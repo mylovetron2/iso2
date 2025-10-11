@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../config/constants.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($title) ? $title : 'Project Management'; ?></title>
+    <title><?php echo isset($title) ? $title : 'Quản lý ISO 2.0'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -15,12 +15,12 @@ require_once __DIR__ . '/../../config/constants.php';
     <!-- Sidebar -->
     <aside class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen">
         <div class="mb-8">
-            <a href="index.php" class="text-2xl font-bold tracking-wide">ProjectManager</a>
+            <a href="index.php" class="text-2xl font-bold tracking-wide">Quản lý ISO v2.0</a>
         </div>
         <nav class="flex-1">
             <ul class="space-y-2">
                 <li>
-                    <a href="projects.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="/iso2/projects.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder mr-2"></i> Projects
                     </a>
                 </li>
@@ -41,7 +41,7 @@ require_once __DIR__ . '/../../config/constants.php';
         <div class="mt-8 border-t border-blue-600 pt-4">
             <?php if (isLoggedIn()): ?>
                 <div class="mb-2">Hello, <?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
-                <a href="/logout.php" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                <a href="/iso2/logout.php" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
             <?php else: ?>
                 <a href="login.php" class="block px-3 py-2 rounded hover:bg-blue-600">Login</a>
                 <a href="register.php" class="block px-3 py-2 rounded hover:bg-blue-600">Register</a>

@@ -6,14 +6,25 @@ require_once __DIR__ . '/../../includes/permissions.php';
 requireAuth();
 requireRole(ROLE_ADMIN);
 
+
 $roleModel = new BaseModel('roles');
 $roles = $roleModel->all();
 
+// Danh sách quyền hệ thống (có thể mở rộng)
+$allPermissions = [
+    'project.view' => 'Xem project',
+    'project.create' => 'Tạo project',
+    'project.edit' => 'Sửa project',
+    'project.delete' => 'Xóa project',
+    'project.manage' => 'Quản lý toàn bộ project',
+];
+
 // Cập nhật quyền cho role
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_id'], $_POST['permissions'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_id'])) {
     $roleId = (int)$_POST['role_id'];
-    $permissions = trim($_POST['permissions']);
-    $roleModel->update($roleId, ['permissions' => $permissions]);
+    $permissions = isset($_POST['permissions']) && is_array($_POST['permissions']) ? $_POST['permissions'] : [];
+    $permissionsStr = implode(',', $permissions);
+    $roleModel->update($roleId, ['permissions' => $permissionsStr]);
     header('Location: permissions_manager.php?success=1');
     exit;
 }
@@ -41,8 +52,16 @@ require_once __DIR__ . '/../layouts/header.php';
                         <td class="px-4 py-2 border font-semibold"><?php echo htmlspecialchars($role['name']); ?></td>
                         <td class="px-4 py-2 border">
                             <input type="hidden" name="role_id" value="<?php echo $role['id']; ?>">
-                            <input type="text" name="permissions" value="<?php echo htmlspecialchars($role['permissions']); ?>" class="w-full px-2 py-1 border rounded">
-                            <div class="text-xs text-gray-500 mt-1">Các quyền cách nhau bằng dấu phẩy, ví dụ: <code>project.view,project.create</code></div>
+                            <div class="flex flex-wrap gap-2">
+                                <?php 
+                                $rolePerms = array_map('trim', explode(',', $role['permissions']));
+                                foreach ($allPermissions as $permKey => $permLabel): ?>
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="checkbox" name="permissions[]" value="<?php echo $permKey; ?>" <?php if (in_array($permKey, $rolePerms)) echo 'checked'; ?>>
+                                        <span class="ml-1 text-sm"><?php echo $permLabel; ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
                         </td>
                         <td class="px-4 py-2 border text-center">
                             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded">Lưu</button>

@@ -7,10 +7,28 @@ requireAuth();
 requireRole(ROLE_ADMIN);
 
 
+
 $userModel = new User();
 $roleModel = new BaseModel('roles');
-$users = $userModel->all();
+$allUsers = $userModel->all();
 $roles = $roleModel->all();
+
+// Tìm kiếm username
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+if ($search !== '') {
+    $users = array_filter($allUsers, function($u) use ($search) {
+        return stripos($u['username'], $search) !== false;
+    });
+} else {
+    $users = $allUsers;
+}
+
+// Phân trang
+$perPage = 10;
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$totalUsers = count($users);
+$totalPages = max(1, ceil($totalUsers / $perPage));
+$usersPage = array_slice(array_values($users), ($page-1)*$perPage, $perPage);
 
 // Gán role cho user
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id'])) {
@@ -21,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['ro
     $db->prepare('DELETE FROM role_user WHERE user_id = ?')->execute([$userId]);
     // Gán role mới
     $db->prepare('INSERT INTO role_user (user_id, role_id) VALUES (?, ?)')->execute([$userId, $roleId]);
-    header('Location: user_permissions.php?success=1');
+    header('Location: /iso2/admin_user_permissions.php?success=1');
     exit;
 }
 
@@ -34,9 +52,14 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="mb-4 text-green-600 text-center">Cập nhật phân quyền thành công!</div>
     <?php endif; ?>
 
-    <!-- Danh sách user và role -->
+
+    <!-- Danh sách user và role + tìm kiếm + phân trang -->
     <div class="mb-8">
         <h3 class="text-lg font-semibold mb-2">Danh sách User & Role</h3>
+        <form method="GET" class="mb-4 flex gap-2">
+            <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Tìm username..." class="px-3 py-2 border rounded w-64">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Tìm kiếm</button>
+        </form>
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white border">
                 <thead class="bg-gray-100">
@@ -48,14 +71,13 @@ require_once __DIR__ . '/../layouts/header.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($users as $user): ?>
+                    <?php foreach ($usersPage as $user): ?>
                         <tr>
                             <td class="px-4 py-2 border"><?php echo htmlspecialchars($user['username']); ?></td>
                             <td class="px-4 py-2 border"><?php echo htmlspecialchars($user['name']); ?></td>
                             <td class="px-4 py-2 border"><?php echo htmlspecialchars($user['email']); ?></td>
                             <td class="px-4 py-2 border">
                                 <?php
-                                // Lấy role của user
                                 $userRoles = $userModel->getRoles($user['stt']);
                                 if (count($userRoles) > 0) {
                                     echo implode(', ', array_map(function($r) { return htmlspecialchars($r['name']); }, $userRoles));
@@ -68,6 +90,15 @@ require_once __DIR__ . '/../layouts/header.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
+        <!-- Phân trang -->
+        <div class="flex justify-center mt-4 gap-2">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>"
+                   class="px-3 py-1 rounded border <?php echo $i == $page ? 'bg-blue-600 text-white' : 'bg-white text-blue-700'; ?>">
+                    <?php echo $i; ?>
+                </a>
+            <?php endfor; ?>
         </div>
     </div>
 

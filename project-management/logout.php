@@ -1,7 +1,8 @@
+
 <?php
-require_once '../config/constants.php';
-require_once '../includes/auth.php';
+require_once __DIR__ . '/config/constants.php';
+require_once __DIR__ . '/includes/auth.php';
 
 logout();
-header('Location: views/auth/login.php');
+header('Location: /iso2/views/auth/login.php');
 exit;
