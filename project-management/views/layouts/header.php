@@ -10,12 +10,20 @@ require_once __DIR__ . '/../../config/constants.php';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body class="bg-gray-100">
+<!-- Sidebar Toggle Button (mobile & desktop) -->
+<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-2 rounded-full shadow-lg focus:outline-none" aria-label="Toggle Sidebar">
+    <i class="fas fa-bars"></i>
+</button>
 <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen">
-        <div class="mb-8">
-            <a href="index.php" class="text-2xl font-bold tracking-wide">Quản lý ISO v2.0</a>
+    <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out translate-x-0 fixed top-0 left-0 h-full z-40">
+        <div class="mb-8 flex items-center justify-between">
+            <a href="index.php" class="text-2xl font-bold tracking-wide">\n  Quản lý ISO </a>
+            <button id="sidebarClose" class="lg:hidden text-white text-xl focus:outline-none" aria-label="Close Sidebar">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <nav class="flex-1">
             <ul class="space-y-2">
@@ -49,4 +57,50 @@ require_once __DIR__ . '/../../config/constants.php';
         </div>
     </aside>
     <!-- Main Content -->
-    <main class="flex-1 px-8 py-8">
+    <main id="mainContent" class="flex-1 px-8 py-8 transition-all duration-300">
+<script>
+    // Sidebar toggle logic
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarClose = document.getElementById('sidebarClose');
+    function openSidebar() {
+        sidebar.classList.remove('translate-x-[-100%]');
+        sidebar.classList.add('translate-x-0');
+    }
+    function closeSidebar() {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('translate-x-[-100%]');
+    }
+    // Sidebar toggle luôn hoạt động trên mọi màn hình
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            if (sidebar.classList.contains('translate-x-0')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', closeSidebar);
+    }
+    // Sidebar luôn mở mặc định khi load trang
+    openSidebar();
+    // Đẩy main content sang phải khi sidebar mở, kéo về khi sidebar đóng trên mọi màn hình
+    function updateMainMargin() {
+        const main = document.getElementById('mainContent');
+        if (sidebar.classList.contains('translate-x-0')) {
+            main.style.marginLeft = '16rem';
+        } else {
+            main.style.marginLeft = '0';
+        }
+    }
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', updateMainMargin);
+    }
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', updateMainMargin);
+    }
+    window.addEventListener('resize', updateMainMargin);
+    updateMainMargin();
+</script>
