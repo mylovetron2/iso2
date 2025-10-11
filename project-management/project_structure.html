@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mô tả cấu trúc project ISO2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #222;
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        pre {
+            background: #f1f5f9;
+            padding: 1em;
+            border-radius: 6px;
+        }
+
+        ul {
+            margin-bottom: 1em;
+        }
+
+        .folder {
+            color: #0d9488;
+            font-weight: bold;
+        }
+
+        .file {
+            color: #64748b;
+        }
+
+        .desc {
+            color: #334155;
+            font-size: 0.98em;
+            margin-bottom: 0.5em;
+        }
+
+        .section {
+            margin-bottom: 2em;
+        }
+
+        .section h2 {
+            color: #4a5568;
+            font-size: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .section ul {
+            padding-left: 1.5em;
+        }
+
+        .section ol {
+            padding-left: 1.5em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Cấu trúc thư mục & thành phần hệ thống ISO2</h1>
+    <div class="section">
+        <h2>1. Sơ đồ thư mục tổng quan</h2>
+        <pre>
+project-management/
+├── <span class="file">index.php</span>
+├── <span class="file">projects.php</span>
+├── <span class="file">admin_user_permissions.php</span>
+├── <span class="folder">config/</span>
+│   ├── <span class="file">constants.php</span>
+│   └── <span class="file">database.php</span>
+├── <span class="folder">controllers/</span>
+│   └── <span class="file">ProjectController.php</span>
+├── <span class="folder">includes/</span>
+│   ├── <span class="file">auth.php</span>
+│   ├── <span class="file">functions.php</span>
+│   └── <span class="file">permissions.php</span>
+├── <span class="folder">migrations/</span>
+│   └── <span class="file">20251011_users_stt_schema.sql</span>
+├── <span class="folder">models/</span>
+│   ├── <span class="file">BaseModel.php</span>
+│   ├── <span class="file">Project.php</span>
+│   └── <span class="file">User.php</span>
+├── <span class="folder">views/</span>
+│   ├── <span class="folder">admin/</span>
+│   │   ├── <span class="file">permissions_manager.php</span>
+│   │   └── <span class="file">user_permissions.php</span>
+│   ├── <span class="folder">auth/</span>
+│   │   ├── <span class="file">login.php</span>
+│   │   └── <span class="file">register.php</span>
+│   ├── <span class="folder">layouts/</span>
+│   │   ├── <span class="file">header.php</span>
+│   │   └── <span class="file">footer.php</span>
+│   └── <span class="folder">projects/</span>
+│       └── <span class="file">index.php</span>
+└── <span class="folder">.git/</span>
+        </pre>
+    </div>
+    <div class="section">
+        <h2>2. Vai trò & chức năng từng thành phần</h2>
+        <ul>
+            <li><span class="file">index.php</span>: Điều hướng đăng nhập/đăng xuất, chuyển hướng người dùng tới trang
+                phù hợp.</li>
+            <li><span class="file">projects.php</span>: Router chính cho các thao tác CRUD Project.</li>
+            <li><span class="file">admin_user_permissions.php</span>: Giao diện phân quyền user (chỉ admin truy cập).
+            </li>
+            <li><span class="folder">config/</span>:
+                <ul>
+                    <li><span class="file">constants.php</span>: Định nghĩa hằng số, quyền, role, require_once các file
+                        core.</li>
+                    <li><span class="file">database.php</span>: Kết nối PDO tới MySQL.</li>
+                </ul>
+            </li>
+            <li><span class="folder">controllers/</span>:
+                <ul>
+                    <li><span class="file">ProjectController.php</span>: Xử lý logic CRUD cho Project, nhận request từ
+                        projects.php.</li>
+                </ul>
+            </li>
+            <li><span class="folder">includes/</span>:
+                <ul>
+                    <li><span class="file">auth.php</span>: Hàm xác thực, session, login/logout.</li>
+                    <li><span class="file">functions.php</span>: Các hàm tiện ích chung.</li>
+                    <li><span class="file">permissions.php</span>: Kiểm tra quyền, phân quyền động.</li>
+                </ul>
+            </li>
+            <li><span class="folder">migrations/</span>:
+                <ul>
+                    <li><span class="file">20251011_users_stt_schema.sql</span>: Tạo bảng users, roles, role_user,
+                        projects.</li>
+                </ul>
+            </li>
+            <li><span class="folder">models/</span>:
+                <ul>
+                    <li><span class="file">BaseModel.php</span>: Model cơ sở thao tác DB.</li>
+                    <li><span class="file">Project.php</span>: Model cho bảng projects.</li>
+                    <li><span class="file">User.php</span>: Model cho bảng users, phân quyền.</li>
+                </ul>
+            </li>
+            <li><span class="folder">views/</span>:
+                <ul>
+                    <li><span class="folder">admin/</span>:
+                        <ul>
+                            <li><span class="file">permissions_manager.php</span>: Quản lý quyền cho role (admin UI).
+                            </li>
+                            <li><span class="file">user_permissions.php</span>: Giao diện phân quyền user.</li>
+                        </ul>
+                    </li>
+                    <li><span class="folder">auth/</span>:
+                        <ul>
+                            <li><span class="file">login.php</span>: Giao diện đăng nhập.</li>
+                            <li><span class="file">register.php</span>: Giao diện đăng ký.</li>
+                        </ul>
+                    </li>
+                    <li><span class="folder">layouts/</span>:
+                        <ul>
+                            <li><span class="file">header.php</span>: Sidebar, header, responsive, logic phân quyền UI.
+                            </li>
+                            <li><span class="file">footer.php</span>: Footer chung.</li>
+                        </ul>
+                    </li>
+                    <li><span class="folder">projects/</span>:
+                        <ul>
+                            <li><span class="file">index.php</span>: Giao diện danh sách, tìm kiếm, CRUD project.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+</body>
+
+</html>

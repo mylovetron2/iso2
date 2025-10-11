@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mô tả mô hình Model & View - ISO2 Project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #222;
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        h2 {
+            color: #0d9488;
+            margin-top: 2em;
+        }
+
+        pre {
+            background: #f1f5f9;
+            padding: 1em;
+            border-radius: 6px;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 1em;
+        }
+
+        .folder {
+            color: #0d9488;
+            font-weight: bold;
+        }
+
+        .file {
+            color: #64748b;
+        }
+
+        .desc {
+            color: #334155;
+            font-size: 0.98em;
+            margin-bottom: 0.5em;
+        }
+
+        .section {
+            margin-bottom: 2em;
+        }
+
+        .key {
+            color: #be185d;
+            font-weight: bold;
+        }
+
+        code {
+            background: #e0e7ef;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Mô hình Model & View của project ISO2</h1>
+    <div class="section">
+        <h2>1. Tổng quan kiến trúc</h2>
+        <ul>
+            <li><b>Model:</b> Định nghĩa các class thao tác với bảng dữ liệu (users, projects, roles, ...), kế thừa
+                <code>BaseModel</code>.
+            </li>
+            <li><b>View:</b> Các file PHP trong <code>views/</code> hiển thị giao diện, nhận dữ liệu từ controller.</li>
+            <li><b>Controller:</b> (ví dụ <code>ProjectController.php</code>) nhận request, gọi model, truyền dữ liệu
+                sang view.</li>
+        </ul>
+    </div>
+    <div class="section">
+        <h2>2. Mô hình Model (models/)</h2>
+        <ul>
+            <li><span class="file">BaseModel.php</span>: Class cha, cung cấp các hàm <code>all()</code>,
+                <code>find()</code>, <code>create()</code>, <code>update()</code>, <code>delete()</code> cho mọi bảng.
+            </li>
+            <li><span class="file">User.php</span>: Model cho bảng <b>users</b>, có thêm hàm
+                <code>getRoles($userId)</code>, <code>hasPermission($userId, $permission)</code>.
+            </li>
+            <li><span class="file">Project.php</span>: Model cho bảng <b>projects</b>, kế thừa <code>BaseModel</code>.
+            </li>
+            <li><b>Muốn mở rộng:</b> Tạo file <code>models/TenBang.php</code> kế thừa <code>BaseModel</code>, định nghĩa
+                thêm hàm đặc thù nếu cần.</li>
+        </ul>
+        <pre>
+class TenBang extends BaseModel {
+    // Định nghĩa các hàm đặc thù cho bảng này nếu cần
+}
+        </pre>
+    </div>
+    <div class="section">
+        <h2>3. Mô hình View (views/)</h2>
+        <ul>
+            <li><b>views/layouts/</b>: Chứa <code>header.php</code>, <code>footer.php</code> (giao diện khung, sidebar,
+                responsive...)</li>
+            <li><b>views/projects/index.php</b>: Hiển thị danh sách, tìm kiếm, CRUD project.</li>
+            <li><b>views/admin/permissions_manager.php</b>: Giao diện quản lý quyền cho role.</li>
+            <li><b>views/admin/user_permissions.php</b>: Giao diện phân quyền user.</li>
+            <li><b>views/auth/</b>: Giao diện đăng nhập, đăng ký.</li>
+            <li><b>Muốn mở rộng:</b> Tạo thư mục <code>views/tenbang/</code> và các file <code>index.php</code>,
+                <code>edit.php</code>, ... tương ứng cho bảng mới.
+            </li>
+        </ul>
+        <pre>
+// Ví dụ tạo view cho bảng "tasks":
+views/tasks/index.php
+views/tasks/edit.php
+        </pre>
+    </div>
+    <div class="section">
+        <h2>4. Quy trình phát triển bảng mới</h2>
+        <ol>
+            <li>Tạo migration cho bảng mới (nếu cần).</li>
+            <li>Tạo model mới kế thừa <code>BaseModel</code> (ví dụ <code>Task.php</code>).</li>
+            <li>Tạo controller mới hoặc thêm action vào controller hiện tại.</li>
+            <li>Tạo view mới trong <code>views/tenbang/</code> (index, edit, ...).</li>
+            <li>Thêm route (file .php entry hoặc trong controller).</li>
+            <li>Kiểm tra phân quyền nếu là bảng nhạy cảm.</li>
+        </ol>
+    </div>
+    <div class="section">
+        <h2>5. Ví dụ mở rộng cho bảng mới</h2>
+        <pre>
+// Tạo model:
+models/Task.php
+class Task extends BaseModel {
+    // ...
+}
+
+// Tạo view:
+views/tasks/index.php
+views/tasks/edit.php
+
+// Tạo controller:
+controllers/TaskController.php
+        </pre>
+        <ul>
+            <li>Chỉ cần kế thừa <code>BaseModel</code> là có sẵn các hàm CRUD cơ bản.</li>
+            <li>View có thể dùng lại layout chung, chỉ cần truyền dữ liệu từ controller sang.</li>
+        </ul>
+    </div>
+
+</body>

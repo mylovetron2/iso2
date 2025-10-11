@@ -43,6 +43,25 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-key mr-2"></i> Quản lý quyền
                     </a>
                 </li>
+                <!-- Menu Cấu trúc project -->
+                <li>
+                    <div id="projectStructMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-sitemap mr-2"></i> Cấu trúc project
+                        <i id="projectStructCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="projectStructMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <li>
+                            <a href="/iso2/project_structure.html"  class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-diagram-project mr-2"></i> Tổng quan cấu trúc
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/project_model_view_structure.html"  class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-cubes mr-2"></i> Mô hình Model & View
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 <?php endif; ?>
             </ul>
         </nav>
@@ -103,4 +122,16 @@ require_once __DIR__ . '/../../config/constants.php';
     }
     window.addEventListener('resize', updateMainMargin);
     updateMainMargin();
+</script>
+<script>
+// Expand/collapse menu Cấu trúc project
+const structBtn = document.getElementById('projectStructMenuBtn');
+const structMenu = document.getElementById('projectStructMenu');
+const structCaret = document.getElementById('projectStructCaret');
+if (structBtn && structMenu && structCaret) {
+    structBtn.addEventListener('click', function() {
+        structMenu.classList.toggle('hidden');
+        structCaret.classList.toggle('rotate-180');
+    });
+}
 </script>
