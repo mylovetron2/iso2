@@ -15,11 +15,12 @@ require_once __DIR__ . '/../../config/constants.php';
             -webkit-text-size-adjust: 100%;
             -webkit-tap-highlight-color: transparent;
         }
-        @media (max-width: 768px) {
-            .overflow-x-auto {
-                -webkit-overflow-scrolling: touch;
-            }
-            /* Ẩn sidebar mặc định trên mobile */
+        /* Hiển thị sidebar mặc định trên desktop */
+        #sidebar {
+            transform: translateX(0);
+        }
+        /* Ẩn sidebar mặc định trên mobile */
+        @media (max-width: 1023px) {
             #sidebar {
                 transform: translateX(-100%);
             }
@@ -27,12 +28,17 @@ require_once __DIR__ . '/../../config/constants.php';
                 transform: translateX(0);
             }
         }
+        @media (max-width: 768px) {
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-gray-100">
-<!-- Sidebar Toggle Button (mobile & desktop) -->
-<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600" aria-label="Toggle Sidebar">
+<!-- Sidebar Toggle Button (chỉ hiện trên mobile) -->
+<button id="sidebarToggle" class="lg:hidden fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600" aria-label="Toggle Sidebar">
     <i class="fas fa-bars text-lg"></i>
 </button>
 <div class="flex min-h-screen">
@@ -127,7 +133,7 @@ require_once __DIR__ . '/../../config/constants.php';
         sidebarOverlay.classList.add('hidden');
         document.body.style.overflow = '';
     }
-    // Sidebar toggle luôn hoạt động trên mọi màn hình
+    // Sidebar toggle chỉ hoạt động trên mobile
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             if (sidebar.classList.contains('show')) {
@@ -144,39 +150,21 @@ require_once __DIR__ . '/../../config/constants.php';
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener('click', closeSidebar);
     }
-    // Close sidebar when window resizes to desktop
+    // Auto show/hide sidebar when window resizes
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 1024) {
-            sidebar.classList.add('show');
+            // Desktop: luôn hiển thị sidebar, ẩn overlay
+            sidebar.classList.remove('show');
             sidebarOverlay.classList.add('hidden');
             document.body.style.overflow = '';
         } else {
+            // Mobile: ẩn sidebar mặc định
             sidebar.classList.remove('show');
+            sidebarOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
         }
     });
-    // Initialize sidebar state based on screen size
-    if (window.innerWidth >= 1024) {
-        sidebar.classList.add('show');
-    }
-    // Sidebar luôn mở mặc định khi load trang
-    openSidebar();
-    // Đẩy main content sang phải khi sidebar mở, kéo về khi sidebar đóng trên mọi màn hình
-    function updateMainMargin() {
-        const main = document.getElementById('mainContent');
-        if (sidebar.classList.contains('translate-x-0')) {
-            main.style.marginLeft = '16rem';
-        } else {
-            main.style.marginLeft = '0';
-        }
-    }
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', updateMainMargin);
-    }
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', updateMainMargin);
-    }
-    window.addEventListener('resize', updateMainMargin);
-    updateMainMargin();
+    // Initialize: không cần thêm class 'show' trên desktop vì CSS đã xử lý
 </script>
 <script>
 // Expand/collapse menu Cấu trúc project
