@@ -3,28 +3,28 @@ header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 require_once __DIR__ . '/../layouts/header.php'; 
 ?>
-<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold flex items-center">
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
+        <h1 class="text-xl md:text-2xl font-bold flex items-center">
             <i class="fas fa-info-circle mr-2"></i> Chi tiết Thiết bị
         </h1>
-        <div class="flex gap-2">
+        <div class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <?php if (hasPermission(PERMISSION_PROJECT_EDIT)): ?>
             <a href="thietbihotro.php?action=edit&id=<?php echo $device['stt']; ?>" 
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto">
                 <i class="fas fa-edit mr-1"></i> Sửa
             </a>
             <?php endif; ?>
-            <a href="thietbihotro.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            <a href="thietbihotro.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto">
                 <i class="fas fa-arrow-left mr-1"></i> Quay lại
             </a>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div class="space-y-3 md:space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1">Tên thiết bị</label>
+                <label class="block text-xs md:text-sm font-semibold text-gray-600 mb-1">Tên thiết bị</label>
                 <p class="text-lg font-bold text-gray-800"><?php echo htmlspecialchars($device['tenthietbi']); ?></p>
             </div>
 

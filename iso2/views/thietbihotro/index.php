@@ -9,22 +9,22 @@ require_once __DIR__ . '/../layouts/header.php';
     </h1>
     
     <!-- Thống kê -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-blue-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-blue-700"><?php echo $stats['total']; ?></div>
-            <div class="text-gray-600">Tổng số thiết bị</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div class="bg-blue-100 rounded p-3 md:p-4 text-center">
+            <div class="text-xl md:text-2xl font-bold text-blue-700"><?php echo $stats['total']; ?></div>
+            <div class="text-xs md:text-sm text-gray-600">Tổng số thiết bị</div>
         </div>
-        <div class="bg-green-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-green-700"><?php echo $stats['conhan']; ?></div>
-            <div class="text-gray-600">Còn hạn KĐ</div>
+        <div class="bg-green-100 rounded p-3 md:p-4 text-center">
+            <div class="text-xl md:text-2xl font-bold text-green-700"><?php echo $stats['conhan']; ?></div>
+            <div class="text-xs md:text-sm text-gray-600">Còn hạn KĐ</div>
         </div>
-        <div class="bg-yellow-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-yellow-700"><?php echo $stats['saphethan']; ?></div>
-            <div class="text-gray-600">Sắp hết hạn (30 ngày)</div>
+        <div class="bg-yellow-100 rounded p-3 md:p-4 text-center">
+            <div class="text-xl md:text-2xl font-bold text-yellow-700"><?php echo $stats['saphethan']; ?></div>
+            <div class="text-xs md:text-sm text-gray-600">Sắp hết hạn (30 ngày)</div>
         </div>
-        <div class="bg-red-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-red-700"><?php echo $stats['hethan']; ?></div>
-            <div class="text-gray-600">Hết hạn KĐ</div>
+        <div class="bg-red-100 rounded p-3 md:p-4 text-center">
+            <div class="text-xl md:text-2xl font-bold text-red-700"><?php echo $stats['hethan']; ?></div>
+            <div class="text-xs md:text-sm text-gray-600">Hết hạn KĐ</div>
         </div>
     </div>
 
@@ -42,12 +42,12 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <!-- Filter & Search -->
-    <form method="get" class="flex flex-wrap gap-2 mb-4">
+    <form method="get" class="flex flex-col md:flex-row gap-2 mb-4">
         <input type="text" name="search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" 
                placeholder="Tìm kiếm tên thiết bị, serial..." 
-               class="border rounded px-3 py-2 flex-1 min-w-[200px]">
+               class="border rounded px-3 py-2 flex-1 w-full md:min-w-[200px] text-sm md:text-base">
         
-        <select name="chusohuu" class="border rounded px-3 py-2">
+        <select name="chusohuu" class="border rounded px-3 py-2 w-full md:w-auto text-sm md:text-base">
             <option value="">Tất cả chủ sở hữu</option>
             <?php foreach ($chusohuuList as $owner): ?>
                 <option value="<?php echo htmlspecialchars($owner); ?>" 
@@ -57,15 +57,15 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php endforeach; ?>
         </select>
         
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base w-full md:w-auto">
             <i class="fas fa-search mr-1"></i> Lọc
         </button>
-        <a href="thietbihotro.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+        <a href="thietbihotro.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto">
             <i class="fas fa-redo mr-1"></i> Xóa lọc
         </a>
         
         <?php if (hasPermission(PERMISSION_PROJECT_CREATE)): ?>
-        <a href="thietbihotro.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded ml-auto">
+        <a href="thietbihotro.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto md:ml-auto">
             <i class="fas fa-plus mr-1"></i> Thêm thiết bị
         </a>
         <?php endif; ?>
@@ -76,16 +76,16 @@ require_once __DIR__ . '/../layouts/header.php';
         <table class="min-w-full bg-white border">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-2 border text-left">STT</th>
-                    <th class="px-4 py-2 border text-left">Tên thiết bị</th>
-                    <th class="px-4 py-2 border text-left">Tên vật tư</th>
-                    <th class="px-4 py-2 border text-left">Chủ sở hữu</th>
-                    <th class="px-4 py-2 border text-left">Serial Number</th>
-                    <th class="px-4 py-2 border text-left">Ngày KĐ</th>
-                    <th class="px-4 py-2 border text-left">Hạn KĐ (tháng)</th>
-                    <th class="px-4 py-2 border text-left">Ngày KĐ tiếp theo</th>
-                    <th class="px-4 py-2 border text-left">Trạng thái</th>
-                    <th class="px-4 py-2 border text-center">Thao tác</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">STT</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Tên thiết bị</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Tên vật tư</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Chủ sở hữu</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Serial Number</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày KĐ</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Hạn KĐ (tháng)</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Ngày KĐ tiếp theo</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -99,22 +99,22 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php else: ?>
                 <?php foreach ($devices as $device): ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 border"><?php echo $device['stt']; ?></td>
-                    <td class="px-4 py-2 border">
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo $device['stt']; ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <strong><?php echo htmlspecialchars($device['tenthietbi']); ?></strong>
                     </td>
-                    <td class="px-4 py-2 border"><?php echo htmlspecialchars($device['tenvt']); ?></td>
-                    <td class="px-4 py-2 border"><?php echo htmlspecialchars($device['chusohuu']); ?></td>
-                    <td class="px-4 py-2 border">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-sm">
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($device['tenvt']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($device['chusohuu']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
+                        <code class="bg-gray-100 px-2 py-1 rounded text-xs">
                             <?php echo htmlspecialchars($device['serialnumber']); ?>
                         </code>
                     </td>
-                    <td class="px-4 py-2 border">
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php echo $device['ngaykd'] ? date('d/m/Y', strtotime($device['ngaykd'])) : '-'; ?>
                     </td>
-                    <td class="px-4 py-2 border text-center"><?php echo $device['hankd']; ?></td>
-                    <td class="px-4 py-2 border">
+                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden lg:table-cell"><?php echo $device['hankd']; ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <?php 
                         if ($device['ngaykdtt']) {
                             $ngaykdtt = strtotime($device['ngaykdtt']);
@@ -133,25 +133,25 @@ require_once __DIR__ . '/../layouts/header.php';
                         }
                         ?>
                     </td>
-                    <td class="px-4 py-2 border text-center">
+                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">
                         <?php 
                         if ($device['ngaykdtt']) {
                             $ngaykdtt = strtotime($device['ngaykdtt']);
                             $today = strtotime('today');
                             
                             if ($ngaykdtt < $today) {
-                                echo '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Hết hạn</span>';
+                                echo '<span class="bg-red-100 text-red-800 text-xs px-1 md:px-2 py-1 rounded">Hết hạn</span>';
                             } elseif (($ngaykdtt - $today) / 86400 <= 30) {
-                                echo '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Sắp hết hạn</span>';
+                                echo '<span class="bg-yellow-100 text-yellow-800 text-xs px-1 md:px-2 py-1 rounded">Sắp hết hạn</span>';
                             } else {
-                                echo '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Còn hạn</span>';
+                                echo '<span class="bg-green-100 text-green-800 text-xs px-1 md:px-2 py-1 rounded">Còn hạn</span>';
                             }
                         } else {
-                            echo '<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">Chưa có</span>';
+                            echo '<span class="bg-gray-100 text-gray-800 text-xs px-1 md:px-2 py-1 rounded">Chưa có</span>';
                         }
                         ?>
                     </td>
-                    <td class="px-4 py-2 border text-center whitespace-nowrap">
+                    <td class="px-2 md:px-4 py-2 border text-center">
                         <a href="thietbihotro.php?action=view&id=<?php echo $device['stt']; ?>" 
                            class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
                             <i class="fas fa-eye"></i>

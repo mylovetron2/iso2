@@ -6,20 +6,38 @@ require_once __DIR__ . '/../../config/constants.php';
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title><?php echo isset($title) ? $title : 'Quản lý ISO 2.0'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 768px) {
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+            /* Ẩn sidebar mặc định trên mobile */
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar.show {
+                transform: translateX(0);
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100">
 <!-- Sidebar Toggle Button (mobile & desktop) -->
-<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-2 rounded-full shadow-lg focus:outline-none" aria-label="Toggle Sidebar">
-    <i class="fas fa-bars"></i>
+<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600" aria-label="Toggle Sidebar">
+    <i class="fas fa-bars text-lg"></i>
 </button>
 <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out translate-x-0 fixed top-0 left-0 h-full z-40">
+    <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out fixed top-0 left-0 h-full z-40 overflow-y-auto">
         <div class="mb-8 flex items-center justify-between">
             <a href="index.php" class="text-2xl font-bold tracking-wide">\n  Quản lý ISO </a>
             <button id="sidebarClose" class="lg:hidden text-white text-xl focus:outline-none" aria-label="Close Sidebar">
@@ -86,25 +104,33 @@ require_once __DIR__ . '/../../config/constants.php';
             <?php endif; ?>
         </div>
     </aside>
+    <!-- Overlay for mobile -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
     <!-- Main Content -->
-    <main id="mainContent" class="flex-1 px-8 py-8 transition-all duration-300">
+    <main id="mainContent" class="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 transition-all duration-300 lg:ml-64 mt-16 lg:mt-0">
 <script>
     // Sidebar toggle logic
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    
     function openSidebar() {
-        sidebar.classList.remove('translate-x-[-100%]');
-        sidebar.classList.add('translate-x-0');
+        sidebar.classList.add('show');
+        if (window.innerWidth < 1024) {
+            sidebarOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
     }
     function closeSidebar() {
-        sidebar.classList.remove('translate-x-0');
-        sidebar.classList.add('translate-x-[-100%]');
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
     }
     // Sidebar toggle luôn hoạt động trên mọi màn hình
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            if (sidebar.classList.contains('translate-x-0')) {
+            if (sidebar.classList.contains('show')) {
                 closeSidebar();
             } else {
                 openSidebar();
@@ -113,6 +139,24 @@ require_once __DIR__ . '/../../config/constants.php';
     }
     if (sidebarClose) {
         sidebarClose.addEventListener('click', closeSidebar);
+    }
+    // Click overlay to close sidebar on mobile
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+    // Close sidebar when window resizes to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) {
+            sidebar.classList.add('show');
+            sidebarOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        } else {
+            sidebar.classList.remove('show');
+        }
+    });
+    // Initialize sidebar state based on screen size
+    if (window.innerWidth >= 1024) {
+        sidebar.classList.add('show');
     }
     // Sidebar luôn mở mặc định khi load trang
     openSidebar();
