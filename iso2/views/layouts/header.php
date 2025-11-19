@@ -1,8 +1,9 @@
 
 <?php
+header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/../../config/constants.php';
 ?><!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,8 +29,18 @@ require_once __DIR__ . '/../../config/constants.php';
         <nav class="flex-1">
             <ul class="space-y-2">
                 <li>
+                    <a href="/iso2/tiendocongviec2.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-business-time mr-2"></i> Tiến độ công việc
+                    </a>
+                </li>
+                <li>
                     <a href="/iso2/projects.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder mr-2"></i> Projects
+                    </a>
+                </li>
+                <li>
+                    <a href="/iso2/thietbihotro.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
                     </a>
                 </li>
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>

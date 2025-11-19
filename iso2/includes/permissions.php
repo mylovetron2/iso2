@@ -1,21 +1,26 @@
 <?php
-function hasPermission($permission) {
+declare(strict_types=1);
+
+function hasPermission(string $permission): bool {
     if (!isLoggedIn()) return false;
     $userModel = new User();
     return $userModel->hasPermission($_SESSION['user_id'], $permission);
 }
-function hasRole($role) {
+
+function hasRole(string $role): bool {
     if (!isLoggedIn()) return false;
     $userModel = new User();
     return $userModel->hasRole($_SESSION['user_id'], $role);
 }
-function requirePermission($permission) {
+
+function requirePermission(string $permission): void {
     if (!hasPermission($permission)) {
         http_response_code(403);
         die('Access Denied. You do not have permission to access this page.');
     }
 }
-function requireRole($role) {
+
+function requireRole(string $role): void {
     if (!hasRole($role)) {
         http_response_code(403);
         die('Access Denied. Required role: ' . $role);

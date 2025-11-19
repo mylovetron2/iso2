@@ -1,10 +1,15 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'mapselli676e_iso2');
-define('DB_USER', 'mapselli676e_iso2');
-define('DB_PASS', 'cntt2019');
-define('DB_CHARSET', 'utf8mb4');
-function getDBConnection($debug = false) {
+declare(strict_types=1);
+
+define('DB_HOST', 'diavatly.com');
+define('DB_USER', 'diavatly_master');
+define('DB_PASS', '12345678');
+define('DB_NAME', 'diavatly_db');
+define('DB_PORT', '3306');
+define('DB_CHARSET', 'latin1');
+
+
+function getDBConnection(bool $debug = false): PDO {
     static $conn = null;
     if ($conn === null) {
         try {
@@ -15,7 +20,8 @@ function getDBConnection($debug = false) {
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES latin1"
                 ]
             );
             if ($debug) {

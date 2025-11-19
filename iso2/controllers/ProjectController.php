@@ -1,24 +1,28 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/../models/Project.php';
 require_once __DIR__ . '/../includes/permissions.php';
+
 class ProjectController {
-    public function index() {
+    public function index(): void {
         requirePermission(PERMISSION_PROJECT_VIEW);
         $projectModel = new Project();
-    $search = isset($_GET['search']) ? $_GET['search'] : '';
-    $status = isset($_GET['status']) ? $_GET['status'] : '';
+        $search = isset($_GET['search']) ? $_GET['search'] : '';
+        $status = isset($_GET['status']) ? $_GET['status'] : '';
         $projects = $projectModel->getAllWithUser($_SESSION['user_id'], $search, $status);
-    include __DIR__ . '/../views/projects/index.php';
+        include __DIR__ . '/../views/projects/index.php';
     }
-    public function create() {
+    public function create(): void {
         requirePermission(PERMISSION_PROJECT_CREATE);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->store();
             return;
         }
-    include __DIR__ . '/../views/projects/create.php';
+        include __DIR__ . '/../views/projects/create.php';
     }
-    private function store() {
+    
+    private function store(): void {
     $name = isset($_POST['name']) ? $_POST['name'] : '';
     $description = isset($_POST['description']) ? $_POST['description'] : '';
     $status = isset($_POST['status']) ? $_POST['status'] : '';
@@ -48,9 +52,10 @@ class ProjectController {
                 $errors[] = "Failed to create project";
             }
         }
-    include __DIR__ . '/../views/projects/create.php';
+        include __DIR__ . '/../views/projects/create.php';
     }
-    public function edit($id) {
+    
+    public function edit(int $id): void {
         requirePermission(PERMISSION_PROJECT_EDIT);
         $projectModel = new Project();
         $project = $projectModel->find($id);
@@ -61,9 +66,10 @@ class ProjectController {
             $this->update($id);
             return;
         }
-    include __DIR__ . '/../views/projects/edit.php';
+        include __DIR__ . '/../views/projects/edit.php';
     }
-    private function update($id) {
+    
+    private function update(int $id): void {
     $name = isset($_POST['name']) ? $_POST['name'] : '';
     $description = isset($_POST['description']) ? $_POST['description'] : '';
     $status = isset($_POST['status']) ? $_POST['status'] : '';
@@ -88,7 +94,7 @@ class ProjectController {
             include __DIR__ . '/../views/projects/edit.php';
         }
     }
-    public function delete($id) {
+    public function delete(int $id): void {
         requirePermission(PERMISSION_PROJECT_DELETE);
         $projectModel = new Project();
         $project = $projectModel->find($id);

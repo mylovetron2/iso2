@@ -1,14 +1,19 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/../models/User.php';
-function isLoggedIn() {
+
+function isLoggedIn(): bool {
     return isset($_SESSION['user_id']);
 }
-function getCurrentUser() {
+
+function getCurrentUser(): array|false|null {
     if (!isLoggedIn()) return null;
     $userModel = new User();
     return $userModel->find($_SESSION['user_id']);
 }
-function login($username, $password) {
+
+function login(string $username, string $password): bool {
     $userModel = new User();
     $user = $userModel->findByUsername($username);
     if ($user && $user['password'] === $password) {
@@ -19,10 +24,12 @@ function login($username, $password) {
     }
     return false;
 }
-function logout() {
+
+function logout(): void {
     session_destroy();
 }
-function requireAuth() {
+
+function requireAuth(): void {
     if (!isLoggedIn()) {
         header('Location: login.php');
         exit;
