@@ -15,17 +15,29 @@ require_once __DIR__ . '/../../config/constants.php';
             -webkit-text-size-adjust: 100%;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Hiển thị sidebar mặc định trên desktop */
+        /* Sidebar có thể toggle trên mọi màn hình */
         #sidebar {
             transform: translateX(0);
+            transition: transform 0.3s ease-in-out;
         }
-        /* Ẩn sidebar mặc định trên mobile */
+        #sidebar.hidden-sidebar {
+            transform: translateX(-100%);
+        }
+        /* Main content tự động điều chỉnh khi sidebar ẩn/hiện */
+        #mainContent {
+            transition: margin-left 0.3s ease-in-out;
+        }
+        /* Trên mobile, sidebar ẩn mặc định */
         @media (max-width: 1023px) {
             #sidebar {
                 transform: translateX(-100%);
             }
             #sidebar.show {
                 transform: translateX(0);
+            }
+            /* Mobile không cần điều chỉnh margin */
+            #mainContent {
+                margin-left: 0 !important;
             }
         }
         @media (max-width: 768px) {
@@ -37,8 +49,8 @@ require_once __DIR__ . '/../../config/constants.php';
 </head>
 
 <body class="bg-gray-100">
-<!-- Sidebar Toggle Button (chỉ hiện trên mobile) -->
-<button id="sidebarToggle" class="lg:hidden fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600" aria-label="Toggle Sidebar">
+<!-- Sidebar Toggle Button (hiện trên cả mobile và desktop) -->
+<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600 transition-all duration-300" aria-label="Toggle Sidebar">
     <i class="fas fa-bars text-lg"></i>
 </button>
 <div class="flex min-h-screen">
@@ -115,56 +127,93 @@ require_once __DIR__ . '/../../config/constants.php';
     <!-- Main Content -->
     <main id="mainContent" class="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 transition-all duration-300 lg:ml-64 mt-16 lg:mt-0">
 <script>
-    // Sidebar toggle logic
+    // Sidebar toggle logic - hoạt động trên cả desktop và mobile
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebarClose = document.getElementById('sidebarClose');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.getElementById('mainContent');
     
-    function openSidebar() {
-        sidebar.classList.add('show');
-        if (window.innerWidth < 1024) {
-            sidebarOverlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+    // Check if we're on mobile or desktop
+    function isMobile() {
+        return window.innerWidth < 1024;
+    }
+    
+    function toggleSidebar() {
+        if (isMobile()) {
+            // Mobile: toggle với overlay
+            if (sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('show');
+                sidebarOverlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        } else {
+            // Desktop: toggle sidebar và điều chỉnh main content
+            if (sidebar.classList.contains('hidden-sidebar')) {
+                sidebar.classList.remove('hidden-sidebar');
+                mainContent.style.marginLeft = '16rem'; // 256px = w-64
+            } else {
+                sidebar.classList.add('hidden-sidebar');
+                mainContent.style.marginLeft = '0';
+            }
         }
     }
-    function closeSidebar() {
-        sidebar.classList.remove('show');
-        sidebarOverlay.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-    // Sidebar toggle chỉ hoạt động trên mobile
+    
+    // Toggle button click
     if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            if (sidebar.classList.contains('show')) {
-                closeSidebar();
-            } else {
-                openSidebar();
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+    
+    // Close button on sidebar (mobile only)
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', function() {
+            if (isMobile()) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.add('hidden');
+                document.body.style.overflow = '';
             }
         });
     }
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeSidebar);
-    }
+    
     // Click overlay to close sidebar on mobile
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
     }
-    // Auto show/hide sidebar when window resizes
+    
+    // Handle window resize
     window.addEventListener('resize', function() {
-        if (window.innerWidth >= 1024) {
-            // Desktop: luôn hiển thị sidebar, ẩn overlay
+        if (isMobile()) {
+            // Mobile: reset state
+            sidebar.classList.remove('hidden-sidebar');
             sidebar.classList.remove('show');
             sidebarOverlay.classList.add('hidden');
             document.body.style.overflow = '';
+            mainContent.style.marginLeft = '';
         } else {
-            // Mobile: ẩn sidebar mặc định
+            // Desktop: remove mobile classes, keep desktop state
             sidebar.classList.remove('show');
             sidebarOverlay.classList.add('hidden');
             document.body.style.overflow = '';
+            // Maintain desktop toggle state
+            if (!sidebar.classList.contains('hidden-sidebar')) {
+                mainContent.style.marginLeft = '16rem';
+            }
         }
     });
-    // Initialize: không cần thêm class 'show' trên desktop vì CSS đã xử lý
+    
+    // Initialize: Set proper state on page load
+    if (!isMobile()) {
+        // Desktop: sidebar visible, main content with margin
+        mainContent.style.marginLeft = '16rem';
+    }
 </script>
 <script>
 // Expand/collapse menu Cấu trúc project

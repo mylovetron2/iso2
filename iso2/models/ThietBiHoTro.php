@@ -17,57 +17,47 @@ class ThietBiHoTro extends BaseModel {
     public function getList(string $search = '', string $chusohuu = '', int $offset = 0, int $limit = 15): array {
         $this->db->exec("SET NAMES latin1");
         
+        // Build SQL with escaped values
         $sql = "SELECT * FROM {$this->table} WHERE 1=1";
-        $params = [];
         
         if ($search) {
-            $sql .= " AND (tenthietbi LIKE :search OR tenvt LIKE :search OR serialnumber LIKE :search OR hosomay LIKE :search)";
-            $params['search'] = "%$search%";
+            $searchEscaped = $this->db->quote("%$search%");
+            $sql .= " AND (tenthietbi LIKE {$searchEscaped} OR tenvt LIKE {$searchEscaped} OR serialnumber LIKE {$searchEscaped} OR hosomay LIKE {$searchEscaped})";
         }
         
         if ($chusohuu) {
-            $sql .= " AND chusohuu LIKE :chusohuu";
-            $params['chusohuu'] = "%$chusohuu%";
+            $chusohuuEscaped = $this->db->quote("%$chusohuu%");
+            $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
         }
         
-        $sql .= " ORDER BY stt DESC LIMIT :offset, :limit";
-        $params['offset'] = $offset;
-        $params['limit'] = $limit;
+        // Cast to int for safety
+        $offset = (int)$offset;
+        $limit = (int)$limit;
+        $sql .= " ORDER BY stt DESC LIMIT {$offset}, {$limit}";
         
-        $stmt = $this->db->prepare($sql);
-        foreach ($params as $k => $v) {
-            if ($k === 'offset' || $k === 'limit') {
-                $stmt->bindValue(":".$k, $v, PDO::PARAM_INT);
-            } else {
-                $stmt->bindValue(":".$k, $v);
-            }
-        }
-        $stmt->execute();
+        $stmt = $this->db->query($sql);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Đếm tổng số thiết bị
+        /**
+     * Đếm tổng số bản ghi (phục vụ phân trang)
      */
     public function countList(string $search = '', string $chusohuu = ''): int {
+        $this->db->exec("SET NAMES latin1");
+        
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE 1=1";
-        $params = [];
         
         if ($search) {
-            $sql .= " AND (tenthietbi LIKE :search OR tenvt LIKE :search OR serialnumber LIKE :search OR hosomay LIKE :search)";
-            $params['search'] = "%$search%";
+            $searchEscaped = $this->db->quote("%$search%");
+            $sql .= " AND (tenthietbi LIKE {$searchEscaped} OR tenvt LIKE {$searchEscaped} OR serialnumber LIKE {$searchEscaped} OR hosomay LIKE {$searchEscaped})";
         }
         
         if ($chusohuu) {
-            $sql .= " AND chusohuu LIKE :chusohuu";
-            $params['chusohuu'] = "%$chusohuu%";
+            $chusohuuEscaped = $this->db->quote("%$chusohuu%");
+            $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
         }
         
-        $stmt = $this->db->prepare($sql);
-        foreach ($params as $k => $v) {
-            $stmt->bindValue(":".$k, $v);
-        }
-        $stmt->execute();
+        $stmt = $this->db->query($sql);
         $row = $stmt->fetch();
         return $row ? (int)$row['total'] : 0;
     }

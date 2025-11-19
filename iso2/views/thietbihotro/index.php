@@ -106,7 +106,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($device['tenvt']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($device['chusohuu']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs">
+                        <code class="bg-gray-100 px-2 py-1 rounded text-sm md:text-base font-semibold">
                             <?php echo htmlspecialchars($device['serialnumber']); ?>
                         </code>
                     </td>
@@ -133,21 +133,21 @@ require_once __DIR__ . '/../layouts/header.php';
                         }
                         ?>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">
+                    <td class="px-2 md:px-4 py-2 border text-center align-middle">
                         <?php 
                         if ($device['ngaykdtt']) {
                             $ngaykdtt = strtotime($device['ngaykdtt']);
                             $today = strtotime('today');
                             
                             if ($ngaykdtt < $today) {
-                                echo '<span class="bg-red-100 text-red-800 text-xs px-1 md:px-2 py-1 rounded">Hết hạn</span>';
+                                echo '<span class="inline-block bg-red-100 text-red-800 text-sm md:text-base font-bold px-2 md:px-3 py-1 rounded">Hết hạn</span>';
                             } elseif (($ngaykdtt - $today) / 86400 <= 30) {
-                                echo '<span class="bg-yellow-100 text-yellow-800 text-xs px-1 md:px-2 py-1 rounded">Sắp hết hạn</span>';
+                                echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-sm md:text-base font-bold px-2 md:px-3 py-1 rounded">Sắp hết hạn</span>';
                             } else {
-                                echo '<span class="bg-green-100 text-green-800 text-xs px-1 md:px-2 py-1 rounded">Còn hạn</span>';
+                                echo '<span class="inline-block bg-green-100 text-green-800 text-sm md:text-base font-bold px-2 md:px-3 py-1 rounded">Còn hạn</span>';
                             }
                         } else {
-                            echo '<span class="bg-gray-100 text-gray-800 text-xs px-1 md:px-2 py-1 rounded">Chưa có</span>';
+                            echo '<span class="inline-block bg-gray-100 text-gray-800 text-sm md:text-base font-bold px-2 md:px-3 py-1 rounded">Chưa có</span>';
                         }
                         ?>
                     </td>
