@@ -113,7 +113,6 @@ require_once __DIR__ . '/../../config/constants.php';
                 <a href="/iso2/logout.php" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
             <?php else: ?>
                 <a href="login.php" class="block px-3 py-2 rounded hover:bg-blue-600">Login</a>
-                <a href="register.php" class="block px-3 py-2 rounded hover:bg-blue-600">Register</a>
             <?php endif; ?>
         </div>
     </aside>

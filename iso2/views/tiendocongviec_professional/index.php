@@ -3,7 +3,7 @@ header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/../layouts/header.php'; 
 ?>
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <h1 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-business-time mr-2"></i> Tiến độ công việc</h1>
+    <h1 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-business-time mr-2"></i> Tiến độ công việc -đang update</h1>
     <!-- Thống kê nhanh -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
         <div class="bg-blue-100 rounded p-3 md:p-4 text-center">

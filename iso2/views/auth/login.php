@@ -38,9 +38,6 @@ require_once '../layouts/header.php';
         </div>
         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded">Đăng nhập</button>
     </form>
-    <div class="mt-4 text-center">
-        <a href="register.php" class="text-blue-600 hover:underline">Chưa có tài khoản? Đăng ký</a>
-    </div>
 </div>
 <?php require_once '../layouts/footer.php'; ?>
 <?php if ($_SERVER['REQUEST_METHOD'] !== 'POST') getDBConnection(true); ?>

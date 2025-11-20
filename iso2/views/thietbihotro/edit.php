@@ -30,12 +30,21 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">
+                <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
                     Chủ sở hữu <span class="text-red-500">*</span>
                 </label>
-                <input type="text" name="chusohuu" required
-                       value="<?php echo isset($_POST['chusohuu']) ? htmlspecialchars($_POST['chusohuu']) : htmlspecialchars($device['chusohuu']); ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <select name="chusohuu" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 text-sm md:text-base">
+                    <option value="">-- Chọn chủ sở hữu --</option>
+                    <?php 
+                    $currentChusohuu = isset($_POST['chusohuu']) ? $_POST['chusohuu'] : $device['chusohuu'];
+                    foreach ($chusohuuList as $value => $label): 
+                    ?>
+                        <option value="<?php echo htmlspecialchars($value); ?>" 
+                                <?php echo ($currentChusohuu === $value) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
 
@@ -51,21 +60,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <input type="text" name="serialnumber"
                        value="<?php echo isset($_POST['serialnumber']) ? htmlspecialchars($_POST['serialnumber']) : htmlspecialchars($device['serialnumber']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-            </div>
-
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Hồ sơ kỹ thuật</label>
-                <?php if (!empty($device['hosomay'])): ?>
-                    <div class="mb-2 p-2 bg-gray-50 rounded text-sm">
-                        <i class="fas fa-file mr-2 text-blue-600"></i>
-                        <a href="/iso2/uploads/hosomay/<?php echo htmlspecialchars($device['hosomay']); ?>" target="_blank" class="text-blue-600 hover:underline">
-                            <?php echo htmlspecialchars($device['hosomay']); ?>
-                        </a>
-                    </div>
-                <?php endif; ?>
-                <input type="file" name="hosomay" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB). Để trống nếu không đổi file.</p>
             </div>
         </div>
 
@@ -92,23 +86,6 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4">
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Tài liệu kỹ thuật</label>
-                <?php if (!empty($device['tlkt'])): ?>
-                    <div class="mb-2 p-2 bg-gray-50 rounded text-sm">
-                        <i class="fas fa-file mr-2 text-blue-600"></i>
-                        <a href="/iso2/uploads/tlkt/<?php echo htmlspecialchars($device['tlkt']); ?>" target="_blank" class="text-blue-600 hover:underline">
-                            <?php echo htmlspecialchars($device['tlkt']); ?>
-                        </a>
-                    </div>
-                <?php endif; ?>
-                <input type="file" name="tlkt" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB). Để trống nếu không đổi file.</p>
-            </div>
-        </div>
-        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div>
@@ -129,6 +106,41 @@ require_once __DIR__ . '/../layouts/header.php';
                     <span class="ml-2 text-gray-700 font-semibold">Thanh lý</span>
                 </label>
                 <p class="text-xs text-gray-500 mt-1 ml-7">Đánh dấu nếu thiết bị đã thanh lý</p>
+            </div>
+        </div>
+        
+        <div class="border-t pt-4 mt-2">
+            <h3 class="text-base md:text-lg font-semibold mb-3 text-gray-700"><i class="fas fa-folder-open mr-2"></i>Tài liệu đính kèm</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Hồ sơ kỹ thuật</label>
+                    <?php if (!empty($device['hosomay'])): ?>
+                        <div class="mb-2 p-2 bg-gray-50 rounded text-sm">
+                            <i class="fas fa-file mr-2 text-blue-600"></i>
+                            <a href="/iso2/uploads/hosomay/<?php echo htmlspecialchars($device['hosomay']); ?>" target="_blank" class="text-blue-600 hover:underline">
+                                <?php echo htmlspecialchars($device['hosomay']); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                    <input type="file" name="hosomay" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB). Để trống nếu không đổi file.</p>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Tài liệu kỹ thuật</label>
+                    <?php if (!empty($device['tlkt'])): ?>
+                        <div class="mb-2 p-2 bg-gray-50 rounded text-sm">
+                            <i class="fas fa-file mr-2 text-blue-600"></i>
+                            <a href="/iso2/uploads/tlkt/<?php echo htmlspecialchars($device['tlkt']); ?>" target="_blank" class="text-blue-600 hover:underline">
+                                <?php echo htmlspecialchars($device['tlkt']); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                    <input type="file" name="tlkt" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB). Để trống nếu không đổi file.</p>
+                </div>
             </div>
         </div>
 

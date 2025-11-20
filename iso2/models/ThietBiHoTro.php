@@ -107,11 +107,36 @@ class ThietBiHoTro extends BaseModel {
     }
 
     /**
-     * Lấy danh sách chủ sở hữu (unique)
+     * Lấy danh sách chủ sở hữu (unique) - deprecated, dùng getChuSoHuuFromResume thay thế
      */
     public function getChuSoHuuList(): array {
         $stmt = $this->query("SELECT DISTINCT chusohuu FROM {$this->table} WHERE chusohuu != '' ORDER BY chusohuu");
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    
+    /**
+     * Lấy danh sách nhân viên từ bảng resume để làm chủ sở hữu
+     * Điều kiện: donvi LIKE '%chuẩn chỉnh máy địa vật lý%' AND nghiviec != 'yes'
+     * Trả về array với key là "danhso-hoten" và value cũng là "danhso-hoten"
+     */
+    public function getChuSoHuuFromResume(): array {
+        $this->db->exec("SET NAMES latin1");
+        
+        $sql = "SELECT danhso, hoten FROM resume 
+                WHERE donvi LIKE '%chuẩn chỉnh máy địa vật lý%' 
+                AND (nghiviec IS NULL OR nghiviec != 'yes')
+                ORDER BY danhso";
+        
+        $stmt = $this->db->query($sql);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $list = [];
+        foreach ($results as $row) {
+            $key = $row['danhso'] . '-' . $row['hoten'];
+            $list[$key] = $key;
+        }
+        
+        return $list;
     }
 
     /**

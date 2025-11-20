@@ -30,8 +30,8 @@ class ThietBiHoTroController {
         // Thống kê
         $stats = $this->model->getStats();
         
-        // Danh sách chủ sở hữu
-        $chusohuuList = $this->model->getChuSoHuuList();
+        // Danh sách chủ sở hữu từ bảng resume
+        $chusohuuList = $this->model->getChuSoHuuFromResume();
 
         $title = 'Quản lý Thiết bị Hỗ trợ';
         include __DIR__ . '/../views/thietbihotro/index.php';
@@ -45,6 +45,7 @@ class ThietBiHoTroController {
             return;
         }
         
+        $chusohuuList = $this->model->getChuSoHuuFromResume();
         $title = 'Thêm Thiết bị Hỗ trợ';
         include __DIR__ . '/../views/thietbihotro/create.php';
     }
@@ -97,6 +98,7 @@ class ThietBiHoTroController {
             return;
         }
         
+        $chusohuuList = $this->model->getChuSoHuuFromResume();
         $title = 'Sửa Thiết bị Hỗ trợ';
         include __DIR__ . '/../views/thietbihotro/edit.php';
     }
