@@ -46,13 +46,29 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1">Hồ sơ máy</label>
-                <p class="text-gray-800"><?php echo htmlspecialchars($device['hosomay']); ?></p>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Hồ sơ kỹ thuật</label>
+                <?php if (!empty($device['hosomay'])): ?>
+                    <a href="/iso2/uploads/hosomay/<?php echo htmlspecialchars($device['hosomay']); ?>" target="_blank" 
+                       class="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">
+                        <i class="fas fa-file-download mr-2"></i>
+                        <?php echo htmlspecialchars($device['hosomay']); ?>
+                    </a>
+                <?php else: ?>
+                    <p class="text-gray-400 italic">Chưa có file</p>
+                <?php endif; ?>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1">Tỷ lệ kiểm tra</label>
-                <p class="text-gray-800"><?php echo htmlspecialchars($device['tlkt']); ?></p>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Tài liệu kỹ thuật</label>
+                <?php if (!empty($device['tlkt'])): ?>
+                    <a href="/iso2/uploads/tlkt/<?php echo htmlspecialchars($device['tlkt']); ?>" target="_blank" 
+                       class="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline">
+                        <i class="fas fa-file-download mr-2"></i>
+                        <?php echo htmlspecialchars($device['tlkt']); ?>
+                    </a>
+                <?php else: ?>
+                    <p class="text-gray-400 italic">Chưa có file</p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -114,15 +130,31 @@ require_once __DIR__ . '/../layouts/header.php';
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Công dụng</label>
-                    <p class="text-2xl font-bold text-blue-600"><?php echo $device['cdung']; ?></p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <label class="block text-sm font-semibold text-gray-600 mb-2">TB chuyên dụng của Xưởng</label>
+                    <?php if ($device['cdung'] == 1): ?>
+                        <span class="inline-flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i> Có
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center bg-gray-200 text-gray-600 px-4 py-2 rounded-lg">
+                            <i class="fas fa-times-circle mr-2"></i> Không
+                        </span>
+                    <?php endif; ?>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Thủ lý</label>
-                    <p class="text-2xl font-bold text-blue-600"><?php echo $device['thly']; ?></p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <label class="block text-sm font-semibold text-gray-600 mb-2">Thanh lý</label>
+                    <?php if ($device['thly'] == 1): ?>
+                        <span class="inline-flex items-center bg-red-100 text-red-800 px-4 py-2 rounded-lg font-semibold">
+                            <i class="fas fa-trash-alt mr-2"></i> Đã thanh lý
+                        </span>
+                    <?php else: ?>
+                        <span class="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-lg font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i> Đang sử dụng
+                        </span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

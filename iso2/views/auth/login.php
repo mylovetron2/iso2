@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
     } else {
         if (login($username, $password)) {
-            header('Location: ../../index.php');
+            header('Location: ../../tiendocongviec2.php');
             exit;
         } else {
             $error = 'Tên đăng nhập hoặc mật khẩu không đúng!';

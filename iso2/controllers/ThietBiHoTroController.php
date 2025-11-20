@@ -19,11 +19,12 @@ class ThietBiHoTroController {
         $perPage = 15;
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $chusohuu = isset($_GET['chusohuu']) ? trim($_GET['chusohuu']) : '';
+        $trangthai = isset($_GET['trangthai']) ? trim($_GET['trangthai']) : '';
 
         // Lấy danh sách thiết bị
         $offset = ($page - 1) * $perPage;
-        $devices = $this->model->getList($search, $chusohuu, $offset, $perPage);
-        $total = $this->model->countList($search, $chusohuu);
+        $devices = $this->model->getList($search, $chusohuu, $trangthai, $offset, $perPage);
+        $total = $this->model->countList($search, $chusohuu, $trangthai);
         $totalPages = ceil($total / $perPage);
 
         // Thống kê
@@ -49,6 +50,10 @@ class ThietBiHoTroController {
     }
 
     private function store(): void {
+        // Xử lý upload file
+        $hosomayFile = $this->handleFileUpload('hosomay', 'hosomay');
+        $tlktFile = $this->handleFileUpload('tlkt', 'tlkt');
+        
         $data = [
             'tenthietbi' => $_POST['tenthietbi'] ?? '',
             'tenvt' => $_POST['tenvt'] ?? '',
@@ -57,10 +62,10 @@ class ThietBiHoTroController {
             'ngaykd' => $_POST['ngaykd'] ?? null,
             'hankd' => (int)($_POST['hankd'] ?? 0),
             'ngaykdtt' => $_POST['ngaykdtt'] ?? null,
-            'tlkt' => $_POST['tlkt'] ?? '',
-            'hosomay' => $_POST['hosomay'] ?? '',
-            'cdung' => (int)($_POST['cdung'] ?? 0),
-            'thly' => (int)($_POST['thly'] ?? 0)
+            'tlkt' => $tlktFile,
+            'hosomay' => $hosomayFile,
+            'cdung' => isset($_POST['cdung']) && $_POST['cdung'] == 1 ? 1 : 0,
+            'thly' => isset($_POST['thly']) && $_POST['thly'] == 1 ? 1 : 0
         ];
 
         $errors = $this->validate($data);
@@ -97,6 +102,12 @@ class ThietBiHoTroController {
     }
 
     private function update(int $id): void {
+        $device = $this->model->find($id);
+        
+        // Xử lý upload file (giữ file cũ nếu không upload mới)
+        $hosomayFile = $this->handleFileUpload('hosomay', 'hosomay') ?: $device['hosomay'];
+        $tlktFile = $this->handleFileUpload('tlkt', 'tlkt') ?: $device['tlkt'];
+        
         $data = [
             'tenthietbi' => $_POST['tenthietbi'] ?? '',
             'tenvt' => $_POST['tenvt'] ?? '',
@@ -105,10 +116,10 @@ class ThietBiHoTroController {
             'ngaykd' => $_POST['ngaykd'] ?? null,
             'hankd' => (int)($_POST['hankd'] ?? 0),
             'ngaykdtt' => $_POST['ngaykdtt'] ?? null,
-            'tlkt' => $_POST['tlkt'] ?? '',
-            'hosomay' => $_POST['hosomay'] ?? '',
-            'cdung' => (int)($_POST['cdung'] ?? 0),
-            'thly' => (int)($_POST['thly'] ?? 0)
+            'tlkt' => $tlktFile,
+            'hosomay' => $hosomayFile,
+            'cdung' => isset($_POST['cdung']) && $_POST['cdung'] == 1 ? 1 : 0,
+            'thly' => isset($_POST['thly']) && $_POST['thly'] == 1 ? 1 : 0
         ];
 
         $errors = $this->validate($data);
@@ -164,5 +175,53 @@ class ThietBiHoTroController {
         }
         
         return $errors;
+    }
+    
+    private function handleFileUpload(string $fieldName, string $folder): string {
+        if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+            return '';
+        }
+        
+        $file = $_FILES[$fieldName];
+        
+        // Kiểm tra lỗi upload
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return '';
+        }
+        
+        // Kiểm tra kích thước file (max 5MB)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return '';
+        }
+        
+        // Kiểm tra loại file
+        $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+                        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'image/jpeg', 'image/jpg', 'image/png'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            return '';
+        }
+        
+        // Tạo tên file unique
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid() . '_' . time() . '.' . $extension;
+        
+        // Tạo thư mục nếu chưa có
+        $uploadDir = __DIR__ . '/../uploads/' . $folder . '/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Di chuyển file
+        $destination = $uploadDir . $filename;
+        if (move_uploaded_file($file['tmp_name'], $destination)) {
+            return $filename;
+        }
+        
+        return '';
     }
 }

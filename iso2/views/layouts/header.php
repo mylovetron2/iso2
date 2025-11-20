@@ -70,11 +70,6 @@ require_once __DIR__ . '/../../config/constants.php';
                     </a>
                 </li>
                 <li>
-                    <a href="/iso2/projects.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-folder mr-2"></i> Projects
-                    </a>
-                </li>
-                <li>
                     <a href="/iso2/thietbihotro.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
                     </a>

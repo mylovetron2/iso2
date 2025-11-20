@@ -57,6 +57,13 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php endforeach; ?>
         </select>
         
+        <select name="trangthai" class="border rounded px-3 py-2 w-full md:w-auto text-sm md:text-base">
+            <option value="">Tất cả trạng thái</option>
+            <option value="conhan" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'conhan') ? 'selected' : ''; ?>>Còn hạn</option>
+            <option value="saphethan" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'saphethan') ? 'selected' : ''; ?>>Sắp hết hạn</option>
+            <option value="hethan" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'hethan') ? 'selected' : ''; ?>>Hết hạn</option>
+        </select>
+        
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base w-full md:w-auto">
             <i class="fas fa-search mr-1"></i> Lọc
         </button>

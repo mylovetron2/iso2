@@ -18,7 +18,7 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <?php endif; ?>
 
-    <form method="POST" class="space-y-3 md:space-y-4">
+    <form method="POST" enctype="multipart/form-data" class="space-y-3 md:space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
@@ -54,56 +54,65 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Hồ sơ máy</label>
-                <input type="text" name="hosomay"
-                       value="<?php echo isset($_POST['hosomay']) ? htmlspecialchars($_POST['hosomay']) : ''; ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <label class="block text-gray-700 font-semibold mb-2">Hồ sơ kỹ thuật</label>
+                <input type="file" name="hosomay" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB)</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Ngày kiểm định</label>
-                <input type="date" name="ngaykd"
+                <input type="date" name="ngaykd" id="ngaykd"
                        value="<?php echo isset($_POST['ngaykd']) ? $_POST['ngaykd'] : ''; ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Hạn kiểm định (tháng)</label>
-                <input type="number" name="hankd" min="0"
+                <input type="number" name="hankd" id="hankd" min="0"
                        value="<?php echo isset($_POST['hankd']) ? $_POST['hankd'] : ''; ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Ngày KĐ tiếp theo</label>
-                <input type="date" name="ngaykdtt"
+                <label class="block text-gray-700 font-semibold mb-2">Ngày KĐ tiếp theo <span class="text-xs text-gray-500">(tự động tính)</span></label>
+                <input type="date" name="ngaykdtt" id="ngaykdtt" readonly
                        value="<?php echo isset($_POST['ngaykdtt']) ? $_POST['ngaykdtt'] : ''; ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                       class="w-full px-3 py-2 border rounded bg-gray-50 focus:outline-none focus:ring focus:border-blue-500">
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4">
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Tỷ lệ kiểm tra</label>
-                <input type="text" name="tlkt"
-                       value="<?php echo isset($_POST['tlkt']) ? htmlspecialchars($_POST['tlkt']) : ''; ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <label class="block text-gray-700 font-semibold mb-2">Tài liệu kỹ thuật</label>
+                <input type="file" name="tlkt" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-xs text-gray-500 mt-1">Chấp nhận: PDF, Word, Excel, Ảnh (Tối đa 5MB)</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="cdung" value="1"
+                           <?php echo (isset($_POST['cdung']) && $_POST['cdung'] == 1) ? 'checked' : ''; ?>
+                           class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-200">
+                    <span class="ml-2 text-gray-700 font-semibold">TB chuyên dụng của Xưởng</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1 ml-7">Đánh dấu nếu là thiết bị chuyên dụng</p>
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Công dụng</label>
-                <input type="number" name="cdung" min="0"
-                       value="<?php echo isset($_POST['cdung']) ? $_POST['cdung'] : ''; ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-            </div>
-
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Thủ lý</label>
-                <input type="number" name="thly" min="0" max="99"
-                       value="<?php echo isset($_POST['thly']) ? $_POST['thly'] : ''; ?>"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="thly" value="1"
+                           <?php echo (isset($_POST['thly']) && $_POST['thly'] == 1) ? 'checked' : ''; ?>
+                           class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-200">
+                    <span class="ml-2 text-gray-700 font-semibold">Thanh lý</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1 ml-7">Đánh dấu nếu thiết bị đã thanh lý</p>
             </div>
         </div>
 
@@ -117,5 +126,34 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     </form>
 </div>
+
+<script>
+// Tự động tính Ngày KĐ tiếp theo = Ngày KĐ + Hạn kiểm định (tháng)
+function calculateNextDate() {
+    const ngaykd = document.getElementById('ngaykd').value;
+    const hankd = parseInt(document.getElementById('hankd').value) || 0;
+    const ngaykdttInput = document.getElementById('ngaykdtt');
+    
+    if (ngaykd && hankd > 0) {
+        const date = new Date(ngaykd);
+        date.setMonth(date.getMonth() + hankd);
+        
+        // Format: YYYY-MM-DD
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        
+        ngaykdttInput.value = `${year}-${month}-${day}`;
+    } else {
+        ngaykdttInput.value = '';
+    }
+}
+
+document.getElementById('ngaykd').addEventListener('change', calculateNextDate);
+document.getElementById('hankd').addEventListener('input', calculateNextDate);
+
+// Tính toán ngay khi load trang nếu đã có dữ liệu
+window.addEventListener('DOMContentLoaded', calculateNextDate);
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

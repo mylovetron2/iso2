@@ -75,15 +75,60 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <!-- Phân trang -->
     <?php if($totalPages > 1): ?>
-    <div class="flex justify-center mt-4 gap-2">
-        <?php for($i=1;$i<=$totalPages;$i++): ?>
-            <?php $params = $_GET; $params['page']=$i; $url = 'tiendocongviec2.php?'.http_build_query($params); ?>
-            <?php if($i == (isset($_GET['page']) ? (int)$_GET['page'] : 1)): ?>
-                <span class="px-3 py-1 rounded bg-blue-600 text-white"><?php echo $i; ?></span>
+    <div class="flex flex-wrap justify-center mt-4 gap-1 md:gap-2">
+        <?php 
+        $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $range = 2; // Số trang hiển thị xung quanh trang hiện tại
+        
+        // Nút Previous
+        if($currentPage > 1):
+            $params = $_GET; $params['page'] = $currentPage - 1; 
+            $url = 'tiendocongviec2.php?'.http_build_query($params);
+        ?>
+            <a href="<?php echo $url; ?>" class="px-2 md:px-3 py-1 rounded bg-gray-200 hover:bg-blue-200 text-xs md:text-sm">‹</a>
+        <?php endif; ?>
+        
+        <?php
+        // Trang đầu
+        if($currentPage > $range + 2):
+            $params = $_GET; $params['page'] = 1; 
+            $url = 'tiendocongviec2.php?'.http_build_query($params);
+        ?>
+            <a href="<?php echo $url; ?>" class="px-2 md:px-3 py-1 rounded bg-gray-200 hover:bg-blue-200 text-xs md:text-sm">1</a>
+            <span class="px-2 py-1 text-xs md:text-sm">...</span>
+        <?php endif; ?>
+        
+        <?php
+        // Các trang xung quanh trang hiện tại
+        for($i = max(1, $currentPage - $range); $i <= min($totalPages, $currentPage + $range); $i++):
+            $params = $_GET; $params['page'] = $i; 
+            $url = 'tiendocongviec2.php?'.http_build_query($params);
+        ?>
+            <?php if($i == $currentPage): ?>
+                <span class="px-2 md:px-3 py-1 rounded bg-blue-600 text-white text-xs md:text-sm"><?php echo $i; ?></span>
             <?php else: ?>
-                <a href="<?php echo $url; ?>" class="px-3 py-1 rounded bg-gray-200 hover:bg-blue-200"><?php echo $i; ?></a>
+                <a href="<?php echo $url; ?>" class="px-2 md:px-3 py-1 rounded bg-gray-200 hover:bg-blue-200 text-xs md:text-sm"><?php echo $i; ?></a>
             <?php endif; ?>
         <?php endfor; ?>
+        
+        <?php
+        // Trang cuối
+        if($currentPage < $totalPages - $range - 1):
+            $params = $_GET; $params['page'] = $totalPages; 
+            $url = 'tiendocongviec2.php?'.http_build_query($params);
+        ?>
+            <span class="px-2 py-1 text-xs md:text-sm">...</span>
+            <a href="<?php echo $url; ?>" class="px-2 md:px-3 py-1 rounded bg-gray-200 hover:bg-blue-200 text-xs md:text-sm"><?php echo $totalPages; ?></a>
+        <?php endif; ?>
+        
+        <?php 
+        // Nút Next
+        if($currentPage < $totalPages):
+            $params = $_GET; $params['page'] = $currentPage + 1; 
+            $url = 'tiendocongviec2.php?'.http_build_query($params);
+        ?>
+            <a href="<?php echo $url; ?>" class="px-2 md:px-3 py-1 rounded bg-gray-200 hover:bg-blue-200 text-xs md:text-sm">›</a>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>

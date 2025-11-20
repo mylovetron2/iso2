@@ -14,7 +14,7 @@ class ThietBiHoTro extends BaseModel {
     /**
      * Lấy danh sách thiết bị hỗ trợ với filter, search, phân trang
      */
-    public function getList(string $search = '', string $chusohuu = '', int $offset = 0, int $limit = 15): array {
+    public function getList(string $search = '', string $chusohuu = '', string $trangthai = '', int $offset = 0, int $limit = 15): array {
         $this->db->exec("SET NAMES latin1");
         
         // Build SQL with escaped values
@@ -30,6 +30,15 @@ class ThietBiHoTro extends BaseModel {
             $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
         }
         
+        // Filter theo trạng thái
+        if ($trangthai === 'conhan') {
+            $sql .= " AND ngaykdtt > CURDATE()";
+        } elseif ($trangthai === 'hethan') {
+            $sql .= " AND ngaykdtt <= CURDATE() AND ngaykdtt IS NOT NULL";
+        } elseif ($trangthai === 'saphethan') {
+            $sql .= " AND ngaykdtt BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
+        }
+        
         // Cast to int for safety
         $offset = (int)$offset;
         $limit = (int)$limit;
@@ -39,10 +48,10 @@ class ThietBiHoTro extends BaseModel {
         return $stmt->fetchAll();
     }
 
-        /**
+    /**
      * Đếm tổng số bản ghi (phục vụ phân trang)
      */
-    public function countList(string $search = '', string $chusohuu = ''): int {
+    public function countList(string $search = '', string $chusohuu = '', string $trangthai = ''): int {
         $this->db->exec("SET NAMES latin1");
         
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE 1=1";
@@ -55,6 +64,15 @@ class ThietBiHoTro extends BaseModel {
         if ($chusohuu) {
             $chusohuuEscaped = $this->db->quote("%$chusohuu%");
             $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
+        }
+        
+        // Filter theo trạng thái
+        if ($trangthai === 'conhan') {
+            $sql .= " AND ngaykdtt > CURDATE()";
+        } elseif ($trangthai === 'hethan') {
+            $sql .= " AND ngaykdtt <= CURDATE() AND ngaykdtt IS NOT NULL";
+        } elseif ($trangthai === 'saphethan') {
+            $sql .= " AND ngaykdtt BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
         }
         
         $stmt = $this->db->query($sql);
