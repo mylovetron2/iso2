@@ -2,15 +2,24 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/ActivityLogger.php';
 
 class BaseModel {
     protected PDO $db;
     protected string $table;
     protected string $primaryKey = 'id'; // Default primary key
+    protected ?ActivityLogger $logger = null;
+    protected bool $enableLogging = true; // Enable/disable logging per model
     
-    public function __construct(string $table) {
+    public function __construct(string $table, bool $enableLogging = true) {
         $this->db = getDBConnection();
         $this->table = $table;
+        $this->enableLogging = $enableLogging;
+        
+        // Initialize logger if logging is enabled
+        if ($this->enableLogging) {
+            $this->logger = new ActivityLogger($this->db);
+        }
     }
     
     protected function query(string $sql, array $params = []): PDOStatement {
@@ -38,10 +47,29 @@ class BaseModel {
         $placeholders = ':' . implode(', :', array_keys($data));
         $sql = "INSERT INTO {$this->table} ({$columns}) VALUES ({$placeholders})";
         $stmt = $this->query($sql, $data);
-        return $this->db->lastInsertId();
+        $insertId = $this->db->lastInsertId();
+        
+        // Log the INSERT operation
+        if ($this->enableLogging && $this->logger) {
+            $this->logger->log(
+                $this->table,
+                'INSERT',
+                (int)$insertId,
+                null,
+                $data
+            );
+        }
+        
+        return $insertId;
     }
     
     public function update(int $id, array $data): int {
+        // Get old data before update for logging
+        $oldData = null;
+        if ($this->enableLogging && $this->logger) {
+            $oldData = $this->find($id);
+        }
+        
         $setClause = '';
         foreach ($data as $key => $value) {
             $setClause .= "{$key} = :{$key}, ";
@@ -49,10 +77,42 @@ class BaseModel {
         $setClause = rtrim($setClause, ', ');
         $data[$this->primaryKey] = $id;
         $sql = "UPDATE {$this->table} SET {$setClause} WHERE {$this->primaryKey} = :{$this->primaryKey}";
-        return $this->query($sql, $data)->rowCount();
+        $rowCount = $this->query($sql, $data)->rowCount();
+        
+        // Log the UPDATE operation
+        if ($this->enableLogging && $this->logger && $rowCount > 0) {
+            $this->logger->log(
+                $this->table,
+                'UPDATE',
+                $id,
+                $oldData ?: [],
+                $data
+            );
+        }
+        
+        return $rowCount;
     }
     
     public function delete(int $id): int {
-        return $this->query("DELETE FROM {$this->table} WHERE {$this->primaryKey} = ?", [$id])->rowCount();
+        // Get old data before delete for logging
+        $oldData = null;
+        if ($this->enableLogging && $this->logger) {
+            $oldData = $this->find($id);
+        }
+        
+        $rowCount = $this->query("DELETE FROM {$this->table} WHERE {$this->primaryKey} = ?", [$id])->rowCount();
+        
+        // Log the DELETE operation
+        if ($this->enableLogging && $this->logger && $rowCount > 0 && $oldData) {
+            $this->logger->log(
+                $this->table,
+                'DELETE',
+                $id,
+                $oldData,
+                null
+            );
+        }
+        
+        return $rowCount;
     }
 }

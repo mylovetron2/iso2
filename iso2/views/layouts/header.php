@@ -85,6 +85,11 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-key mr-2"></i> Quản lý quyền
                     </a>
                 </li>
+                <li>
+                    <a href="/iso2/views/admin/activity_logs.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-history mr-2"></i> Nhật ký hoạt động
+                    </a>
+                </li>
                 <!-- Menu Cấu trúc project -->
                 <li>
                     <div id="projectStructMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
