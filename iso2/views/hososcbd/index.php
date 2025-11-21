@@ -149,6 +149,10 @@ require_once __DIR__ . '/../layouts/header.php';
                         ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
+                        <a href="hososcbd.php?action=view&id=<?php echo $item['stt']; ?>" 
+                           class="text-blue-600 hover:text-blue-800 mx-1" title="Xem">
+                            <i class="fas fa-eye"></i>
+                        </a>
                         <?php if (hasPermission('hososcbd.edit')): ?>
                         <a href="hososcbd.php?action=edit&id=<?php echo $item['stt']; ?>" 
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">

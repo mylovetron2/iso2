@@ -16,6 +16,10 @@ $controller = new HoSoScBdController();
 $action = $_GET['action'] ?? 'index';
 
 switch ($action) {
+    case 'view':
+        require_once __DIR__ . '/views/hososcbd/view.php';
+        break;
+        
     case 'create':
         if (!hasPermission('hososcbd.create')) {
             header('Location: /iso2/hososcbd.php?error=permission_denied');
