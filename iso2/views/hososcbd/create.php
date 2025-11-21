@@ -306,4 +306,166 @@ require_once __DIR__ . '/../layouts/header.php';
     </form>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const madvSelect = document.querySelector('select[name="madv"]');
+    
+    if (!madvSelect) return;
+    
+    // Cascade handler: when unit changes, load devices for all 5 slots
+    madvSelect.addEventListener('change', function() {
+        const madv = this.value;
+        
+        if (!madv) {
+            // Clear all device dropdowns if no unit selected
+            for (let i = 1; i <= 5; i++) {
+                resetDeviceInputs(i);
+            }
+            return;
+        }
+        
+        // Load devices for this unit
+        fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    // Store devices data globally for use in device inputs
+                    window.availableDevices = data.data;
+                    
+                    // For simple implementation: keep text inputs but show info
+                    console.log(`Loaded ${data.data.length} devices for unit ${madv}`);
+                    
+                    // Optional: Show available devices info
+                    const deviceCount = data.data.length;
+                    if (deviceCount > 0) {
+                        showNotification(`Đã tải ${deviceCount} thiết bị cho đơn vị này`, 'success');
+                    } else {
+                        showNotification('Không có thiết bị nào cho đơn vị này', 'warning');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading devices:', error);
+                showNotification('Lỗi khi tải danh sách thiết bị', 'error');
+            });
+    });
+    
+    // Helper: Reset device inputs for a slot
+    function resetDeviceInputs(index) {
+        const mavtInput = document.querySelector(`input[name="devices[${index}][mavt]"]`);
+        const somayInput = document.querySelector(`input[name="devices[${index}][somay]"]`);
+        const modelInput = document.querySelector(`input[name="devices[${index}][model]"]`);
+        
+        if (mavtInput && index !== 1) mavtInput.value = '';
+        if (somayInput && index !== 1) somayInput.value = '';
+        if (modelInput && index !== 1) modelInput.value = '';
+    }
+    
+    // Helper: Show notification
+    function showNotification(message, type = 'info') {
+        const colors = {
+            success: 'bg-green-100 border-green-400 text-green-700',
+            warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+            error: 'bg-red-100 border-red-400 text-red-700',
+            info: 'bg-blue-100 border-blue-400 text-blue-700'
+        };
+        
+        const notification = document.createElement('div');
+        notification.className = `${colors[type]} border px-4 py-3 rounded mb-4 fixed top-4 right-4 z-50 shadow-lg`;
+        notification.innerHTML = `
+            <span class="block sm:inline">${message}</span>
+            <button onclick="this.parentElement.remove()" class="ml-4 font-bold">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 5000);
+    }
+    
+    // Auto-fill functionality: When user types mavt, suggest from available devices
+    for (let i = 1; i <= 5; i++) {
+        const mavtInput = document.querySelector(`input[name="devices[${i}][mavt]"]`);
+        const somayInput = document.querySelector(`input[name="devices[${i}][somay]"]`);
+        const modelInput = document.querySelector(`input[name="devices[${i}][model]"]`);
+        
+        if (!mavtInput) continue;
+        
+        // Add autocomplete suggestions
+        mavtInput.addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            
+            if (!window.availableDevices || value.length < 2) return;
+            
+            // Find matching devices
+            const matches = window.availableDevices.filter(d => 
+                d.mavt.toLowerCase().includes(value) || 
+                d.tenvt.toLowerCase().includes(value)
+            );
+            
+            if (matches.length > 0) {
+                // Show first match as placeholder or suggestion
+                const firstMatch = matches[0];
+                this.setAttribute('title', `${firstMatch.mavt} - ${firstMatch.tenvt}`);
+            }
+        });
+        
+        // When somay field is focused, load available serial numbers for the mavt
+        somayInput.addEventListener('focus', function() {
+            const madv = madvSelect.value;
+            const mavt = mavtInput.value;
+            
+            if (!madv || !mavt) {
+                showNotification('Vui lòng chọn đơn vị và nhập mã vật tư trước', 'warning');
+                return;
+            }
+            
+            // Load serial numbers
+            fetch(`/iso2/api/somay.php?madv=${encodeURIComponent(madv)}&mavt=${encodeURIComponent(mavt)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Store in input data attribute
+                        somayInput.setAttribute('data-available', JSON.stringify(data.data));
+                        
+                        // Create datalist for autocomplete
+                        let datalistId = `somay-list-${i}`;
+                        let datalist = document.getElementById(datalistId);
+                        
+                        if (!datalist) {
+                            datalist = document.createElement('datalist');
+                            datalist.id = datalistId;
+                            somayInput.setAttribute('list', datalistId);
+                            somayInput.parentNode.appendChild(datalist);
+                        }
+                        
+                        datalist.innerHTML = data.data.map(d => 
+                            `<option value="${d.somay}">${d.somay} - ${d.model || ''}</option>`
+                        ).join('');
+                        
+                        console.log(`Loaded ${data.data.length} serial numbers for ${mavt}`);
+                    }
+                })
+                .catch(error => console.error('Error loading serial numbers:', error));
+        });
+        
+        // When somay changes, auto-fill model if available
+        somayInput.addEventListener('change', function() {
+            const availableData = this.getAttribute('data-available');
+            if (!availableData) return;
+            
+            try {
+                const devices = JSON.parse(availableData);
+                const selected = devices.find(d => d.somay === this.value);
+                
+                if (selected && selected.model && !modelInput.value) {
+                    modelInput.value = selected.model;
+                }
+            } catch (e) {
+                console.error('Error parsing available data:', e);
+            }
+        });
+    }
+});
+</script>
+
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
