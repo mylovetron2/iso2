@@ -4,18 +4,21 @@ declare(strict_types=1);
 require_once __DIR__ . '/../models/HoSoSCBD.php';
 require_once __DIR__ . '/../models/DonVi.php';
 require_once __DIR__ . '/../models/ThietBi.php';
+require_once __DIR__ . '/../models/LichSuDN.php';
 
 class HoSoScBdController
 {
     private HoSoSCBD $model;
     private DonVi $donViModel;
     private ThietBi $thietBiModel;
+    private LichSuDN $logModel;
 
     public function __construct()
     {
         $this->model = new HoSoSCBD();
         $this->donViModel = new DonVi();
         $this->thietBiModel = new ThietBi();
+        $this->logModel = new LichSuDN();
     }
 
     public function index(): void
@@ -77,6 +80,17 @@ class HoSoScBdController
                     $id = $this->model->create($data);
                     if ($id) {
                         $successCount++;
+                        
+                        // Log the creation
+                        $this->logHistory('CREATE', [
+                            'record_id' => $id,
+                            'maql' => $data['maql'],
+                            'phieu' => $data['phieu'],
+                            'mavt' => $data['mavt'],
+                            'somay' => $data['somay'],
+                            'madv' => $data['madv'],
+                            'description' => "Tạo hồ sơ mới: {$data['maql']} - Thiết bị {$index}/{count($devicesData)}"
+                        ]);
                     }
                 }
                 
@@ -122,6 +136,17 @@ class HoSoScBdController
                 
                 $success = $this->model->update($stt, $data);
                 if ($success) {
+                    // Log the update
+                    $this->logHistory('UPDATE', [
+                        'record_id' => $stt,
+                        'maql' => $data['maql'],
+                        'phieu' => $data['phieu'],
+                        'mavt' => $data['mavt'],
+                        'somay' => $data['somay'],
+                        'madv' => $data['madv'],
+                        'description' => "Cập nhật hồ sơ: {$data['maql']}"
+                    ]);
+                    
                     header('Location: /iso2/hososcbd.php?success=updated');
                     exit;
                 }
@@ -148,8 +173,24 @@ class HoSoScBdController
             exit;
         }
 
+        // Get record info before deleting for logging
+        $item = $this->model->findById($stt);
+        
         $success = $this->model->delete($stt);
         if ($success) {
+            // Log the deletion
+            if ($item) {
+                $this->logHistory('DELETE', [
+                    'record_id' => $stt,
+                    'maql' => $item['maql'] ?? null,
+                    'phieu' => $item['phieu'] ?? null,
+                    'mavt' => $item['mavt'] ?? null,
+                    'somay' => $item['somay'] ?? null,
+                    'madv' => $item['madv'] ?? null,
+                    'description' => "Xóa hồ sơ: {$item['maql']}"
+                ]);
+            }
+            
             header('Location: /iso2/hososcbd.php?success=deleted');
         } else {
             header('Location: /iso2/hososcbd.php?error=delete_failed');
@@ -370,5 +411,21 @@ class HoSoScBdController
     private function generateHoSo(string $madv, string $phieu, string $mavt, string $somay): string
     {
         return "{$madv}-{$phieu}-{$mavt}-{$somay}";
+    }
+    
+    /**
+     * Log history action
+     * 
+     * @param string $action CREATE/UPDATE/DELETE/HANDOVER
+     * @param array $data Additional data to log
+     */
+    private function logHistory(string $action, array $data): void
+    {
+        try {
+            $this->logModel->log($action, $data);
+        } catch (Exception $e) {
+            // Silent fail - don't break the main operation if logging fails
+            error_log("Logging failed: " . $e->getMessage());
+        }
     }
 }
