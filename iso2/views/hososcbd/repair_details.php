@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ngày kiểm tra</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Ngày kết thúc</label>
                     <input type="date" name="ngaykt" value="<?php echo $item['ngaykt']; ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>

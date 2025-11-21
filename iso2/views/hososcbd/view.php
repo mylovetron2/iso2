@@ -149,7 +149,7 @@ if (!$item) {
                 <p class="font-semibold"><?php echo $item['ngayth'] ? date('d/m/Y', strtotime($item['ngayth'])) : '-'; ?></p>
             </div>
             <div>
-                <label class="text-gray-600 text-sm">Ngày kiểm tra:</label>
+                <label class="text-gray-600 text-sm">Ngày kết thúc:</label>
                 <p class="font-semibold"><?php echo $item['ngaykt'] ? date('d/m/Y', strtotime($item['ngaykt'])) : '-'; ?></p>
             </div>
             <div>
