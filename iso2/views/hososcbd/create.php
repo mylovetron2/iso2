@@ -138,15 +138,22 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Đơn vị <span class="text-red-500">*</span></label>
-                    <select name="madv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                        <option value="">-- Chọn đơn vị --</option>
-                        <?php foreach ($donViList as $dv): ?>
-                            <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
-                                    <?php echo (isset($_POST['madv']) && $_POST['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($dv['tendv']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="flex gap-2">
+                        <select name="madv" id="madvSelect" required class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                            <option value="">-- Chọn đơn vị --</option>
+                            <?php foreach ($donViList as $dv): ?>
+                                <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
+                                        <?php echo (isset($_POST['madv']) && $_POST['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($dv['tendv']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" onclick="openAddUnitModal()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded font-bold text-lg"
+                                title="Thêm đơn vị mới">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Điện thoại</label>
@@ -306,7 +313,145 @@ require_once __DIR__ . '/../layouts/header.php';
     </form>
 </div>
 
+<!-- Modal: Add Unit -->
+<div id="addUnitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-lg font-bold">
+                <i class="fas fa-plus-circle mr-2"></i>Thêm đơn vị mới
+            </h3>
+            <button onclick="closeAddUnitModal()" class="text-white hover:text-gray-200 text-2xl font-bold">
+                &times;
+            </button>
+        </div>
+        
+        <form id="addUnitForm" class="p-6 space-y-4">
+            <div id="modalMessage" class="hidden"></div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    Mã đơn vị <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="newMadv" required 
+                       placeholder="Ví dụ: XDT, PCC, etc."
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Mã viết tắt, không dấu, chữ hoa</p>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    Tên đơn vị <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="newTendv" required 
+                       placeholder="Ví dụ: Xưởng Điện Tử"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+            </div>
+            
+            <div class="flex gap-2 pt-4 border-t">
+                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">
+                    <i class="fas fa-save mr-2"></i>Lưu
+                </button>
+                <button type="button" onclick="closeAddUnitModal()" 
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded font-semibold">
+                    <i class="fas fa-times mr-2"></i>Hủy
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+// Modal functions for Add Unit
+function openAddUnitModal() {
+    document.getElementById('addUnitModal').classList.remove('hidden');
+    document.getElementById('newMadv').focus();
+}
+
+function closeAddUnitModal() {
+    document.getElementById('addUnitModal').classList.add('hidden');
+    document.getElementById('addUnitForm').reset();
+    document.getElementById('modalMessage').classList.add('hidden');
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAddUnitModal();
+    }
+});
+
+// Close modal on background click
+document.getElementById('addUnitModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAddUnitModal();
+    }
+});
+
+// Handle Add Unit Form Submit
+document.getElementById('addUnitForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const madv = document.getElementById('newMadv').value.trim().toUpperCase();
+    const tendv = document.getElementById('newTendv').value.trim();
+    
+    if (!madv || !tendv) {
+        showModalMessage('Vui lòng điền đầy đủ thông tin', 'error');
+        return;
+    }
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('madv', madv);
+    formData.append('tendv', tendv);
+    
+    // Submit to API
+    fetch('/iso2/api/donvi.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showModalMessage(data.message, 'success');
+            
+            // Add new option to select
+            const madvSelect = document.getElementById('madvSelect');
+            const newOption = document.createElement('option');
+            newOption.value = data.data.madv;
+            newOption.textContent = data.data.tendv;
+            newOption.selected = true;
+            madvSelect.appendChild(newOption);
+            
+            // Trigger change event to reload devices
+            madvSelect.dispatchEvent(new Event('change'));
+            
+            // Close modal after 1 second
+            setTimeout(() => {
+                closeAddUnitModal();
+                showNotification('Đơn vị mới đã được thêm và chọn', 'success');
+            }, 1000);
+        } else {
+            showModalMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showModalMessage('Có lỗi xảy ra khi thêm đơn vị', 'error');
+    });
+});
+
+function showModalMessage(message, type) {
+    const messageDiv = document.getElementById('modalMessage');
+    const colors = {
+        success: 'bg-green-100 border-green-400 text-green-700',
+        error: 'bg-red-100 border-red-400 text-red-700'
+    };
+    
+    messageDiv.className = `border px-4 py-3 rounded mb-4 ${colors[type]}`;
+    messageDiv.textContent = message;
+    messageDiv.classList.remove('hidden');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const madvSelect = document.querySelector('select[name="madv"]');
     
