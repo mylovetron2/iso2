@@ -23,20 +23,26 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 // Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $record) {
-    $updateData = [
-        'bg' => isset($_POST['bg']) ? 1 : 0,
-        'slbg' => $_POST['slbg'] ?? 0,
-        'dong' => $_POST['dong'] ?? '',
-        'ghichu' => $_POST['ghichu'] ?? '',
-        'ghichufinal' => $_POST['ghichufinal'] ?? ''
-    ];
-    
-    if ($model->update($record['stt'], $updateData)) {
-        // Redirect immediately without output
-        header("Location: hososcbd.php");
-        exit;
-    } else {
-        $message = 'Có lỗi xảy ra khi cập nhật';
+    try {
+        $updateData = [
+            'bg' => isset($_POST['bg']) ? 1 : 0,
+            'slbg' => $_POST['slbg'] ?? 0,
+            'dong' => $_POST['dong'] ?? '',
+            'ghichu' => $_POST['ghichu'] ?? '',
+            'ghichufinal' => $_POST['ghichufinal'] ?? ''
+        ];
+        
+        if ($model->update($record['stt'], $updateData) !== false) {
+            // Redirect immediately without output
+            header("Location: /iso2/hososcbd.php");
+            exit;
+        } else {
+            $message = 'Có lỗi xảy ra khi cập nhật';
+            $messageType = 'error';
+        }
+    } catch (Exception $e) {
+        error_log("Error updating handover details: " . $e->getMessage());
+        $message = 'Lỗi: ' . $e->getMessage();
         $messageType = 'error';
     }
 }

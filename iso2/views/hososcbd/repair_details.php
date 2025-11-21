@@ -25,38 +25,43 @@ if (!$item) {
 
 // Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'nhomsc' => trim($_POST['nhomsc'] ?? ''),
-        'ngaybdtt' => trim($_POST['ngaybdtt'] ?? ''),
-        'ngayth' => trim($_POST['ngayth'] ?? ''),
-        'ngaykt' => trim($_POST['ngaykt'] ?? ''),
-        'solg' => (int)($_POST['solg'] ?? 0),
-        'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
-        'honghoc' => trim($_POST['honghoc'] ?? ''),
-        'khacphuc' => trim($_POST['khacphuc'] ?? ''),
-        'ttktafter' => trim($_POST['ttktafter'] ?? ''),
-        'noidung' => trim($_POST['noidung'] ?? ''),
-        'ketluan' => trim($_POST['ketluan'] ?? ''),
-        'xemxetxuong' => trim($_POST['xemxetxuong'] ?? ''),
-        'tbdosc' => trim($_POST['tbdosc'] ?? ''),
-        'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
-        'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
-        'serialtbdosc1' => trim($_POST['serialtbdosc1'] ?? ''),
-        'tbdosc2' => trim($_POST['tbdosc2'] ?? ''),
-        'serialtbdosc2' => trim($_POST['serialtbdosc2'] ?? ''),
-        'tbdosc3' => trim($_POST['tbdosc3'] ?? ''),
-        'serialtbdosc3' => trim($_POST['serialtbdosc3'] ?? ''),
-        'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
-        'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? '')
-    ];
-    
-    $success = $model->update($stt, $data);
-    if ($success) {
-        // Redirect immediately without output
-        header("Location: hososcbd.php");
-        exit;
-    } else {
-        $errorMessage = 'Có lỗi xảy ra khi cập nhật';
+    try {
+        $data = [
+            'nhomsc' => trim($_POST['nhomsc'] ?? ''),
+            'ngaybdtt' => !empty(trim($_POST['ngaybdtt'] ?? '')) ? trim($_POST['ngaybdtt']) : null,
+            'ngayth' => !empty(trim($_POST['ngayth'] ?? '')) ? trim($_POST['ngayth']) : null,
+            'ngaykt' => !empty(trim($_POST['ngaykt'] ?? '')) ? trim($_POST['ngaykt']) : null,
+            'solg' => (int)($_POST['solg'] ?? 0),
+            'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
+            'honghoc' => trim($_POST['honghoc'] ?? ''),
+            'khacphuc' => trim($_POST['khacphuc'] ?? ''),
+            'ttktafter' => trim($_POST['ttktafter'] ?? ''),
+            'noidung' => trim($_POST['noidung'] ?? ''),
+            'ketluan' => trim($_POST['ketluan'] ?? ''),
+            'xemxetxuong' => trim($_POST['xemxetxuong'] ?? ''),
+            'tbdosc' => trim($_POST['tbdosc'] ?? ''),
+            'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
+            'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
+            'serialtbdosc1' => trim($_POST['serialtbdosc1'] ?? ''),
+            'tbdosc2' => trim($_POST['tbdosc2'] ?? ''),
+            'serialtbdosc2' => trim($_POST['serialtbdosc2'] ?? ''),
+            'tbdosc3' => trim($_POST['tbdosc3'] ?? ''),
+            'serialtbdosc3' => trim($_POST['serialtbdosc3'] ?? ''),
+            'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
+            'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? '')
+        ];
+        
+        $success = $model->update($stt, $data);
+        if ($success !== false) {
+            // Redirect immediately without output
+            header("Location: /iso2/hososcbd.php");
+            exit;
+        } else {
+            $errorMessage = 'Có lỗi xảy ra khi cập nhật';
+        }
+    } catch (Exception $e) {
+        error_log("Error updating repair details: " . $e->getMessage());
+        $errorMessage = 'Lỗi: ' . $e->getMessage();
     }
 }
 
