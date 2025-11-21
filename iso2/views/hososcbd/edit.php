@@ -21,12 +21,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <h2 class="text-lg font-bold mb-3 text-blue-700">
                 <i class="fas fa-info-circle mr-2"></i>Thông tin cơ bản
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Mã quản lý <span class="text-red-500">*</span></label>
-                    <input type="text" name="maql" required value="<?php echo isset($error) && isset($_POST['maql']) ? htmlspecialchars($_POST['maql']) : htmlspecialchars($item['maql'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Số phiếu</label>
                     <input type="text" name="phieu" value="<?php echo isset($error) && isset($_POST['phieu']) ? htmlspecialchars($_POST['phieu']) : htmlspecialchars($item['phieu'] ?? ''); ?>"
@@ -37,6 +32,25 @@ require_once __DIR__ . '/../layouts/header.php';
                     <input type="date" name="ngayyc" required value="<?php echo isset($error) && isset($_POST['ngayyc']) ? $_POST['ngayyc'] : ($item['ngayyc'] ?? date('Y-m-d')); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-600">Mã quản lý (tự động):</label>
+                        <div class="font-mono text-sm font-semibold text-blue-800 bg-white px-2 py-1 rounded mt-1">
+                            <?php echo htmlspecialchars($item['maql'] ?? 'Chưa tạo'); ?>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Mã hồ sơ (tự động):</label>
+                        <div class="font-mono text-sm font-semibold text-blue-800 bg-white px-2 py-1 rounded mt-1">
+                            <?php echo htmlspecialchars($item['hoso'] ?? 'Chưa tạo'); ?>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">
+                    <i class="fas fa-info-circle"></i> Mã này sẽ được cập nhật tự động khi lưu thay đổi
+                </p>
             </div>
         </div>
 
@@ -160,11 +174,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Số lượng</label>
                     <input type="number" name="solg" min="0" value="<?php echo isset($error) && isset($_POST['solg']) ? $_POST['solg'] : ($item['solg'] ?? '0'); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Hồ sơ</label>
-                    <input type="text" name="hoso" value="<?php echo isset($error) && isset($_POST['hoso']) ? htmlspecialchars($_POST['hoso']) : htmlspecialchars($item['hoso'] ?? ''); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-3">

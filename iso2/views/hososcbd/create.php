@@ -21,23 +21,25 @@ require_once __DIR__ . '/../layouts/header.php';
             <h2 class="text-lg font-bold mb-3 text-blue-700">
                 <i class="fas fa-info-circle mr-2"></i>Thông tin cơ bản
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Mã quản lý <span class="text-red-500">*</span></label>
-                    <input type="text" name="maql" required value="<?php echo isset($_POST['maql']) ? htmlspecialchars($_POST['maql']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Số phiếu</label>
                     <input type="text" name="phieu" value="<?php echo isset($_POST['phieu']) ? htmlspecialchars($_POST['phieu']) : $nextPhieu; ?>"
                            placeholder="Tự động: <?php echo $nextPhieu; ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Để trống sẽ tự động sinh số tiếp theo</p>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Ngày yêu cầu <span class="text-red-500">*</span></label>
                     <input type="date" name="ngayyc" required value="<?php echo isset($_POST['ngayyc']) ? $_POST['ngayyc'] : date('Y-m-d'); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-3">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-robot mr-1"></i> <strong>Tự động:</strong> 
+                    Mã quản lý (maql) và Mã hồ sơ (hoso) sẽ được tạo tự động khi lưu phiếu.
+                </p>
             </div>
         </div>
 
@@ -158,11 +160,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Số lượng</label>
                     <input type="number" name="solg" min="0" value="<?php echo isset($_POST['solg']) ? $_POST['solg'] : '0'; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Hồ sơ</label>
-                    <input type="text" name="hoso" value="<?php echo isset($_POST['hoso']) ? htmlspecialchars($_POST['hoso']) : ''; ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-3">

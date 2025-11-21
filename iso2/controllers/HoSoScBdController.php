@@ -51,6 +51,10 @@ class HoSoScBdController
                     $data['phieu'] = $this->model->getNextPhieuNumber();
                 }
                 
+                // Auto-generate maql and hoso
+                $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
+                $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
+                
                 $id = $this->model->create($data);
                 if ($id) {
                     header('Location: /iso2/hososcbd.php?success=created');
@@ -88,6 +92,10 @@ class HoSoScBdController
             $errors = $this->validate($data);
 
             if (empty($errors)) {
+                // Auto-generate maql and hoso for edit
+                $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
+                $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
+                
                 $success = $this->model->update($stt, $data);
                 if ($success) {
                     header('Location: /iso2/hososcbd.php?success=updated');
@@ -128,7 +136,6 @@ class HoSoScBdController
     private function getPostData(): array
     {
         return [
-            'maql' => trim($_POST['maql'] ?? ''),
             'mavt' => trim($_POST['mavt'] ?? ''),
             'somay' => trim($_POST['somay'] ?? ''),
             'ngayyc' => trim($_POST['ngayyc'] ?? date('Y-m-d')),
@@ -136,7 +143,6 @@ class HoSoScBdController
             'phieu' => trim($_POST['phieu'] ?? ''),
             'solg' => (int)($_POST['solg'] ?? 0),
             'cv' => trim($_POST['cv'] ?? ''),
-            'hoso' => trim($_POST['hoso'] ?? ''),
             'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
             'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
             'ngaykt' => trim($_POST['ngaykt'] ?? ''),
@@ -179,8 +185,7 @@ class HoSoScBdController
     {
         $errors = [];
         
-        // Required fields
-        if (empty($data['maql'])) $errors[] = 'Mã quản lý không được để trống';
+        // Required fields (maql and hoso will be auto-generated)
         if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
         if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
         if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
@@ -194,5 +199,26 @@ class HoSoScBdController
         if (empty($data['mo'])) $errors[] = 'Mỏ không được để trống';
 
         return $errors;
+    }
+
+    /**
+     * Generate mã quản lý (maql)
+     * Format: YYYYMMDD-MADV-PHIEU-N1
+     * Example: 20251121-XDT-0126-N1
+     */
+    private function generateMaQL(string $madv, string $phieu, int $index = 1): string
+    {
+        $date = date('Ymd');
+        return "{$date}-{$madv}-{$phieu}-N{$index}";
+    }
+
+    /**
+     * Generate mã hồ sơ (hoso)
+     * Format: MADV-PHIEU-MAVT-SOMAY
+     * Example: XDT-0126-PM001-SN12345
+     */
+    private function generateHoSo(string $madv, string $phieu, string $mavt, string $somay): string
+    {
+        return "{$madv}-{$phieu}-{$mavt}-{$somay}";
     }
 }
