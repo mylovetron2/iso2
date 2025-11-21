@@ -93,6 +93,11 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-building mr-2"></i> Đơn vị KH
                     </a>
                 </li>
+                <li>
+                    <a href="/iso2/hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBĐ
+                    </a>
+                </li>
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
                 <li>

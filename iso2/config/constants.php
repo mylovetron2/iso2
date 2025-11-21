@@ -16,6 +16,12 @@ define('PERMISSION_PROJECT_EDIT', 'project.edit');
 define('PERMISSION_PROJECT_DELETE', 'project.delete');
 define('PERMISSION_PROJECT_MANAGE', 'project.manage');
 
+// Hồ sơ SCBĐ Permissions
+define('PERMISSION_HOSOSCBD_VIEW', 'hososcbd.view');
+define('PERMISSION_HOSOSCBD_CREATE', 'hososcbd.create');
+define('PERMISSION_HOSOSCBD_EDIT', 'hososcbd.edit');
+define('PERMISSION_HOSOSCBD_DELETE', 'hososcbd.delete');
+
 require_once __DIR__.'/database.php';
 require_once __DIR__.'/../includes/functions.php';
 require_once __DIR__.'/../includes/auth.php';
