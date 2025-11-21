@@ -33,8 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $record) {
         ];
         
         if ($model->update($record['stt'], $updateData) !== false) {
-            // Redirect immediately without output
-            header("Location: /iso2/hososcbd.php");
+            // Build redirect URL with preserved filters from referrer
+            $redirectUrl = '/iso2/hososcbd.php';
+            if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'hososcbd.php') !== false) {
+                parse_str(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) ?? '', $params);
+                unset($params['action'], $params['id']); // Remove action/id params
+                if (!empty($params)) {
+                    $redirectUrl .= '?' . http_build_query($params);
+                }
+            }
+            header("Location: $redirectUrl");
             exit;
         } else {
             $message = 'Có lỗi xảy ra khi cập nhật';
@@ -58,7 +66,18 @@ require_once __DIR__ . '/../layouts/header.php';
                 <i class="fas fa-handshake text-red-500 mr-2"></i>
                 Thông tin bàn giao
             </h1>
-            <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            <?php
+            // Preserve query params from referrer for back link
+            $backUrl = 'hososcbd.php';
+            if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'hososcbd.php') !== false) {
+                parse_str(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) ?? '', $params);
+                unset($params['action'], $params['id']);
+                if (!empty($params)) {
+                    $backUrl .= '?' . http_build_query($params);
+                }
+            }
+            ?>
+            <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách
             </a>
         </div>
@@ -154,7 +173,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded font-semibold">
                     <i class="fas fa-save mr-2"></i>Lưu thông tin
                 </button>
-                <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded font-semibold text-center">
+                <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded font-semibold text-center">
                     <i class="fas fa-times mr-2"></i>Hủy
                 </a>
             </div>
@@ -164,7 +183,7 @@ require_once __DIR__ . '/../layouts/header.php';
     <div class="bg-white shadow-md rounded-lg p-6 text-center">
         <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
         <p class="text-gray-600">Không thể tải thông tin hồ sơ. Vui lòng thử lại.</p>
-        <a href="hososcbd.php" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
             Quay lại danh sách
         </a>
     </div>
