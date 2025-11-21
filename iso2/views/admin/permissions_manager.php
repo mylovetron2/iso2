@@ -24,10 +24,20 @@ $allPermissions = [
     'tiendocongviec.delete' => 'Xóa tiến độ công việc',
     'tiendocongviec.pause' => 'Tạm dừng công việc',
     
+    'thietbi.view' => 'Xem thiết bị',
+    'thietbi.create' => 'Tạo thiết bị',
+    'thietbi.edit' => 'Sửa thiết bị',
+    'thietbi.delete' => 'Xóa thiết bị',
+    
     'thietbihotro.view' => 'Xem thiết bị hỗ trợ',
     'thietbihotro.create' => 'Tạo thiết bị hỗ trợ',
     'thietbihotro.edit' => 'Sửa thiết bị hỗ trợ',
     'thietbihotro.delete' => 'Xóa thiết bị hỗ trợ',
+    
+    'donvi.view' => 'Xem đơn vị khách hàng',
+    'donvi.create' => 'Tạo đơn vị khách hàng',
+    'donvi.edit' => 'Sửa đơn vị khách hàng',
+    'donvi.delete' => 'Xóa đơn vị khách hàng',
     
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
@@ -50,6 +60,8 @@ require_once __DIR__ . '/../layouts/header.php';
 $permissionGroups = [
     'Project' => ['project.view', 'project.create', 'project.edit', 'project.delete', 'project.manage'],
     'Tiến độ công việc' => ['tiendocongviec.view', 'tiendocongviec.create', 'tiendocongviec.edit', 'tiendocongviec.delete', 'tiendocongviec.pause'],
+    'Thiết bị' => ['thietbi.view', 'thietbi.create', 'thietbi.edit', 'thietbi.delete'],
+    'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];

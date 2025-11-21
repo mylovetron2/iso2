@@ -42,6 +42,43 @@ class BaseModel {
         return $stmt->fetchAll();
     }
     
+    /**
+     * Get all records with optional WHERE clause, params, limit and offset
+     */
+    public function getAll(string $where = '', array $params = [], int $limit = 0, int $offset = 0): array {
+        $sql = "SELECT * FROM {$this->table}";
+        if ($where) {
+            $sql .= " $where";
+        }
+        if ($limit > 0) {
+            $sql .= " LIMIT $limit";
+            if ($offset > 0) {
+                $sql .= " OFFSET $offset";
+            }
+        }
+        $stmt = $this->query($sql, $params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Count records with optional WHERE clause
+     */
+    public function count(string $where = '', array $params = []): int {
+        $sql = "SELECT COUNT(*) FROM {$this->table}";
+        if ($where) {
+            $sql .= " $where";
+        }
+        $stmt = $this->query($sql, $params);
+        return (int)$stmt->fetchColumn();
+    }
+    
+    /**
+     * Find by primary key (alias for find)
+     */
+    public function findById(int $id): array|false {
+        return $this->find($id);
+    }
+    
     public function create(array $data): string {
         $columns = implode(', ', array_keys($data));
         $placeholders = ':' . implode(', :', array_keys($data));

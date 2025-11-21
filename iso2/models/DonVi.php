@@ -16,11 +16,21 @@ class DonVi extends BaseModel
     }
     
     /**
-     * Lấy danh sách đơn vị
+     * Lấy tất cả đơn vị sắp xếp theo tên
      */
-    public function getAll(): array
+    public function getAllOrdered(): array
     {
         $sql = "SELECT * FROM {$this->table} ORDER BY tendv ASC";
+        $stmt = $this->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Lấy danh sách đơn vị đơn giản (madv, tendv)
+     */
+    public function getAllSimple(): array
+    {
+        $sql = "SELECT madv, tendv FROM {$this->table} ORDER BY tendv ASC";
         $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

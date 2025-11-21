@@ -69,9 +69,28 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-business-time mr-2"></i> Tiến độ công việc
                     </a>
                 </li>
+                <!-- Menu Danh mục thiết bị -->
                 <li>
-                    <a href="/iso2/thietbihotro.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
+                    <div id="thietbiMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-cogs mr-2"></i> Danh mục thiết bị
+                        <i id="thietbiCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="thietbiMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <li>
+                            <a href="/iso2/thietbi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-cogs mr-2"></i> Thiết bị
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/thietbihotro.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/iso2/donvi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-building mr-2"></i> Đơn vị KH
                     </a>
                 </li>
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
@@ -226,6 +245,17 @@ if (adminBtn && adminMenu && adminCaret) {
     adminBtn.addEventListener('click', function() {
         adminMenu.classList.toggle('hidden');
         adminCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Danh mục thiết bị
+const thietbiBtn = document.getElementById('thietbiMenuBtn');
+const thietbiMenu = document.getElementById('thietbiMenu');
+const thietbiCaret = document.getElementById('thietbiCaret');
+if (thietbiBtn && thietbiMenu && thietbiCaret) {
+    thietbiBtn.addEventListener('click', function() {
+        thietbiMenu.classList.toggle('hidden');
+        thietbiCaret.classList.toggle('rotate-180');
     });
 }
 </script>
