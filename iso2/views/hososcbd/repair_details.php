@@ -5,6 +5,14 @@ mb_internal_encoding('UTF-8');
 // Get record ID from URL
 $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+// Capture filter params from URL to preserve them
+$filterParams = [];
+foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
+    if (isset($_GET[$key]) && $_GET[$key] !== '') {
+        $filterParams[$key] = $_GET[$key];
+    }
+}
+
 // Load model first
 require_once __DIR__ . '/../../models/HoSoSCBD.php';
 $model = new HoSoSCBD();
@@ -53,14 +61,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $success = $model->update($stt, $data);
         if ($success !== false) {
-            // Build redirect URL with preserved filters from referrer
+            // Build redirect URL with preserved filters
             $redirectUrl = '/iso2/hososcbd.php';
-            if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'hososcbd.php') !== false) {
-                parse_str(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) ?? '', $params);
-                unset($params['action'], $params['id']); // Remove action/id params
-                if (!empty($params)) {
-                    $redirectUrl .= '?' . http_build_query($params);
+            // Get filter params from POST (hidden inputs) or from initial GET
+            $postFilters = [];
+            foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
+                if (isset($_POST['filter_' . $key]) && $_POST['filter_' . $key] !== '') {
+                    $postFilters[$key] = $_POST['filter_' . $key];
                 }
+            }
+            $params = !empty($postFilters) ? $postFilters : $filterParams;
+            if (!empty($params)) {
+                $redirectUrl .= '?' . http_build_query($params);
             }
             header("Location: $redirectUrl");
             exit;
@@ -84,14 +96,10 @@ require_once __DIR__ . '/../layouts/header.php';
             <i class="fas fa-wrench mr-2 text-orange-600"></i> Thông tin sửa chữa & Thiết bị đo
         </h1>
         <?php
-        // Preserve query params from referrer for back link
+        // Build back URL with filter params
         $backUrl = 'hososcbd.php';
-        if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'hososcbd.php') !== false) {
-            parse_str(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_QUERY) ?? '', $params);
-            unset($params['action'], $params['id']);
-            if (!empty($params)) {
-                $backUrl .= '?' . http_build_query($params);
-            }
+        if (!empty($filterParams)) {
+            $backUrl .= '?' . http_build_query($filterParams);
         }
         ?>
         <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
@@ -124,6 +132,11 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <form method="POST" class="space-y-6">
+        <!-- Hidden inputs to preserve filters -->
+        <?php foreach ($filterParams as $key => $value): ?>
+            <input type="hidden" name="filter_<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
+        <?php endforeach; ?>
+        
         <!-- Thông tin sửa chữa -->
         <div class="border-l-4 border-orange-500 pl-4">
             <h2 class="text-lg font-bold mb-3 text-orange-700">

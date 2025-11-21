@@ -158,11 +158,21 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?>" 
+                        <?php
+                        // Build URLs with current filter params
+                        $currentFilters = [];
+                        foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
+                            if (isset($_GET[$key]) && $_GET[$key] !== '') {
+                                $currentFilters[$key] = $_GET[$key];
+                            }
+                        }
+                        $filterQuery = !empty($currentFilters) ? '&' . http_build_query($currentFilters) : '';
+                        ?>
+                        <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
                            class="text-orange-600 hover:text-orange-800 mx-1" title="Thông tin sửa chữa">
                             <i class="fas fa-wrench"></i>
                         </a>
-                        <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?>" 
+                        <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
                            class="text-red-600 hover:text-red-800 mx-1" title="Thông tin bàn giao">
                             <i class="fas fa-handshake"></i>
                         </a>
