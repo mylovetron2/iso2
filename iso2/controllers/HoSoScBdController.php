@@ -43,7 +43,7 @@ class HoSoScBdController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $this->getPostData();
             
-            $errors = $this->validate($data);
+            $errors = $this->validate($data, null);
 
             if (empty($errors)) {
                 // Auto generate phieu number
@@ -89,7 +89,7 @@ class HoSoScBdController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $this->getPostData();
             
-            $errors = $this->validate($data);
+            $errors = $this->validate($data, $stt);
 
             if (empty($errors)) {
                 // Auto-generate maql and hoso for edit
@@ -181,7 +181,7 @@ class HoSoScBdController
         ];
     }
 
-    private function validate(array $data): array
+    private function validate(array $data, ?int $excludeStt = null): array
     {
         $errors = [];
         
@@ -197,6 +197,13 @@ class HoSoScBdController
         if (empty($data['lo'])) $errors[] = 'Lô không được để trống';
         if (empty($data['gieng'])) $errors[] = 'Giếng không được để trống';
         if (empty($data['mo'])) $errors[] = 'Mỏ không được để trống';
+        
+        // Check device availability (bg=0 means device is busy)
+        if (!empty($data['mavt']) && !empty($data['somay'])) {
+            if (!$this->model->isDeviceAvailable($data['mavt'], $data['somay'], $excludeStt)) {
+                $errors[] = "Thiết bị {$data['mavt']} - {$data['somay']} đang được sử dụng trong phiếu khác (chưa bàn giao)";
+            }
+        }
 
         return $errors;
     }

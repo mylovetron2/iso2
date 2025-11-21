@@ -162,6 +162,37 @@ class HoSoSCBD extends BaseModel
     }
     
     /**
+     * Kiểm tra thiết bị có sẵn sàng không (bg=0 nghĩa là đang bận)
+     * Trả về true nếu thiết bị có thể sử dụng (không có bản ghi bg=0)
+     * 
+     * @param string $mavt Mã vật tư
+     * @param string $somay Số máy
+     * @param int|null $excludeStt Loại trừ STT này (dùng khi edit)
+     * @return bool
+     */
+    public function isDeviceAvailable(string $mavt, string $somay, ?int $excludeStt = null): bool
+    {
+        $mavtEscaped = $this->db->quote($mavt);
+        $somayEscaped = $this->db->quote($somay);
+        
+        $sql = "SELECT COUNT(*) as count 
+                FROM {$this->table} 
+                WHERE mavt = $mavtEscaped 
+                  AND somay = $somayEscaped 
+                  AND bg = 0";
+        
+        if ($excludeStt !== null) {
+            $sql .= " AND stt != " . (int)$excludeStt;
+        }
+        
+        $stmt = $this->query($sql);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Trả về true nếu không tìm thấy bản ghi nào (device available)
+        return (int)$result['count'] === 0;
+    }
+    
+    /**
      * Cập nhật trạng thái bàn giao
      */
     public function updateBanGiao(int $stt): bool
