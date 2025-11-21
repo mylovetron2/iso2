@@ -330,7 +330,7 @@ class HoSoScBdController
         if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
         if (empty($data['madv'])) $errors[] = 'Mã đơn vị không được để trống';
         if (empty($data['cv'])) $errors[] = 'Công việc không được để trống';
-        if (empty($data['nhomsc'])) $errors[] = 'Nhóm sửa chữa không được để trống';
+        // nhomsc is optional now - can be filled in repair_details page
         
         return $errors;
     }

@@ -181,90 +181,21 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Thông tin sửa chữa -->
-        <div class="border-l-4 border-orange-500 pl-4">
+        <!-- Link to Repair Details Page -->
+        <div class="border-l-4 border-orange-500 pl-4 bg-orange-50 rounded-lg p-6">
             <h2 class="text-lg font-bold mb-3 text-orange-700">
-                <i class="fas fa-wrench mr-2"></i>Thông tin sửa chữa
+                <i class="fas fa-wrench mr-2"></i>Thông tin sửa chữa & Thiết bị đo
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Nhóm SC <span class="text-red-500">*</span></label>
-                    <input type="text" name="nhomsc" required value="<?php echo isset($_POST['nhomsc']) ? htmlspecialchars($_POST['nhomsc']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ngày bắt đầu TT</label>
-                    <input type="date" name="ngaybdtt" value="<?php echo isset($_POST['ngaybdtt']) ? $_POST['ngaybdtt'] : date('Y-m-d'); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ngày thực hiện</label>
-                    <input type="date" name="ngayth" value="<?php echo isset($_POST['ngayth']) ? $_POST['ngayth'] : date('Y-m-d'); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ngày kiểm tra</label>
-                    <input type="date" name="ngaykt" value="<?php echo isset($_POST['ngaykt']) ? $_POST['ngaykt'] : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Số lượng</label>
-                    <input type="number" name="solg" min="0" value="<?php echo isset($_POST['solg']) ? $_POST['solg'] : '0'; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT trước</label>
-                    <textarea name="ttktbefore" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ttktbefore']) ? htmlspecialchars($_POST['ttktbefore']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Hỏng hóc</label>
-                    <textarea name="honghoc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['honghoc']) ? htmlspecialchars($_POST['honghoc']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Khắc phục</label>
-                    <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['khacphuc']) ? htmlspecialchars($_POST['khacphuc']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT sau</label>
-                    <textarea name="ttktafter" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ttktafter']) ? htmlspecialchars($_POST['ttktafter']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Nội dung</label>
-                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['noidung']) ? htmlspecialchars($_POST['noidung']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Kết luận</label>
-                    <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ketluan']) ? htmlspecialchars($_POST['ketluan']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Xem xét xưởng</label>
-                    <textarea name="xemxetxuong" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['xemxetxuong']) ? htmlspecialchars($_POST['xemxetxuong']) : ''; ?></textarea>
-                </div>
-            </div>
-        </div>
-
-        <!-- Thiết bị đo SC -->
-        <div class="border-l-4 border-teal-500 pl-4">
-            <h2 class="text-lg font-bold mb-3 text-teal-700">
-                <i class="fas fa-tools mr-2"></i>Thiết bị đo sửa chữa (5 slot)
-            </h2>
-            <?php for ($i = 0; $i <= 4; $i++): 
-                $tbField = $i == 0 ? 'tbdosc' : "tbdosc$i";
-                $serialField = $i == 0 ? 'serialtbdosc' : "serialtbdosc$i";
-            ?>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">TB đo SC <?php echo $i + 1; ?></label>
-                    <input type="text" name="<?php echo $tbField; ?>" value="<?php echo isset($_POST[$tbField]) ? htmlspecialchars($_POST[$tbField]) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Serial <?php echo $i + 1; ?></label>
-                    <input type="text" name="<?php echo $serialField; ?>" value="<?php echo isset($_POST[$serialField]) ? htmlspecialchars($_POST[$serialField]) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-            </div>
-            <?php endfor; ?>
+            <p class="text-gray-700 mb-4">
+                Nhập thông tin chi tiết về quá trình sửa chữa, thiết bị đo sử dụng ở trang riêng.
+            </p>
+            <a href="hososcbd_repair_details.php" 
+               class="inline-block bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded text-base font-semibold">
+                <i class="fas fa-arrow-right mr-2"></i>Đi tới trang Thông tin sửa chữa
+            </a>
+            <p class="text-sm text-gray-500 mt-3">
+                <i class="fas fa-info-circle"></i> Bạn có thể nhập thông tin này sau khi đã tạo hồ sơ cơ bản
+            </p>
         </div>
 
         <!-- Bàn giao -->

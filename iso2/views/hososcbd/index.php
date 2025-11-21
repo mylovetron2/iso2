@@ -158,6 +158,10 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </a>
+                        <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?>" 
+                           class="text-orange-600 hover:text-orange-800 mx-1" title="Thông tin sửa chữa">
+                            <i class="fas fa-wrench"></i>
+                        </a>
                         <?php endif; ?>
                         <?php if (hasPermission('hososcbd.delete')): ?>
                         <form method="POST" action="hososcbd.php?action=delete" 
