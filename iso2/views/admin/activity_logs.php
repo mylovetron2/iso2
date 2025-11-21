@@ -1,20 +1,48 @@
 <?php
 declare(strict_types=1);
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../../config/constants.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/permissions.php';
 require_once __DIR__ . '/../../includes/ActivityLogger.php';
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../models/BaseModel.php';
 
-// Check if user is logged in and has admin role
-requireLogin();
-if (!hasRole('admin')) {
+// Check if user is logged in and has permission to view activity logs
+requireAuth();
+if (!hasRole(ROLE_ADMIN) && !hasPermission('activitylogs.view')) {
     header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
 
 $db = getDBConnection();
 $logger = new ActivityLogger($db);
+
+// Check if activity_logs table exists
+try {
+    $db->query("SELECT 1 FROM activity_logs LIMIT 1");
+} catch (PDOException $e) {
+    // Table doesn't exist, show error message
+    $pageTitle = 'Nhật ký hoạt động';
+    require_once __DIR__ . '/../layouts/header.php';
+    echo '<div class="container mx-auto px-4 py-6">';
+    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">';
+    echo '<p class="font-bold">Lỗi: Bảng activity_logs chưa được tạo!</p>';
+    echo '<p>Vui lòng chạy migration: <code>migrations/20251120_create_activity_logs.sql</code></p>';
+    echo '<p class="text-xs mt-2">Error: ' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '</div></div>';
+    require_once __DIR__ . '/../layouts/footer.php';
+    exit;
+}
 
 // Get filter parameters
 $filterTable = $_GET['table'] ?? '';
@@ -37,17 +65,26 @@ $limit = 50;
 $offset = ($page - 1) * $limit;
 
 // Get logs and total count
-$logs = $logger->getLogs($limit, $offset, $filters);
-$totalLogs = $logger->countLogs($filters);
-$totalPages = max(1, (int)ceil($totalLogs / $limit));
-
-// Get unique tables for filter dropdown
-$tablesStmt = $db->query("SELECT DISTINCT table_name FROM activity_logs ORDER BY table_name");
-$tables = $tablesStmt->fetchAll(PDO::FETCH_COLUMN);
-
-// Get users for filter dropdown
-$usersStmt = $db->query("SELECT DISTINCT user_id, username FROM activity_logs ORDER BY username");
-$users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $logs = $logger->getLogs($limit, $offset, $filters);
+    $totalLogs = $logger->countLogs($filters);
+    $totalPages = max(1, (int)ceil($totalLogs / $limit));
+    
+    // Get unique tables for filter dropdown
+    $tablesStmt = $db->query("SELECT DISTINCT table_name FROM activity_logs ORDER BY table_name");
+    $tables = $tablesStmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Get users for filter dropdown
+    $usersStmt = $db->query("SELECT DISTINCT user_id, username FROM activity_logs ORDER BY username");
+    $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // Handle any errors gracefully
+    $logs = [];
+    $totalLogs = 0;
+    $totalPages = 1;
+    $tables = [];
+    $users = [];
+}
 
 $pageTitle = 'Nhật ký hoạt động';
 require_once __DIR__ . '/../layouts/header.php';

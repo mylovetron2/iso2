@@ -33,12 +33,12 @@ class ActivityLogger
         ?array $newData = null
     ): bool {
         // Check if user is logged in
-        if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
+        if (!isset($_SESSION['user_id'])) {
             return false; // Skip logging if no user session
         }
         
         $userId = (int)$_SESSION['user_id'];
-        $username = $_SESSION['username'];
+        $username = $_SESSION['user_name'] ?? $_SESSION['username'] ?? 'unknown';
         
         // Get client information
         $ipAddress = $this->getClientIp();

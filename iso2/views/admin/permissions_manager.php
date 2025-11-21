@@ -28,6 +28,9 @@ $allPermissions = [
     'thietbihotro.create' => 'Tạo thiết bị hỗ trợ',
     'thietbihotro.edit' => 'Sửa thiết bị hỗ trợ',
     'thietbihotro.delete' => 'Xóa thiết bị hỗ trợ',
+    
+    'activitylogs.view' => 'Xem nhật ký hoạt động',
+    'activitylogs.export' => 'Xuất nhật ký hoạt động',
 ];
 
 // Cập nhật quyền cho role
@@ -48,6 +51,7 @@ $permissionGroups = [
     'Project' => ['project.view', 'project.create', 'project.edit', 'project.delete', 'project.manage'],
     'Tiến độ công việc' => ['tiendocongviec.view', 'tiendocongviec.create', 'tiendocongviec.edit', 'tiendocongviec.delete', 'tiendocongviec.pause'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
+    'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-8 mt-4 md:mt-8">

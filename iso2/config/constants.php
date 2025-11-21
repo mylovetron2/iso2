@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 define('BASE_URL', 'http://localhost/project-management');
 define('ROLE_SUPER_ADMIN', 'super_admin');
