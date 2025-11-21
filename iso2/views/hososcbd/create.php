@@ -198,38 +198,19 @@ require_once __DIR__ . '/../layouts/header.php';
             </p>
         </div>
 
-        <!-- Bàn giao -->
-        <div class="border-l-4 border-red-500 pl-4">
+        <!-- Bàn giao - Link to separate page -->
+        <div class="border-l-4 border-red-500 pl-4 bg-red-50 p-4 rounded">
             <h2 class="text-lg font-bold mb-3 text-red-700">
                 <i class="fas fa-handshake mr-2"></i>Thông tin bàn giao
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <div>
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" name="bg" value="1" <?php echo (isset($_POST['bg']) && $_POST['bg'] == 1) ? 'checked' : ''; ?>
-                               class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-200">
-                        <span class="ml-2 text-gray-700 font-semibold">Đã bàn giao</span>
-                    </label>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Số lần BG</label>
-                    <input type="number" name="slbg" min="0" value="<?php echo isset($_POST['slbg']) ? $_POST['slbg'] : '0'; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Dòng</label>
-                    <input type="text" name="dong" value="<?php echo isset($_POST['dong']) ? htmlspecialchars($_POST['dong']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
-                    <textarea name="ghichu" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ghichu']) ? htmlspecialchars($_POST['ghichu']) : ''; ?></textarea>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú cuối</label>
-                    <textarea name="ghichufinal" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ghichufinal']) ? htmlspecialchars($_POST['ghichufinal']) : ''; ?></textarea>
-                </div>
-            </div>
+            <p class="text-gray-600 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>
+                Bạn có thể nhập thông tin này sau khi đã tạo hồ sơ cơ bản.
+            </p>
+            <a href="#" onclick="alert('Vui lòng lưu hồ sơ trước, sau đó sử dụng icon bàn giao trong danh sách để nhập thông tin này.'); return false;" 
+               class="inline-block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold">
+                <i class="fas fa-arrow-right mr-2"></i>Nhập thông tin bàn giao sau
+            </a>
         </div>
 
         <!-- Buttons -->

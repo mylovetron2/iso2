@@ -162,6 +162,10 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-orange-600 hover:text-orange-800 mx-1" title="Thông tin sửa chữa">
                             <i class="fas fa-wrench"></i>
                         </a>
+                        <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?>" 
+                           class="text-red-600 hover:text-red-800 mx-1" title="Thông tin bàn giao">
+                            <i class="fas fa-handshake"></i>
+                        </a>
                         <?php endif; ?>
                         <?php if (hasPermission('hososcbd.delete')): ?>
                         <form method="POST" action="hososcbd.php?action=delete" 
