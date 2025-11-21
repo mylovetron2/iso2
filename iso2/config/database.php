@@ -8,6 +8,13 @@ define('DB_NAME', 'diavatly_db');
 define('DB_PORT', '3306');
 define('DB_CHARSET', 'latin1');
 
+// define('DB_HOST', 'localhost');
+// define('DB_USER', 'mapselli676e_iso2');
+// define('DB_PASS', 'cntt2019');
+// define('DB_NAME', 'mapselli676e_iso2');
+// define('DB_PORT', '3306');
+// define('DB_CHARSET', 'latin1');
+
 
 function getDBConnection(bool $debug = false): PDO {
     static $conn = null;

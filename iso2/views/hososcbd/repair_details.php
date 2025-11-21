@@ -1,51 +1,29 @@
 <?php 
 header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
-$title = 'Thông tin sửa chữa & Thiết bị đo';
-require_once __DIR__ . '/../layouts/header.php'; 
 
 // Get record ID from URL
 $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// If no ID, show message
+// Load model first
+require_once __DIR__ . '/../../models/HoSoSCBD.php';
+$model = new HoSoSCBD();
+
+// If no ID, redirect
 if (!$stt) {
-    echo '<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mt-6">
-            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                <i class="fas fa-exclamation-triangle mr-2"></i>
-                Vui lòng chọn hồ sơ từ danh sách để nhập thông tin sửa chữa.
-            </div>
-            <div class="mt-4">
-                <a href="/iso2/hososcbd.php" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded inline-block">
-                    <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách
-                </a>
-            </div>
-          </div>';
-    require_once __DIR__ . '/../layouts/footer.php';
+    header("Location: hososcbd.php");
     exit;
 }
 
 // Load the record
-require_once __DIR__ . '/../../models/HoSoSCBD.php';
-$model = new HoSoSCBD();
 $item = $model->findById($stt);
 
 if (!$item) {
-    echo '<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mt-6">
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                <i class="fas fa-times-circle mr-2"></i>
-                Không tìm thấy hồ sơ.
-            </div>
-            <div class="mt-4">
-                <a href="/iso2/hososcbd.php" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded inline-block">
-                    <i class="fas fa-arrow-left mr-2"></i>Quay lại danh sách
-                </a>
-            </div>
-          </div>';
-    require_once __DIR__ . '/../layouts/footer.php';
+    header("Location: hososcbd.php");
     exit;
 }
 
-// Handle form submission
+// Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = [
         'nhomsc' => trim($_POST['nhomsc'] ?? ''),
@@ -74,12 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $success = $model->update($stt, $data);
     if ($success) {
-        $successMessage = 'Cập nhật thông tin sửa chữa thành công!';
-        $item = $model->findById($stt); // Reload data
+        // Redirect immediately without output
+        header("Location: hososcbd.php");
+        exit;
     } else {
         $errorMessage = 'Có lỗi xảy ra khi cập nhật';
     }
 }
+
+// Now include header after all logic
+$title = 'Thông tin sửa chữa & Thiết bị đo';
+require_once __DIR__ . '/../layouts/header.php';
 ?>
 
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
@@ -109,12 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-
-    <?php if (isset($successMessage)): ?>
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-        <i class="fas fa-check-circle mr-2"></i><?php echo $successMessage; ?>
-    </div>
-    <?php endif; ?>
 
     <?php if (isset($errorMessage)): ?>
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

@@ -21,7 +21,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     }
 }
 
-// Handle form submission
+// Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $record) {
     $updateData = [
         'bg' => isset($_POST['bg']) ? 1 : 0,
@@ -32,14 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $record) {
     ];
     
     if ($model->update($record['stt'], $updateData)) {
-        $message = 'Cập nhật thông tin bàn giao thành công!';
-        $messageType = 'success';
-        
-        // Refresh record data
-        $record = $model->findById($id);
-        
-        // Redirect after 1 second
-        header("refresh:1;url=hososcbd.php");
+        // Redirect immediately without output
+        header("Location: hososcbd.php");
+        exit;
     } else {
         $message = 'Có lỗi xảy ra khi cập nhật';
         $messageType = 'error';
