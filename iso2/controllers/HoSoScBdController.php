@@ -41,29 +41,53 @@ class HoSoScBdController
     public function create(): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = $this->getPostData();
+            $commonData = $this->getCommonPostData();
+            $devicesData = $this->getDevicesPostData();
             
-            $errors = $this->validate($data, null);
+            // Validate common data
+            $errors = $this->validateCommonData($commonData);
+            
+            // Validate each device
+            if (empty($errors) && empty($devicesData)) {
+                $errors[] = 'Phải nhập ít nhất 1 thiết bị';
+            }
+            
+            foreach ($devicesData as $index => $device) {
+                $deviceErrors = $this->validateDevice($device, $index, null);
+                if (!empty($deviceErrors)) {
+                    $errors = array_merge($errors, $deviceErrors);
+                }
+            }
 
             if (empty($errors)) {
                 // Auto generate phieu number
-                if (empty($data['phieu'])) {
-                    $data['phieu'] = $this->model->getNextPhieuNumber();
+                if (empty($commonData['phieu'])) {
+                    $commonData['phieu'] = $this->model->getNextPhieuNumber();
                 }
                 
-                // Auto-generate maql and hoso
-                $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
-                $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
+                // Insert each device
+                $successCount = 0;
+                foreach ($devicesData as $index => $device) {
+                    $data = array_merge($commonData, $device);
+                    
+                    // Auto-generate maql with index suffix (N1, N2, N3, etc.)
+                    $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu'], $index);
+                    $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
+                    
+                    $id = $this->model->create($data);
+                    if ($id) {
+                        $successCount++;
+                    }
+                }
                 
-                $id = $this->model->create($data);
-                if ($id) {
-                    header('Location: /iso2/hososcbd.php?success=created');
+                if ($successCount > 0) {
+                    header("Location: /iso2/hososcbd.php?success=created&count={$successCount}");
                     exit;
                 }
                 $errors[] = 'Có lỗi xảy ra khi tạo hồ sơ';
             }
 
-            $error = implode(', ', $errors);
+            $error = implode('<br>', $errors);
         }
 
         $donViList = $this->donViModel->getAllSimple();
@@ -133,6 +157,80 @@ class HoSoScBdController
         exit;
     }
 
+    /**
+     * Get common data (shared across all devices in batch)
+     */
+    private function getCommonPostData(): array
+    {
+        return [
+            'ngayyc' => trim($_POST['ngayyc'] ?? date('Y-m-d')),
+            'madv' => trim($_POST['madv'] ?? ''),
+            'phieu' => trim($_POST['phieu'] ?? ''),
+            'solg' => (int)($_POST['solg'] ?? 0),
+            'cv' => trim($_POST['cv'] ?? ''),
+            'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
+            'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
+            'ngaykt' => trim($_POST['ngaykt'] ?? ''),
+            'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
+            'honghoc' => trim($_POST['honghoc'] ?? ''),
+            'khacphuc' => trim($_POST['khacphuc'] ?? ''),
+            'ttktafter' => trim($_POST['ttktafter'] ?? ''),
+            'ghichu' => trim($_POST['ghichu'] ?? ''),
+            'ngayth' => trim($_POST['ngayth'] ?? date('Y-m-d')),
+            'tbdosc' => trim($_POST['tbdosc'] ?? ''),
+            'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
+            'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
+            'serialtbdosc1' => trim($_POST['serialtbdosc1'] ?? ''),
+            'tbdosc2' => trim($_POST['tbdosc2'] ?? ''),
+            'serialtbdosc2' => trim($_POST['serialtbdosc2'] ?? ''),
+            'tbdosc3' => trim($_POST['tbdosc3'] ?? ''),
+            'serialtbdosc3' => trim($_POST['serialtbdosc3'] ?? ''),
+            'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
+            'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? ''),
+            'nhomsc' => trim($_POST['nhomsc'] ?? ''),
+            'bg' => (int)($_POST['bg'] ?? 0),
+            'ngaybdtt' => trim($_POST['ngaybdtt'] ?? date('Y-m-d')),
+            'dong' => trim($_POST['dong'] ?? ''),
+            'noidung' => trim($_POST['noidung'] ?? ''),
+            'ketluan' => trim($_POST['ketluan'] ?? ''),
+            'dienthoai' => trim($_POST['dienthoai'] ?? ''),
+            'ycthemkh' => trim($_POST['ycthemkh'] ?? ''),
+            'xemxetxuong' => trim($_POST['xemxetxuong'] ?? ''),
+            'slbg' => (int)($_POST['slbg'] ?? 0),
+            'ghichufinal' => trim($_POST['ghichufinal'] ?? '')
+        ];
+    }
+    
+    /**
+     * Get devices data (array of 1-5 devices)
+     */
+    private function getDevicesPostData(): array
+    {
+        $devices = [];
+        
+        if (isset($_POST['devices']) && is_array($_POST['devices'])) {
+            foreach ($_POST['devices'] as $index => $device) {
+                // Only add device if at least mavt and somay are filled
+                if (!empty($device['mavt']) && !empty($device['somay'])) {
+                    $devices[(int)$index] = [
+                        'mavt' => trim($device['mavt'] ?? ''),
+                        'somay' => trim($device['somay'] ?? ''),
+                        'model' => trim($device['model'] ?? ''),
+                        'vitrimaybd' => trim($device['vitrimaybd'] ?? ''),
+                        'lo' => trim($device['lo'] ?? ''),
+                        'gieng' => trim($device['gieng'] ?? ''),
+                        'mo' => trim($device['mo'] ?? '')
+                    ];
+                }
+            }
+        }
+        
+        return $devices;
+    }
+    
+    /**
+     * Get single device POST data (for edit)
+     */
     private function getPostData(): array
     {
         return [
@@ -181,6 +279,51 @@ class HoSoScBdController
         ];
     }
 
+    /**
+     * Validate common data (shared fields)
+     */
+    private function validateCommonData(array $data): array
+    {
+        $errors = [];
+        
+        if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
+        if (empty($data['madv'])) $errors[] = 'Mã đơn vị không được để trống';
+        if (empty($data['cv'])) $errors[] = 'Công việc không được để trống';
+        if (empty($data['nhomsc'])) $errors[] = 'Nhóm sửa chữa không được để trống';
+        
+        return $errors;
+    }
+    
+    /**
+     * Validate single device data
+     */
+    private function validateDevice(array $device, int $index, ?int $excludeStt = null): array
+    {
+        $errors = [];
+        $label = "Thiết bị {$index}";
+        
+        // Required fields
+        if (empty($device['mavt'])) $errors[] = "{$label}: Mã vật tư không được để trống";
+        if (empty($device['somay'])) $errors[] = "{$label}: Số máy không được để trống";
+        if (empty($device['model'])) $errors[] = "{$label}: Model không được để trống";
+        if (empty($device['vitrimaybd'])) $errors[] = "{$label}: Vị trí máy bàn dịch không được để trống";
+        if (empty($device['lo'])) $errors[] = "{$label}: Lô không được để trống";
+        if (empty($device['gieng'])) $errors[] = "{$label}: Giếng không được để trống";
+        if (empty($device['mo'])) $errors[] = "{$label}: Mỏ không được để trống";
+        
+        // Check device availability (bg=0 means device is busy)
+        if (!empty($device['mavt']) && !empty($device['somay'])) {
+            if (!$this->model->isDeviceAvailable($device['mavt'], $device['somay'], $excludeStt)) {
+                $errors[] = "{$label}: {$device['mavt']} - {$device['somay']} đang được sử dụng trong phiếu khác (chưa bàn giao)";
+            }
+        }
+        
+        return $errors;
+    }
+    
+    /**
+     * Validate single record (for edit)
+     */
     private function validate(array $data, ?int $excludeStt = null): array
     {
         $errors = [];

@@ -43,48 +43,91 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Thông tin thiết bị -->
+        <!-- Thông tin thiết bị (5 slots) -->
         <div class="border-l-4 border-green-500 pl-4">
             <h2 class="text-lg font-bold mb-3 text-green-700">
-                <i class="fas fa-cogs mr-2"></i>Thông tin thiết bị
+                <i class="fas fa-cogs mr-2"></i>Thông tin thiết bị (nhập tối đa 5 thiết bị)
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Mã vật tư <span class="text-red-500">*</span></label>
-                    <input type="text" name="mavt" required value="<?php echo isset($_POST['mavt']) ? htmlspecialchars($_POST['mavt']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Số máy <span class="text-red-500">*</span></label>
-                    <input type="text" name="somay" required value="<?php echo isset($_POST['somay']) ? htmlspecialchars($_POST['somay']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Model <span class="text-red-500">*</span></label>
-                    <input type="text" name="model" required value="<?php echo isset($_POST['model']) ? htmlspecialchars($_POST['model']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Vị trí máy BD <span class="text-red-500">*</span></label>
-                    <input type="text" name="vitrimaybd" required value="<?php echo isset($_POST['vitrimaybd']) ? htmlspecialchars($_POST['vitrimaybd']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Lô <span class="text-red-500">*</span></label>
-                    <input type="text" name="lo" required value="<?php echo isset($_POST['lo']) ? htmlspecialchars($_POST['lo']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Giếng <span class="text-red-500">*</span></label>
-                    <input type="text" name="gieng" required value="<?php echo isset($_POST['gieng']) ? htmlspecialchars($_POST['gieng']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Mỏ <span class="text-red-500">*</span></label>
-                    <input type="text" name="mo" required value="<?php echo isset($_POST['mo']) ? htmlspecialchars($_POST['mo']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+            <div class="bg-green-50 border border-green-200 rounded p-3 mb-4">
+                <p class="text-sm text-green-800">
+                    <i class="fas fa-info-circle mr-1"></i> 
+                    Bạn có thể nhập từ 1 đến 5 thiết bị cùng lúc. Chỉ cần điền vào các thiết bị bạn muốn thêm.
+                </p>
+            </div>
+
+            <?php for ($i = 1; $i <= 5; $i++): ?>
+            <div class="border border-gray-300 rounded-lg p-4 mb-4 bg-gray-50">
+                <h3 class="font-bold text-gray-700 mb-3 flex items-center">
+                    <span class="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2"><?php echo $i; ?></span>
+                    Thiết bị <?php echo $i; ?><?php if ($i === 1): ?> <span class="text-red-500 ml-1">*</span><?php endif; ?>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Mã vật tư<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][mavt]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['mavt']) ? htmlspecialchars($_POST['devices'][$i]['mavt']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Số máy<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][somay]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['somay']) ? htmlspecialchars($_POST['devices'][$i]['somay']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Model<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][model]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['model']) ? htmlspecialchars($_POST['devices'][$i]['model']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Vị trí máy BD<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][vitrimaybd]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['vitrimaybd']) ? htmlspecialchars($_POST['devices'][$i]['vitrimaybd']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Lô<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][lo]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['lo']) ? htmlspecialchars($_POST['devices'][$i]['lo']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Giếng<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][gieng]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['gieng']) ? htmlspecialchars($_POST['devices'][$i]['gieng']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-sm text-gray-700 font-semibold mb-1">
+                            Mỏ<?php if ($i === 1): ?> <span class="text-red-500">*</span><?php endif; ?>
+                        </label>
+                        <input type="text" name="devices[<?php echo $i; ?>][mo]" 
+                               <?php if ($i === 1): ?>required<?php endif; ?>
+                               value="<?php echo isset($_POST['devices'][$i]['mo']) ? htmlspecialchars($_POST['devices'][$i]['mo']) : ''; ?>"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    </div>
                 </div>
             </div>
+            <?php endfor; ?>
         </div>
 
         <!-- Thông tin đơn vị & yêu cầu -->
