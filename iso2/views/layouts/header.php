@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../config/constants.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title><?php echo isset($title) ? $title : 'Quản lý ISO 2.0'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css?v=<?php echo time(); ?>">
     <style>
         body {
             -webkit-text-size-adjust: 100%;
