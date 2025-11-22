@@ -98,6 +98,11 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBĐ
                     </a>
                 </li>
+                <li>
+                    <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-handshake mr-2"></i> Phiếu bàn giao
+                    </a>
+                </li>
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
                 <li>
