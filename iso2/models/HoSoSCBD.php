@@ -209,4 +209,43 @@ class HoSoSCBD extends BaseModel
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':stt' => $stt]);
     }
+    
+    /**
+     * Lấy danh sách thiết bị chưa bàn giao theo phiếu YC
+     */
+    public function getUndeliveredByPhieu(string $phieu): array
+    {
+        $phieuEscaped = $this->db->quote($phieu);
+        
+        $sql = "SELECT h.*, 
+                       COALESCE(t.tenvt, h.mavt) as tenvt,
+                       d.tendv
+                FROM {$this->table} h
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                LEFT JOIN donvi_iso d ON h.madv = d.madv
+                WHERE h.phieu = $phieuEscaped 
+                  AND h.bg = 0
+                  AND h.ngaykt IS NOT NULL 
+                  AND h.ngaykt != '0000-00-00'
+                ORDER BY h.maql";
+        
+        $stmt = $this->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Cập nhật trạng thái bg
+     */
+    public function updateBGStatus(int $stt, int $bgStatus): bool
+    {
+        $sql = "UPDATE {$this->table} 
+                SET bg = :bg 
+                WHERE stt = :stt";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':bg' => $bgStatus,
+            ':stt' => $stt
+        ]);
+    }
 }
