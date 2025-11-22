@@ -3,12 +3,11 @@ declare(strict_types=1);
 
 session_start();
 
+require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/permissions.php';
 require_once __DIR__ . '/controllers/PhieuBanGiaoPhieuYCController.php';
 
-// Kiểm tra đăng nhập
-requireLogin();
+requireAuth();
 
 // Kiểm tra quyền
 if (!hasPermission('phieubangiao.view')) {
