@@ -187,7 +187,7 @@ $statusIcon = [
     </div>
 
     <!-- Action buttons -->
-    <?php if ($item['trangthai'] == 0 && hasPermission('hososcbd.delete')): ?>
+    <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
     <div class="mt-6 pt-4 border-t">
         <button onclick="if(confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.')) { window.location.href='phieubangiao.php?action=delete&id=<?php echo $item['stt']; ?>'; }" 
                 class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">

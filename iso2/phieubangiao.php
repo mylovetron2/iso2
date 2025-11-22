@@ -9,7 +9,7 @@ require_once __DIR__ . '/controllers/PhieuBanGiaoController.php';
 
 requireAuth();
 
-if (!hasPermission('hososcbd.view')) {
+if (!hasPermission('phieubangiao.view')) {
     header('Location: /iso2/index.php?error=permission_denied');
     exit;
 }
@@ -19,7 +19,7 @@ $action = $_GET['action'] ?? 'index';
 
 switch ($action) {
     case 'select':
-        if (!hasPermission('hososcbd.create')) {
+        if (!hasPermission('phieubangiao.create')) {
             header('Location: /iso2/phieubangiao.php?error=permission_denied');
             exit;
         }
@@ -27,7 +27,7 @@ switch ($action) {
         break;
 
     case 'confirm':
-        if (!hasPermission('hososcbd.create')) {
+        if (!hasPermission('phieubangiao.create')) {
             header('Location: /iso2/phieubangiao.php?error=permission_denied');
             exit;
         }
@@ -39,7 +39,7 @@ switch ($action) {
         break;
 
     case 'delete':
-        if (!hasPermission('hososcbd.delete')) {
+        if (!hasPermission('phieubangiao.delete')) {
             header('Location: /iso2/phieubangiao.php?error=permission_denied');
             exit;
         }

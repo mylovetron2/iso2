@@ -72,7 +72,7 @@ require_once __DIR__ . '/../layouts/header.php';
     </form>
 
     <!-- Create Button -->
-    <?php if (hasPermission('hososcbd.create')): ?>
+    <?php if (hasPermission('phieubangiao.create')): ?>
     <div class="mb-4">
         <a href="phieubangiao.php?action=select" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded inline-block font-semibold">
             <i class="fas fa-plus mr-2"></i>Tạo Phiếu Bàn Giao Mới
@@ -134,7 +134,7 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <?php if ($item['trangthai'] == 0 && hasPermission('hososcbd.delete')): ?>
+                        <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
                         <form method="POST" action="phieubangiao.php?action=delete" 
                               onsubmit="return confirm('Bạn có chắc muốn xóa phiếu này?');" 
                               class="inline">

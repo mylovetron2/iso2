@@ -33,9 +33,7 @@ CREATE TABLE IF NOT EXISTS phieubangiao_thietbi_iso (
     ghichu TEXT COMMENT 'Ghi chú riêng cho thiết bị',
     ngaytao DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_sophieu (sophieu),
-    INDEX idx_hososcbd (hososcbd_stt),
-    FOREIGN KEY (sophieu) REFERENCES phieubangiao_iso(sophieu) ON DELETE CASCADE,
-    FOREIGN KEY (hososcbd_stt) REFERENCES hososcbd_iso(stt) ON DELETE RESTRICT
+    INDEX idx_hososcbd (hososcbd_stt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Chi tiết thiết bị trong phiếu bàn giao';
 
 -- Grant permissions (if needed)
