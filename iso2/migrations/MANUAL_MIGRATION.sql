@@ -80,9 +80,9 @@ AND REFERENCED_TABLE_NAME IS NOT NULL;
 -- Kiểm tra thiết bị có thể bàn giao (ngaykt đã có, bg = 0)
 SELECT 
     h.stt,
-    h.sophieu as phieuyc,
+    h.phieu as phieuyc,
     h.mavt,
-    h.tenvt,
+    COALESCE(t.tenvt, h.mavt) as tenvt,
     h.somay,
     h.madv,
     h.ngaykt,
@@ -90,6 +90,7 @@ SELECT
     d.tendv
 FROM hososcbd_iso h
 LEFT JOIN donvi_iso d ON h.madv = d.madv
+LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
 WHERE h.ngaykt IS NOT NULL 
 AND h.ngaykt != '0000-00-00'
 AND h.bg = 0

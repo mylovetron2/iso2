@@ -36,7 +36,7 @@ $where[] = "h.bg = 0"; // Chưa bàn giao
 
 if ($search) {
     $search_escaped = $db->quote("%$search%");
-    $where[] = "(h.mavt LIKE $search_escaped OR h.tenvt LIKE $search_escaped OR h.somay LIKE $search_escaped OR h.maql LIKE $search_escaped)";
+    $where[] = "(h.mavt LIKE $search_escaped OR t.tenvt LIKE $search_escaped OR h.somay LIKE $search_escaped OR h.maql LIKE $search_escaped)";
 }
 
 if ($madv) {
@@ -67,7 +67,7 @@ $sql = "SELECT
             h.maql,
             h.phieu,
             h.mavt,
-            h.tenvt,
+            COALESCE(t.tenvt, h.mavt) as tenvt,
             h.somay,
             h.madv,
             d.tendv,
@@ -76,6 +76,7 @@ $sql = "SELECT
             h.slbg as so_lan_bg
         FROM hososcbd_iso h
         LEFT JOIN donvi_iso d ON h.madv = d.madv
+        LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
         WHERE $whereClause
         ORDER BY h.ngaykt DESC, h.phieu DESC, h.mavt ASC
         LIMIT 100";
