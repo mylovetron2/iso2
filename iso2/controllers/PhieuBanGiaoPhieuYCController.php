@@ -54,6 +54,30 @@ class PhieuBanGiaoPhieuYCController
                 exit;
             }
 
+            // Lưu danh sách phiếu YC đã chọn vào session
+            $_SESSION['pbg_phieuyc_selected'] = $selectedPhieuYC;
+
+            // Chuyển sang bước 2: Chọn thiết bị
+            header("Location: /iso2/phieubangiao_phieuyc.php?action=select_devices");
+            exit;
+        }
+    }
+
+    /**
+     * Bước 2: Chọn thiết bị cần bàn giao
+     */
+    public function selectDevices(): void
+    {
+        // Kiểm tra đã có phiếu YC chưa
+        if (!isset($_SESSION['pbg_phieuyc_selected']) || empty($_SESSION['pbg_phieuyc_selected'])) {
+            header("Location: /iso2/phieubangiao_phieuyc.php?action=select");
+            exit;
+        }
+
+        $selectedPhieuYC = $_SESSION['pbg_phieuyc_selected'];
+
+        // GET: Hiển thị danh sách thiết bị để chọn
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Load tất cả thiết bị chưa bàn giao của các phiếu YC đã chọn
             $groupedByPhieu = [];
             foreach ($selectedPhieuYC as $phieu) {
@@ -66,6 +90,39 @@ class PhieuBanGiaoPhieuYCController
             if (empty($groupedByPhieu)) {
                 $_SESSION['error'] = 'Không tìm thấy thiết bị chưa bàn giao trong các phiếu đã chọn';
                 header("Location: /iso2/phieubangiao_phieuyc.php?action=select");
+                exit;
+            }
+
+            require_once __DIR__ . '/../views/phieubangiao_phieuyc/select_devices.php';
+            return;
+        }
+
+        // POST: Xử lý khi submit chọn thiết bị
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_devices'])) {
+            $selectedDeviceIds = $_POST['selected_devices']; // Array of device stt
+            
+            if (empty($selectedDeviceIds)) {
+                $_SESSION['error'] = 'Vui lòng chọn ít nhất 1 thiết bị cần bàn giao';
+                header("Location: /iso2/phieubangiao_phieuyc.php?action=select_devices");
+                exit;
+            }
+
+            // Load thiết bị đã chọn và nhóm theo phiếu YC
+            $groupedByPhieu = [];
+            foreach ($selectedDeviceIds as $stt) {
+                $device = $this->hosoModel->findById((int)$stt);
+                if ($device && $device['bg'] == 0) {
+                    $phieu = $device['phieu'];
+                    if (!isset($groupedByPhieu[$phieu])) {
+                        $groupedByPhieu[$phieu] = [];
+                    }
+                    $groupedByPhieu[$phieu][] = $device;
+                }
+            }
+
+            if (empty($groupedByPhieu)) {
+                $_SESSION['error'] = 'Không tìm thấy thiết bị hợp lệ';
+                header("Location: /iso2/phieubangiao_phieuyc.php?action=select_devices");
                 exit;
             }
 

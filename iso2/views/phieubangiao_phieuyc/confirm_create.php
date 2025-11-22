@@ -10,24 +10,62 @@ $phieuCount = count($groupedByPhieu);
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">
                     <i class="fas fa-check-circle text-green-600 mr-2"></i>
-                    Bước 2: Xác Nhận & Tạo Phiếu Bàn Giao
+                    Bước 3: Xác Nhận & Tạo Phiếu Bàn Giao
                 </h1>
                 <p class="text-gray-600 mt-1">Kiểm tra và điền thông tin cho <?php echo $phieuCount; ?> phiếu bàn giao</p>
             </div>
-            <a href="phieubangiao_phieuyc.php?action=select" 
+            <a href="phieubangiao_phieuyc.php?action=select_devices" 
                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại
             </a>
         </div>
     </div>
 
+    <!-- Progress Steps -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="ml-3">
+                    <div class="text-sm font-semibold text-gray-700">Bước 1</div>
+                    <div class="text-xs text-gray-500">Chọn Phiếu YC</div>
+                </div>
+            </div>
+            <div class="flex-1 h-1 bg-green-600 mx-4"></div>
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="ml-3">
+                    <div class="text-sm font-semibold text-gray-700">Bước 2</div>
+                    <div class="text-xs text-gray-500">Chọn Thiết Bị</div>
+                </div>
+            </div>
+            <div class="flex-1 h-1 bg-green-600 mx-4"></div>
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                    3
+                </div>
+                <div class="ml-3">
+                    <div class="text-sm font-semibold text-gray-700">Bước 3</div>
+                    <div class="text-xs text-gray-500">Xác Nhận</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Thông báo -->
-    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+    <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
         <div class="flex items-center">
-            <i class="fas fa-info-circle text-blue-600 text-2xl mr-3"></i>
+            <i class="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
             <div>
-                <p class="font-semibold text-blue-800">Hệ thống sẽ tạo <?php echo $phieuCount; ?> phiếu bàn giao</p>
-                <p class="text-sm text-blue-700">Mỗi phiếu yêu cầu sẽ tương ứng với 1 phiếu bàn giao</p>
+                <p class="font-semibold text-green-800">Hệ thống sẽ tạo <?php echo $phieuCount; ?> phiếu bàn giao</p>
+                <p class="text-sm text-green-700">
+                    Bàn giao <strong><?php echo array_sum(array_map('count', $groupedByPhieu)); ?> thiết bị</strong> đã chọn 
+                    (có thể còn thiết bị khác chưa bàn giao - sẽ xử lý đợt sau)
+                </p>
             </div>
         </div>
     </div>

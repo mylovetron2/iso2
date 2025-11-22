@@ -30,8 +30,18 @@ switch ($action) {
         $controller->selectPhieuYC();
         break;
 
+    case 'select_devices':
+        // Bước 2: Chọn thiết bị cần bàn giao
+        if (!hasPermission('phieubangiao.create')) {
+            $_SESSION['error'] = 'Bạn không có quyền tạo phiếu bàn giao';
+            header('Location: /iso2/phieubangiao_phieuyc.php');
+            exit;
+        }
+        $controller->selectDevices();
+        break;
+
     case 'confirm':
-        // Bước 2: Xác nhận và tạo phiếu BG
+        // Bước 3: Xác nhận và tạo phiếu BG
         if (!hasPermission('phieubangiao.create')) {
             $_SESSION['error'] = 'Bạn không có quyền tạo phiếu bàn giao';
             header('Location: /iso2/phieubangiao_phieuyc.php');

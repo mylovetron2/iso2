@@ -57,7 +57,7 @@ require_once __DIR__ . '/../../config/constants.php';
     <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out fixed top-0 left-0 h-full z-40 overflow-y-auto">
         <div class="mb-8 flex items-center justify-between">
-            <a href="index.php" class="text-2xl font-bold tracking-wide">\n    Quản lý ISO </a>
+            <a href="index.php" class="text-2xl font-bold tracking-wide">\n --   Quản lý ISO </a>
             <button id="sidebarClose" class="lg:hidden text-white text-xl focus:outline-none" aria-label="Close Sidebar">
                 <i class="fas fa-times"></i>
             </button>
