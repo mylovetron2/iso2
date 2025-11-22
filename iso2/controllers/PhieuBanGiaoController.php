@@ -184,6 +184,9 @@ class PhieuBanGiaoController
             exit;
         }
 
+        // Extract devices for view
+        $devices = $item['thietbi'] ?? [];
+
         require_once __DIR__ . '/../views/phieubangiao/view.php';
     }
 

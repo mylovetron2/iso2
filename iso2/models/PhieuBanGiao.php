@@ -148,7 +148,18 @@ class PhieuBanGiao extends BaseModel
      */
     public function getDetailWithDevices(int $stt): array|false
     {
-        $phieu = $this->findById($stt);
+        // Load phiếu với thông tin đơn vị
+        $sql = "SELECT p.*,
+                       dg.tendv as donvigiao_tendv,
+                       dn.tendv as donvinhan_tendv
+                FROM {$this->table} p
+                LEFT JOIN donvi_iso dg ON p.donvigiao = dg.madv
+                LEFT JOIN donvi_iso dn ON p.donvinhan = dn.madv
+                WHERE p.stt = :stt";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':stt' => $stt]);
+        $phieu = $stmt->fetch(PDO::FETCH_ASSOC);
+        
         if (!$phieu) {
             return false;
         }
@@ -156,9 +167,14 @@ class PhieuBanGiao extends BaseModel
         // Load thiết bị
         $sophieuEscaped = $this->db->quote($phieu['sophieu']);
         $sql = "SELECT pt.*, 
-                       h.mavt, h.tenvt, h.somay, h.maql, h.phieu as phieu_yc
+                       h.mavt, 
+                       COALESCE(t.tenvt, h.mavt) as tenvt,
+                       h.somay, 
+                       h.maql, 
+                       h.phieu as phieu_yc
                 FROM phieubangiao_thietbi_iso pt
                 INNER JOIN hososcbd_iso h ON pt.hososcbd_stt = h.stt
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
                 WHERE pt.sophieu = $sophieuEscaped
                 ORDER BY pt.stt";
         $stmt = $this->query($sql);
