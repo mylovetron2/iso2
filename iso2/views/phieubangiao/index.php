@@ -134,6 +134,12 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
+                        <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.edit')): ?>
+                        <a href="phieubangiao.php?action=edit&id=<?php echo $item['stt']; ?>" 
+                           class="text-yellow-600 hover:text-yellow-800 mx-1" title="Sửa">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <?php endif; ?>
                         <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
                         <form method="POST" action="phieubangiao.php?action=delete" 
                               onsubmit="return confirm('Bạn có chắc muốn xóa phiếu này?');" 

@@ -190,6 +190,84 @@ class PhieuBanGiaoController
         require_once __DIR__ . '/../views/phieubangiao/view.php';
     }
 
+    public function edit(): void
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if (!$id) {
+            header("Location: /iso2/phieubangiao.php");
+            exit;
+        }
+
+        $item = $this->model->getDetailWithDevices($id);
+        
+        if (!$item) {
+            $_SESSION['error'] = 'Không tìm thấy phiếu bàn giao';
+            header("Location: /iso2/phieubangiao.php");
+            exit;
+        }
+
+        // Chỉ cho phép sửa phiếu nháp
+        if ($item['trangthai'] == 1) {
+            $_SESSION['error'] = 'Không thể sửa phiếu đã duyệt';
+            header("Location: /iso2/phieubangiao.php?action=view&id=" . $id);
+            exit;
+        }
+
+        // GET: Hiển thị form
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $devices = $item['thietbi'] ?? [];
+            $donViList = $this->donViModel->getAllSimple();
+            require_once __DIR__ . '/../views/phieubangiao/edit.php';
+            return;
+        }
+
+        // POST: Xử lý update
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [
+                'ngaybg' => $_POST['ngaybg'] ?? '',
+                'nguoigiao' => $_POST['nguoigiao'] ?? '',
+                'nguoinhan' => $_POST['nguoinhan'] ?? '',
+                'donvinhan' => $_POST['donvinhan'] ?? '',
+                'ghichu' => $_POST['ghichu'] ?? '',
+                'nguoisua' => $_SESSION['username'] ?? 'system'
+            ];
+
+            // Validate
+            if (empty($data['ngaybg']) || empty($data['nguoigiao']) || empty($data['nguoinhan']) || empty($data['donvinhan'])) {
+                $_SESSION['error'] = 'Vui lòng điền đầy đủ thông tin bắt buộc';
+                header("Location: /iso2/phieubangiao.php?action=edit&id=" . $id);
+                exit;
+            }
+
+            // Cập nhật trạng thái nếu có checkbox duyệt
+            if (isset($_POST['duyet']) && $_POST['duyet'] == '1') {
+                $data['trangthai'] = 1;
+            }
+
+            // Update phiếu
+            if ($this->model->update($id, $data)) {
+                // Cập nhật tình trạng thiết bị nếu có
+                foreach ($item['thietbi'] as $device) {
+                    $stt = $device['stt'];
+                    if (isset($_POST['tinhtrang_' . $stt])) {
+                        $this->thietBiModel->update($stt, [
+                            'tinhtrang' => $_POST['tinhtrang_' . $stt],
+                            'ghichu' => $_POST['ghichu_tb_' . $stt] ?? ''
+                        ]);
+                    }
+                }
+
+                $_SESSION['success'] = 'Đã cập nhật phiếu bàn giao';
+                header("Location: /iso2/phieubangiao.php?action=view&id=" . $id);
+            } else {
+                $_SESSION['error'] = 'Có lỗi khi cập nhật phiếu bàn giao';
+                header("Location: /iso2/phieubangiao.php?action=edit&id=" . $id);
+            }
+            exit;
+        }
+    }
+
     public function delete(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

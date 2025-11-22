@@ -187,12 +187,21 @@ $statusIcon = [
     </div>
 
     <!-- Action buttons -->
-    <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
-    <div class="mt-6 pt-4 border-t">
+    <?php if ($item['trangthai'] == 0): ?>
+    <div class="mt-6 pt-4 border-t flex gap-3">
+        <?php if (hasPermission('phieubangiao.edit')): ?>
+        <a href="phieubangiao.php?action=edit&id=<?php echo $item['stt']; ?>" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+            <i class="fas fa-edit mr-2"></i>Sửa Phiếu
+        </a>
+        <?php endif; ?>
+        
+        <?php if (hasPermission('phieubangiao.delete')): ?>
         <button onclick="if(confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.')) { window.location.href='phieubangiao.php?action=delete&id=<?php echo $item['stt']; ?>'; }" 
                 class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
             <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp
         </button>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>

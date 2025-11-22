@@ -38,6 +38,14 @@ switch ($action) {
         $controller->view();
         break;
 
+    case 'edit':
+        if (!hasPermission('phieubangiao.edit')) {
+            header('Location: /iso2/phieubangiao.php?error=permission_denied');
+            exit;
+        }
+        $controller->edit();
+        break;
+
     case 'delete':
         if (!hasPermission('phieubangiao.delete')) {
             header('Location: /iso2/phieubangiao.php?error=permission_denied');
