@@ -6,11 +6,20 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../models/HoSoSCBD.php';
-require_once __DIR__ . '/../models/DonVi.php';
-
-$model = new HoSoSCBD();
-$donViModel = new DonVi();
+try {
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../models/BaseModel.php';
+    require_once __DIR__ . '/../models/HoSoSCBD.php';
+    
+    $db = getDBConnection();
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Lỗi kết nối database: ' . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // Get filters from request
 $search = $_GET['search'] ?? '';
@@ -26,27 +35,27 @@ $where[] = "h.ngaykt != '0000-00-00'";
 $where[] = "h.bg = 0"; // Chưa bàn giao
 
 if ($search) {
-    $search_escaped = $model->db->quote("%$search%");
+    $search_escaped = $db->quote("%$search%");
     $where[] = "(h.mavt LIKE $search_escaped OR h.tenvt LIKE $search_escaped OR h.somay LIKE $search_escaped OR h.maql LIKE $search_escaped)";
 }
 
 if ($madv) {
-    $madv_escaped = $model->db->quote($madv);
+    $madv_escaped = $db->quote($madv);
     $where[] = "h.madv = $madv_escaped";
 }
 
 if ($phieuyc) {
-    $phieuyc_escaped = $model->db->quote($phieuyc);
+    $phieuyc_escaped = $db->quote($phieuyc);
     $where[] = "h.phieu = $phieuyc_escaped";
 }
 
 if ($from_date) {
-    $from_escaped = $model->db->quote($from_date);
+    $from_escaped = $db->quote($from_date);
     $where[] = "h.ngaykt >= $from_escaped";
 }
 
 if ($to_date) {
-    $to_escaped = $model->db->quote($to_date);
+    $to_escaped = $db->quote($to_date);
     $where[] = "h.ngaykt <= $to_escaped";
 }
 
@@ -72,7 +81,7 @@ $sql = "SELECT
         LIMIT 100";
 
 try {
-    $stmt = $model->query($sql);
+    $stmt = $db->query($sql);
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Group by phieu for summary
