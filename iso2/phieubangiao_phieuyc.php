@@ -17,14 +17,14 @@ if (!hasPermission('phieubangiao.view')) {
 }
 
 $controller = new PhieuBanGiaoPhieuYCController();
-$action = $_GET['action'] ?? 'index';
+$action = $_GET['action'] ?? 'select';
 
 switch ($action) {
     case 'select':
         // Bước 1: Chọn phiếu YC
         if (!hasPermission('phieubangiao.create')) {
             $_SESSION['error'] = 'Bạn không có quyền tạo phiếu bàn giao';
-            header('Location: /iso2/phieubangiao_phieuyc.php');
+            header('Location: /iso2/phieubangiao.php');
             exit;
         }
         $controller->selectPhieuYC();
@@ -34,7 +34,7 @@ switch ($action) {
         // Bước 2: Chọn thiết bị cần bàn giao
         if (!hasPermission('phieubangiao.create')) {
             $_SESSION['error'] = 'Bạn không có quyền tạo phiếu bàn giao';
-            header('Location: /iso2/phieubangiao_phieuyc.php');
+            header('Location: /iso2/phieubangiao.php');
             exit;
         }
         $controller->selectDevices();
@@ -44,15 +44,14 @@ switch ($action) {
         // Bước 3: Xác nhận và tạo phiếu BG
         if (!hasPermission('phieubangiao.create')) {
             $_SESSION['error'] = 'Bạn không có quyền tạo phiếu bàn giao';
-            header('Location: /iso2/phieubangiao_phieuyc.php');
+            header('Location: /iso2/phieubangiao.php');
             exit;
         }
         $controller->confirmCreate();
         break;
 
-    case 'index':
     default:
-        // Hiển thị danh sách phiếu YC có thiết bị chưa bàn giao
-        $controller->index();
-        break;
+        // Mặc định: chuyển thẳng sang trang chọn phiếu YC
+        header('Location: /iso2/phieubangiao_phieuyc.php?action=select');
+        exit;
 }
