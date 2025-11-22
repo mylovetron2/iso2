@@ -101,7 +101,7 @@ require_once __DIR__ . '/../../config/constants.php';
                 <!-- Menu Bàn giao -->
                 <li>
                     <div id="bangiaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
-                        <i class="fas fa-handshake mr-2"></i> Bàn giao
+                        <i class="fas fa-clipboard-check mr-2"></i> Bàn giao
                         <i id="bangiaoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
                     </div>
                     <ul id="bangiaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
