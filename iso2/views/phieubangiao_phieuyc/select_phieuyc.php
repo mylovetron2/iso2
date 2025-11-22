@@ -12,6 +12,27 @@ require_once __DIR__ . '/../layouts/header.php';
         <p class="text-gray-600 mt-1">Chọn các phiếu yêu cầu để tạo phiếu bàn giao</p>
     </div>
 
+    <!-- Search Form -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <form method="GET" action="phieubangiao_phieuyc.php" class="flex gap-2">
+            <input type="hidden" name="action" value="select">
+            <input type="text" 
+                   name="search" 
+                   value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"
+                   placeholder="Tìm theo số phiếu YC..."
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-search mr-2"></i>Tìm kiếm
+            </button>
+            <?php if (!empty($_GET['search'])): ?>
+            <a href="phieubangiao_phieuyc.php?action=select" 
+               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-times mr-2"></i>Xóa lọc
+            </a>
+            <?php endif; ?>
+        </form>
+    </div>
+
     <!-- Form -->
     <form method="POST" action="phieubangiao_phieuyc.php?action=select" id="selectForm">
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">

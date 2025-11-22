@@ -39,7 +39,8 @@ class PhieuBanGiaoPhieuYCController
     {
         // GET: Hiển thị danh sách phiếu YC để chọn
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $phieuYCList = $this->model->getPhieuYCWithUndeliveredDevices();
+            $search = $_GET['search'] ?? '';
+            $phieuYCList = $this->model->getPhieuYCWithUndeliveredDevices($search);
             require_once __DIR__ . '/../views/phieubangiao_phieuyc/select_phieuyc.php';
             return;
         }
@@ -162,8 +163,12 @@ class PhieuBanGiaoPhieuYCController
 
                 // Tạo từng phiếu bàn giao cho mỗi phiếu YC
                 foreach ($groupedByPhieu as $phieuyc => $devices) {
+                    // Sinh số phiếu tự động
+                    $sophieu = $this->model->getNextSoPhieu();
+                    
                     // Lấy thông tin từ form
                     $data = [
+                        'sophieu' => $sophieu,
                         'phieuyc' => $phieuyc,
                         'ngaybg' => $_POST['ngaybg_' . $phieuyc] ?? date('Y-m-d'),
                         'nguoigiao' => $_POST['nguoigiao_' . $phieuyc] ?? '',
@@ -172,6 +177,7 @@ class PhieuBanGiaoPhieuYCController
                         'donvinhan' => $_POST['donvinhan_' . $phieuyc] ?? '',
                         'ghichu' => $_POST['ghichu_' . $phieuyc] ?? '',
                         'trangthai' => isset($_POST['duyet_' . $phieuyc]) ? 1 : 0,
+                        'nguoitao' => $_SESSION['user_name'] ?? 'system',
                     ];
 
                     // Validate
@@ -187,7 +193,7 @@ class PhieuBanGiaoPhieuYCController
                         // Thêm thiết bị vào phiếu bàn giao
                         foreach ($devices as $device) {
                             $thietbiData = [
-                                'phieubangiao_stt' => $phieuBGId,
+                                'sophieu' => $sophieu,
                                 'hososcbd_stt' => $device['stt'],
                                 'tinhtrang' => $_POST['tinhtrang_' . $device['stt']] ?? 'Hoạt động tốt',
                                 'ghichu' => $_POST['ghichu_device_' . $device['stt']] ?? '',

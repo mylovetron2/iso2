@@ -201,8 +201,15 @@ class PhieuBanGiao extends BaseModel
     /**
      * Lấy danh sách phiếu yêu cầu có thiết bị chưa bàn giao
      */
-    public function getPhieuYCWithUndeliveredDevices(): array
+    public function getPhieuYCWithUndeliveredDevices(string $search = ''): array
     {
+        $where = "h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
+        
+        if ($search) {
+            $searchEscaped = $this->db->quote("%$search%");
+            $where .= " AND h.phieu LIKE $searchEscaped";
+        }
+        
         $sql = "SELECT 
                     h.phieu,
                     COUNT(DISTINCT h.stt) as tong_thietbi,
@@ -211,7 +218,7 @@ class PhieuBanGiao extends BaseModel
                     MIN(h.ngaykt) as ngay_sua_som_nhat,
                     MAX(h.ngaykt) as ngay_sua_muon_nhat
                 FROM hososcbd_iso h
-                WHERE h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'
+                WHERE $where
                 GROUP BY h.phieu
                 HAVING chua_bangiao > 0
                 ORDER BY h.phieu DESC";

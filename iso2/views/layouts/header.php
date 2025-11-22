@@ -98,15 +98,24 @@ require_once __DIR__ . '/../../config/constants.php';
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBĐ
                     </a>
                 </li>
+                <!-- Menu Bàn giao -->
                 <li>
-                    <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-handshake mr-2"></i> Phiếu bàn giao
-                    </a>
-                </li>
-                <li>
-                    <a href="/iso2/phieubangiao_phieuyc.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-file-invoice mr-2"></i> BG theo Phiếu YC
-                    </a>
+                    <div id="bangiaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-handshake mr-2"></i> Bàn giao
+                        <i id="bangiaoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="bangiaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <li>
+                            <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-clipboard-list mr-2"></i> Theo thiết bị
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/phieubangiao_phieuyc.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-file-invoice mr-2"></i> Theo phiếu YC
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
@@ -271,6 +280,17 @@ if (thietbiBtn && thietbiMenu && thietbiCaret) {
     thietbiBtn.addEventListener('click', function() {
         thietbiMenu.classList.toggle('hidden');
         thietbiCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Bàn giao
+const bangiaoBtn = document.getElementById('bangiaoMenuBtn');
+const bangiaoMenu = document.getElementById('bangiaoMenu');
+const bangiaoCaret = document.getElementById('bangiaoCaret');
+if (bangiaoBtn && bangiaoMenu && bangiaoCaret) {
+    bangiaoBtn.addEventListener('click', function() {
+        bangiaoMenu.classList.toggle('hidden');
+        bangiaoCaret.classList.toggle('rotate-180');
     });
 }
 </script>
