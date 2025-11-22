@@ -110,7 +110,7 @@ class PhieuBanGiaoPhieuYCController
             // Load thiết bị đã chọn và nhóm theo phiếu YC
             $groupedByPhieu = [];
             foreach ($selectedDeviceIds as $stt) {
-                $device = $this->hosoModel->findById((int)$stt);
+                $device = $this->hosoModel->getDeviceWithDetails((int)$stt);
                 if ($device && $device['bg'] == 0) {
                     $phieu = $device['phieu'];
                     if (!isset($groupedByPhieu[$phieu])) {

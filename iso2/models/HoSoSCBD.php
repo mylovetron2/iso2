@@ -248,4 +248,22 @@ class HoSoSCBD extends BaseModel
             ':stt' => $stt
         ]);
     }
+    
+    /**
+     * Lấy thông tin thiết bị với đầy đủ chi tiết (tenvt, tendv)
+     */
+    public function getDeviceWithDetails(int $stt): array|false
+    {
+        $sql = "SELECT h.*, 
+                       COALESCE(t.tenvt, h.mavt) as tenvt,
+                       d.tendv
+                FROM {$this->table} h
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                LEFT JOIN donvi_iso d ON h.madv = d.madv
+                WHERE h.stt = :stt";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':stt' => $stt]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }
