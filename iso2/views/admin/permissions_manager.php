@@ -44,6 +44,12 @@ $allPermissions = [
     'hososcbd.edit' => 'Sửa hồ sơ SCBĐ',
     'hososcbd.delete' => 'Xóa hồ sơ SCBĐ',
     
+    'phieubangiao.view' => 'Xem phiếu bàn giao',
+    'phieubangiao.create' => 'Tạo phiếu bàn giao',
+    'phieubangiao.edit' => 'Sửa phiếu bàn giao',
+    'phieubangiao.delete' => 'Xóa phiếu bàn giao',
+    'phieubangiao.approve' => 'Duyệt phiếu bàn giao',
+    
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
 ];
@@ -69,6 +75,7 @@ $permissionGroups = [
     'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete'],
+    'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];
 ?>
