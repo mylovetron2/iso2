@@ -21,9 +21,12 @@ class PhieuBanGiaoThietBi extends BaseModel
     {
         $sophieuEscaped = $this->db->quote($sophieu);
         $sql = "SELECT pt.*, 
-                       h.mavt, h.tenvt, h.somay, h.maql, h.phieu as phieu_yc, h.madv
+                       h.mavt, 
+                       COALESCE(t.tenvt, h.mavt) as tenvt,
+                       h.somay, h.maql, h.phieu as phieu_yc, h.madv
                 FROM {$this->table} pt
                 INNER JOIN hososcbd_iso h ON pt.hososcbd_stt = h.stt
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
                 WHERE pt.sophieu = $sophieuEscaped
                 ORDER BY pt.stt";
         $stmt = $this->query($sql);
