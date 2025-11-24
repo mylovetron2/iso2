@@ -270,7 +270,12 @@ class PhieuBanGiaoController
 
     public function delete(): void
     {
+        // Enable error reporting for debugging
+        ini_set('display_errors', '1');
+        error_reporting(E_ALL);
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method';
             header("Location: /iso2/phieubangiao.php");
             exit;
         }
@@ -283,34 +288,50 @@ class PhieuBanGiaoController
             exit;
         }
 
-        $phieu = $this->model->findById($id);
-        
-        if (!$phieu) {
-            $_SESSION['error'] = 'Không tìm thấy phiếu bàn giao';
-            header("Location: /iso2/phieubangiao.php");
-            exit;
-        }
+        try {
+            $phieu = $this->model->findById($id);
+            
+            if (!$phieu) {
+                $_SESSION['error'] = 'Không tìm thấy phiếu bàn giao';
+                header("Location: /iso2/phieubangiao.php");
+                exit;
+            }
 
-        // Chỉ cho phép xóa phiếu nháp
-        if ($phieu['trangthai'] == 1) {
-            $_SESSION['error'] = 'Không thể xóa phiếu đã duyệt';
-            header("Location: /iso2/phieubangiao.php");
-            exit;
-        }
+            // Chỉ cho phép xóa phiếu nháp
+            if ($phieu['trangthai'] == 1) {
+                $_SESSION['error'] = 'Không thể xóa phiếu đã duyệt';
+                header("Location: /iso2/phieubangiao.php");
+                exit;
+            }
 
-        // Lấy danh sách thiết bị để cập nhật lại trạng thái bg=0
-        $thietBiList = $this->thietBiModel->getBySoPhieu($phieu['sophieu']);
-        
-        // Xóa phiếu (cascade sẽ xóa chi tiết)
-        if ($this->model->delete($id)) {
-            // Cập nhật lại trạng thái bg=0 cho các thiết bị
-            foreach ($thietBiList as $tb) {
-                $this->hosoModel->update($tb['hososcbd_stt'], ['bg' => 0]);
+            // Lấy danh sách thiết bị để cập nhật lại trạng thái bg=0
+            $thietBiList = $this->thietBiModel->getBySoPhieu($phieu['sophieu']);
+            
+            // Xóa chi tiết thiết bị trước
+            $deletedDetails = $this->thietBiModel->deleteBySoPhieu($phieu['sophieu']);
+            error_log("Deleted $deletedDetails device details for sophieu: {$phieu['sophieu']}");
+            
+            // Xóa phiếu chính
+            $deletedPhieu = $this->model->delete($id);
+            error_log("Deleted phieu result: $deletedPhieu");
+            
+            if ($deletedPhieu > 0) {
+                // Cập nhật lại trạng thái bg=0 cho các thiết bị
+                foreach ($thietBiList as $tb) {
+                    $this->hosoModel->update($tb['hososcbd_stt'], ['bg' => 0]);
+                    error_log("Updated hososcbd_stt {$tb['hososcbd_stt']} bg=0");
+                }
+                
+                $_SESSION['success'] = 'Đã xóa phiếu bàn giao';
+            } else {
+                $_SESSION['error'] = 'Không thể xóa phiếu bàn giao (rowCount = 0)';
+                error_log("Delete phieu failed: rowCount = 0 for ID $id");
             }
             
-            $_SESSION['success'] = 'Đã xóa phiếu bàn giao';
-        } else {
-            $_SESSION['error'] = 'Có lỗi khi xóa phiếu bàn giao';
+        } catch (Exception $e) {
+            error_log("Exception deleting phieu ban giao ID $id: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            $_SESSION['error'] = 'Có lỗi khi xóa: ' . $e->getMessage();
         }
 
         header("Location: /iso2/phieubangiao.php");

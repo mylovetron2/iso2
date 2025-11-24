@@ -197,10 +197,13 @@ $statusIcon = [
         <?php endif; ?>
         
         <?php if (hasPermission('phieubangiao.delete')): ?>
-        <button onclick="if(confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.')) { window.location.href='phieubangiao.php?action=delete&id=<?php echo $item['stt']; ?>'; }" 
-                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
-            <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp
-        </button>
+        <form method="POST" action="phieubangiao.php?action=delete" class="inline" 
+              onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.');">
+            <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
+                <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp
+            </button>
+        </form>
         <?php endif; ?>
     </div>
     <?php endif; ?>
