@@ -11,6 +11,10 @@ if (!$item) {
     exit;
 }
 
+// Debug: Log item data
+error_log("View.php - Item STT: " . ($item['stt'] ?? 'NOT SET'));
+error_log("View.php - Item data: " . print_r($item, true));
+
 $statusClass = [
     0 => 'bg-yellow-100 text-yellow-800',
     1 => 'bg-green-100 text-green-800'
@@ -198,10 +202,10 @@ $statusIcon = [
         
         <?php if (hasPermission('phieubangiao.delete')): ?>
         <form method="POST" action="phieubangiao.php?action=delete" class="inline" 
-              onsubmit="return confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.');">
-            <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
+              onsubmit="console.log('Deleting phieu ID:', this.querySelector('input[name=id]').value); return confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.');">
+            <input type="hidden" name="id" value="<?php echo htmlspecialchars((string)$item['stt']); ?>">
             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
-                <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp
+                <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp #<?php echo $item['stt']; ?>
             </button>
         </form>
         <?php endif; ?>

@@ -142,10 +142,10 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endif; ?>
                         <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
                         <form method="POST" action="phieubangiao.php?action=delete" 
-                              onsubmit="return confirm('Bạn có chắc muốn xóa phiếu này?');" 
+                              onsubmit="console.log('Form submitting, ID:', this.querySelector('input[name=id]').value); return confirm('Bạn có chắc muốn xóa phiếu này?');" 
                               class="inline">
-                            <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
-                            <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa">
+                            <input type="hidden" name="id" value="<?php echo htmlspecialchars((string)$item['stt']); ?>">
+                            <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa phiếu #<?php echo $item['stt']; ?>">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
