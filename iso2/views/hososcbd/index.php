@@ -96,7 +96,6 @@ require_once __DIR__ . '/../layouts/header.php';
         <table class="min-w-full bg-white border">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Mã QL</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Phiếu</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Mã VT</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
@@ -109,7 +108,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có hồ sơ nào</p>
                     </td>
@@ -117,11 +116,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php else: ?>
                 <?php foreach ($items as $item): ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
-                        <code class="bg-blue-100 px-2 py-1 rounded font-semibold">
-                            <?php echo htmlspecialchars($item['maql']); ?>
-                        </code>
-                    </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <strong><?php echo htmlspecialchars($item['phieu']); ?></strong>
                     </td>
