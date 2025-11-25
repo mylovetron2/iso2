@@ -18,8 +18,11 @@ function login(string $username, string $password): bool {
     $user = $userModel->findByUsername($username);
     if ($user && $user['password'] === $password) {
         $_SESSION['user_id'] = $user['stt'];
+        $_SESSION['user_stt'] = $user['stt'];
+        $_SESSION['username'] = $user['username'];
         $_SESSION['user_name'] = $user['username'];
         $_SESSION['user_email'] = isset($user['email']) ? $user['email'] : '';
+        $_SESSION['role'] = isset($user['role']) ? $user['role'] : 'user';
         return true;
     }
     return false;

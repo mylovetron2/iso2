@@ -15,8 +15,11 @@ if (!isLoggedIn() && isset($_COOKIE['remember_me'])) {
     $user = $userModel->findByRememberToken($token);
     if ($user) {
         $_SESSION['user_id'] = $user['stt'];
+        $_SESSION['user_stt'] = $user['stt'];
+        $_SESSION['username'] = $user['username'];
         $_SESSION['user_name'] = $user['username'];
         $_SESSION['user_email'] = $user['email'] ?? '';
+        $_SESSION['role'] = $user['role'] ?? 'user';
         header('Location: ../../tiendocongviec2.php');
         exit;
     }
