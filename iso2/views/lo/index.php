@@ -45,7 +45,7 @@ require_once __DIR__ . '/../layouts/header.php';
     <!-- Table -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <table class="min-w-full border">
-            <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+            <thead class="bg-gray-100">
                 <tr>
                     <th class="px-6 py-4 border text-left font-semibold">Mã Lô</th>
                     <th class="px-6 py-4 border text-left font-semibold">Tên Lô</th>
