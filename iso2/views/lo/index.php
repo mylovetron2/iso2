@@ -44,28 +44,28 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Table -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full border">
+            <thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã Lô</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên Lô</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thao Tác</th>
+                    <th class="px-6 py-4 border text-left font-semibold">Mã Lô</th>
+                    <th class="px-6 py-4 border text-left font-semibold">Tên Lô</th>
+                    <th class="px-6 py-4 border text-center font-semibold">Thao Tác</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white">
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="3" class="px-6 py-4 text-center text-gray-500">
-                        <i class="fas fa-inbox text-4xl mb-2"></i><br>
+                    <td colspan="3" class="px-6 py-8 border text-center text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-2 block"></i>
                         Không có dữ liệu
                     </td>
                 </tr>
                 <?php else: ?>
                 <?php foreach ($items as $item): ?>
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap font-semibold text-blue-600"><?php echo htmlspecialchars($item['malo']); ?></td>
-                    <td class="px-6 py-4"><?php echo htmlspecialchars($item['tenlo']); ?></td>
-                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                <tr class="hover:bg-blue-50 transition-colors">
+                    <td class="px-6 py-4 border font-semibold text-blue-600"><?php echo htmlspecialchars($item['malo']); ?></td>
+                    <td class="px-6 py-4 border"><?php echo htmlspecialchars($item['tenlo']); ?></td>
+                    <td class="px-6 py-4 border text-center">
                         <a href="lo.php?action=edit&id=<?php echo $item['stt']; ?>" 
                            class="text-yellow-600 hover:text-yellow-800 mx-1" title="Sửa">
                             <i class="fas fa-edit"></i>
