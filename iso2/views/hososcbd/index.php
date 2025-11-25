@@ -102,13 +102,14 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
-                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Xem/Sửa</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Chi tiết</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có hồ sơ nào</p>
                     </td>
@@ -150,6 +151,20 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </a>
+                        <?php endif; ?>
+                        <?php if (hasPermission('hososcbd.delete')): ?>
+                        <form method="POST" action="hososcbd.php?action=delete" 
+                              onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ này?');" 
+                              class="inline">
+                            <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
+                            <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-2 md:px-4 py-2 border text-center">
+                        <?php if (hasPermission('hososcbd.edit')): ?>
                         <?php
                         // Build URLs with current filter params
                         $currentFilters = [];
@@ -165,19 +180,9 @@ require_once __DIR__ . '/../layouts/header.php';
                             <i class="fas fa-wrench"></i>
                         </a>
                         <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="text-red-600 hover:text-red-800 mx-1" title="Thông tin bàn giao">
+                           class="text-purple-600 hover:text-purple-800 mx-1" title="Thông tin bàn giao">
                             <i class="fas fa-handshake"></i>
                         </a>
-                        <?php endif; ?>
-                        <?php if (hasPermission('hososcbd.delete')): ?>
-                        <form method="POST" action="hososcbd.php?action=delete" 
-                              onsubmit="return confirm('Bạn có chắc muốn xóa hồ sơ này?');" 
-                              class="inline">
-                            <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
-                            <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
                         <?php endif; ?>
                     </td>
                 </tr>
