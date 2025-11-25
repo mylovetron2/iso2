@@ -117,6 +117,16 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                     </ul>
                 </li>
+
+                <!-- Menu Lô -->
+                <?php if (isLoggedIn()): ?>
+                <li>
+                    <a href="/iso2/lo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-box mr-2"></i> Quản lý Lô
+                    </a>
+                </li>
+                <?php endif; ?>
+
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
                 <li>
