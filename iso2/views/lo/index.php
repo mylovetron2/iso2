@@ -50,14 +50,13 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã Lô</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên Lô</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ghi Chú</th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thao Tác</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i><br>
                         Không có dữ liệu
                     </td>
@@ -68,7 +67,6 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-6 py-4 whitespace-nowrap"><?php echo $item['stt']; ?></td>
                     <td class="px-6 py-4 whitespace-nowrap font-semibold text-blue-600"><?php echo htmlspecialchars($item['malo']); ?></td>
                     <td class="px-6 py-4"><?php echo htmlspecialchars($item['tenlo']); ?></td>
-                    <td class="px-6 py-4"><?php echo htmlspecialchars($item['ghichu'] ?? ''); ?></td>
                     <td class="px-6 py-4 text-center whitespace-nowrap">
                         <a href="lo.php?action=edit&id=<?php echo $item['stt']; ?>" 
                            class="text-yellow-600 hover:text-yellow-800 mx-1" title="Sửa">

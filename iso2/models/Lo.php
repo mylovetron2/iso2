@@ -25,7 +25,7 @@ class Lo extends BaseModel
             $params[] = "%$search%";
         }
         
-        $sql = "SELECT * FROM {$this->table} 
+        $sql = "SELECT stt, malo, tenlo FROM {$this->table} 
                 WHERE $where 
                 ORDER BY malo ASC 
                 LIMIT $limit OFFSET $offset";

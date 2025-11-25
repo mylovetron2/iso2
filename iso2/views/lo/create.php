@@ -34,13 +34,6 @@ require_once __DIR__ . '/../layouts/header.php';
                        placeholder="Nhập tên lô">
             </div>
 
-            <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2">Ghi Chú</label>
-                <textarea name="ghichu" rows="3" 
-                          class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Nhập ghi chú (tùy chọn)"></textarea>
-            </div>
-
             <div class="flex gap-4">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
                     <i class="fas fa-save mr-2"></i>Lưu

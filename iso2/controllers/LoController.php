@@ -36,9 +36,7 @@ class LoController
         // POST: Xử lý tạo mới
         $data = [
             'malo' => trim($_POST['malo'] ?? ''),
-            'tenlo' => trim($_POST['tenlo'] ?? ''),
-            'ghichu' => trim($_POST['ghichu'] ?? ''),
-            'nguoitao' => $_SESSION['username'] ?? 'system'
+            'tenlo' => trim($_POST['tenlo'] ?? '')
         ];
 
         // Validate
@@ -96,9 +94,7 @@ class LoController
         // POST: Xử lý cập nhật
         $data = [
             'malo' => trim($_POST['malo'] ?? ''),
-            'tenlo' => trim($_POST['tenlo'] ?? ''),
-            'ghichu' => trim($_POST['ghichu'] ?? ''),
-            'nguoisua' => $_SESSION['username'] ?? 'system'
+            'tenlo' => trim($_POST['tenlo'] ?? '')
         ];
 
         // Validate
