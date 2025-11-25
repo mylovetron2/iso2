@@ -141,14 +141,11 @@ require_once __DIR__ . '/../layouts/header.php';
                         </a>
                         <?php endif; ?>
                         <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
-                        <form method="POST" action="phieubangiao.php?action=delete" 
-                              onsubmit="console.log('Form submitting, ID:', this.querySelector('input[name=id]').value); return confirm('Bạn có chắc muốn xóa phiếu này?');" 
-                              class="inline">
-                            <input type="hidden" name="id" value="<?php echo htmlspecialchars((string)$item['stt']); ?>">
-                            <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa phiếu #<?php echo $item['stt']; ?>">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
+                        <button onclick="deletePhieu(<?php echo $item['stt']; ?>, '<?php echo htmlspecialchars($item['sophieu']); ?>')" 
+                                class="text-red-600 hover:text-red-800 mx-1" 
+                                title="Xóa phiếu #<?php echo $item['stt']; ?>">
+                            <i class="fas fa-trash"></i>
+                        </button>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -178,5 +175,29 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <?php endif; ?>
 </div>
+
+<script>
+function deletePhieu(id, sophieu) {
+    if (!confirm('Bạn có chắc muốn xóa phiếu ' + sophieu + ' (ID: ' + id + ')?')) {
+        return;
+    }
+    
+    // Tạo form động và submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'phieubangiao.php?action=delete';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = id;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    
+    console.log('Submitting delete form for ID:', id);
+    form.submit();
+}
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -201,13 +201,10 @@ $statusIcon = [
         <?php endif; ?>
         
         <?php if (hasPermission('phieubangiao.delete')): ?>
-        <form method="POST" action="phieubangiao.php?action=delete" class="inline" 
-              onsubmit="console.log('Deleting phieu ID:', this.querySelector('input[name=id]').value); return confirm('Bạn có chắc chắn muốn xóa phiếu nháp này? Các thiết bị sẽ được trả lại trạng thái chưa bàn giao.');">
-            <input type="hidden" name="id" value="<?php echo htmlspecialchars((string)$item['stt']); ?>">
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
-                <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp #<?php echo $item['stt']; ?>
-            </button>
-        </form>
+        <button onclick="deletePhieuConfirm(<?php echo $item['stt']; ?>, '<?php echo htmlspecialchars($item['sophieu']); ?>')" 
+                class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded">
+            <i class="fas fa-trash mr-2"></i>Xóa Phiếu Nháp #<?php echo $item['stt']; ?>
+        </button>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -223,5 +220,29 @@ $statusIcon = [
     }
 }
 </style>
+
+<script>
+function deletePhieuConfirm(id, sophieu) {
+    if (!confirm('Bạn có chắc chắn muốn xóa phiếu ' + sophieu + ' (ID: ' + id + ')?\n\nCác thiết bị sẽ được trả lại trạng thái chưa bàn giao.')) {
+        return;
+    }
+    
+    // Tạo form động và submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'phieubangiao.php?action=delete';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'id';
+    input.value = id;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    
+    console.log('Submitting delete form for ID:', id);
+    form.submit();
+}
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
