@@ -274,16 +274,25 @@ class PhieuBanGiaoController
         ini_set('display_errors', '1');
         error_reporting(E_ALL);
         
+        // Log request info
+        error_log("=== DELETE REQUEST START ===");
+        error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
+        error_log("POST data: " . print_r($_POST, true));
+        error_log("GET data: " . print_r($_GET, true));
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            error_log("Error: Not POST method");
             $_SESSION['error'] = 'Invalid request method';
             header("Location: /iso2/phieubangiao.php");
             exit;
         }
 
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+        error_log("ID from POST: $id");
         
         if (!$id) {
-            $_SESSION['error'] = 'ID không hợp lệ';
+            error_log("Error: ID is 0 or not set");
+            $_SESSION['error'] = 'ID không hợp lệ - POST id: ' . ($_POST['id'] ?? 'not set');
             header("Location: /iso2/phieubangiao.php");
             exit;
         }
