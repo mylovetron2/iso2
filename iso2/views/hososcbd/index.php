@@ -127,7 +127,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         if ($item['ngayyc'] && $item['ngayyc'] != '0000-00-00') {
                             echo date('d/m/Y', strtotime($item['ngayyc']));
                             if ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00') {
-                                echo ' → ' . date('d/m/Y', strtotime($item['ngaykt']));
+                                echo '<br>→ ' . date('d/m/Y', strtotime($item['ngaykt']));
                             }
                         } else {
                             echo '-';
