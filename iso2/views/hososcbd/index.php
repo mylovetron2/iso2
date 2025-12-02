@@ -55,7 +55,7 @@ require_once __DIR__ . '/../layouts/header.php';
     <!-- Filter & Search -->
     <form method="get" class="flex flex-col md:flex-row gap-2 mb-4">
         <input type="text" name="search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" 
-               placeholder="Tìm mã quản lý, phiếu, mã VT, số máy..." 
+               placeholder="Tìm phiếu, mã VT, số máy, đơn vị..." 
                class="border rounded px-3 py-2 flex-1 w-full md:min-w-[200px] text-sm md:text-base">
         
         <select name="madv" class="border rounded px-3 py-2 w-full md:w-auto text-sm md:text-base">

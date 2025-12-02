@@ -46,15 +46,15 @@ class HoSoSCBD extends BaseModel
         
         // Lọc theo trạng thái
         if ($trangthai === 'chuath') { // Chưa thực hiện
-            $where[] = "ngayth IS NULL OR ngayth = '0000-00-00'";
+            $where[] = "h.ngayth IS NULL OR h.ngayth = '0000-00-00'";
         } elseif ($trangthai === 'danglam') { // Đang làm
-            $where[] = "ngayth IS NOT NULL AND ngayth != '0000-00-00' AND (ngaykt IS NULL OR ngaykt = '0000-00-00')";
+            $where[] = "h.ngayth IS NOT NULL AND h.ngayth != '0000-00-00' AND (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00')";
         } elseif ($trangthai === 'hoanthanh') { // Hoàn thành
-            $where[] = "ngaykt IS NOT NULL AND ngaykt != '0000-00-00'";
+            $where[] = "h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'chuabg') { // Chưa bàn giao
-            $where[] = "bg = 0 AND ngaykt IS NOT NULL AND ngaykt != '0000-00-00'";
+            $where[] = "h.bg = 0 AND h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'dabg') { // Đã bàn giao
-            $where[] = "bg = 1";
+            $where[] = "h.bg = 1";
         }
         
         $whereClause = implode(' AND ', $where);
@@ -84,34 +84,37 @@ class HoSoSCBD extends BaseModel
         $where = ["1=1"];
         
         if ($search) {
-            $where[] = "(maql LIKE $searchEscaped OR phieu LIKE $searchEscaped OR mavt LIKE $searchEscaped OR somay LIKE $searchEscaped)";
+            $where[] = "(h.maql LIKE $searchEscaped OR h.phieu LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped OR h.madv LIKE $searchEscaped OR d.tendv LIKE $searchEscaped)";
         }
         
         if ($nhomsc) {
             $nhomscEscaped = $this->db->quote($nhomsc);
-            $where[] = "nhomsc = $nhomscEscaped";
+            $where[] = "h.nhomsc = $nhomscEscaped";
         }
         
         if ($madv) {
             $madvEscaped = $this->db->quote($madv);
-            $where[] = "madv = $madvEscaped";
+            $where[] = "h.madv = $madvEscaped";
         }
         
         if ($trangthai === 'chuath') {
-            $where[] = "ngayth IS NULL OR ngayth = '0000-00-00'";
+            $where[] = "h.ngayth IS NULL OR h.ngayth = '0000-00-00'";
         } elseif ($trangthai === 'danglam') {
-            $where[] = "ngayth IS NOT NULL AND ngayth != '0000-00-00' AND (ngaykt IS NULL OR ngaykt = '0000-00-00')";
+            $where[] = "h.ngayth IS NOT NULL AND h.ngayth != '0000-00-00' AND (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00')";
         } elseif ($trangthai === 'hoanthanh') {
-            $where[] = "ngaykt IS NOT NULL AND ngaykt != '0000-00-00'";
+            $where[] = "h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'chuabg') {
-            $where[] = "bg = 0 AND ngaykt IS NOT NULL AND ngaykt != '0000-00-00'";
+            $where[] = "h.bg = 0 AND h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'dabg') {
-            $where[] = "bg = 1";
+            $where[] = "h.bg = 1";
         }
         
         $whereClause = implode(' AND ', $where);
         
-        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE $whereClause";
+        $sql = "SELECT COUNT(*) 
+                FROM {$this->table} h
+                LEFT JOIN donvi_iso d ON h.madv = d.madv
+                WHERE $whereClause";
         $stmt = $this->query($sql);
         return (int)$stmt->fetchColumn();
     }
