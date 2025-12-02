@@ -123,7 +123,16 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['mavt']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($item['somay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
-                        <?php echo $item['ngayyc'] ? date('d/m/Y', strtotime($item['ngayyc'])) : '-'; ?>
+                        <?php 
+                        if ($item['ngayyc'] && $item['ngayyc'] != '0000-00-00') {
+                            echo date('d/m/Y', strtotime($item['ngayyc']));
+                            if ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00') {
+                                echo ' → ' . date('d/m/Y', strtotime($item['ngaykt']));
+                            }
+                        } else {
+                            echo '-';
+                        }
+                        ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php echo htmlspecialchars($item['tendv'] ?? $item['madv']); ?>
