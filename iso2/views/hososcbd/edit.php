@@ -136,11 +136,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Công việc <span class="text-red-500">*</span></label>
-                    <textarea name="cv" required rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['cv']) ? htmlspecialchars($_POST['cv']) : htmlspecialchars($item['cv'] ?? ''); ?></textarea>
+                    <textarea name="cv" required rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['cv']) ? htmlspecialchars($_POST['cv']) : displayText($item['cv'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Yêu cầu thêm của KH</label>
-                    <textarea name="ycthemkh" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ycthemkh']) ? htmlspecialchars($_POST['ycthemkh']) : htmlspecialchars($item['ycthemkh'] ?? ''); ?></textarea>
+                    <textarea name="ycthemkh" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ycthemkh']) ? htmlspecialchars($_POST['ycthemkh']) : displayText($item['ycthemkh'] ?? ''); ?></textarea>
                 </div>
             </div>
         </div>
@@ -177,28 +177,37 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT trước</label>
-                    <textarea name="ttktbefore" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ttktbefore']) ? htmlspecialchars($_POST['ttktbefore']) : htmlspecialchars($item['ttktbefore'] ?? ''); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật trước khi SC/BĐ</label>
+                    <textarea name="ttktbefore" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ttktbefore']) ? htmlspecialchars($_POST['ttktbefore']) : displayText($item['ttktbefore'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Hỏng hóc</label>
-                    <textarea name="honghoc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['honghoc']) ? htmlspecialchars($_POST['honghoc']) : htmlspecialchars($item['honghoc'] ?? ''); ?></textarea>
+                    <textarea name="honghoc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['honghoc']) ? htmlspecialchars($_POST['honghoc']) : displayText($item['honghoc'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Khắc phục</label>
-                    <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['khacphuc']) ? htmlspecialchars($_POST['khacphuc']) : htmlspecialchars($item['khacphuc'] ?? ''); ?></textarea>
+                    <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['khacphuc']) ? htmlspecialchars($_POST['khacphuc']) : displayText($item['khacphuc'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT sau</label>
-                    <textarea name="ttktafter" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ttktafter']) ? htmlspecialchars($_POST['ttktafter']) : htmlspecialchars($item['ttktafter'] ?? ''); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật sau khi SC/BĐ</label>
+                    <?php $ttktafter_value = isset($error) && isset($_POST['ttktafter']) ? $_POST['ttktafter'] : ($item['ttktafter'] ?? 'Đạt'); ?>
+                    <select name="ttktafter" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <option value="">-- Chọn trạng thái --</option>
+                        <option value="Đạt" <?php echo $ttktafter_value === 'Đạt' ? 'selected' : ''; ?>>Đạt</option>
+                        <option value="Hỏng" <?php echo $ttktafter_value === 'Hỏng' ? 'selected' : ''; ?>>Hỏng (Không khắc phục được)</option>
+                        <option value="Chờ vật tư thay thế" <?php echo $ttktafter_value === 'Chờ vật tư thay thế' ? 'selected' : ''; ?>>Chờ vật tư thay thế</option>
+                        <option value="Chưa kết luận" <?php echo $ttktafter_value === 'Chưa kết luận' ? 'selected' : ''; ?>>Chưa kết luận</option>
+                        <option value="Đang sửa chữa" <?php echo $ttktafter_value === 'Đang sửa chữa' ? 'selected' : ''; ?>>Đang sửa chữa</option>
+                        <option value="TTKTDB" <?php echo $ttktafter_value === 'TTKTDB' ? 'selected' : ''; ?>>TTKT Đặc biệt</option>
+                    </select>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Nội dung</label>
-                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['noidung']) ? htmlspecialchars($_POST['noidung']) : htmlspecialchars($item['noidung'] ?? ''); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Nội dung sửa chữa</label>
+                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['noidung']) ? htmlspecialchars($_POST['noidung']) : displayText($item['noidung'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Kết luận</label>
-                    <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ketluan']) ? htmlspecialchars($_POST['ketluan']) : htmlspecialchars($item['ketluan'] ?? ''); ?></textarea>
+                    <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ketluan']) ? htmlspecialchars($_POST['ketluan']) : displayText($item['ketluan'] ?? ''); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Xem xét xưởng</label>

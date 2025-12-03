@@ -48,7 +48,7 @@ if (!$item) {
                 <p class="font-semibold"><code class="bg-blue-100 px-2 py-1 rounded"><?php echo htmlspecialchars($item['maql']); ?></code></p>
             </div>
             <div>
-                <label class="text-gray-600 text-sm">Số phiếu:</label>
+                <label class="text-gray-600 text-sm">Tình trạng kỹ thuật sau khi SC/BĐ:</label>
                 <p class="font-semibold"><?php echo htmlspecialchars($item['phieu']); ?></p>
             </div>
             <div>
@@ -119,12 +119,12 @@ if (!$item) {
             </div>
             <div class="md:col-span-2">
                 <label class="text-gray-600 text-sm">Công việc:</label>
-                <p class="font-semibold whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['cv']); ?></p>
+                <p class="font-semibold whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['cv']); ?></p>
             </div>
             <?php if ($item['ycthemkh']): ?>
             <div class="md:col-span-2">
                 <label class="text-gray-600 text-sm">Yêu cầu thêm của KH:</label>
-                <p class="font-semibold whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['ycthemkh']); ?></p>
+                <p class="font-semibold whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['ycthemkh']); ?></p>
             </div>
             <?php endif; ?>
         </div>
@@ -163,30 +163,30 @@ if (!$item) {
             <?php if ($item['ttktbefore']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">TT KT trước:</label>
-                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['ttktbefore']); ?></p>
+                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['ttktbefore']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['honghoc']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">Hỏng hóc:</label>
-                <p class="whitespace-pre-wrap bg-red-50 p-3 rounded"><?php echo htmlspecialchars($item['honghoc']); ?></p>
+                <p class="whitespace-pre-wrap bg-red-50 p-3 rounded"><?php echo displayText($item['honghoc']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['khacphuc']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">Khắc phục:</label>
-                <p class="whitespace-pre-wrap bg-green-50 p-3 rounded"><?php echo htmlspecialchars($item['khacphuc']); ?></p>
+                <p class="whitespace-pre-wrap bg-green-50 p-3 rounded"><?php echo displayText($item['khacphuc']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['ttktafter']): ?>
             <div class="md:col-span-3">
-                <label class="text-gray-600 text-sm">TT KT sau:</label>
-                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['ttktafter']); ?></p>
+                <label class="text-gray-600 text-sm">Tình trạng kỹ thuật sau khi SC/BĐ:</label>
+                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['ttktafter']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['noidung']): ?>
             <div class="md:col-span-3">
-                <label class="text-gray-600 text-sm">Nội dung:</label>
+                <label class="text-gray-600 text-sm">Nội dung sửa chữa:</label>
                 <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['noidung']); ?></p>
             </div>
             <?php endif; ?>

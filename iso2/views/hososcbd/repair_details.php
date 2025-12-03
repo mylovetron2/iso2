@@ -107,20 +107,16 @@ require_once __DIR__ . '/../layouts/header.php';
         </a>
     </div>
     
-    <!-- Record Info -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-                <span class="font-semibold text-gray-700">Mã quản lý:</span>
-                <span class="ml-2 font-mono text-blue-700"><?php echo htmlspecialchars($item['maql']); ?></span>
+    <!-- Record Info - Sticky Header -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 sticky top-0 z-10 shadow-md">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-base md:text-lg">
+            <div class="bg-indigo-100 p-3 rounded-lg border-l-4 border-indigo-500">
+                <span class="font-semibold text-indigo-700">Số phiếu:</span>
+                <span class="ml-2 font-bold text-indigo-900"><?php echo htmlspecialchars($item['phieu']); ?></span>
             </div>
-            <div>
-                <span class="font-semibold text-gray-700">Số phiếu:</span>
-                <span class="ml-2"><?php echo htmlspecialchars($item['phieu']); ?></span>
-            </div>
-            <div>
-                <span class="font-semibold text-gray-700">Thiết bị:</span>
-                <span class="ml-2"><?php echo htmlspecialchars($item['mavt'] . ' - ' . $item['somay']); ?></span>
+            <div class="bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
+                <span class="font-semibold text-green-700">Thiết bị:</span>
+                <span class="ml-2 font-bold text-green-900"><?php echo htmlspecialchars($item['mavt'] . ' - ' . $item['somay']); ?></span>
             </div>
         </div>
     </div>
@@ -169,32 +165,40 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT trước</label>
-                    <textarea name="ttktbefore" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['ttktbefore']); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật trước khi SC/BĐ</label>
+                    <textarea name="ttktbefore" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['ttktbefore']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Hỏng hóc</label>
-                    <textarea name="honghoc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['honghoc']); ?></textarea>
+                    <textarea name="honghoc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['honghoc']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Khắc phục</label>
-                    <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['khacphuc']); ?></textarea>
+                    <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['khacphuc']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">TT KT sau</label>
-                    <textarea name="ttktafter" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['ttktafter']); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật sau khi SC/BĐ</label>
+                    <select name="ttktafter" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <option value="">-- Chọn trạng thái --</option>
+                        <option value="Đạt" <?php echo empty($item['ttktafter']) || ($item['ttktafter'] ?? '') === 'Đạt' ? 'selected' : ''; ?>>Đạt</option>
+                        <option value="Hỏng" <?php echo ($item['ttktafter'] ?? '') === 'Hỏng' ? 'selected' : ''; ?>>Hỏng (Không khắc phục được)</option>
+                        <option value="Chờ vật tư thay thế" <?php echo ($item['ttktafter'] ?? '') === 'Chờ vật tư thay thế' ? 'selected' : ''; ?>>Chờ vật tư thay thế</option>
+                        <option value="Chưa kết luận" <?php echo ($item['ttktafter'] ?? '') === 'Chưa kết luận' ? 'selected' : ''; ?>>Chưa kết luận</option>
+                        <option value="Đang sửa chữa" <?php echo ($item['ttktafter'] ?? '') === 'Đang sửa chữa' ? 'selected' : ''; ?>>Đang sửa chữa</option>
+                        <option value="TTKTDB" <?php echo ($item['ttktafter'] ?? '') === 'TTKTDB' ? 'selected' : ''; ?>>TTKT Đặc biệt</option>
+                    </select>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Nội dung</label>
-                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['noidung']); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Nội dung sửa chữa</label>
+                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['noidung']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Kết luận</label>
-                    <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['ketluan']); ?></textarea>
+                    <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['ketluan']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Xem xét xưởng</label>
-                    <textarea name="xemxetxuong" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars($item['xemxetxuong']); ?></textarea>
+                    <textarea name="xemxetxuong" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['xemxetxuong']); ?></textarea>
                 </div>
             </div>
         </div>
