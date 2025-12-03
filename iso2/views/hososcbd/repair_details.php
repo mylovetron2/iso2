@@ -205,27 +205,92 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Thiết bị đo SC -->
         <div class="border-l-4 border-teal-500 pl-4">
-            <h2 class="text-lg font-bold mb-3 text-teal-700">
-                <i class="fas fa-tools mr-2"></i>Thiết bị đo sửa chữa (5 slot)
-            </h2>
-            <?php for ($i = 0; $i <= 4; $i++): 
-                $tbField = $i == 0 ? 'tbdosc' : "tbdosc$i";
-                $serialField = $i == 0 ? 'serialtbdosc' : "serialtbdosc$i";
-            ?>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">TB đo SC <?php echo $i + 1; ?></label>
-                    <input type="text" name="<?php echo $tbField; ?>" value="<?php echo htmlspecialchars($item[$tbField]); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-600 mb-1">Serial <?php echo $i + 1; ?></label>
-                    <input type="text" name="<?php echo $serialField; ?>" value="<?php echo htmlspecialchars($item[$serialField]); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                </div>
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-bold text-teal-700">
+                    <i class="fas fa-tools mr-2"></i>Thiết bị hỗ trợ
+                </h2>
+                <button type="button" onclick="addDeviceRow()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded text-sm">
+                    <i class="fas fa-plus mr-1"></i> Thêm thiết bị
+                </button>
             </div>
-            <?php endfor; ?>
+            <div id="deviceList" class="space-y-2">
+                <?php 
+                // Collect existing devices
+                $devices = [];
+                for ($i = 0; $i <= 4; $i++) {
+                    $tbField = $i == 0 ? 'tbdosc' : "tbdosc$i";
+                    $serialField = $i == 0 ? 'serialtbdosc' : "serialtbdosc$i";
+                    if (!empty($item[$tbField]) || !empty($item[$serialField])) {
+                        $devices[] = [
+                            'tb' => $item[$tbField],
+                            'serial' => $item[$serialField],
+                            'tbField' => $tbField,
+                            'serialField' => $serialField
+                        ];
+                    }
+                }
+                // If no devices, show at least one empty row
+                if (empty($devices)) {
+                    $devices[] = ['tb' => '', 'serial' => '', 'tbField' => 'tbdosc', 'serialField' => 'serialtbdosc'];
+                }
+                
+                foreach ($devices as $idx => $device): 
+                ?>
+                <div class="device-row flex gap-2 items-start bg-teal-50 p-2 rounded">
+                    <div class="flex-1">
+                        <input type="text" name="<?php echo $device['tbField']; ?>" placeholder="Tên thiết bị hỗ trợ" 
+                               value="<?php echo htmlspecialchars($device['tb']); ?>"
+                               class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                    </div>
+                    <div class="flex-1">
+                        <input type="text" name="<?php echo $device['serialField']; ?>" placeholder="Serial/Mã số" 
+                               value="<?php echo htmlspecialchars($device['serial']); ?>"
+                               class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                    </div>
+                    <button type="button" onclick="removeDeviceRow(this)" class="text-red-600 hover:text-red-800 px-2 py-1" title="Xóa">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <?php endforeach; ?>
+            </div>
         </div>
+
+        <script>
+        let deviceIndex = <?php echo count($devices); ?>;
+        
+        function addDeviceRow() {
+            const container = document.getElementById('deviceList');
+            const fieldName = deviceIndex === 0 ? 'tbdosc' : `tbdosc${deviceIndex}`;
+            const serialName = deviceIndex === 0 ? 'serialtbdosc' : `serialtbdosc${deviceIndex}`;
+            
+            const row = document.createElement('div');
+            row.className = 'device-row flex gap-2 items-start bg-teal-50 p-2 rounded';
+            row.innerHTML = `
+                <div class="flex-1">
+                    <input type="text" name="${fieldName}" placeholder="Tên thiết bị hỗ trợ" 
+                           class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                </div>
+                <div class="flex-1">
+                    <input type="text" name="${serialName}" placeholder="Serial/Mã số" 
+                           class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                </div>
+                <button type="button" onclick="removeDeviceRow(this)" class="text-red-600 hover:text-red-800 px-2 py-1" title="Xóa">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            deviceIndex++;
+        }
+        
+        function removeDeviceRow(button) {
+            const row = button.closest('.device-row');
+            if (document.querySelectorAll('.device-row').length > 1) {
+                row.remove();
+            } else {
+                alert('Phải có ít nhất 1 dòng thiết bị');
+            }
+        }
+        </script>
 
         <!-- Buttons -->
         <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
