@@ -125,9 +125,9 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php 
                         if ($item['ngayyc'] && $item['ngayyc'] != '0000-00-00') {
-                            echo date('d/m/Y', strtotime($item['ngayyc']));
+                            echo '<div class="text-gray-700">' . date('d/m/Y', strtotime($item['ngayyc'])) . '</div>';
                             if ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00') {
-                                echo '<br>→ ' . date('d/m/Y', strtotime($item['ngaykt']));
+                                echo '<div class="text-green-600 font-semibold mt-1"><i class="fas fa-arrow-right text-xs"></i> ' . date('d/m/Y', strtotime($item['ngaykt'])) . '</div>';
                             }
                         } else {
                             echo '-';
