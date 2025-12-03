@@ -157,6 +157,12 @@ class HoSoScBdController
         }
 
         $donViList = $this->donViModel->getAllSimple();
+        
+        // Load thiết bị hỗ trợ list
+        require_once __DIR__ . '/../models/ThietBiHoTro.php';
+        $thietBiHoTroModel = new ThietBiHoTro();
+        $thietBiHoTroList = $thietBiHoTroModel->getAllSimple();
+        
         require_once __DIR__ . '/../views/hososcbd/edit.php';
     }
 

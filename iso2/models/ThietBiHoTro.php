@@ -153,4 +153,24 @@ class ThietBiHoTro extends BaseModel {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    /**
+     * Lấy danh sách thiết bị hỗ trợ đơn giản cho dropdown/autocomplete
+     */
+    public function getAllSimple(): array {
+        try {
+            $this->db->exec("SET NAMES latin1");
+            
+            $sql = "SELECT COALESCE(tenthietbi, '') as tenthietbi, 
+                           COALESCE(serialnumber, '') as serialnumber, 
+                           COALESCE(tenvt, '') as tenvt 
+                    FROM {$this->table} 
+                    ORDER BY tenthietbi ASC";
+            $stmt = $this->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error in ThietBiHoTro::getAllSimple(): " . $e->getMessage());
+            return [];
+        }
+    }
 }

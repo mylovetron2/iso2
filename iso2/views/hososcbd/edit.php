@@ -253,9 +253,10 @@ require_once __DIR__ . '/../layouts/header.php';
                 ?>
                 <div class="device-row flex gap-2 items-start bg-teal-50 p-2 rounded">
                     <div class="flex-1">
-                        <input type="text" name="<?php echo $device['tbField']; ?>" placeholder="Tên thiết bị hỗ trợ" 
+                        <input type="text" name="<?php echo $device['tbField']; ?>" list="tbhtList" placeholder="Tên thiết bị hỗ trợ" 
                                value="<?php echo htmlspecialchars($device['tb']); ?>"
-                               class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                               class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500"
+                               onchange="fillSerial(this)">
                     </div>
                     <div class="flex-1">
                         <input type="text" name="<?php echo $device['serialField']; ?>" placeholder="Serial/Mã số" 
@@ -270,8 +271,36 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
+        <!-- Datalist for thiết bị hỗ trợ -->
+        <datalist id="tbhtList">
+            <?php foreach ($thietBiHoTroList as $tb): ?>
+                <option value="<?php echo htmlspecialchars($tb['tenthietbi']); ?>" 
+                        data-serial="<?php echo htmlspecialchars($tb['serialnumber']); ?>"
+                        data-tenvt="<?php echo htmlspecialchars($tb['tenvt']); ?>">
+                    <?php echo htmlspecialchars($tb['tenthietbi'] . ' - ' . $tb['serialnumber']); ?>
+                </option>
+            <?php endforeach; ?>
+        </datalist>
+
         <script>
         let deviceIndex = <?php echo count($devices); ?>;
+        
+        // Auto-fill serial when device is selected
+        function fillSerial(input) {
+            const selectedValue = input.value;
+            const datalist = document.getElementById('tbhtList');
+            const options = datalist.querySelectorAll('option');
+            
+            for (let option of options) {
+                if (option.value === selectedValue) {
+                    const serialInput = input.closest('.device-row').querySelector('input[name*="serial"]');
+                    if (serialInput && option.dataset.serial) {
+                        serialInput.value = option.dataset.serial;
+                    }
+                    break;
+                }
+            }
+        }
         
         function addDeviceRow() {
             const container = document.getElementById('deviceList');
@@ -282,8 +311,9 @@ require_once __DIR__ . '/../layouts/header.php';
             row.className = 'device-row flex gap-2 items-start bg-teal-50 p-2 rounded';
             row.innerHTML = `
                 <div class="flex-1">
-                    <input type="text" name="${fieldName}" placeholder="Tên thiết bị hỗ trợ" 
-                           class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500">
+                    <input type="text" name="${fieldName}" list="tbhtList" placeholder="Tên thiết bị hỗ trợ" 
+                           class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500"
+                           onchange="fillSerial(this)">
                 </div>
                 <div class="flex-1">
                     <input type="text" name="${serialName}" placeholder="Serial/Mã số" 
