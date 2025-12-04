@@ -91,18 +91,14 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
 
         <?php if ($record): ?>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50 p-4 rounded border-l-4 border-blue-500">
-            <div>
-                <span class="text-gray-600 font-semibold">Mã quản lý:</span>
-                <span class="ml-2 text-blue-700 font-bold"><?php echo htmlspecialchars($record['maql'] ?? ''); ?></span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50 p-4 rounded sticky top-0 z-10 shadow-md text-base md:text-lg">
+            <div class="bg-indigo-100 p-3 rounded-lg border-l-4 border-indigo-500">
+                <span class="text-indigo-700 font-semibold">Phiếu:</span>
+                <span class="ml-2 font-bold text-indigo-900"><?php echo htmlspecialchars($record['phieu'] ?? ''); ?></span>
             </div>
-            <div>
-                <span class="text-gray-600 font-semibold">Phiếu:</span>
-                <span class="ml-2"><?php echo htmlspecialchars($record['phieu'] ?? ''); ?></span>
-            </div>
-            <div>
-                <span class="text-gray-600 font-semibold">Thiết bị:</span>
-                <span class="ml-2"><?php echo htmlspecialchars($record['mavt'] ?? ''); ?> - <?php echo htmlspecialchars($record['tenvt'] ?? ''); ?></span>
+            <div class="bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
+                <span class="text-green-700 font-semibold">Thiết bị:</span>
+                <span class="ml-2 font-bold text-green-900"><?php echo htmlspecialchars($record['mavt'] ?? ''); ?> - <?php echo htmlspecialchars($record['tenvt'] ?? ''); ?></span>
             </div>
         </div>
         <?php endif; ?>

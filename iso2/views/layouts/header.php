@@ -127,6 +127,13 @@ require_once __DIR__ . '/../../config/constants.php';
                     </a>
                 </li>
 
+                <!-- 6. Thống kê Kiểm định -->
+                <li>
+                    <a href="/iso2/thongke_kiemdinh.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-chart-bar mr-2"></i> Thống kê Kiểm định
+                    </a>
+                </li>
+
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
                 <li>

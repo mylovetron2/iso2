@@ -31,17 +31,17 @@ class HoSoSCBD extends BaseModel
         $where = ["1=1"];
         
         if ($search) {
-            $where[] = "(maql LIKE $searchEscaped OR phieu LIKE $searchEscaped OR mavt LIKE $searchEscaped OR somay LIKE $searchEscaped)";
+            $where[] = "(h.maql LIKE $searchEscaped OR h.phieu LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped OR h.madv LIKE $searchEscaped OR d.tendv LIKE $searchEscaped)";
         }
         
         if ($nhomsc) {
             $nhomscEscaped = $this->db->quote($nhomsc);
-            $where[] = "nhomsc = $nhomscEscaped";
+            $where[] = "h.nhomsc = $nhomscEscaped";
         }
         
         if ($madv) {
             $madvEscaped = $this->db->quote($madv);
-            $where[] = "madv = $madvEscaped";
+            $where[] = "h.madv = $madvEscaped";
         }
         
         // Lọc theo trạng thái

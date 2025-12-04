@@ -25,3 +25,18 @@ function sanitizeInput(mixed $input): mixed {
     }
     return $input;
 }
+
+/**
+ * Display text content safely - decodes HTML entities and strips tags
+ */
+function displayText(?string $text): string {
+    if (empty($text)) {
+        return '';
+    }
+    // Decode HTML entities first
+    $decoded = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    // Strip HTML tags but keep line breaks
+    $stripped = strip_tags($decoded);
+    // Escape for safe display
+    return htmlspecialchars($stripped, ENT_QUOTES, 'UTF-8');
+}

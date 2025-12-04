@@ -21,9 +21,9 @@ if (!$item) {
 }
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl md:text-2xl font-bold flex items-center">
-            <i class="fas fa-file-alt mr-2"></i> Chi tiết Hồ sơ SCBĐ
+            <i class="fas fa-file-alt mr-2 text-blue-600"></i> Chi tiết Hồ sơ SCBĐ
         </h1>
         <div class="flex gap-2">
             <a href="hososcbd.php?action=edit&id=<?php echo $item['stt']; ?>" 
@@ -32,8 +32,22 @@ if (!$item) {
             </a>
             <a href="hososcbd.php" 
                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
-                <i class="fas fa-arrow-left mr-1"></i> Quay lại
+                <i class="fas fa-arrow-left mr-2"></i>Quay lại
             </a>
+        </div>
+    </div>
+    
+    <!-- Record Info - Sticky Header -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 sticky top-0 z-10 shadow-md">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-base md:text-lg">
+            <div class="bg-indigo-100 p-3 rounded-lg border-l-4 border-indigo-500">
+                <span class="font-semibold text-indigo-700">Số phiếu:</span>
+                <span class="ml-2 font-bold text-indigo-900"><?php echo htmlspecialchars($item['phieu']); ?></span>
+            </div>
+            <div class="bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
+                <span class="font-semibold text-green-700">Thiết bị:</span>
+                <span class="ml-2 font-bold text-green-900"><?php echo htmlspecialchars($item['mavt'] . ' - ' . $item['somay']); ?></span>
+            </div>
         </div>
     </div>
 
@@ -43,12 +57,12 @@ if (!$item) {
             <i class="fas fa-info-circle mr-2"></i>Thông tin cơ bản
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+            <div style="display: none;">
                 <label class="text-gray-600 text-sm">Mã quản lý:</label>
                 <p class="font-semibold"><code class="bg-blue-100 px-2 py-1 rounded"><?php echo htmlspecialchars($item['maql']); ?></code></p>
             </div>
             <div>
-                <label class="text-gray-600 text-sm">Tình trạng kỹ thuật sau khi SC/BĐ:</label>
+                <label class="text-gray-600 text-sm">Số phiếu:</label>
                 <p class="font-semibold"><?php echo htmlspecialchars($item['phieu']); ?></p>
             </div>
             <div>
@@ -152,7 +166,7 @@ if (!$item) {
                 <label class="text-gray-600 text-sm">Ngày kết thúc:</label>
                 <p class="font-semibold"><?php echo $item['ngaykt'] ? date('d/m/Y', strtotime($item['ngaykt'])) : '-'; ?></p>
             </div>
-            <div>
+            <div style="display: none;">
                 <label class="text-gray-600 text-sm">Số lượng:</label>
                 <p class="font-semibold"><?php echo $item['solg'] ?? '0'; ?></p>
             </div>
@@ -187,19 +201,19 @@ if (!$item) {
             <?php if ($item['noidung']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">Nội dung sửa chữa:</label>
-                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['noidung']); ?></p>
+                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['noidung']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['ketluan']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">Kết luận:</label>
-                <p class="whitespace-pre-wrap bg-blue-50 p-3 rounded font-semibold"><?php echo htmlspecialchars($item['ketluan']); ?></p>
+                <p class="whitespace-pre-wrap bg-blue-50 p-3 rounded font-semibold"><?php echo displayText($item['ketluan']); ?></p>
             </div>
             <?php endif; ?>
             <?php if ($item['xemxetxuong']): ?>
             <div class="md:col-span-3">
                 <label class="text-gray-600 text-sm">Xem xét xưởng:</label>
-                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo htmlspecialchars($item['xemxetxuong']); ?></p>
+                <p class="whitespace-pre-wrap bg-gray-50 p-3 rounded"><?php echo displayText($item['xemxetxuong']); ?></p>
             </div>
             <?php endif; ?>
         </div>
@@ -265,11 +279,11 @@ if (!$item) {
                     <?php endif; ?>
                 </p>
             </div>
-            <div>
+            <div style="display: none;">
                 <label class="text-gray-600 text-sm">Số lần BG:</label>
                 <p class="font-semibold"><?php echo $item['slbg'] ?? '0'; ?></p>
             </div>
-            <div>
+            <div style="display: none;">
                 <label class="text-gray-600 text-sm">Dòng:</label>
                 <p class="font-semibold"><?php echo htmlspecialchars($item['dong'] ?? '-'); ?></p>
             </div>

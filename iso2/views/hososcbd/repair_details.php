@@ -162,10 +162,8 @@ require_once __DIR__ . '/../layouts/header.php';
                     <input type="date" name="ngaykt" value="<?php echo $item['ngaykt']; ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Số lượng</label>
-                    <input type="number" name="solg" min="0" value="<?php echo $item['solg']; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <div style="display: none;">
+                    <input type="hidden" name="solg" value="<?php echo $item['solg']; ?>">
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật trước khi SC/BĐ</label>
@@ -180,20 +178,20 @@ require_once __DIR__ . '/../layouts/header.php';
                     <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['khacphuc']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
+                    <label class="block text-gray-700 font-semibold mb-2">Nội dung sửa chữa</label>
+                    <textarea name="noidung" rows="4" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['noidung']); ?></textarea>
+                </div>
+                <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Tình trạng kỹ thuật sau khi SC/BĐ</label>
                     <select name="ttktafter" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                         <option value="">-- Chọn trạng thái --</option>
-                        <option value="Đạt" <?php echo empty($item['ttktafter']) || ($item['ttktafter'] ?? '') === 'Đạt' ? 'selected' : ''; ?>>Đạt</option>
+                        <option value="Đạt" <?php echo ($item['ttktafter'] ?? '') === 'Đạt' ? 'selected' : ''; ?>>Đạt</option>
                         <option value="Hỏng" <?php echo ($item['ttktafter'] ?? '') === 'Hỏng' ? 'selected' : ''; ?>>Hỏng (Không khắc phục được)</option>
                         <option value="Chờ vật tư thay thế" <?php echo ($item['ttktafter'] ?? '') === 'Chờ vật tư thay thế' ? 'selected' : ''; ?>>Chờ vật tư thay thế</option>
                         <option value="Chưa kết luận" <?php echo ($item['ttktafter'] ?? '') === 'Chưa kết luận' ? 'selected' : ''; ?>>Chưa kết luận</option>
                         <option value="Đang sửa chữa" <?php echo ($item['ttktafter'] ?? '') === 'Đang sửa chữa' ? 'selected' : ''; ?>>Đang sửa chữa</option>
                         <option value="TTKTDB" <?php echo ($item['ttktafter'] ?? '') === 'TTKTDB' ? 'selected' : ''; ?>>TTKT Đặc biệt</option>
                     </select>
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Nội dung sửa chữa</label>
-                    <textarea name="noidung" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['noidung']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
                     <label class="block text-gray-700 font-semibold mb-2">Kết luận</label>
