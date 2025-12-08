@@ -20,7 +20,7 @@ if (!isLoggedIn() && isset($_COOKIE['remember_me'])) {
         $_SESSION['user_name'] = $user['username'];
         $_SESSION['user_email'] = $user['email'] ?? '';
         $_SESSION['role'] = $user['role'] ?? 'user';
-        header('Location: ../../tiendocongviec2.php');
+        header('Location: ../../hososcbd.php');
         exit;
     }
 }
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setcookie('remember_me', $token, time() + (30 * 24 * 60 * 60), '/', '', false, true);
                 }
             }
-            header('Location: ../../tiendocongviec2.php');
+            header('Location: ../../hososcbd.php');
             exit;
         } else {
             $error = 'Tên đăng nhập hoặc mật khẩu không đúng!';

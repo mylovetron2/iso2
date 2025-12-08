@@ -25,10 +25,10 @@ require_once __DIR__ . '/../layouts/header.php';
             
             <!-- Export Buttons -->
             <div class="flex gap-2">
-                <a href="thongke_kiemdinh.php?action=export&namkh=<?php echo $namkh; ?>" 
-                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
+                <button disabled
+                   class="bg-gray-400 text-white px-4 py-2 rounded flex items-center gap-2 text-sm cursor-not-allowed opacity-50">
                     <i class="fas fa-file-word"></i> Xuất Word
-                </a>
+                </button>
                 <a href="thongke_kiemdinh.php?action=exportpdf&namkh=<?php echo $namkh; ?>" 
                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
                     <i class="fas fa-file-pdf"></i> Xuất PDF

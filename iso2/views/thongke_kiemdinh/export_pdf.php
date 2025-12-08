@@ -6,7 +6,7 @@
         body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; }
         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         th, td { border: 1px solid black; padding: 6px; }
-        th { background-color: #dbeafe; font-weight: bold; text-align: center; }
+        th { background-color: #2563eb; color: white; font-weight: bold; text-align: center; }
         .text-center { text-align: center; }
         .status-dung { color: #16a34a; font-weight: bold; }
         .status-chua { color: #dc2626; font-weight: bold; }
@@ -31,39 +31,43 @@
         if (empty($statistics['details'][$status])) continue;
     ?>
     
+    <div style="page-break-inside: avoid; margin-top: 15px;">
     <div class="section-title"><?php echo $info['title']; ?> (<?php echo count($statistics['details'][$status]); ?> thiết bị)</div>
     
-    <table>
+    <table cellpadding="3" cellspacing="0" border="1" style="width: 100%; font-size: 9pt; border-collapse: collapse;">
+        <colgroup>
+            <col style="width: 5%;">
+            <col style="width: 28%;">
+            <col style="width: 15%;">
+            <col style="width: 10%;">
+            <col style="width: 17%;">
+            <col style="width: 12%;">
+            <col style="width: 13%;">
+        </colgroup>
         <thead>
             <tr>
-                <th style="width: 5%;">STT</th>
-                <th style="width: 20%;">Tên thiết bị</th>
-                <th style="width: 12%;">Mã hiệu</th>
-                <th style="width: 10%;">Số máy</th>
-                <th style="width: 12%;">Hãng SX</th>
-                <th style="width: 8%;">Tháng KH</th>
-                <th style="width: 15%;">Khoảng cho phép</th>
-                <th style="width: 13%;">Ngày KĐ</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold; text-align: center;">STT</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold;">Tên thiết bị</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold;">Mã hiệu</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold; text-align: center;">Số máy</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold;">Hãng SX</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold; text-align: center;">Tháng KH</th>
+                <th style="background-color: #2563eb; color: white; font-weight: bold; text-align: center;">Ngày KĐ</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($statistics['details'][$status] as $idx => $item): 
                 $plan = $item['plan'];
                 $inspection = $item['inspection'];
-                $dateRange = $item['date_range'];
             ?>
             <tr>
-                <td class="text-center"><?php echo $idx + 1; ?></td>
+                <td style="text-align: center;"><?php echo $idx + 1; ?></td>
                 <td><?php echo htmlspecialchars($plan['tenthietbi'] ?? '-'); ?></td>
                 <td><?php echo htmlspecialchars($plan['mahieu'] ?? '-'); ?></td>
-                <td class="text-center"><strong><?php echo htmlspecialchars($plan['somay']); ?></strong></td>
+                <td style="text-align: center;"><strong><?php echo htmlspecialchars($plan['somay']); ?></strong></td>
                 <td><?php echo htmlspecialchars($plan['hangsx'] ?? '-'); ?></td>
-                <td class="text-center">Tháng <?php echo $plan['thang']; ?></td>
-                <td class="text-center" style="font-size: 9pt;">
-                    <?php echo date('d/m/Y', strtotime($dateRange['start'])); ?><br>
-                    <?php echo date('d/m/Y', strtotime($dateRange['end'])); ?>
-                </td>
-                <td class="text-center <?php echo $info['class']; ?>">
+                <td style="text-align: center;">Tháng <?php echo $plan['thang']; ?></td>
+                <td style="text-align: center;" class="<?php echo $info['class']; ?>">
                     <?php 
                     if ($inspection && !empty($inspection['ngayhc'])) {
                         echo date('d/m/Y', strtotime($inspection['ngayhc']));
@@ -76,6 +80,7 @@
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <?php endforeach; ?>
 
     <!-- Footer -->
