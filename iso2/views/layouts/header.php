@@ -127,11 +127,24 @@ require_once __DIR__ . '/../../config/constants.php';
                     </a>
                 </li>
 
-                <!-- 6. Thống kê Kiểm định -->
+                <!-- 6. Thống kê -->
                 <li>
-                    <a href="/iso2/thongke_kiemdinh.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-chart-bar mr-2"></i> Thống kê Kiểm định
-                    </a>
+                    <div id="thongkeMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-chart-bar mr-2"></i> Thống kê
+                        <i id="thongkeCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="thongkeMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <li>
+                            <a href="/iso2/thongke_kiemdinh.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-clipboard-check mr-2"></i> Thống kê Kiểm định
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/thongke_hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> Hồ sơ SCBD
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
@@ -308,6 +321,17 @@ if (bangiaoBtn && bangiaoMenu && bangiaoCaret) {
     bangiaoBtn.addEventListener('click', function() {
         bangiaoMenu.classList.toggle('hidden');
         bangiaoCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Thống kê
+const thongkeBtn = document.getElementById('thongkeMenuBtn');
+const thongkeMenu = document.getElementById('thongkeMenu');
+const thongkeCaret = document.getElementById('thongkeCaret');
+if (thongkeBtn && thongkeMenu && thongkeCaret) {
+    thongkeBtn.addEventListener('click', function() {
+        thongkeMenu.classList.toggle('hidden');
+        thongkeCaret.classList.toggle('rotate-180');
     });
 }
 </script>
