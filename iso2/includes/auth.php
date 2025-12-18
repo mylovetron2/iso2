@@ -16,15 +16,31 @@ function getCurrentUser(): array|false|null {
 function login(string $username, string $password): bool {
     $userModel = new User();
     $user = $userModel->findByUsername($username);
-    if ($user && $user['password'] === $password) {
-        $_SESSION['user_id'] = $user['stt'];
-        $_SESSION['user_stt'] = $user['stt'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['user_name'] = $user['username'];
-        $_SESSION['user_email'] = isset($user['email']) ? $user['email'] : '';
-        $_SESSION['role'] = isset($user['role']) ? $user['role'] : 'user';
-        return true;
+    
+    if ($user) {
+        // Kiểm tra password - hỗ trợ cả plaintext (user cũ) và hashed (user mới)
+        $passwordValid = false;
+        
+        // Thử verify với password_hash trước
+        if (password_verify($password, $user['password'])) {
+            $passwordValid = true;
+        }
+        // Nếu không match, thử so sánh trực tiếp (cho user cũ)
+        elseif ($user['password'] === $password) {
+            $passwordValid = true;
+        }
+        
+        if ($passwordValid) {
+            $_SESSION['user_id'] = $user['stt'];
+            $_SESSION['user_stt'] = $user['stt'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['user_name'] = $user['username'];
+            $_SESSION['user_email'] = isset($user['email']) ? $user['email'] : '';
+            $_SESSION['role'] = isset($user['role']) ? $user['role'] : 'user';
+            return true;
+        }
     }
+    
     return false;
 }
 

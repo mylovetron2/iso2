@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô tả Logic Thống kê Kiểm định</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #1e40af;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #1d4ed8;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 15px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info-box {
+            background: #dbeafe;
+            padding: 15px;
+            border-left: 4px solid #3b82f6;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background: #d1fae5;
+            padding: 15px;
+            border-left: 4px solid #10b981;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fee2e2;
+            padding: 15px;
+            border-left: 4px solid #ef4444;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        .status-chua {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status-dung {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-truoc {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-sau {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        .flowchart {
+            background: white;
+            border: 2px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .formula {
+            background: #fef3c7;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Mô tả Logic Thống kê Kiểm định (thongke_kiemdinh.php)</h1>
+
+        <div class="info-box">
+            <strong>🎯 Mục đích:</strong> Module thống kê đánh giá việc thực hiện kiểm định thiết bị so với kế hoạch đã đề ra, 
+            phân loại theo trạng thái: đúng hạn, trước hạn, sau hạn, chưa kiểm định.
+        </div>
+
+        <h2>📋 I. Cấu trúc dữ liệu</h2>
+
+        <div class="section">
+            <h3>Bảng chính:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Bảng</th>
+                        <th>Mô tả</th>
+                        <th>Cột quan trọng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>kehoach_iso</code></td>
+                        <td>Kế hoạch kiểm định</td>
+                        <td><code>somay</code>, <code>mahieu</code>, <code>thang</code>, <code>namkh</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>hosohckd_iso</code></td>
+                        <td>Hồ sơ hiệu chuẩn kiểm định thực tế</td>
+                        <td><code>tenmay</code>, <code>ngayhc</code>, <code>namkh</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight">
+                <strong>🔑 Mapping Key:</strong><br>
+                <code>kehoach_iso.mahieu = hosohckd_iso.tenmay</code>
+            </div>
+        </div>
+
+        <h2>⚙️ II. Quy trình xử lý</h2>
+
+        <div class="flowchart">
+┌─────────────────────────────────────────────┐
+│ 1. Load kehoach_iso (kế hoạch năm)         │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│ 2. Load hosohckd_iso (hồ sơ thực tế năm)   │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│ 3. Đếm planCount cho mỗi thiết bị           │
+│    (số lần xuất hiện trong kế hoạch)       │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│ 4. Với mỗi plan:                            │
+│    a. Tính khoảng thời gian cho phép        │
+│    b. Tìm inspection record matching        │
+│    c. So sánh ngayhc với khoảng cho phép    │
+│    d. Phân loại vào 1 trong 4 trạng thái    │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────┐
+│ 5. Tính summary statistics                  │
+└─────────────────────────────────────────────┘
+        </div>
+
+        <h2>📅 III. Tính toán khoảng thời gian cho phép</h2>
+
+        <div class="section">
+            <h3>Trường hợp A: Thiết bị có 1 lần kiểm định/năm (planCount = 1)</h3>
+            <div class="info-box">
+                <strong>Quy tắc:</strong> Cho phép kiểm định trong <strong>3 tháng liên tiếp</strong><br>
+                <ul>
+                    <li>Tháng bắt đầu: <code>max(1, thang - 2)</code></li>
+                    <li>Tháng kết thúc: <code>thang</code></li>
+                    <li>Ngày bắt đầu: Ngày đầu tiên của tháng bắt đầu</li>
+                    <li>Ngày kết thúc: Ngày cuối cùng của tháng kế hoạch</li>
+                </ul>
+                <strong>Ví dụ:</strong><br>
+                Kế hoạch: Tháng 6/2025<br>
+                → Cho phép: <strong>01/04/2025</strong> đến <strong>30/06/2025</strong>
+            </div>
+
+            <h3>Trường hợp B: Thiết bị có nhiều lần kiểm định/năm (planCount > 1)</h3>
+            <div class="info-box">
+                <strong>Quy tắc:</strong> Cho phép kiểm định trong khoảng <strong>±15 ngày</strong> xung quanh ngày 15 của tháng kế hoạch<br>
+                <ul>
+                    <li>Ngày trung tâm: Ngày 15 của tháng kế hoạch</li>
+                    <li>Ngày bắt đầu: Ngày trung tâm - 15 ngày</li>
+                    <li>Ngày kết thúc: Ngày trung tâm + 15 ngày</li>
+                </ul>
+                <strong>Ví dụ:</strong><br>
+                Kế hoạch: Tháng 6/2025<br>
+                → Cho phép: <strong>31/05/2025</strong> đến <strong>30/06/2025</strong>
+            </div>
+        </div>
+
+        <h2>🏷️ IV. Phân loại trạng thái kiểm định</h2>
+
+        <div class="section">
+            <h3>4 trạng thái:</h3>
+
+            <div class="warning-box">
+                <span class="status-badge status-chua">1. CHƯA KIỂM ĐỊNH</span><br>
+                <strong>Điều kiện:</strong>
+                <ul>
+                    <li>KHÔNG tìm thấy record trong <code>hosohckd_iso</code> match với <code>mahieu</code> và <code>namkh</code></li>
+                    <li>HOẶC có record nhưng <code>ngayhc IS NULL</code></li>
+                </ul>
+                <strong>Code:</strong> <code>chua_kiem_dinh</code>
+            </div>
+
+            <div class="success-box">
+                <span class="status-badge status-dung">2. ĐÚNG KẾ HOẠCH</span><br>
+                <strong>Điều kiện:</strong>
+                <ul>
+                    <li>Có record trong <code>hosohckd_iso</code></li>
+                    <li><code>startDate ≤ ngayhc ≤ endDate</code></li>
+                </ul>
+                <strong>Code:</strong> <code>dung_ke_hoach</code>
+            </div>
+
+            <div class="highlight">
+                <span class="status-badge status-truoc">3. TRƯỚC HẠN</span><br>
+                <strong>Điều kiện:</strong>
+                <ul>
+                    <li>Có record trong <code>hosohckd_iso</code></li>
+                    <li><code>ngayhc < startDate</code></li>
+                </ul>
+                <strong>Code:</strong> <code>truoc_han</code>
+            </div>
+
+            <div class="warning-box">
+                <span class="status-badge status-sau">4. SAU HẠN</span><br>
+                <strong>Điều kiện:</strong>
+                <ul>
+                    <li>Có record trong <code>hosohckd_iso</code></li>
+                    <li><code>ngayhc > endDate</code></li>
+                </ul>
+                <strong>Code:</strong> <code>sau_han</code>
+            </div>
+        </div>
+
+        <h2>📈 V. Summary Statistics</h2>
+
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên thống kê</th>
+                        <th>Mô tả</th>
+                        <th>Công thức</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>total_plans</code></td>
+                        <td>Tổng số kế hoạch</td>
+                        <td><code>COUNT(*) FROM kehoach_iso WHERE namkh = ?</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>dung_ke_hoach</code></td>
+                        <td>Số lượng kiểm định đúng hạn</td>
+                        <td>Đếm số status = <code>'dung_ke_hoach'</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>chua_kiem_dinh</code></td>
+                        <td>Số lượng chưa kiểm định</td>
+                        <td>Đếm số status = <code>'chua_kiem_dinh'</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>truoc_han</code></td>
+                        <td>Số lượng kiểm định trước hạn</td>
+                        <td>Đếm số status = <code>'truoc_han'</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>sau_han</code></td>
+                        <td>Số lượng kiểm định sau hạn</td>
+                        <td>Đếm số status = <code>'sau_han'</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>tyle_hoan_thanh</code></td>
+                        <td>Tỷ lệ hoàn thành (%)</td>
+                        <td><code>(dung + truoc + sau) / total * 100</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="formula">
+                Tỷ lệ hoàn thành = (Đã kiểm định / Tổng kế hoạch) × 100%
+            </div>
+        </div>
+
+        <h2>💡 VI. Ví dụ minh họa</h2>
+
+        <div class="section">
+            <h3>Ví dụ 1: Thiết bị kiểm định 1 lần/năm</h3>
+            <pre><code>Kế hoạch: Máy A - Tháng 8/2025
+Plan Count: 1
+Khoảng cho phép: 01/06/2025 → 31/08/2025
+
+Kịch bản:
+- Ngày kiểm định: 15/05/2025 → <span style="color: #f59e0b;">TRƯỚC HẠN</span>
+- Ngày kiểm định: 20/07/2025 → <span style="color: #10b981;">ĐÚNG KẾ HOẠCH</span>
+- Ngày kiểm định: 10/09/2025 → <span style="color: #f97316;">SAU HẠN</span>
+- Không có record          → <span style="color: #ef4444;">CHƯA KIỂM ĐỊNH</span></code></pre>
+
+            <h3>Ví dụ 2: Thiết bị kiểm định nhiều lần/năm</h3>
+            <pre><code>Kế hoạch: Máy B - Tháng 6/2025
+Plan Count: 4 (kiểm định 4 lần trong năm)
+Khoảng cho phép: 31/05/2025 → 30/06/2025
+
+Kịch bản:
+- Ngày kiểm định: 25/05/2025 → <span style="color: #f59e0b;">TRƯỚC HẠN</span>
+- Ngày kiểm định: 15/06/2025 → <span style="color: #10b981;">ĐÚNG KẾ HOẠCH</span>
+- Ngày kiểm định: 05/07/2025 → <span style="color: #f97316;">SAU HẠN</span>
+- Không có record          → <span style="color: #ef4444;">CHƯA KIỂM ĐỊNH</span></code></pre>
+        </div>
+
+        <h2>✅ VII. Điểm quan trọng</h2>
+
+        <div class="success-box">
+            <ul>
+                <li>✅ <strong>Logic linh hoạt:</strong> Khoảng thời gian cho phép thay đổi tùy theo tần suất kiểm định (planCount)</li>
+                <li>✅ <strong>Match chính xác:</strong> Sử dụng <code>mahieu = tenmay</code> và <code>namkh</code> để matching</li>
+                <li>✅ <strong>Phân loại rõ ràng:</strong> 4 trạng thái dễ hiểu, không overlap</li>
+                <li>✅ <strong>Tính tỷ lệ hoàn thành:</strong> Bao gồm cả trước hạn và sau hạn (vì đã thực hiện)</li>
+                <li>✅ <strong>Hỗ trợ export PDF:</strong> Biểu đồ tròn + bảng chi tiết theo từng trạng thái</li>
+            </ul>
+        </div>
+
+        <h2>🔧 VIII. Code quan trọng</h2>
+
+        <div class="section">
+            <h3>calculateDateRange()</h3>
+            <pre><code>if ($planCount == 1) {
+    // 3 tháng liên tiếp
+    $startMonth = max(1, $thang - 2);
+    $endMonth = $thang;
+    $startDate = "{$namkh}-{$startMonth}-01";
+    $endDate = last_day_of_month("{$namkh}-{$endMonth}-01");
+} else {
+    // ±15 ngày
+    $midDate = "{$namkh}-{$thang}-15";
+    $startDate = $midDate - 15 days;
+    $endDate = $midDate + 15 days;
+}</code></pre>
+
+            <h3>classifyInspection()</h3>
+            <pre><code>// Tìm inspection record
+$matchingInspection = find_where(
+    tenmay = $mahieu AND namkh = $namkh
+);
+
+if (!$matchingInspection || !$matchingInspection['ngayhc']) {
+    return 'chua_kiem_dinh';
+}
+
+$ngayhc = $matchingInspection['ngayhc'];
+
+if ($ngayhc < $startDate) {
+    return 'truoc_han';
+} elseif ($ngayhc > $endDate) {
+    return 'sau_han';
+} else {
+    return 'dung_ke_hoach';
+}</code></pre>
+        </div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <strong>📄 Tài liệu này mô tả:</strong><br>
+            Module: <code>controllers/ThongKeKiemDinhController.php</code><br>
+            File: <code>thongke_kiemdinh.php</code><br>
+            Ngày cập nhật: 10/12/2025
+        </div>
+    </div>
+</body>
+</html>

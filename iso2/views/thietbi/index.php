@@ -44,7 +44,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <option value="">Tất cả đơn vị</option>
             <?php foreach ($donViList as $dv): ?>
                 <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
-                        <?php echo (isset($_GET['madv']) && $_GET['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
+                        <?php echo (isset($_GET['madv']) && $_GET['madv'] == $dv['madv']) ? 'selected' : ''; ?>>
                     <?php echo htmlspecialchars($dv['tendv']); ?>
                 </option>
             <?php endforeach; ?>

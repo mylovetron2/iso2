@@ -27,12 +27,14 @@ class HoSoScBdController
         $madv = $_GET['madv'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
         $trangthai = $_GET['trangthai'] ?? '';
+        $fromDate = $_GET['from_date'] ?? '';
+        $toDate = $_GET['to_date'] ?? '';
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, $offset, $limit);
-        $total = $this->model->countList($search, $nhomsc, $trangthai, $madv);
+        $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, $offset, $limit, $fromDate, $toDate);
+        $total = $this->model->countList($search, $nhomsc, $trangthai, $madv, $fromDate, $toDate);
         $totalPages = ceil($total / $limit);
 
         $stats = $this->model->getStats($nhomsc);
@@ -433,5 +435,44 @@ class HoSoScBdController
             // Silent fail - don't break the main operation if logging fails
             error_log("Logging failed: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Export single record as PDF
+     */
+    public function exportPdf(): void
+    {
+        $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if (!$stt) {
+            header('Location: /iso2/hososcbd.php?error=invalid');
+            exit;
+        }
+
+        $item = $this->model->findById($stt);
+        if (!$item) {
+            header('Location: /iso2/hososcbd.php?error=notfound');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/hososcbd/export_pdf.php';
+    }
+
+    /**
+     * Export list as PDF with filters
+     */
+    public function exportListPdf(): void
+    {
+        $search = $_GET['search'] ?? '';
+        $madv = $_GET['madv'] ?? '';
+        $nhomsc = $_GET['nhomsc'] ?? '';
+        $trangthai = $_GET['trangthai'] ?? '';
+        $fromDate = $_GET['from_date'] ?? '';
+        $toDate = $_GET['to_date'] ?? '';
+
+        $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, 0, 1000, $fromDate, $toDate); // Max 1000 records
+        $stats = $this->model->getStats($nhomsc);
+        $donViList = $this->donViModel->getAllSimple();
+
+        require_once __DIR__ . '/../views/hososcbd/export_list_pdf.php';
     }
 }

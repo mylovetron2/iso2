@@ -17,35 +17,52 @@ class ThietBiController
 
     public function index(): void
     {
-        $search = $_GET['search'] ?? '';
-        $madv = $_GET['madv'] ?? '';
-        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-        $limit = 20;
-        $offset = ($page - 1) * $limit;
+        try {
+            $search = $_GET['search'] ?? '';
+            $madv = $_GET['madv'] ?? '';
+            $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+            $limit = 20;
+            $offset = ($page - 1) * $limit;
 
-        $conditions = [];
-        $params = [];
+            $conditions = [];
+            $params = [];
 
-        if ($search) {
-            $conditions[] = "(mavt LIKE :search OR tenvt LIKE :search OR somay LIKE :search OR model LIKE :search)";
-            $params[':search'] = "%$search%";
+            if ($search) {
+                $conditions[] = "(mavt LIKE :search OR tenvt LIKE :search OR somay LIKE :search OR model LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            if ($madv !== '') {
+                $conditions[] = "madv = :madv";
+                $params[':madv'] = $madv;
+            }
+
+            $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $orderBy = 'ORDER BY stt DESC';
+            
+            $items = $this->model->getAll($where . ' ' . $orderBy, $params, $limit, $offset);
+            $total = $this->model->count($where, $params);
+            $totalPages = ceil($total / $limit);
+
+            $donViList = $this->donViModel->getAllSimple();
+
+            require_once __DIR__ . '/../views/thietbi/index.php';
+        } catch (Exception $e) {
+            error_log("Error in ThietBiController::index: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            // Set default values to prevent view errors
+            $items = [];
+            $total = 0;
+            $totalPages = 0;
+            $donViList = [];
+            $search = '';
+            $madv = '';
+            $page = 1;
+            $error = 'Có lỗi xảy ra: ' . $e->getMessage();
+            
+            require_once __DIR__ . '/../views/thietbi/index.php';
         }
-
-        if ($madv) {
-            $conditions[] = "madv = :madv";
-            $params[':madv'] = $madv;
-        }
-
-        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
-        $orderBy = 'ORDER BY stt DESC';
-        
-        $items = $this->model->getAll($where . ' ' . $orderBy, $params, $limit, $offset);
-        $total = $this->model->count($where, $params);
-        $totalPages = ceil($total / $limit);
-
-        $donViList = $this->donViModel->getAllSimple();
-
-        require_once __DIR__ . '/../views/thietbi/index.php';
     }
 
     public function create(): void

@@ -58,4 +58,100 @@ class HoSoHCKD extends BaseModel {
             return false;
         }
     }
+    
+    /**
+     * Lấy hồ sơ theo thiết bị và ngày HC
+     */
+    public function getByDeviceAndDate(string $mavattu, string $ngayhc): ?array {
+        try {
+            $sql = "SELECT * FROM {$this->table} 
+                    WHERE tenmay = :tenmay AND ngayhc = :ngayhc 
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['tenmay' => $mavattu, 'ngayhc' => $ngayhc]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::getByDeviceAndDate: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Tạo số hồ sơ tự động
+     * Format: YY-TMM-XX
+     */
+    public function generateSoHS(int $month, int $year): string {
+        try {
+            $yearShort = substr((string)$year, -2);
+            $monthStr = str_pad((string)$month, 2, '0', STR_PAD_LEFT);
+            $prefix = "{$yearShort}-T{$monthStr}-";
+            
+            // Tìm số thứ tự lớn nhất trong tháng
+            $sql = "SELECT sohs FROM {$this->table} 
+                    WHERE sohs LIKE :prefix 
+                    ORDER BY sohs DESC 
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['prefix' => $prefix . '%']);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result && $result['sohs']) {
+                // Lấy phần số thứ tự
+                $parts = explode('-', $result['sohs']);
+                $lastNum = isset($parts[2]) ? (int)$parts[2] : 0;
+                $nextNum = $lastNum + 1;
+            } else {
+                $nextNum = 1;
+            }
+            
+            $numStr = str_pad((string)$nextNum, 2, '0', STR_PAD_LEFT);
+            return $prefix . $numStr;
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::generateSoHS: " . $e->getMessage());
+            return '';
+        }
+    }
+    
+    /**
+     * Lưu hoặc cập nhật hồ sơ HC
+     */
+    public function saveHoSo(array $data): bool {
+        try {
+            // Kiểm tra xem đã tồn tại chưa
+            $existing = $this->getByDeviceAndDate($data['tenmay'], $data['ngayhc']);
+            
+            if ($existing) {
+                // UPDATE
+                $result = $this->update((int)$existing['stt'], $data);
+                return $result >= 0;
+            } else {
+                // INSERT
+                $id = $this->create($data);
+                return (int)$id > 0;
+            }
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::saveHoSo: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Lấy hồ sơ HC mới nhất của thiết bị
+     */
+    public function getLatestByDevice(string $mavattu): ?array {
+        try {
+            $sql = "SELECT * FROM {$this->table} 
+                    WHERE tenmay = :tenmay 
+                    ORDER BY ngayhc DESC 
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['tenmay' => $mavattu]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::getLatestByDevice: " . $e->getMessage());
+            return null;
+        }
+    }
 }

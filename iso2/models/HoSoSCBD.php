@@ -24,7 +24,9 @@ class HoSoSCBD extends BaseModel
         string $trangthai = '',
         string $madv = '',
         int $offset = 0,
-        int $limit = 15
+        int $limit = 15,
+        string $fromDate = '',
+        string $toDate = ''
     ): array {
         $searchEscaped = $this->db->quote("%$search%");
         
@@ -42,6 +44,17 @@ class HoSoSCBD extends BaseModel
         if ($madv) {
             $madvEscaped = $this->db->quote($madv);
             $where[] = "h.madv = $madvEscaped";
+        }
+        
+        // Lọc theo ngày yêu cầu
+        if ($fromDate) {
+            $fromDateEscaped = $this->db->quote($fromDate);
+            $where[] = "h.ngayyc >= $fromDateEscaped";
+        }
+        
+        if ($toDate) {
+            $toDateEscaped = $this->db->quote($toDate);
+            $where[] = "h.ngayyc <= $toDateEscaped";
         }
         
         // Lọc theo trạng thái
@@ -77,7 +90,9 @@ class HoSoSCBD extends BaseModel
         string $search = '',
         string $nhomsc = '',
         string $trangthai = '',
-        string $madv = ''
+        string $madv = '',
+        string $fromDate = '',
+        string $toDate = ''
     ): int {
         $searchEscaped = $this->db->quote("%$search%");
         
@@ -95,6 +110,17 @@ class HoSoSCBD extends BaseModel
         if ($madv) {
             $madvEscaped = $this->db->quote($madv);
             $where[] = "h.madv = $madvEscaped";
+        }
+        
+        // Lọc theo ngày yêu cầu
+        if ($fromDate) {
+            $fromDateEscaped = $this->db->quote($fromDate);
+            $where[] = "h.ngayyc >= $fromDateEscaped";
+        }
+        
+        if ($toDate) {
+            $toDateEscaped = $this->db->quote($toDate);
+            $where[] = "h.ngayyc <= $toDateEscaped";
         }
         
         if ($trangthai === 'chuath') {

@@ -100,7 +100,7 @@ require_once __DIR__ . '/../../config/constants.php';
                     <ul id="thietbiMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
                             <a href="/iso2/thietbi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
-                                <i class="fas fa-cogs mr-2"></i> Thiết bị
+                                <i class="fas fa-cogs mr-2"></i> Thiết bị máy giếng
                             </a>
                         </li>
                         <li>
@@ -108,10 +108,45 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
                             </a>
                         </li>
+                        <li>
+                            <a href="/iso2/thietbihckd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-certificate mr-2"></i> Thiết bị HC/KĐ
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
-                <!-- 4. Quản lý Lô -->
+                <!-- 4. Bảng Cảnh Báo HC/KĐ -->
+                <li>
+                    <div id="bangcanhbaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Bảng Cảnh Báo HC/KĐ
+                        <i id="bangcanhbaoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="bangcanhbaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <li>
+                            <a href="/iso2/bangcanhbao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-calendar-check mr-2"></i> Bảng Cảnh Báo
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/bangcanhbao.php?action=phieuyc" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-file-alt mr-2"></i> Phiếu Yêu Cầu
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/bangcanhbao.php?action=formhoso" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-edit mr-2"></i> Nhập Hồ Sơ HC
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/bangcanhbao.php?action=phieukt" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-clipboard-check mr-2"></i> Phiếu Kiểm Tra
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- 5. Quản lý Lô -->
                 <?php if (isLoggedIn()): ?>
                 <li>
                     <a href="/iso2/lo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
@@ -120,14 +155,14 @@ require_once __DIR__ . '/../../config/constants.php';
                 </li>
                 <?php endif; ?>
 
-                <!-- 5. Đơn vị -->
+                <!-- 6. Đơn vị -->
                 <li>
                     <a href="/iso2/donvi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-building mr-2"></i> Danh mục Bộ phận
                     </a>
                 </li>
 
-                <!-- 6. Thống kê -->
+                <!-- 7. Thống kê -->
                 <li>
                     <div id="thongkeMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-chart-bar mr-2"></i> Thống kê
@@ -141,7 +176,12 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                         <li>
                             <a href="/iso2/thongke_hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
-                                <i class="fas fa-exclamation-triangle mr-2"></i> Hồ sơ SCBD
+                                <i class="fas fa-exclamation-triangle mr-2"></i> Hồ sơ SCBD quá 30 ngày
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/iso2/thongke_thietbi_chuakd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-clipboard-list mr-2"></i> TB chưa Kiểm định
                             </a>
                         </li>
                     </ul>
@@ -332,6 +372,17 @@ if (thongkeBtn && thongkeMenu && thongkeCaret) {
     thongkeBtn.addEventListener('click', function() {
         thongkeMenu.classList.toggle('hidden');
         thongkeCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Bảng Cảnh Báo HC/KĐ
+const bangcanhbaoBtn = document.getElementById('bangcanhbaoMenuBtn');
+const bangcanhbaoMenu = document.getElementById('bangcanhbaoMenu');
+const bangcanhbaoCaret = document.getElementById('bangcanhbaoCaret');
+if (bangcanhbaoBtn && bangcanhbaoMenu && bangcanhbaoCaret) {
+    bangcanhbaoBtn.addEventListener('click', function() {
+        bangcanhbaoMenu.classList.toggle('hidden');
+        bangcanhbaoCaret.classList.toggle('rotate-180');
     });
 }
 </script>

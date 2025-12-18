@@ -26,9 +26,17 @@ class BaseModel {
         // For latin1 database: Use latin1 connection to properly handle UTF-8 bytes
         $this->db->exec("SET NAMES latin1");
         
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt;
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt;
+        } catch (PDOException $e) {
+            // Log the error with SQL and params for debugging
+            error_log("SQL Error: " . $e->getMessage());
+            error_log("SQL: " . $sql);
+            error_log("Params: " . print_r($params, true));
+            throw $e;
+        }
     }
     
     public function find(int $id): array|false {

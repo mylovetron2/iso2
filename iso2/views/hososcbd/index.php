@@ -53,42 +53,60 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <!-- Filter & Search -->
-    <form method="get" class="flex flex-col md:flex-row gap-2 mb-4">
-        <input type="text" name="search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" 
-               placeholder="Tìm phiếu, mã VT, số máy, đơn vị..." 
-               class="border rounded px-3 py-2 flex-1 w-full md:min-w-[200px] text-sm md:text-base">
+    <form method="get" class="mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
+            <input type="text" name="search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" 
+                   placeholder="Tìm phiếu, mã VT, số máy, đơn vị..." 
+                   class="border rounded px-3 py-2 text-sm md:text-base">
+            
+            <select name="madv" class="border rounded px-3 py-2 text-sm md:text-base">
+                <option value="">Tất cả đơn vị</option>
+                <?php foreach ($donViList as $dv): ?>
+                    <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
+                            <?php echo (isset($_GET['madv']) && $_GET['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($dv['tendv']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            
+            <select name="trangthai" class="border rounded px-3 py-2 text-sm md:text-base">
+                <option value="">Tất cả trạng thái</option>
+                <option value="chuath" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuath') ? 'selected' : ''; ?>>Chưa thực hiện</option>
+                <option value="danglam" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'danglam') ? 'selected' : ''; ?>>Đang làm</option>
+                <option value="hoanthanh" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'hoanthanh') ? 'selected' : ''; ?>>Hoàn thành</option>
+                <option value="chuabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuabg') ? 'selected' : ''; ?>>Chưa bàn giao</option>
+                <option value="dabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'dabg') ? 'selected' : ''; ?>>Đã bàn giao</option>
+            </select>
+            
+            <input type="date" name="from_date" value="<?php echo $_GET['from_date'] ?? ''; ?>" 
+                   placeholder="Từ ngày" 
+                   class="border rounded px-3 py-2 text-sm md:text-base">
+            
+            <input type="date" name="to_date" value="<?php echo $_GET['to_date'] ?? ''; ?>" 
+                   placeholder="Đến ngày" 
+                   class="border rounded px-3 py-2 text-sm md:text-base">
+        </div>
         
-        <select name="madv" class="border rounded px-3 py-2 w-full md:w-auto text-sm md:text-base">
-            <option value="">Tất cả đơn vị</option>
-            <?php foreach ($donViList as $dv): ?>
-                <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
-                        <?php echo (isset($_GET['madv']) && $_GET['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($dv['tendv']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        
-        <select name="trangthai" class="border rounded px-3 py-2 w-full md:w-auto text-sm md:text-base">
-            <option value="">Tất cả trạng thái</option>
-            <option value="chuath" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuath') ? 'selected' : ''; ?>>Chưa thực hiện</option>
-            <option value="danglam" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'danglam') ? 'selected' : ''; ?>>Đang làm</option>
-            <option value="hoanthanh" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'hoanthanh') ? 'selected' : ''; ?>>Hoàn thành</option>
-            <option value="chuabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuabg') ? 'selected' : ''; ?>>Chưa bàn giao</option>
-            <option value="dabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'dabg') ? 'selected' : ''; ?>>Đã bàn giao</option>
-        </select>
-        
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base w-full md:w-auto">
-            <i class="fas fa-search mr-1"></i> Lọc
-        </button>
-        <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto">
-            <i class="fas fa-redo mr-1"></i> Xóa lọc
-        </a>
-        
-        <?php if (hasPermission('hososcbd.create')): ?>
-        <a href="hososcbd.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto md:ml-auto">
-            <i class="fas fa-plus mr-1"></i> Thêm hồ sơ
-        </a>
-        <?php endif; ?>
+        <div class="flex flex-wrap gap-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm md:text-base">
+                <i class="fas fa-search mr-1"></i> Lọc
+            </button>
+            <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm md:text-base text-center">
+                <i class="fas fa-redo mr-1"></i> Xóa lọc
+            </a>
+            
+            <a href="hososcbd.php?action=exportlistpdf&<?php echo http_build_query(['search' => $_GET['search'] ?? '', 'madv' => $_GET['madv'] ?? '', 'trangthai' => $_GET['trangthai'] ?? '', 'nhomsc' => $_GET['nhomsc'] ?? '', 'from_date' => $_GET['from_date'] ?? '', 'to_date' => $_GET['to_date'] ?? '']); ?>" 
+               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm md:text-base text-center"
+               target="_blank">
+                <i class="fas fa-file-pdf mr-1"></i> In PDF
+            </a>
+            
+            <?php if (hasPermission('hososcbd.create')): ?>
+            <a href="hososcbd.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm md:text-base text-center ml-auto">
+                <i class="fas fa-plus mr-1"></i> Thêm hồ sơ
+            </a>
+            <?php endif; ?>
+        </div>
     </form>
 
     <!-- Table -->

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Select2</title>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Select2 CSS (Stable) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+    
+    <!-- Select2 JS (Stable) -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 50px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .test-box {
+            border: 2px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            height: 42px !important;
+            padding: 8px !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 26px !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Select2</h1>
+    
+    <div class="test-box">
+        <h2>Status Check</h2>
+        <div id="status"></div>
+    </div>
+    
+    <div class="test-box">
+        <label for="device">Chọn thiết bị (có tìm kiếm):</label>
+        <select id="device" style="width: 100%">
+            <option value="">-- Chọn thiết bị --</option>
+            <optgroup label="Máy CNC">
+                <option value="cnc1" data-code="M001">[M001] Máy CNC 5 trục</option>
+                <option value="cnc2" data-code="M002">[M002] Máy CNC 3 trục</option>
+                <option value="cnc3" data-code="M003">[M003] Máy CNC Vertical</option>
+            </optgroup>
+            <optgroup label="Máy Khoan">
+                <option value="drill1" data-code="K001">[K001] Máy khoan bàn</option>
+                <option value="drill2" data-code="K002">[K002] Máy khoan cột</option>
+                <option value="drill3" data-code="K003">[K003] Máy khoan từ</option>
+            </optgroup>
+            <optgroup label="Máy Đo">
+                <option value="measure1" data-code="D001">[D001] Thước cặp điện tử</option>
+                <option value="measure2" data-code="D002">[D002] Panme điện tử</option>
+                <option value="measure3" data-code="D003">[D003] Máy đo 3D</option>
+            </optgroup>
+        </select>
+        
+        <div style="margin-top: 20px;">
+            <label>Giá trị đã chọn:</label>
+            <div id="selected-value" style="padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                Chưa chọn
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Hướng dẫn test:</h3>
+        <ol>
+            <li>Kiểm tra "Status Check" phía trên - phải hiển thị ✅ cho tất cả</li>
+            <li>Click vào combobox thiết bị</li>
+            <li>Thử gõ "cnc" hoặc "M001" để tìm kiếm</li>
+            <li>Chọn một thiết bị và xem kết quả</li>
+        </ol>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Check status
+            var statusHTML = '';
+            statusHTML += '<p>jQuery loaded: ' + (typeof jQuery !== 'undefined' ? '✅' : '❌') + '</p>';
+            statusHTML += '<p>jQuery version: ' + (typeof jQuery !== 'undefined' ? jQuery.fn.jquery : 'N/A') + '</p>';
+            statusHTML += '<p>Select2 loaded: ' + (typeof $.fn.select2 !== 'undefined' ? '✅' : '❌') + '</p>';
+            statusHTML += '<p>Test: Click vào combobox và thử gõ để tìm kiếm</p>';
+            $('#status').html(statusHTML);
+            
+            console.log('Initializing Select2...');
+            
+            // Initialize Select2
+            $('#device').select2({
+                placeholder: '-- Gõ để tìm kiếm --',
+                allowClear: true,
+                width: '100%'
+            });
+            
+            console.log('Select2 initialized');
+            
+            // On select
+            $('#device').on('select2:select', function(e) {
+                var data = e.params.data;
+                var $option = $(data.element);
+                var code = $option.data('code');
+                
+                $('#selected-value').html(
+                    '<strong>Value:</strong> ' + data.id + '<br>' +
+                    '<strong>Text:</strong> ' + data.text + '<br>' +
+                    '<strong>Code:</strong> ' + code
+                );
+                
+                console.log('Selected:', data);
+            });
+            
+            // Auto-open on click
+            $('#device').on('select2:open', function() {
+                console.log('Dropdown opened');
+                setTimeout(function() {
+                    $('.select2-search__field').focus();
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

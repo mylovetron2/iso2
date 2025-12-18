@@ -44,6 +44,22 @@ switch ($action) {
         $controller->delete();
         break;
 
+    case 'exportpdf':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportPdf();
+        break;
+
+    case 'exportlistpdf':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportListPdf();
+        break;
+
     default:
         $controller->index();
         break;

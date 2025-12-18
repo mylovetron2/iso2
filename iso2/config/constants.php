@@ -9,6 +9,7 @@ define('BASE_URL', 'http://localhost/project-management');
 define('ROLE_SUPER_ADMIN', 'super_admin');
 define('ROLE_ADMIN', 'admin');
 define('ROLE_USER', 'user');
+define('ROLE_USER2', 'user2');
 define('ROLE_VIEWER', 'viewer');
 define('PERMISSION_PROJECT_VIEW', 'project.view');
 define('PERMISSION_PROJECT_CREATE', 'project.create');
