@@ -166,6 +166,11 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
+        <!-- DEBUG MARKER 1: After unit info section -->
+        <div style="background: #2196F3; color: white; padding: 15px; margin: 20px 0; text-align: center; font-size: 16px; font-weight: bold; border-radius: 5px;">
+            🔵 DEBUG CHECKPOINT 1: Đã render xong phần Thông tin đơn vị
+        </div>
+
         <!-- Thông tin thiết bị (Dynamic) -->
         <div class="border-l-4 border-green-500 pl-4">
             <div class="flex items-center justify-between mb-3">
@@ -376,6 +381,11 @@ function renumberDevices() {
             <p class="text-sm text-gray-500 mt-3">
                 <i class="fas fa-info-circle"></i> Bạn có thể nhập thông tin này sau khi đã tạo hồ sơ cơ bản
             </p>
+        </div>
+
+        <!-- DEBUG MARKER 2: Before handover info section -->
+        <div style="background: #9C27B0; color: white; padding: 15px; margin: 20px 0; text-align: center; font-size: 16px; font-weight: bold; border-radius: 5px;">
+            🟣 DEBUG CHECKPOINT 2: Trước phần Thông tin bàn giao
         </div>
 
         <!-- Bàn giao - Link to separate page (HIDDEN) -->
@@ -1181,5 +1191,10 @@ mark {
     border-radius: 2px;
 }
 </style>
+
+<!-- DEBUG: File rendered completely at line 1181 - Version <?php echo date('Y-m-d H:i:s'); ?> -->
+<div style="position: fixed; bottom: 10px; right: 10px; background: #f44336; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999; font-size: 14px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+    🔴 DEBUG: File loaded @ <?php echo date('H:i:s'); ?>
+</div>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
