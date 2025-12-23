@@ -10,7 +10,7 @@ require_once __DIR__ . '/controllers/PhieuBanGiaoController.php';
 requireAuth();
 
 if (!hasPermission('phieubangiao.view')) {
-    header('Location: /iso2/index.php?error=permission_denied');
+    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
     exit;
 }
 

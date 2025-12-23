@@ -76,13 +76,14 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Model</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Hộp máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Đơn vị</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden xl:table-cell">Lịch sử sửa chữa</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có thiết bị nào</p>
                     </td>
@@ -103,6 +104,31 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['model']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['homay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['madv']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden xl:table-cell">
+                        <?php if (!empty($item['lichsu_suachua'])): ?>
+                            <div class="max-h-32 overflow-y-auto">
+                                <?php foreach ($item['lichsu_suachua'] as $ls): ?>
+                                    <div class="mb-2 pb-2 border-b border-gray-200 last:border-0">
+                                        <div class="text-xs text-blue-600 font-semibold">
+                                            <?php echo $ls['ngaykt'] ? date('d/m/Y', strtotime($ls['ngaykt'])) : ''; ?>
+                                        </div>
+                                        <?php if (!empty($ls['honghoc'])): ?>
+                                            <div class="text-xs text-red-600 mt-1">
+                                                <strong>Hỏng:</strong> <?php $text = strip_tags($ls['honghoc']); $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8'); echo mb_substr($text, 0, 80, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($ls['khacphuc'])): ?>
+                                            <div class="text-xs text-green-600 mt-1">
+                                                <strong>Khắc phục:</strong> <?php $text = strip_tags($ls['khacphuc']); $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8'); echo mb_substr($text, 0, 80, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <span class="text-gray-400 text-xs">Chưa có lịch sử</span>
+                        <?php endif; ?>
+                    </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php if (hasPermission('thietbi.edit')): ?>
                         <a href="thietbi.php?action=edit&id=<?php echo $item['stt']; ?>" 

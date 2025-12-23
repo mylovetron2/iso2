@@ -64,12 +64,14 @@ require_once __DIR__ . '/../layouts/header.php';
                 </button>
             </div>
             
+            <?php /* Ẩn Phiếu Yêu Cầu
             <div>
                 <a href="bangcanhbao.php?action=phieuyc&month=<?php echo $month; ?>&year=<?php echo $year; ?>" 
                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block text-center w-full">
                     <i class="fas fa-file-alt mr-1"></i> Phiếu Yêu Cầu
                 </a>
             </div>
+            */ ?>
         </div>
     </form>
 

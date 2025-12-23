@@ -28,19 +28,34 @@ class ThietBiController
             $params = [];
 
             if ($search) {
-                $conditions[] = "(mavt LIKE :search OR tenvt LIKE :search OR somay LIKE :search OR model LIKE :search)";
-                $params[':search'] = "%$search%";
+                $conditions[] = "(mavt LIKE :search1 OR tenvt LIKE :search2 OR somay LIKE :search3 OR model LIKE :search4)";
+                $params['search1'] = "%$search%";
+                $params['search2'] = "%$search%";
+                $params['search3'] = "%$search%";
+                $params['search4'] = "%$search%";
+                error_log("ThietBiController search: $search");
             }
 
             if ($madv !== '') {
                 $conditions[] = "madv = :madv";
-                $params[':madv'] = $madv;
+                $params['madv'] = $madv;
+                error_log("ThietBiController madv: $madv");
             }
 
             $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
             $orderBy = 'ORDER BY stt DESC';
             
+            error_log("ThietBiController WHERE: $where");
+            error_log("ThietBiController params: " . print_r($params, true));
+            
             $items = $this->model->getAll($where . ' ' . $orderBy, $params, $limit, $offset);
+            
+            // Get repair history for each item
+            foreach ($items as &$item) {
+                $item['lichsu_suachua'] = $this->model->getLichSuSuaChua($item['mamay'] ?? '');
+            }
+            unset($item);
+            
             $total = $this->model->count($where, $params);
             $totalPages = ceil($total / $limit);
 

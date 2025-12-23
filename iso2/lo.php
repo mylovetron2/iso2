@@ -9,11 +9,11 @@ require_once __DIR__ . '/controllers/LoController.php';
 
 requireAuth();
 
-// Kiểm tra quyền (tạm thời cho phép tất cả user đã login, sau này có thể thêm permission riêng)
-// if (!hasPermission('lo.view')) {
-//     header('Location: /iso2/index.php?error=permission_denied');
-//     exit;
-// }
+// Check permissions
+if (!hasPermission('lo.view')) {
+    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
+    exit;
+}
 
 $controller = new LoController();
 $action = $_GET['action'] ?? 'index';

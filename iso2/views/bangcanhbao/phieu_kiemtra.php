@@ -92,14 +92,14 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium mb-2">Phương Pháp Chuẩn</label>
                 <div class="flex gap-6">
                     <label class="flex items-center">
-                        <input type="checkbox" name="danchuan" value="1" 
-                               <?php echo (!empty($hoSo['danchuan'])) ? 'checked' : ''; ?>
+                        <input type="checkbox" name="danchuan" value="on" 
+                               <?php echo ($hoSo['danchuan'] === 'on') ? 'checked' : ''; ?>
                                class="mr-2">
                         Dẫn chuẩn
                     </label>
                     <label class="flex items-center">
-                        <input type="checkbox" name="mauchuan" value="1" 
-                               <?php echo (!empty($hoSo['mauchuan'])) ? 'checked' : ''; ?>
+                        <input type="checkbox" name="mauchuan" value="on" 
+                               <?php echo ($hoSo['mauchuan'] === 'on') ? 'checked' : ''; ?>
                                class="mr-2">
                         Chuẩn qua mẫu chuẩn
                     </label>

@@ -50,6 +50,21 @@ $allPermissions = [
     'phieubangiao.delete' => 'Xóa phiếu bàn giao',
     'phieubangiao.approve' => 'Duyệt phiếu bàn giao',
     
+    'lo.view' => 'Xem lô',
+    'lo.create' => 'Tạo lô',
+    'lo.edit' => 'Sửa lô',
+    'lo.delete' => 'Xóa lô',
+    
+    'mo.view' => 'Xem mỏ',
+    'mo.create' => 'Tạo mỏ',
+    'mo.edit' => 'Sửa mỏ',
+    'mo.delete' => 'Xóa mỏ',
+    
+    'hieuchuan.view' => 'Xem hiệu chuẩn/kiểm định',
+    'hieuchuan.create' => 'Tạo hồ sơ hiệu chuẩn',
+    'hieuchuan.edit' => 'Sửa hồ sơ hiệu chuẩn',
+    'hieuchuan.delete' => 'Xóa hồ sơ hiệu chuẩn',
+    
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
 ];
@@ -76,6 +91,9 @@ $permissionGroups = [
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete'],
     'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],
+    'Quản lý Lô' => ['lo.view', 'lo.create', 'lo.edit', 'lo.delete'],
+    'Quản lý Mỏ' => ['mo.view', 'mo.create', 'mo.edit', 'mo.delete'],
+    'Hiệu Chuẩn/Kiểm Định' => ['hieuchuan.view', 'hieuchuan.create', 'hieuchuan.edit', 'hieuchuan.delete'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];
 ?>

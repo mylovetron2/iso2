@@ -65,13 +65,16 @@ require_once __DIR__ . '/../../config/constants.php';
         <nav class="flex-1">
             <ul class="space-y-2">
                 <!-- 1. Hồ sơ SCBD -->
+                <?php if (isLoggedIn() && hasPermission('hososcbd.view')): ?>
                 <li>
                     <a href="/iso2/hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBĐ
                     </a>
                 </li>
+                <?php endif; ?>
 
                 <!-- 2. Bàn giao -->
+                <?php if (isLoggedIn() && hasPermission('phieubangiao.view')): ?>
                 <li>
                     <div id="bangiaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-clipboard-check mr-2"></i> Bàn giao
@@ -90,8 +93,10 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
                 <!-- 3. Quản lý Thiết bị -->
+                <?php if (isLoggedIn() && hasPermission('thietbi.view')): ?>
                 <li>
                     <div id="thietbiMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-cogs mr-2"></i> Quản lý Thiết bị
@@ -115,11 +120,13 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
-                <!-- 4. Bảng Cảnh Báo HC/KĐ -->
+                <!-- 4. Hiệu Chuẩn/Kiểm Định -->
+                <?php if (isLoggedIn() && hasPermission('hieuchuan.view')): ?>
                 <li>
                     <div id="bangcanhbaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> Bảng Cảnh Báo HC/KĐ
+                        <i class="fas fa-certificate mr-2"></i> Hiệu Chuẩn/Kiểm Định
                         <i id="bangcanhbaoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
                     </div>
                     <ul id="bangcanhbaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
@@ -128,41 +135,71 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-calendar-check mr-2"></i> Bảng Cảnh Báo
                             </a>
                         </li>
+                        <?php /* Ẩn Phiếu Yêu Cầu
                         <li>
                             <a href="/iso2/bangcanhbao.php?action=phieuyc" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-file-alt mr-2"></i> Phiếu Yêu Cầu
                             </a>
                         </li>
+                        */ ?>
                         <li>
                             <a href="/iso2/bangcanhbao.php?action=formhoso" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-edit mr-2"></i> Nhập Hồ Sơ HC
                             </a>
                         </li>
+                        <?php /* Ẩn Phiếu Kiểm Tra
                         <li>
                             <a href="/iso2/bangcanhbao.php?action=phieukt" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-clipboard-check mr-2"></i> Phiếu Kiểm Tra
                             </a>
                         </li>
+                        */ ?>
+                        <li>
+                            <a href="/iso2/thongke_hckd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-chart-line mr-2"></i> Thống Kê HC/KĐ
+                            </a>
+                        </li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
-                <!-- 5. Quản lý Lô -->
-                <?php if (isLoggedIn()): ?>
+                <!-- 5. Quản lý Lô & Mỏ -->
+                <?php if (isLoggedIn() && (hasPermission('lo.view') || hasPermission('mo.view'))): ?>
                 <li>
-                    <a href="/iso2/lo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-box mr-2"></i> Quản lý Lô
-                    </a>
+                    <div id="loMoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-industry mr-2"></i> Quản lý Lô & Mỏ
+                        <i id="loMoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="loMoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <?php if (hasPermission('lo.view')): ?>
+                        <li>
+                            <a href="/iso2/lo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-box mr-2"></i> Quản lý Lô
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('mo.view')): ?>
+                        <li>
+                            <a href="/iso2/mo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-mountain mr-2"></i> Quản lý Mỏ
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
                 </li>
                 <?php endif; ?>
 
                 <!-- 6. Đơn vị -->
+                <?php if (isLoggedIn() && hasPermission('donvi.view')): ?>
                 <li>
                     <a href="/iso2/donvi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-building mr-2"></i> Danh mục Bộ phận
                     </a>
                 </li>
+                <?php endif; ?>
 
                 <!-- 7. Thống kê -->
+                <?php if (isLoggedIn()): ?>
                 <li>
                     <div id="thongkeMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-chart-bar mr-2"></i> Thống kê
@@ -186,6 +223,7 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
                 <!-- Menu Admin -->
@@ -210,6 +248,7 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-history mr-2"></i> Nhật ký hoạt động
                             </a>
                         </li>
+                        <?php /* Ẩn Cấu trúc Project
                         <li class="pt-2 border-t border-blue-600">
                             <div class="text-xs text-blue-300 px-3 py-1">Cấu trúc Project</div>
                         </li>
@@ -223,6 +262,7 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-cubes mr-2"></i> Mô hình Model & View
                             </a>
                         </li>
+                        */ ?>
                     </ul>
                 </li>
                 <?php endif; ?>
@@ -375,6 +415,29 @@ if (thongkeBtn && thongkeMenu && thongkeCaret) {
     });
 }
 
+// Toggle dropdown menus (for general use)
+function toggleDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+    // Close other dropdowns
+    document.querySelectorAll('[id$="Dropdown"]').forEach(dd => {
+        if (dd.id !== dropdownId) {
+            dd.classList.add('hidden');
+        }
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('button') && !e.target.closest('[id$="Dropdown"]')) {
+        document.querySelectorAll('[id$="Dropdown"]').forEach(dd => {
+            dd.classList.add('hidden');
+        });
+    }
+});
+
 // Expand/collapse menu Bảng Cảnh Báo HC/KĐ
 const bangcanhbaoBtn = document.getElementById('bangcanhbaoMenuBtn');
 const bangcanhbaoMenu = document.getElementById('bangcanhbaoMenu');
@@ -383,6 +446,17 @@ if (bangcanhbaoBtn && bangcanhbaoMenu && bangcanhbaoCaret) {
     bangcanhbaoBtn.addEventListener('click', function() {
         bangcanhbaoMenu.classList.toggle('hidden');
         bangcanhbaoCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Lô & Mỏ
+const loMoBtn = document.getElementById('loMoMenuBtn');
+const loMoMenu = document.getElementById('loMoMenu');
+const loMoCaret = document.getElementById('loMoCaret');
+if (loMoBtn && loMoMenu && loMoCaret) {
+    loMoBtn.addEventListener('click', function() {
+        loMoMenu.classList.toggle('hidden');
+        loMoCaret.classList.toggle('rotate-180');
     });
 }
 </script>

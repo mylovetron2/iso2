@@ -166,11 +166,6 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- DEBUG MARKER 1: After unit info section -->
-        <div style="background: #2196F3; color: white; padding: 15px; margin: 20px 0; text-align: center; font-size: 16px; font-weight: bold; border-radius: 5px;">
-            🔵 DEBUG CHECKPOINT 1: Đã render xong phần Thông tin đơn vị
-        </div>
-
         <!-- Thông tin thiết bị (Dynamic) -->
         <div class="border-l-4 border-green-500 pl-4">
             <div class="flex items-center justify-between mb-3">
@@ -383,11 +378,6 @@ function renumberDevices() {
             </p>
         </div>
 
-        <!-- DEBUG MARKER 2: Before handover info section -->
-        <div style="background: #9C27B0; color: white; padding: 15px; margin: 20px 0; text-align: center; font-size: 16px; font-weight: bold; border-radius: 5px;">
-            🟣 DEBUG CHECKPOINT 2: Trước phần Thông tin bàn giao
-        </div>
-
         <!-- Bàn giao - Link to separate page (HIDDEN) -->
         <div class="hidden border-l-4 border-red-500 pl-4 bg-red-50 p-4 rounded">
             <h2 class="text-lg font-bold mb-3 text-red-700">
@@ -404,9 +394,9 @@ function renumberDevices() {
         </div>
 
         <!-- Buttons -->
-        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t" style="background: #ffeb3b; padding: 20px; margin: 20px 0;">
-            <button type="submit" style="background: #f44336 !important; color: white !important; padding: 20px 40px !important; font-size: 24px !important; font-weight: bold !important; border: 5px solid #000 !important; border-radius: 10px !important; cursor: pointer !important; display: block !important; width: 100% !important;">
-                ✅ LƯU HỒ SƠ - CLICK ĐÂY
+        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
+                <i class="fas fa-save mr-2"></i> Lưu hồ sơ
             </button>
             <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded text-base font-semibold text-center w-full md:w-auto">
                 <i class="fas fa-times mr-2"></i> Hủy
@@ -1186,10 +1176,5 @@ mark {
     border-radius: 2px;
 }
 </style>
-
-<!-- DEBUG: File rendered completely at line 1181 - Version <?php echo date('Y-m-d H:i:s'); ?> -->
-<div style="position: fixed; bottom: 10px; right: 10px; background: #f44336; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999; font-size: 14px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-    🔴 DEBUG: File loaded @ <?php echo date('H:i:s'); ?>
-</div>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

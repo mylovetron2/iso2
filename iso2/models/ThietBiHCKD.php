@@ -101,9 +101,10 @@ class ThietBiHCKD extends BaseModel
      */
     public function getAllBoPhanSH(): array
     {
-        $sql = "SELECT DISTINCT bophansh FROM {$this->table} WHERE bophansh != '' ORDER BY bophansh ASC";
+        // Lấy danh sách đơn vị từ bảng donvi_iso (madv và tendv)
+        $sql = "SELECT madv, tendv FROM donvi_iso WHERE madv != '' AND tendv != '' ORDER BY tendv ASC";
         $stmt = $this->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
     /**
@@ -165,6 +166,116 @@ class ThietBiHCKD extends BaseModel
             return $grouped;
         } catch (PDOException $e) {
             error_log("Error in ThietBiHCKD::getAllGrouped: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Count records with filter based on expiry status
+     */
+    public function countWithFilter(string $where = '', array $params = [], string $filterType = ''): int
+    {
+        try {
+            // Build same inner query as getAllWithLatestHC
+            $innerSql = "SELECT t.*, 
+                           CASE 
+                               WHEN COALESCE(h.ngayhc, t.ngayktnghiemthu) IS NOT NULL AND t.thoihankd IS NOT NULL THEN
+                                   DATEDIFF(DATE_ADD(COALESCE(h.ngayhc, t.ngayktnghiemthu), INTERVAL CAST(t.thoihankd AS SIGNED) MONTH), CURDATE())
+                               ELSE NULL
+                           END as days_to_expire
+                    FROM {$this->table} t
+                    LEFT JOIN (
+                        SELECT tenmay, 
+                               MAX(stt) as max_stt
+                        FROM hosohckd_iso
+                        WHERE ngayhc IS NOT NULL
+                        GROUP BY tenmay
+                    ) latest ON t.mavattu = latest.tenmay
+                    LEFT JOIN hosohckd_iso h ON h.stt = latest.max_stt";
+            
+            if ($where) {
+                // Replace table references in WHERE clause, but NOT parameter names (those with : prefix)
+                $where = preg_replace('/(?<!:)\b(mavattu|tenviettat|tenthietbi|somay|hangsx|bophansh|loaitb)\b/', 't.$1', $where);
+                $innerSql .= " $where";
+            }
+            
+            // Wrap in COUNT query with filter
+            $sql = "SELECT COUNT(*) FROM ($innerSql) subq";
+            
+            // Apply filter by expiry status
+            if ($filterType === 'saphethan') {
+                $sql .= " WHERE days_to_expire IS NOT NULL AND days_to_expire <= 30 AND days_to_expire >= 0";
+            } elseif ($filterType === 'dahethan') {
+                $sql .= " WHERE days_to_expire IS NOT NULL AND days_to_expire < 0";
+            }
+            
+            $stmt = $this->query($sql, $params);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error in ThietBiHCKD::countWithFilter: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Lấy danh sách thiết bị kèm ngày HC gần nhất từ hosohckd_iso
+     */
+    public function getAllWithLatestHC(string $where = '', array $params = [], int $limit = 0, int $offset = 0, string $filterType = ''): array
+    {
+        try {
+            // Build inner query
+            $innerSql = "SELECT t.*, 
+                           dv.tendv as tendv_bophan,
+                           h.ngayhc as ngayhc_latest,
+                           h.ngayhctt as ngayhctt_latest,
+                           h.ttkt as ttkt_latest,
+                           COALESCE(h.ngayhc, t.ngayktnghiemthu) as ngayhc_calc,
+                           CASE 
+                               WHEN COALESCE(h.ngayhc, t.ngayktnghiemthu) IS NOT NULL AND t.thoihankd IS NOT NULL THEN
+                                   DATEDIFF(DATE_ADD(COALESCE(h.ngayhc, t.ngayktnghiemthu), INTERVAL CAST(t.thoihankd AS SIGNED) MONTH), CURDATE())
+                               ELSE NULL
+                           END as days_to_expire
+                    FROM {$this->table} t
+                    LEFT JOIN donvi_iso dv ON t.bophansh = dv.madv
+                    LEFT JOIN (
+                        SELECT tenmay, 
+                               MAX(stt) as max_stt
+                        FROM hosohckd_iso
+                        WHERE ngayhc IS NOT NULL
+                        GROUP BY tenmay
+                    ) latest ON t.mavattu = latest.tenmay
+                    LEFT JOIN hosohckd_iso h ON h.stt = latest.max_stt";
+            
+            if ($where) {
+                // Replace table references in WHERE clause, but NOT parameter names (those with : prefix)
+                $where = preg_replace('/(?<!:)\b(mavattu|tenviettat|tenthietbi|somay|hangsx|bophansh|loaitb)\b/', 't.$1', $where);
+                $innerSql .= " $where";
+            }
+            
+            // Wrap in subquery and apply filter in outer WHERE clause
+            $sql = "SELECT * FROM ($innerSql) subq";
+            
+            // Apply filter by expiry status using WHERE clause on subquery
+            if ($filterType === 'saphethan') {
+                $sql .= " WHERE days_to_expire IS NOT NULL AND days_to_expire <= 30 AND days_to_expire >= 0";
+            } elseif ($filterType === 'dahethan') {
+                $sql .= " WHERE days_to_expire IS NOT NULL AND days_to_expire < 0";
+            }
+            
+            // Add ORDER BY after filter
+            $sql .= " ORDER BY stt DESC";
+            
+            if ($limit > 0) {
+                $sql .= " LIMIT $limit";
+                if ($offset > 0) {
+                    $sql .= " OFFSET $offset";
+                }
+            }
+            
+            $stmt = $this->query($sql, $params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error in ThietBiHCKD::getAllWithLatestHC: " . $e->getMessage());
             return [];
         }
     }

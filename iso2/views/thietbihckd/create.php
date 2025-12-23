@@ -53,14 +53,15 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div>
                 <label class="block text-sm font-medium mb-1">Bộ phận sử dụng <span class="text-red-500">*</span></label>
-                <input type="text" name="bophansh" required list="bophan-list"
-                       class="w-full border rounded px-3 py-2" 
-                       value="<?php echo isset($_POST['bophansh']) ? htmlspecialchars($_POST['bophansh']) : ''; ?>">
-                <datalist id="bophan-list">
+                <select name="bophansh" required class="w-full border rounded px-3 py-2">
+                    <option value="">-- Chọn bộ phận --</option>
                     <?php foreach ($boPhanList as $bp): ?>
-                        <option value="<?php echo htmlspecialchars($bp); ?>">
+                        <option value="<?php echo htmlspecialchars($bp['madv']); ?>"
+                                <?php echo (isset($_POST['bophansh']) && $_POST['bophansh'] == $bp['madv']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($bp['tendv']); ?>
+                        </option>
                     <?php endforeach; ?>
-                </datalist>
+                </select>
             </div>
 
             <div>
@@ -72,21 +73,22 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div>
                 <label class="block text-sm font-medium mb-1">Loại thiết bị</label>
-                <input type="text" name="loaitb" list="loaitb-list"
-                       class="w-full border rounded px-3 py-2" 
-                       value="<?php echo isset($_POST['loaitb']) ? htmlspecialchars($_POST['loaitb']) : ''; ?>">
-                <datalist id="loaitb-list">
-                    <?php foreach ($loaiTBList as $lt): ?>
-                        <option value="<?php echo htmlspecialchars($lt); ?>">
-                    <?php endforeach; ?>
-                </datalist>
+                <select name="loaitb" class="w-full border rounded px-3 py-2">
+                    <option value=""></option>
+                    <option value="1" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '1') ? 'selected' : ''; ?>>Thiết bị theo dõi và đo lường</option>
+                    <option value="2" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '2') ? 'selected' : ''; ?>>Máy bắn mìn</option>
+                    <option value="3" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '3') ? 'selected' : ''; ?>>Máy kiểm tra kíp mìn</option>
+                    <option value="4" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '4') ? 'selected' : ''; ?>>Máy đo độ lệch</option>
+                    <option value="5" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '5') ? 'selected' : ''; ?>>Mẫu chuẩn,vật chuẩn</option>
+                    <option value="6" <?php echo (isset($_POST['loaitb']) && $_POST['loaitb'] == '6') ? 'selected' : ''; ?>>Thiết bị đo lường chuyên dụng</option>
+                </select>
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-1">Ngày kiểm tra/nghiệm thu</label>
                 <input type="date" name="ngayktnghiemthu" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo isset($_POST['ngayktnghiemthu']) ? htmlspecialchars($_POST['ngayktnghiemthu']) : ''; ?>">
+                       value="<?php echo isset($_POST['ngayktnghiemthu']) ? htmlspecialchars($_POST['ngayktnghiemthu']) : '1970-01-01'; ?>">
             </div>
 
             <div>

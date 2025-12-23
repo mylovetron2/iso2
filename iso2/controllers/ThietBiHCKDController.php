@@ -30,33 +30,48 @@ class ThietBiHCKDController
             $params = [];
 
             if ($search) {
-                $conditions[] = "(mavattu LIKE :search OR tenviettat LIKE :search OR tenthietbi LIKE :search OR somay LIKE :search OR hangsx LIKE :search)";
-                $params[':search'] = "%$search%";
+                $conditions[] = "(mavattu LIKE :search1 OR tenviettat LIKE :search2 OR tenthietbi LIKE :search3 OR somay LIKE :search4 OR hangsx LIKE :search5)";
+                $params['search1'] = "%$search%";
+                $params['search2'] = "%$search%";
+                $params['search3'] = "%$search%";
+                $params['search4'] = "%$search%";
+                $params['search5'] = "%$search%";
             }
 
             if ($bophansh !== '') {
                 $conditions[] = "bophansh = :bophansh";
-                $params[':bophansh'] = $bophansh;
+                $params['bophansh'] = $bophansh;
             }
 
             if ($loaitb !== '') {
                 $conditions[] = "loaitb = :loaitb";
-                $params[':loaitb'] = $loaitb;
+                $params['loaitb'] = $loaitb;
             }
 
-            // Filter by expiry status
+            // Filter by expiry status - will be applied after JOIN
+            $filterType = ''; // Store filter type for post-processing in model
             if ($filter === 'saphethan') {
-                $conditions[] = "ngayktnghiemthu IS NOT NULL AND DATEDIFF(DATE_ADD(ngayktnghiemthu, INTERVAL CAST(thoihankd AS SIGNED) MONTH), CURDATE()) <= 30 AND DATEDIFF(DATE_ADD(ngayktnghiemthu, INTERVAL CAST(thoihankd AS SIGNED) MONTH), CURDATE()) >= 0";
+                $filterType = 'saphethan';
             } elseif ($filter === 'dahethan') {
-                $conditions[] = "ngayktnghiemthu IS NOT NULL AND DATEDIFF(DATE_ADD(ngayktnghiemthu, INTERVAL CAST(thoihankd AS SIGNED) MONTH), CURDATE()) < 0";
+                $filterType = 'dahethan';
             }
 
             $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
-            $orderBy = 'ORDER BY stt DESC';
             
-            $items = $this->model->getAll($where . ' ' . $orderBy, $params, $limit, $offset);
-            $total = $this->model->count($where, $params);
-            $totalPages = ceil($total / $limit);
+            $items = $this->model->getAllWithLatestHC($where, $params, $limit, $offset, $filterType);
+            
+            // Calculate counts
+            $whereForCount = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $totalAll = $this->model->count($whereForCount, $params); // Total without filter
+            
+            if ($filterType) {
+                // When filtering, $total is filtered count for pagination
+                $total = $this->model->countWithFilter($where, $params, $filterType);
+                $totalPages = ceil($total / $limit);
+            } else {
+                $total = $totalAll;
+                $totalPages = ceil($total / $limit);
+            }
 
             $boPhanList = $this->model->getAllBoPhanSH();
             $loaiTBList = $this->model->getAllLoaiTB();
@@ -69,6 +84,7 @@ class ThietBiHCKDController
             // Set default values to prevent view errors
             $items = [];
             $total = 0;
+            $totalAll = 0;
             $totalPages = 0;
             $boPhanList = [];
             $loaiTBList = [];
@@ -85,44 +101,57 @@ class ThietBiHCKDController
 
     public function create(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'mavattu' => trim($_POST['mavattu'] ?? ''),
-                'tenviettat' => trim($_POST['tenviettat'] ?? ''),
-                'tenthietbi' => trim($_POST['tenthietbi'] ?? ''),
-                'somay' => trim($_POST['somay'] ?? ''),
-                'hangsx' => trim($_POST['hangsx'] ?? ''),
-                'bophansh' => trim($_POST['bophansh'] ?? ''),
-                'chusohuu' => trim($_POST['chusohuu'] ?? ''),
-                'thoihankd' => trim($_POST['thoihankd'] ?? ''),
-                'ngayktnghiemthu' => trim($_POST['ngayktnghiemthu'] ?? ''),
-                'loaitb' => trim($_POST['loaitb'] ?? ''),
-                'tlkt' => trim($_POST['tlkt'] ?? ''),
-                'danchuan' => (int)($_POST['danchuan'] ?? 0)
-            ];
+        try {
+            // Get lists for form dropdowns
+            $boPhanList = $this->model->getAllBoPhanSH();
+            $loaiTBList = $this->model->getAllLoaiTB();
+            
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = [
+                    'mavattu' => trim($_POST['mavattu'] ?? ''),
+                    'tenviettat' => trim($_POST['tenviettat'] ?? ''),
+                    'tenthietbi' => trim($_POST['tenthietbi'] ?? ''),
+                    'somay' => trim($_POST['somay'] ?? ''),
+                    'hangsx' => trim($_POST['hangsx'] ?? ''),
+                    'bophansh' => trim($_POST['bophansh'] ?? ''),
+                    'chusohuu' => trim($_POST['chusohuu'] ?? ''),
+                    'thoihankd' => trim($_POST['thoihankd'] ?? ''),
+                    'ngayktnghiemthu' => trim($_POST['ngayktnghiemthu'] ?? ''),
+                    'loaitb' => trim($_POST['loaitb'] ?? ''),
+                    'tlkt' => trim($_POST['tlkt'] ?? ''),
+                    'danchuan' => (int)($_POST['danchuan'] ?? 0)
+                ];
 
-            $errors = [];
-            if (empty($data['mavattu'])) $errors[] = 'Mã vật tư không được để trống';
-            if (empty($data['tenviettat'])) $errors[] = 'Tên viết tắt không được để trống';
-            if (empty($data['tenthietbi'])) $errors[] = 'Tên thiết bị không được để trống';
-            if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
-            if (empty($data['bophansh'])) $errors[] = 'Bộ phận sử dụng không được để trống';
+                $errors = [];
+                if (empty($data['mavattu'])) $errors[] = 'Mã vật tư không được để trống';
+                if (empty($data['tenviettat'])) $errors[] = 'Tên viết tắt không được để trống';
+                if (empty($data['tenthietbi'])) $errors[] = 'Tên thiết bị không được để trống';
+                if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
+                if (empty($data['bophansh'])) $errors[] = 'Bộ phận sử dụng không được để trống';
 
-            if (empty($errors)) {
-                $id = $this->model->create($data);
-                if ($id) {
-                    header('Location: /iso2/thietbihckd.php?success=created');
-                    exit;
+                if (empty($errors)) {
+                    $id = $this->model->create($data);
+                    if ($id) {
+                        header('Location: /iso2/thietbihckd.php?success=created');
+                        exit;
+                    }
+                    $errors[] = 'Có lỗi xảy ra khi tạo thiết bị';
                 }
-                $errors[] = 'Có lỗi xảy ra khi tạo thiết bị';
+
+                $error = implode(', ', $errors);
             }
 
-            $error = implode(', ', $errors);
+            require_once __DIR__ . '/../views/thietbihckd/create.php';
+        } catch (Exception $e) {
+            error_log("Error in ThietBiHCKDController::create: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            $boPhanList = [];
+            $loaiTBList = [];
+            $error = 'Có lỗi xảy ra: ' . $e->getMessage();
+            
+            require_once __DIR__ . '/../views/thietbihckd/create.php';
         }
-
-        $boPhanList = $this->model->getAllBoPhanSH();
-        $loaiTBList = $this->model->getAllLoaiTB();
-        require_once __DIR__ . '/../views/thietbihckd/create.php';
     }
 
     public function edit(): void

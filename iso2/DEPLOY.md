@@ -58,3 +58,36 @@ curl -X POST https://diavatly.cloud/iso2/deploy.php
 ## Khuyến nghị:
 - **Development**: Dùng SSH + Git Pull
 - **Production**: Setup Webhook để tự động
+
+---
+
+## Nhật ký hoạt động
+
+### 2024-12-18: Cải thiện hệ thống phân quyền
+**Vấn đề:** User chỉ có quyền `hieuchuan.view` vẫn có thể tạo và chỉnh sửa hồ sơ
+
+**Giải pháp:** Thêm kiểm tra quyền chi tiết cho từng action trong `bangcanhbao.php`:
+- `formhoso`, `savehoso`: Yêu cầu quyền `hieuchuan.create` hoặc `hieuchuan.edit`
+- `phieukt`, `savekt`: Yêu cầu quyền `hieuchuan.edit`
+- `api_generatesohs`: Yêu cầu quyền `hieuchuan.create`
+
+**Tác động:**
+- Bảo mật tốt hơn: User chỉ xem không thể tạo/sửa hồ sơ
+- Phân quyền rõ ràng theo từng thao tác (view/create/edit/delete)
+
+**Files thay đổi:**
+- `bangcanhbao.php`: Thêm permission checks trong switch statement
+
+### 2024-12-17: Triển khai hệ thống phân quyền toàn diện
+**Các thay đổi:**
+1. Menu sidebar hiển thị dựa trên quyền user
+2. Redirect tự động về trang thống kê khi không có quyền
+3. Thêm phân quyền cho module Lô và Hiệu Chuẩn/Kiểm Định
+4. Đổi tên menu "Bảng Cảnh Báo HC/KĐ" → "Hiệu Chuẩn/Kiểm Định"
+5. Thay icon thành fa-certificate
+
+**Files thay đổi:**
+- `views/layouts/header.php`: Permission checks cho menu items
+- `hososcbd.php`, `thietbi.php`, `thietbihckd.php`, `phieubangiao.php`, `donvi.php`, `lo.php`: Redirect logic
+- `views/admin/permissions_manager.php`: Thêm permissions mới
+- `bangcanhbao.php`: Thêm entry-level permission check

@@ -50,9 +50,9 @@ require_once __DIR__ . '/../layouts/header.php';
             <select name="bophansh" class="border rounded px-3 py-2 text-sm md:text-base">
                 <option value="">Tất cả bộ phận</option>
                 <?php foreach ($boPhanList as $bp): ?>
-                    <option value="<?php echo htmlspecialchars($bp); ?>" 
-                            <?php echo (isset($_GET['bophansh']) && $_GET['bophansh'] == $bp) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($bp); ?>
+                    <option value="<?php echo htmlspecialchars($bp['madv']); ?>" 
+                            <?php echo (isset($_GET['bophansh']) && $_GET['bophansh'] == $bp['madv']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($bp['tendv']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -94,6 +94,22 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     </form>
 
+    <!-- DEBUG INFO (Set to true to enable for troubleshooting) -->
+    <?php if (false): // Set to true to enable debug ?>
+    <div class="bg-yellow-50 border border-yellow-300 p-3 mb-4 text-sm">
+        <strong>Debug Info:</strong><br>
+        Filter: <?php echo htmlspecialchars($_GET['filter'] ?? 'none'); ?><br>
+        Items count: <?php echo count($items); ?><br>
+        Filtered count: <?php echo $total; ?><br>
+        Total all: <?php echo $totalAll ?? 'N/A'; ?><br>
+        Total pages: <?php echo $totalPages; ?><br>
+        Current page: <?php echo $page; ?><br>
+        Search: <?php echo htmlspecialchars($_GET['search'] ?? ''); ?><br>
+        Bộ phận: <?php echo htmlspecialchars($_GET['bophansh'] ?? ''); ?><br>
+        Loại TB: <?php echo htmlspecialchars($_GET['loaitb'] ?? ''); ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Table -->
     <div class="overflow-x-auto">
         <table class="min-w-full bg-white border">
@@ -107,26 +123,30 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Hãng SX</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Bộ phận</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden xl:table-cell">Thời hạn</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">Ngày HC</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Trạng thái</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Nhập HS</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có thiết bị nào</p>
                     </td>
                 </tr>
                 <?php else: ?>
                 <?php foreach ($items as $item): 
-                    // Calculate expiry status
+                    // Calculate expiry status based on latest HC date
                     $status = '';
                     $statusClass = '';
-                    if (!empty($item['ngayktnghiemthu']) && !empty($item['thoihankd'])) {
-                        $ngayKT = new DateTime($item['ngayktnghiemthu']);
-                        $ngayHetHan = clone $ngayKT;
+                    $ngayHCGanNhat = $item['ngayhc_latest'] ?? $item['ngayktnghiemthu'];
+                    
+                    if (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
+                        $ngayHC = new DateTime($ngayHCGanNhat);
+                        $ngayHetHan = clone $ngayHC;
                         $ngayHetHan->modify('+' . (int)$item['thoihankd'] . ' months');
                         $today = new DateTime();
                         $diff = $today->diff($ngayHetHan);
@@ -158,15 +178,36 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['somay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['hangsx']); ?></td>
-                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['bophansh']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['tendv_bophan'] ?? $item['bophansh']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden xl:table-cell">
                         <?php echo $item['thoihankd'] ? $item['thoihankd'] . ' tháng' : '-'; ?>
+                    </td>
+                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">
+                        <?php 
+                        $ngayHC = $item['ngayhc_latest'] ?? null;
+                        if ($ngayHC) {
+                            echo '<span class="text-blue-700 font-medium">' . date('d/m/Y', strtotime($ngayHC)) . '</span>';
+                        } else {
+                            echo '<span class="text-gray-400">Chưa HC</span>';
+                        }
+                        ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php if ($status): ?>
                             <span class="px-2 py-1 rounded text-xs <?php echo $statusClass; ?>">
                                 <?php echo $status; ?>
                             </span>
+                        <?php else: ?>
+                            <span class="text-gray-400 text-xs">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-2 py-2 border text-center">
+                        <?php if (hasPermission('hieuchuan.create') || hasPermission('hieuchuan.edit')): ?>
+                        <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($item['mavattu']); ?>" 
+                           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs" 
+                           title="Nhập hồ sơ HC/KĐ cho thiết bị này">
+                            <i class="fas fa-file-medical mr-1"></i> Nhập HS
+                        </a>
                         <?php else: ?>
                             <span class="text-gray-400 text-xs">-</span>
                         <?php endif; ?>
@@ -266,7 +307,17 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
     
     <div class="mt-4 text-sm text-gray-600 text-center">
-        Hiển thị <?php echo count($items); ?> / <?php echo $total; ?> thiết bị
+        <?php if (isset($_GET['filter']) && $_GET['filter']): ?>
+            Hiển thị <?php echo count($items); ?> / <?php echo $total; ?> thiết bị 
+            <?php if ($_GET['filter'] === 'saphethan'): ?>
+                <span class="text-orange-600 font-semibold">(sắp hết hạn)</span>
+            <?php elseif ($_GET['filter'] === 'dahethan'): ?>
+                <span class="text-red-600 font-semibold">(đã hết hạn)</span>
+            <?php endif; ?>
+            trong tổng số <?php echo $totalAll ?? $total; ?> thiết bị
+        <?php else: ?>
+            Hiển thị <?php echo count($items); ?> / <?php echo $total; ?> thiết bị
+        <?php endif; ?>
     </div>
 </div>
 

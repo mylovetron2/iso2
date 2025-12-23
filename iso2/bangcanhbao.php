@@ -3,8 +3,16 @@ declare(strict_types=1);
 
 // Session and Authentication
 session_start();
+require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/permissions.php';
 requireAuth();
+
+// Check permissions
+if (!hasPermission('hieuchuan.view')) {
+    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
+    exit;
+}
 
 // Load config and controller
 require_once __DIR__ . '/config/database.php';
@@ -27,12 +35,20 @@ try {
             
         case 'formhoso':
         case 'hoso':
-            // Form nhập/sửa hồ sơ HC
+            // Form nhập/sửa hồ sơ HC - yêu cầu quyền create hoặc edit
+            if (!hasPermission('hieuchuan.create') && !hasPermission('hieuchuan.edit')) {
+                header('Location: /iso2/bangcanhbao.php?error=no_permission');
+                exit;
+            }
             $controller->formHoSo();
             break;
             
         case 'savehoso':
-            // Lưu hồ sơ HC
+            // Lưu hồ sơ HC - yêu cầu quyền create hoặc edit
+            if (!hasPermission('hieuchuan.create') && !hasPermission('hieuchuan.edit')) {
+                header('Location: /iso2/bangcanhbao.php?error=no_permission');
+                exit;
+            }
             $controller->saveHoSo();
             break;
             
@@ -44,17 +60,30 @@ try {
             
         case 'phieukt':
         case 'hosokt':
-            // Form phiếu kiểm tra
+            // Form phiếu kiểm tra - yêu cầu quyền edit
+            if (!hasPermission('hieuchuan.edit')) {
+                header('Location: /iso2/bangcanhbao.php?error=no_permission');
+                exit;
+            }
             $controller->phieuKiemTra();
             break;
             
         case 'savekt':
-            // Lưu kết quả kiểm tra
+            // Lưu kết quả kiểm tra - yêu cầu quyền edit
+            if (!hasPermission('hieuchuan.edit')) {
+                header('Location: /iso2/bangcanhbao.php?error=no_permission');
+                exit;
+            }
             $controller->saveKiemTra();
             break;
             
         case 'api_generatesohs':
-            // API tạo số hồ sơ tự động
+            // API tạo số hồ sơ tự động - yêu cầu quyền create
+            if (!hasPermission('hieuchuan.create')) {
+                http_response_code(403);
+                echo json_encode(['error' => 'No permission']);
+                exit;
+            }
             $controller->apiGenerateSoHS();
             break;
             

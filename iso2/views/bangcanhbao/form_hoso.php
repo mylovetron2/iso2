@@ -18,6 +18,9 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <form method="post" action="bangcanhbao.php?action=savehoso" class="space-y-4">
+        <!-- Hidden field to store return URL -->
+        <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>">
+        
         <!-- Số Hồ Sơ -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -112,26 +115,26 @@ require_once __DIR__ . '/../layouts/header.php';
             </label>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <label class="flex items-center">
-                    <input type="checkbox" name="danchuan" value="1" 
-                           <?php echo (!empty($hoSo['danchuan'])) ? 'checked' : ''; ?>
+                    <input type="checkbox" name="danchuan" value="on" 
+                           <?php echo ($hoSo['danchuan'] === 'on') ? 'checked' : ''; ?>
                            class="mr-2">
                     Dẫn chuẩn
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" name="mauchuan" value="1" 
-                           <?php echo (!empty($hoSo['mauchuan'])) ? 'checked' : ''; ?>
+                    <input type="checkbox" name="mauchuan" value="on" 
+                           <?php echo ($hoSo['mauchuan'] === 'on') ? 'checked' : ''; ?>
                            class="mr-2">
                     Chuẩn qua mẫu chuẩn
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" name="dinhky" value="1" 
-                           <?php echo (!empty($hoSo['dinhky'])) ? 'checked' : ''; ?>
+                    <input type="checkbox" name="dinhky" value="on" 
+                           <?php echo ($hoSo['dinhky'] === 'on') ? 'checked' : ''; ?>
                            class="mr-2">
                     Định kỳ
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" name="dotxuat" value="1" 
-                           <?php echo (!empty($hoSo['dotxuat'])) ? 'checked' : ''; ?>
+                    <input type="checkbox" name="dotxuat" value="on" 
+                           <?php echo ($hoSo['dotxuat'] === 'on') ? 'checked' : ''; ?>
                            class="mr-2">
                     Đột xuất
                 </label>
@@ -184,17 +187,23 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-base font-bold text-gray-800 mb-2">
                     <i class="fas fa-user-check text-teal-600"></i> Người Hiệu Chuẩn <span class="text-red-500">*</span>
                 </label>
-                <select name="nhanvien" class="border rounded px-3 py-2 w-full" required>
-                    <option value="">-- Chọn nhân viên --</option>
+                <input type="text" 
+                       name="nhanvien" 
+                       id="nhanvien-input"
+                       class="border rounded px-3 py-2 w-full" 
+                       list="nhanvien-list"
+                       value="<?php echo isset($hoSo['nhanvien']) ? htmlspecialchars($hoSo['nhanvien']) : ''; ?>"
+                       placeholder="Nhập hoặc chọn nhân viên..."
+                       required>
+                <datalist id="nhanvien-list">
                     <?php if (!empty($nhanVienList)): ?>
                         <?php foreach ($nhanVienList as $nv): ?>
-                            <option value="<?php echo htmlspecialchars($nv['hoten']); ?>"
-                                    <?php echo (isset($hoSo['nhanvien']) && $hoSo['nhanvien'] === $nv['hoten']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($nv['hoten']); ?>">
                                 <?php echo htmlspecialchars($nv['hoten'] . ' - ' . $nv['chucdanh']); ?>
                             </option>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                </select>
+                </datalist>
             </div>
         </div>
 

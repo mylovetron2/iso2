@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../config/database.php';
 
 try {
-    $db = Database::getInstance()->getConnection();
+    $db = getDBConnection();
     
     $madv = $_GET['madv'] ?? '';
     
@@ -15,14 +15,14 @@ try {
         exit;
     }
     
-    // Get distinct mavt + tenvt for this unit
-    $sql = "SELECT DISTINCT mavt, tenvt, model 
+    // Get all devices (mavt + somay + model) for this unit
+    $sql = "SELECT mavt, tenvt, somay, model, mamay 
             FROM thietbi_iso 
-            WHERE madv = :madv 
-            ORDER BY mavt ASC";
+            WHERE madv = ? 
+            ORDER BY mavt ASC, somay ASC";
     
     $stmt = $db->prepare($sql);
-    $stmt->execute([':madv' => $madv]);
+    $stmt->execute([$madv]);
     
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

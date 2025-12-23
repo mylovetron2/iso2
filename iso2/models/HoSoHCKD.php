@@ -118,20 +118,35 @@ class HoSoHCKD extends BaseModel {
      */
     public function saveHoSo(array $data): bool {
         try {
+            error_log("=== HoSoHCKD::saveHoSo ===");
+            error_log("Input data: " . print_r($data, true));
+            
             // Kiểm tra xem đã tồn tại chưa
             $existing = $this->getByDeviceAndDate($data['tenmay'], $data['ngayhc']);
             
+            error_log("Existing record: " . ($existing ? "Found (stt=" . $existing['stt'] . ")" : "Not found"));
+            
             if ($existing) {
                 // UPDATE
+                error_log("Attempting UPDATE...");
                 $result = $this->update((int)$existing['stt'], $data);
+                error_log("UPDATE result: " . $result);
                 return $result >= 0;
             } else {
                 // INSERT
+                error_log("Attempting INSERT...");
                 $id = $this->create($data);
+                error_log("INSERT result (ID): " . $id);
                 return (int)$id > 0;
             }
         } catch (PDOException $e) {
             error_log("Error in HoSoHCKD::saveHoSo: " . $e->getMessage());
+            error_log("SQL State: " . $e->getCode());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            return false;
+        } catch (Exception $e) {
+            error_log("General error in HoSoHCKD::saveHoSo: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             return false;
         }
     }
@@ -152,6 +167,44 @@ class HoSoHCKD extends BaseModel {
         } catch (PDOException $e) {
             error_log("Error in HoSoHCKD::getLatestByDevice: " . $e->getMessage());
             return null;
+        }
+    }
+    
+    /**
+     * Lấy danh sách hồ sơ HC/KĐ theo khoảng thời gian
+     */
+    public function getByDateRange(string $tungay, string $denngay, string $search = ''): array {
+        try {
+            $sql = "SELECT h.*, 
+                           t.tenthietbi, t.tenviettat, t.bophansh, t.thoihankd, t.chusohuu,
+                           DATE_ADD(h.ngayhc, INTERVAL CAST(t.thoihankd AS SIGNED) MONTH) as ngayhc_tieptheo,
+                           CASE 
+                               WHEN h.dinhky = 'on' THEN 'DK'
+                               WHEN h.dotxuat = 'on' THEN 'DX'
+                               ELSE ''
+                           END as loai_hc
+                    FROM {$this->table} h
+                    LEFT JOIN thietbihckd_iso t ON h.tenmay = t.mavattu
+                    WHERE h.ngayhc >= :tungay AND h.ngayhc <= :denngay";
+            
+            $params = [
+                'tungay' => $tungay,
+                'denngay' => $denngay
+            ];
+            
+            if ($search) {
+                $sql .= " AND (h.tenmay LIKE :search OR h.sohs LIKE :search OR t.tenthietbi LIKE :search OR h.nhanvien LIKE :search)";
+                $params['search'] = "%$search%";
+            }
+            
+            $sql .= " ORDER BY h.ngayhc DESC, h.stt DESC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::getByDateRange: " . $e->getMessage());
+            return [];
         }
     }
 }

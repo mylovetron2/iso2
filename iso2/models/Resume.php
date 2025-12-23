@@ -14,13 +14,14 @@ class Resume extends BaseModel
     }
 
     /**
-     * Lấy danh sách nhân viên còn làm việc
+     * Lấy danh sách nhân viên còn làm việc thuộc Xưởng sửa chữa và chuẩn chỉnh
      */
     public function getActiveEmployees(): array
     {
         $sql = "SELECT stt, hoten, chucdanh, donvi 
                 FROM {$this->table} 
-                WHERE nghiviec IS NULL OR nghiviec = ''
+                WHERE (nghiviec IS NULL OR nghiviec = '' OR nghiviec != 'yes')
+                AND donvi LIKE '%Xưởng sửa chữa và chuẩn chỉnh%'
                 ORDER BY hoten";
         
         $stmt = $this->db->query($sql);

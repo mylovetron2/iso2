@@ -9,7 +9,7 @@ requireAuth();
 
 // Check permissions
 if (!hasPermission('donvi.view')) {
-    header('Location: /iso2/index.php?error=permission_denied');
+    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
     exit;
 }
 

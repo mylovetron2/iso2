@@ -52,4 +52,29 @@ class ThietBi extends BaseModel
         $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
+    
+    /**
+     * Lấy lịch sử sửa chữa theo thiết bị ID (mamay)
+     */
+    public function getLichSuSuaChua(string $mamay): array
+    {
+        if (empty($mamay)) {
+            return [];
+        }
+        
+        $mamayEscaped = $this->db->quote($mamay);
+        $sql = "SELECT ngaykt, honghoc, khacphuc, noidung 
+                FROM view_lich_su_bao_duong_iso 
+                WHERE mamay = $mamayEscaped 
+                ORDER BY ngaykt DESC 
+                LIMIT 5";
+        
+        try {
+            $stmt = $this->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error fetching repair history: " . $e->getMessage());
+            return [];
+        }
+    }
 }

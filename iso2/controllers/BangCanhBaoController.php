@@ -128,6 +128,10 @@ class BangCanhBaoController
                 throw new Exception("Invalid request method");
             }
 
+            // DEBUG: Log POST data
+            error_log("=== saveHoSo DEBUG ===");
+            error_log("POST data: " . print_r($_POST, true));
+
             // Lấy dữ liệu từ form
             $mavattu = $_POST['tenmay'] ?? '';
             $sohs = $_POST['sohs'] ?? '';
@@ -137,13 +141,20 @@ class BangCanhBaoController
             $noithuchien = $_POST['noithuchien'] ?? '';
             $ttkt = $_POST['ttkt'] ?? '';
 
-            // Phương pháp chuẩn
-            $danchuan = isset($_POST['danchuan']) ? 1 : 0;
-            $mauchuan = isset($_POST['mauchuan']) ? 1 : 0;
-            $dinhky = isset($_POST['dinhky']) ? 1 : 0;
-            $dotxuat = isset($_POST['dotxuat']) ? 1 : 0;
+            // Validate required fields
+            if (empty($mavattu) || empty($ngayhc) || empty($nhanvien) || empty($ttkt)) {
+                throw new Exception("Vui lòng điền đầy đủ thông tin bắt buộc");
+            }
 
-            // Thiết bị dẫn chuẩn (5 thiết bị)
+            error_log("Validated required fields");
+
+            // Phương pháp chuẩn - convert null to empty string for NOT NULL columns
+            $danchuan = isset($_POST['danchuan']) ? 'on' : '';
+            $mauchuan = isset($_POST['mauchuan']) ? 'on' : '';
+            $dinhky = isset($_POST['dinhky']) ? 'on' : '';
+            $dotxuat = isset($_POST['dotxuat']) ? 'on' : '';
+
+            // Thiết bị dẫn chuẩn (5 thiết bị) - ensure not null
             $thietbidc1 = $_POST['thietbidc1'] ?? '';
             $thietbidc2 = $_POST['thietbidc2'] ?? '';
             $thietbidc3 = $_POST['thietbidc3'] ?? '';
@@ -196,16 +207,32 @@ class BangCanhBaoController
             ];
 
             // Lưu vào database
+            error_log("Attempting to save to database...");
+            error_log("Data: " . print_r($data, true));
+            
             $result = $this->hoSoModel->saveHoSo($data);
+            
+            error_log("Save result: " . ($result ? 'SUCCESS' : 'FAILED'));
 
             if ($result) {
-                // Chuyển về trang bảng cảnh báo
+                // Chuyển về trang trước đó hoặc trang bảng cảnh báo
+                $returnUrl = $_POST['return_url'] ?? $_SERVER['HTTP_REFERER'] ?? null;
+                
+                if ($returnUrl && strpos($returnUrl, $_SERVER['HTTP_HOST']) !== false) {
+                    // Nếu có return_url và là URL nội bộ
+                    error_log("Redirecting to return URL: $returnUrl");
+                    header("Location: $returnUrl");
+                    exit;
+                }
+                
+                // Fallback: chuyển về trang bảng cảnh báo
                 $month = (int)date('m', strtotime($ngayhc));
                 $year = (int)date('Y', strtotime($ngayhc));
+                error_log("Redirecting to bangcanhbao.php?month=$month&year=$year&success=1");
                 header("Location: bangcanhbao.php?month=$month&year=$year&success=1");
                 exit;
             } else {
-                throw new Exception("Không thể lưu hồ sơ");
+                throw new Exception("Không thể lưu hồ sơ - saveHoSo returned false");
             }
         } catch (Exception $e) {
             error_log("Error in BangCanhBaoController::saveHoSo: " . $e->getMessage());
@@ -292,8 +319,8 @@ class BangCanhBaoController
 
             $stt = isset($_POST['stt']) ? (int)$_POST['stt'] : 0;
             $ttkt = $_POST['ttkt'] ?? 'Tốt';
-            $danchuan = isset($_POST['danchuan']) ? 1 : 0;
-            $mauchuan = isset($_POST['mauchuan']) ? 1 : 0;
+            $danchuan = isset($_POST['danchuan']) ? 'on' : null;
+            $mauchuan = isset($_POST['mauchuan']) ? 'on' : null;
 
             // Thiết bị dẫn chuẩn
             $thietbidc1 = $_POST['thietbidc1'] ?? '';
