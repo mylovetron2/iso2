@@ -403,15 +403,10 @@ function renumberDevices() {
             </a>
         </div>
 
-        <!-- DEBUG MARKER: FILE VERSION 2024-12-23 -->
-        <div style="background: yellow; padding: 10px; margin: 20px 0; border: 3px solid red; text-align: center; font-size: 20px; font-weight: bold;">
-            ⚠️ DEBUG: Nếu thấy dòng này nghĩa là file đã update. Nút submit nằm ngay bên dưới ⬇️
-        </div>
-
         <!-- Buttons -->
-        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
-                <i class="fas fa-save mr-2"></i> Lưu hồ sơ
+        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t" style="background: #ffeb3b; padding: 20px; margin: 20px 0;">
+            <button type="submit" style="background: #f44336 !important; color: white !important; padding: 20px 40px !important; font-size: 24px !important; font-weight: bold !important; border: 5px solid #000 !important; border-radius: 10px !important; cursor: pointer !important; display: block !important; width: 100% !important;">
+                ✅ LƯU HỒ SƠ - CLICK ĐÂY
             </button>
             <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded text-base font-semibold text-center w-full md:w-auto">
                 <i class="fas fa-times mr-2"></i> Hủy
