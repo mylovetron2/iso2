@@ -59,12 +59,13 @@ $whereClause = implode(' AND ', $where);
 // Lấy toàn bộ thiết bị với GROUP_CONCAT để gộp các tháng - chỉ lấy thiết bị có kế hoạch
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as thang_thuchien,
+        MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
         INNER JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         WHERE $whereClause
         GROUP BY t.stt
-        ORDER BY t.loaitb, t.tenthietbi";
+        ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
@@ -81,26 +82,37 @@ header('Cache-Control: max-age=0');
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; }
+        body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid black; padding: 5px; text-align: center; }
         th { background-color: #CCCCCC; font-weight: bold; }
-        .title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 20px; }
+        .title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px; }
         .highlight { background-color: #2196F3; }
     </style>
 </head>
 <body>
-    <div class="title">KẾ HOẠCH HIỆU CHUẨN/KIỂM ĐỊNH THIẾT BỊ NĂM 2026</div>
+    <div style="position: relative;">
+        <img src="logo.jpg" alt="Logo" style="position: absolute; left: 20px; top: 10px; height: 80px;">
+    </div>
+    <div class="title">
+        DANH MỤC THIẾT BỊ, MẪU CHUẨN/VẬT CHUẨN<br>
+        YÊU CẦU HIỆU CHUẨN/KIỂM ĐỊNH, KIỂM TRA<br>
+        <br><br><br>
+        Năm 2026<br>
+        <br>
+        Xí Nghiệp Địa Vật Lý Giếng Khoan
+    </div>
     
     <table>
         <thead>
             <tr>
                 <th rowspan="2" style="width: 30px;">STT</th>
                 <th rowspan="2" style="width: 200px;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
+                <th rowspan="2" style="width: 80px;">Ký/Mã hiệu</th>
                 <th rowspan="2" style="width: 80px;">Số máy</th>
-                <th rowspan="2" style="width: 100px;">Hãng sx</th>
-                <th rowspan="2" style="width: 120px;">Đơn vị thực hiện</th>
-                <th colspan="12">Tháng thực hiện</th>
+                <th rowspan="2" style="width: 100px;">Nước/Hãng SX</th>
+                <th rowspan="2" style="width: 120px;">Nơi thực hiện</th>
+                <th colspan="12">Tháng</th>
                 <th rowspan="2" style="width: 120px;">Chủ sở hữu</th>
             </tr>
             <tr>
@@ -118,6 +130,7 @@ header('Cache-Control: max-age=0');
             <tr>
                 <td><?= $displaySTT++ ?></td>
                 <td style="text-align: left;"><?= htmlspecialchars($item['tenthietbi']) ?></td>
+                <td><?= htmlspecialchars($item['tenviettat'] ?? '') ?></td>
                 <td><?= htmlspecialchars($item['somay'] ?? '') ?></td>
                 <td><?= htmlspecialchars($item['hangsx'] ?? '') ?></td>
                 <td><?= htmlspecialchars($item['donvi_thuchien'] ?? '') ?></td>

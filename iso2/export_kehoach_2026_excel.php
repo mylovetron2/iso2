@@ -72,12 +72,13 @@ $whereClause = implode(' AND ', $where);
 // Lấy toàn bộ thiết bị với GROUP_CONCAT để gộp các tháng - chỉ lấy thiết bị có kế hoạch
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as thang_thuchien,
+        MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
         INNER JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         WHERE $whereClause
         GROUP BY t.stt
-        ORDER BY t.loaitb, t.tenthietbi";
+        ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
@@ -91,31 +92,47 @@ $sheet = $spreadsheet->getActiveSheet();
 $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
 $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
 
+// Add logo
+$logoPath = __DIR__ . '/logo.jpg';
+if (file_exists($logoPath)) {
+    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+    $drawing->setName('Logo');
+    $drawing->setDescription('Company Logo');
+    $drawing->setPath($logoPath);
+    $drawing->setCoordinates('A1');
+    $drawing->setHeight(80); // Logo height in pixels
+    $drawing->setOffsetX(10);
+    $drawing->setOffsetY(10);
+    $drawing->setWorksheet($sheet);
+}
+
 // Header
-$sheet->mergeCells('A1:P1');
-$sheet->setCellValue('A1', 'KẾ HOẠCH CHUẨN/KIỂM ĐỊNH THIẾT BỊ NĂM 2026');
-$sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-$sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+$sheet->mergeCells('A1:S1');
+$sheet->setCellValue('A1', "DANH MỤC THIẾT BỊ, MẪU CHUẨN/VẬT CHUẨN\nYÊU CẦU HIỆU CHUẨN/KIỂM ĐỊNH, KIỂM TRA\n\n\n\nNăm 2026\n\nXí Nghiệp Địa Vật Lý Giếng Khoan");
+$sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
+$sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+$sheet->getRowDimension(1)->setRowHeight(120);
 
 // Column headers - row 2
 $sheet->setCellValue('A2', 'STT');
 $sheet->setCellValue('B2', 'Tên thiết bị');
-$sheet->setCellValue('C2', 'Số S/N');
-$sheet->setCellValue('D2', 'Nước/Hãng');
-$sheet->setCellValue('E2', 'Thực hiện');
-$sheet->setCellValue('F2', '1');
-$sheet->setCellValue('G2', '2');
-$sheet->setCellValue('H2', '3');
-$sheet->setCellValue('I2', '4');
-$sheet->setCellValue('J2', '5');
-$sheet->setCellValue('K2', '6');
-$sheet->setCellValue('L2', '7');
-$sheet->setCellValue('M2', '8');
-$sheet->setCellValue('N2', '9');
-$sheet->setCellValue('O2', '10');
-$sheet->setCellValue('P2', '11');
-$sheet->setCellValue('Q2', '12');
-$sheet->setCellValue('R2', 'Ghi chú');
+$sheet->setCellValue('C2', 'Ký/Mã hiệu');
+$sheet->setCellValue('D2', 'Số S/N');
+$sheet->setCellValue('E2', 'Nước/Hãng SX');
+$sheet->setCellValue('F2', 'Nơi thực hiện');
+$sheet->setCellValue('G2', '1');
+$sheet->setCellValue('H2', '2');
+$sheet->setCellValue('I2', '3');
+$sheet->setCellValue('J2', '4');
+$sheet->setCellValue('K2', '5');
+$sheet->setCellValue('L2', '6');
+$sheet->setCellValue('M2', '7');
+$sheet->setCellValue('N2', '8');
+$sheet->setCellValue('O2', '9');
+$sheet->setCellValue('P2', '10');
+$sheet->setCellValue('Q2', '11');
+$sheet->setCellValue('R2', '12');
+$sheet->setCellValue('S2', 'Ghi chú');
 
 // Style header row
 $headerStyle = [
@@ -124,18 +141,19 @@ $headerStyle = [
     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'CCCCCC']],
     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
 ];
-$sheet->getStyle('A2:R2')->applyFromArray($headerStyle);
+$sheet->getStyle('A2:S2')->applyFromArray($headerStyle);
 
 // Set column widths
 $sheet->getColumnDimension('A')->setWidth(5);
 $sheet->getColumnDimension('B')->setWidth(40);
 $sheet->getColumnDimension('C')->setWidth(15);
 $sheet->getColumnDimension('D')->setWidth(15);
-$sheet->getColumnDimension('E')->setWidth(20);
-for ($col = 'F'; $col <= 'Q'; $col++) {
+$sheet->getColumnDimension('E')->setWidth(15);
+$sheet->getColumnDimension('F')->setWidth(20);
+for ($col = 'G'; $col <= 'R'; $col++) {
     $sheet->getColumnDimension($col)->setWidth(4);
 }
-$sheet->getColumnDimension('R')->setWidth(20);
+$sheet->getColumnDimension('S')->setWidth(20);
 
 // Data rows
 $row = 3;
@@ -144,9 +162,10 @@ $displaySTT = 1;
 foreach ($allData as $item) {
     $sheet->setCellValue('A' . $row, $displaySTT++);
     $sheet->setCellValue('B' . $row, $item['tenthietbi']);
-    $sheet->setCellValue('C' . $row, $item['somay'] ?? '');
-    $sheet->setCellValue('D' . $row, $item['hangsx'] ?? '');
-    $sheet->setCellValue('E' . $row, $item['donvi_thuchien'] ?? '');
+    $sheet->setCellValue('C' . $row, $item['tenviettat'] ?? '');
+    $sheet->setCellValue('D' . $row, $item['somay'] ?? '');
+    $sheet->setCellValue('E' . $row, $item['hangsx'] ?? '');
+    $sheet->setCellValue('F' . $row, $item['donvi_thuchien'] ?? '');
     
     // Tô màu xanh dương cho 3 tháng liên tiếp (tháng dữ liệu là tháng đầu tiên hoặc điều chỉnh nếu gần cuối năm)
     if (!empty($item['thang_thuchien'])) {
@@ -161,7 +180,7 @@ foreach ($allData as $item) {
                 
                 for ($i = 0; $i < 3; $i++) {
                     $currentMonth = $startMonth + $i;
-                    $colIndex = ord('E') + $currentMonth; // F=1, G=2, ... Q=12
+                    $colIndex = ord('F') + $currentMonth; // G=1, H=2, ... R=12
                     $colLetter = chr($colIndex);
                     
                     // Tô nền xanh dương
@@ -180,10 +199,10 @@ foreach ($allData as $item) {
         }
     }
     
-    $sheet->setCellValue('R' . $row, $item['chusohuu'] ?? '');
+    $sheet->setCellValue('S' . $row, $item['chusohuu'] ?? '');
     
     // Border for data row
-    $sheet->getStyle('A' . $row . ':R' . $row)->applyFromArray([
+    $sheet->getStyle('A' . $row . ':S' . $row)->applyFromArray([
         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
     ]);
     

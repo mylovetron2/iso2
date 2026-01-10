@@ -203,12 +203,13 @@ $limitClause = $search ? '' : "LIMIT $limit OFFSET $offset";
 
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months,
+        MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
         LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         WHERE $whereClause
         GROUP BY t.stt
-        ORDER BY t.loaitb, t.tenthietbi
+        ORDER BY first_month ASC, t.loaitb, t.tenthietbi
         $limitClause";
 
 $stmt = $db->prepare($sql);
@@ -220,7 +221,7 @@ $loaiTBList = $db->query("SELECT DISTINCT loaitb FROM thietbihckd_iso WHERE loai
 $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bophansh != '' ORDER BY bophansh")->fetchAll(PDO::FETCH_COLUMN);
 
 // Set title for header
-$title = 'Kế hoạch Kiểm định Thiết bị 2026';
+$title = 'Danh mục thiết bị, mẫu chuẩn/vật chuẩn yêu cầu hiệu chuẩn/kiểm định, kiểm tra - Năm 2026';
 require_once __DIR__ . '/views/layouts/header.php';
 ?>
 
@@ -237,11 +238,23 @@ require_once __DIR__ . '/views/layouts/header.php';
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         th { background: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
-        .month-cell { text-align: center; width: auto; cursor: pointer; user-select: none; }
+        .month-cell { text-align: center; width: auto; cursor: pointer; user-select: none; position: relative; }
         .month-header { text-align: center; background: #2196F3; width: auto; }
         .month-selected { background: #4CAF50 !important; }
         input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
         input[type="radio"] { opacity: 0; position: absolute; pointer-events: none; }
+        .month-tooltip {
+            position: fixed;
+            background: #333;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10000;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
         .btn-save-single { 
             padding: 6px 12px; 
             background: #28a745; 
@@ -328,9 +341,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                             <th rowspan="2" style="width: 20%;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
                             <th rowspan="2" style="width: 8%;">Ký/Mã hiệu</th>
                             <th rowspan="2" style="width: 8%;">Số máy</th>
-                            <th rowspan="2" style="width: 7%;">Nước/Hãng SX</th>
-                            <th rowspan="2" style="width: 10%;">Nơi thực hiện</th>
-                            <th colspan="12" class="month-header">THÁNG</th>
+                            <th rowspan="2" style="width: 10%;">Nước/Hãng SX</th>
+                            <th rowspan="2" style="width: 7%;">Nơi thực hiện</th>
+                            <th colspan="12" style="width: 30%;">Tháng</th>
                             <th rowspan="2" style="width: 8%;">Chủ sở hữu</th>
                             <th rowspan="2" style="width: 5%;">Lưu</th>
                         </tr>
@@ -531,6 +544,32 @@ require_once __DIR__ . '/views/layouts/header.php';
         
         // Handle cell clicks
         document.querySelectorAll('.month-cell').forEach(cell => {
+            // Add tooltip on hover/click
+            cell.addEventListener('mouseenter', function(e) {
+                const radio = this.querySelector('input[type="radio"]');
+                if (!radio) return;
+                
+                const monthValue = radio.value;
+                const monthNames = ['', 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 
+                                    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'month-tooltip';
+                tooltip.textContent = monthNames[monthValue] || 'Tháng ' + monthValue;
+                tooltip.id = 'month-tooltip-' + monthValue;
+                document.body.appendChild(tooltip);
+                
+                // Position tooltip near cursor
+                const rect = this.getBoundingClientRect();
+                tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+                tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + 'px';
+            });
+            
+            cell.addEventListener('mouseleave', function() {
+                const tooltips = document.querySelectorAll('.month-tooltip');
+                tooltips.forEach(t => t.remove());
+            });
+            
             cell.addEventListener('click', function() {
                 const radio = this.querySelector('input[type="radio"]');
                 if (!radio) return;
