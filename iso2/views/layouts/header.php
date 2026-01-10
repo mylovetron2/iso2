@@ -159,11 +159,13 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-chart-line mr-2"></i> Thống Kê HC/KĐ
                             </a>
                         </li>
+                        <?php if (hasPermission('kehoach_kiemdinh.view')): ?>
                         <li>
                             <a href="/iso2/kehoach_thietbi_2026.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-calendar-alt mr-2"></i> Kế hoạch KĐ 2026
                             </a>
                         </li>
+                        <?php endif; ?>
                     </ul>
                 </li>
                 <?php endif; ?>

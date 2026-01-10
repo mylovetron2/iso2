@@ -65,6 +65,10 @@ $allPermissions = [
     'hieuchuan.edit' => 'Sửa hồ sơ hiệu chuẩn',
     'hieuchuan.delete' => 'Xóa hồ sơ hiệu chuẩn',
     
+    'kehoach_kiemdinh.view' => 'Xem kế hoạch kiểm định',
+    'kehoach_kiemdinh.edit' => 'Sửa kế hoạch kiểm định',
+    'kehoach_kiemdinh.export' => 'Xuất kế hoạch kiểm định',
+    
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
 ];
@@ -94,6 +98,7 @@ $permissionGroups = [
     'Quản lý Lô' => ['lo.view', 'lo.create', 'lo.edit', 'lo.delete'],
     'Quản lý Mỏ' => ['mo.view', 'mo.create', 'mo.edit', 'mo.delete'],
     'Hiệu Chuẩn/Kiểm Định' => ['hieuchuan.view', 'hieuchuan.create', 'hieuchuan.edit', 'hieuchuan.delete'],
+    'Kế hoạch Kiểm Định' => ['kehoach_kiemdinh.view', 'kehoach_kiemdinh.edit', 'kehoach_kiemdinh.export'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];
 ?>

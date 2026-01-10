@@ -9,7 +9,7 @@ require_once __DIR__ . '/includes/ActivityLogger.php';
 requireAuth();
 
 // Check permissions
-if (!hasPermission('thietbi.view')) {
+if (!hasPermission('kehoach_kiemdinh.view')) {
     header('Location: /iso2/index.php?error=no_permission');
     exit;
 }
@@ -202,7 +202,8 @@ $totalPages = ceil($totalRecords / $limit);
 $limitClause = $search ? '' : "LIMIT $limit OFFSET $offset";
 
 $sql = "SELECT t.*, 
-        GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months
+        GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months,
+        MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
         LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         WHERE $whereClause
@@ -218,18 +219,13 @@ $thietbiList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $loaiTBList = $db->query("SELECT DISTINCT loaitb FROM thietbihckd_iso WHERE loaitb != '' ORDER BY loaitb")->fetchAll(PDO::FETCH_COLUMN);
 $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bophansh != '' ORDER BY bophansh")->fetchAll(PDO::FETCH_COLUMN);
 
+// Set title for header
+$title = 'Kế hoạch Kiểm định Thiết bị 2026';
+require_once __DIR__ . '/views/layouts/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kế hoạch Kiểm định Thiết bị 2026</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 100%; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #333; margin-bottom: 20px; font-size: 24px; }
+
+<style>
+    h1 { color: #333; margin-bottom: 20px; font-size: 24px; }
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 4px; }
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
@@ -238,11 +234,11 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
         .filters button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .filters button:hover { background: #0056b3; }
         .table-wrapper { overflow-x: auto; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         th { background: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
-        .month-cell { text-align: center; width: 50px; cursor: pointer; user-select: none; }
-        .month-header { text-align: center; background: #2196F3; }
+        .month-cell { text-align: center; width: auto; cursor: pointer; user-select: none; }
+        .month-header { text-align: center; background: #2196F3; width: auto; }
         .month-selected { background: #4CAF50 !important; }
         input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
         input[type="radio"] { opacity: 0; position: absolute; pointer-events: none; }
@@ -268,13 +264,12 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
         .selected { background: #e3f2fd !important; }
         .action-buttons { margin-top: 20px; display: flex; gap: 10px; }
         .checkbox-label { display: flex; align-items: center; gap: 5px; margin-bottom: 15px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <a href="/iso2/thietbihckd.php" class="back-link">← Quay lại danh sách thiết bị</a>
-        
-        <h1>� Kế hoạch Kiểm định Thiết bị Năm 2026</h1>
+</style>
+
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <a href="/iso2/thietbihckd.php" class="back-link">← Quay lại danh sách thiết bị</a>
+    
+    <h1 class="text-2xl font-bold mb-4">📅 Kế hoạch Kiểm định Thiết bị Năm 2026</h1>
         
         <?php if ($success): ?>
             <div class="alert alert-success">✓ <?= htmlspecialchars($success) ?></div>
@@ -308,6 +303,14 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
             
             <button type="submit">Lọc</button>
             <a href="kehoach_thietbi_2026.php" style="padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Reset</a>
+            <a href="export_kehoach_2026_excel.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh]) ?>" 
+               style="padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-left: auto;">
+                📊 Xuất Excel
+            </a>
+            <a href="export_kehoach_2026_word.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh]) ?>" 
+               style="padding: 8px 16px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                📝 Xuất Word
+            </a>
         </form>
         
         <!-- Form nhập kế hoạch -->
@@ -321,15 +324,15 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 40px;">STT</th>
-                            <th rowspan="2" style="min-width: 200px;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
-                            <th rowspan="2" style="width: 100px;">Ký/Mã hiệu</th>
-                            <th rowspan="2" style="width: 100px;">Số máy</th>
-                            <th rowspan="2" style="width: 80px;">Nước/Hãng SX</th>
-                            <th rowspan="2" style="min-width: 150px;">Nơi thực hiện</th>
+                            <th rowspan="2" style="width: 3%;">STT</th>
+                            <th rowspan="2" style="width: 20%;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
+                            <th rowspan="2" style="width: 8%;">Ký/Mã hiệu</th>
+                            <th rowspan="2" style="width: 8%;">Số máy</th>
+                            <th rowspan="2" style="width: 7%;">Nước/Hãng SX</th>
+                            <th rowspan="2" style="width: 10%;">Nơi thực hiện</th>
                             <th colspan="12" class="month-header">THÁNG</th>
-                            <th rowspan="2" style="width: 100px;">Chủ sở hữu</th>
-                            <th rowspan="2" style="width: 80px;">Lưu</th>
+                            <th rowspan="2" style="width: 8%;">Chủ sở hữu</th>
+                            <th rowspan="2" style="width: 5%;">Lưu</th>
                         </tr>
                         <tr>
                             <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -361,7 +364,7 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
                                            name="donvi_thuchien[<?= (int)$tb['stt'] ?>]" 
                                            class="small" 
                                            placeholder="Nơi thực hiện"
-                                           value="">
+                                           value="<?= htmlspecialchars($tb['donvi_thuchien'] ?? '') ?>">
                                 </td>
                                 <?php for ($month = 1; $month <= 12; $month++): ?>
                                     <td class="month-cell">
@@ -556,5 +559,6 @@ $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bo
             });
         });
     </script>
-</body>
-</html>
+</div>
+
+<?php require_once __DIR__ . '/views/layouts/footer.php'; ?>

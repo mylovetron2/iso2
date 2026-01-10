@@ -3,31 +3,36 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../models/User.php';
 
-function isLoggedIn(): bool {
-    return isset($_SESSION['user_id']);
+if (!function_exists('isLoggedIn')) {
+    function isLoggedIn(): bool {
+        return isset($_SESSION['user_id']);
+    }
 }
 
-function getCurrentUser(): array|false|null {
-    if (!isLoggedIn()) return null;
-    $userModel = new User();
-    return $userModel->find($_SESSION['user_id']);
+if (!function_exists('getCurrentUser')) {
+    function getCurrentUser(): array|false|null {
+        if (!isLoggedIn()) return null;
+        $userModel = new User();
+        return $userModel->find($_SESSION['user_id']);
+    }
 }
 
-function login(string $username, string $password): bool {
-    $userModel = new User();
-    $user = $userModel->findByUsername($username);
-    
-    if ($user) {
-        // Kiểm tra password - hỗ trợ cả plaintext (user cũ) và hashed (user mới)
-        $passwordValid = false;
+if (!function_exists('login')) {
+    function login(string $username, string $password): bool {
+        $userModel = new User();
+        $user = $userModel->findByUsername($username);
         
-        // Thử verify với password_hash trước
-        if (password_verify($password, $user['password'])) {
-            $passwordValid = true;
-        }
-        // Nếu không match, thử so sánh trực tiếp (cho user cũ)
-        elseif ($user['password'] === $password) {
-            $passwordValid = true;
+        if ($user) {
+            // Kiểm tra password - hỗ trợ cả plaintext (user cũ) và hashed (user mới)
+            $passwordValid = false;
+            
+            // Thử verify với password_hash trước
+            if (password_verify($password, $user['password'])) {
+                $passwordValid = true;
+            }
+            // Nếu không match, thử so sánh trực tiếp (cho user cũ)
+            elseif ($user['password'] === $password) {
+                $passwordValid = true;
         }
         
         if ($passwordValid) {
@@ -42,15 +47,20 @@ function login(string $username, string $password): bool {
     }
     
     return false;
+    }
 }
 
-function logout(): void {
-    session_destroy();
+if (!function_exists('logout')) {
+    function logout(): void {
+        session_destroy();
+    }
 }
 
-function requireAuth(): void {
-    if (!isLoggedIn()) {
-        header('Location: login.php');
-        exit;
+if (!function_exists('requireAuth')) {
+    function requireAuth(): void {
+        if (!isLoggedIn()) {
+            header('Location: login.php');
+            exit;
+        }
     }
 }
