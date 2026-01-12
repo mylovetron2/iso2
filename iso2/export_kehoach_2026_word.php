@@ -139,9 +139,37 @@ header('Cache-Control: max-age=0');
                 <td><?= htmlspecialchars($item['donvi_thuchien'] ?? '') ?></td>
                 
                 <?php for ($month = 1; $month <= 12; $month++): 
-                    // Kiểm tra xem tháng này có trong đợt 1 (green) hoặc đợt 2 (orange)
-                    $isGreen = in_array((string)$month, $selectedMonths);
-                    $isOrange = in_array((string)$month, $selectedMonths2);
+                    // Kiểm tra xem tháng này có được tô màu không (3 tháng liên tiếp)
+                    $isGreen = false;
+                    $isOrange = false;
+                    
+                    // Kiểm tra đợt 1 (green)
+                    foreach ($selectedMonths as $selectedMonth) {
+                        $selectedMonth = (int)trim($selectedMonth);
+                        if ($selectedMonth >= 1 && $selectedMonth <= 12) {
+                            $startMonth = ($selectedMonth >= 11) ? 10 : $selectedMonth;
+                            // Kiểm tra nếu tháng hiện tại nằm trong 3 tháng liên tiếp
+                            if ($month >= $startMonth && $month < $startMonth + 3) {
+                                $isGreen = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Kiểm tra đợt 2 (orange) - chỉ tô cam nếu chưa tô xanh
+                    if (!$isGreen) {
+                        foreach ($selectedMonths2 as $selectedMonth2) {
+                            $selectedMonth2 = (int)trim($selectedMonth2);
+                            if ($selectedMonth2 >= 1 && $selectedMonth2 <= 12) {
+                                $startMonth = ($selectedMonth2 >= 11) ? 10 : $selectedMonth2;
+                                // Kiểm tra nếu tháng hiện tại nằm trong 3 tháng liên tiếp
+                                if ($month >= $startMonth && $month < $startMonth + 3) {
+                                    $isOrange = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     
                     $highlightClass = '';
                     if ($isGreen) {

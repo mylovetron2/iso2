@@ -168,27 +168,38 @@ foreach ($allData as $item) {
     $sheet->setCellValue('E' . $row, $item['hangsx'] ?? '');
     $sheet->setCellValue('F' . $row, $item['donvi_thuchien'] ?? '');
     
-    // Tô màu cho các tháng kế hoạch
+    // Tô màu cho các tháng kế hoạch - mỗi tháng tô 3 ô liên tiếp
     // Tháng đợt 1: màu xanh lá (green)
     if (!empty($item['thang_thuchien'])) {
         $selectedMonths = explode(',', $item['thang_thuchien']);
         foreach ($selectedMonths as $month) {
             $month = (int)trim($month);
             if ($month >= 1 && $month <= 12) {
-                $colIndex = ord('F') + $month; // G=1, H=2, ... R=12
-                $colLetter = chr($colIndex);
+                // Xác định tháng bắt đầu cho 3 tháng liên tiếp
+                // Nếu tháng >= 11, bắt đầu từ tháng 10 (tô 10,11,12)
+                // Nếu tháng <= 10, bắt đầu từ tháng đó
+                $startMonth = ($month >= 11) ? 10 : $month;
                 
-                // Tô nền xanh lá
-                $sheet->getStyle($colLetter . $row)->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => '4CAF50'] // Green
-                    ],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical' => Alignment::VERTICAL_CENTER
-                    ]
-                ]);
+                // Tô 3 tháng liên tiếp
+                for ($i = 0; $i < 3; $i++) {
+                    $currentMonth = $startMonth + $i;
+                    if ($currentMonth >= 1 && $currentMonth <= 12) {
+                        $colIndex = ord('F') + $currentMonth; // G=1, H=2, ... R=12
+                        $colLetter = chr($colIndex);
+                        
+                        // Tô nền xanh lá
+                        $sheet->getStyle($colLetter . $row)->applyFromArray([
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => '4CAF50'] // Green
+                            ],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                                'vertical' => Alignment::VERTICAL_CENTER
+                            ]
+                        ]);
+                    }
+                }
             }
         }
     }
@@ -199,20 +210,29 @@ foreach ($allData as $item) {
         foreach ($selectedMonths2 as $month) {
             $month = (int)trim($month);
             if ($month >= 1 && $month <= 12) {
-                $colIndex = ord('F') + $month; // G=1, H=2, ... R=12
-                $colLetter = chr($colIndex);
+                // Xác định tháng bắt đầu cho 3 tháng liên tiếp
+                $startMonth = ($month >= 11) ? 10 : $month;
                 
-                // Tô nền cam
-                $sheet->getStyle($colLetter . $row)->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FF9800'] // Orange
-                    ],
-                    'alignment' => [
-                        'horizontal' => Alignment::HORIZONTAL_CENTER,
-                        'vertical' => Alignment::VERTICAL_CENTER
-                    ]
-                ]);
+                // Tô 3 tháng liên tiếp
+                for ($i = 0; $i < 3; $i++) {
+                    $currentMonth = $startMonth + $i;
+                    if ($currentMonth >= 1 && $currentMonth <= 12) {
+                        $colIndex = ord('F') + $currentMonth; // G=1, H=2, ... R=12
+                        $colLetter = chr($colIndex);
+                        
+                        // Tô nền cam
+                        $sheet->getStyle($colLetter . $row)->applyFromArray([
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'FF9800'] // Orange
+                            ],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                                'vertical' => Alignment::VERTICAL_CENTER
+                            ]
+                        ]);
+                    }
+                }
             }
         }
     }
