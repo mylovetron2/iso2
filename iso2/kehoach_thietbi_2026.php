@@ -276,7 +276,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         .month-header { text-align: center; background: #2196F3; width: auto; }
         .month-selected { background: #4CAF50 !important; }
         .month-selected-dot2 { background: #FF9800 !important; }
-        input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
+        input[type="checkbox"] { opacity: 0; position: absolute; pointer-events: none; }
         input[type="text"].small { width: 150px; padding: 4px; font-size: 12px; white-space: nowrap; }
         .month-tooltip {
             position: fixed;
