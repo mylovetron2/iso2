@@ -187,11 +187,11 @@ foreach ($allData as $item) {
                         $colIndex = ord('F') + $currentMonth; // G=1, H=2, ... R=12
                         $colLetter = chr($colIndex);
                         
-                        // Tô nền xanh lá
+                        // Tô nền xanh dương
                         $sheet->getStyle($colLetter . $row)->applyFromArray([
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => '4CAF50'] // Green
+                                'startColor' => ['rgb' => '2196F3'] // Blue
                             ],
                             'alignment' => [
                                 'horizontal' => Alignment::HORIZONTAL_CENTER,

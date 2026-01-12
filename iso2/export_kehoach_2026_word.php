@@ -88,7 +88,7 @@ header('Cache-Control: max-age=0');
         th, td { border: 1px solid black; padding: 5px; text-align: center; }
         th { background-color: #CCCCCC; font-weight: bold; }
         .title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px; }
-        .highlight-green { background-color: #4CAF50; }
+        .highlight-green { background-color: #2196F3; }
         .highlight-orange { background-color: #FF9800; }
     </style>
 </head>
