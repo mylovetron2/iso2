@@ -45,16 +45,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
         
         $db->beginTransaction();
         
+        // Cập nhật chủ sở hữu vào master table nếu có thay đổi
+        if ($chusohuuInput !== '') {
+            $stmtUpdate = $db->prepare("UPDATE thietbihckd_iso SET chusohuu = :chusohuu WHERE stt = :stt");
+            $stmtUpdate->execute([':chusohuu' => $chusohuuInput, ':stt' => $stt]);
+        }
+        
         // Xóa kế hoạch cũ của thiết bị này trong năm 2026 (join qua stt)
         $stmtDelete = $db->prepare("DELETE FROM kehoach_kiemdinh_2026_iso WHERE stt = :stt AND nam_kehoach = 2026");
         $stmtDelete->execute([':stt' => $stt]);
         
-        // Nếu có chọn tháng, thêm kế hoạch mới
-        if (!empty($selectedMonth)) {
+        // Nếu có chọn ít nhất 1 tháng, thêm kế hoạch mới
+        if (!empty($thangThuchien)) {
             $stmt = $db->prepare("
                 INSERT INTO kehoach_kiemdinh_2026_iso 
-                (stt, ten_thietbi, ky_hieu, hang_sanxuat, so_may, thang_thuchien, donvi_thuchien, ghichu, nam_kehoach)
-                VALUES (:stt, :ten_thietbi, :ky_hieu, :hang_sanxuat, :so_may, :thang_thuchien, :donvi_thuchien, :ghichu, 2026)
+                (stt, ten_thietbi, ky_hieu, hang_sanxuat, so_may, thang_thuchien, thang_dot2, donvi_thuchien, ghichu, nam_kehoach)
+                VALUES (:stt, :ten_thietbi, :ky_hieu, :hang_sanxuat, :so_may, :thang_thuchien, :thang_dot2, :donvi_thuchien, :ghichu, 2026)
             ");
             
             $stmt->execute([
@@ -63,7 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
                 ':ky_hieu' => $thietbi['tenviettat'] ?? '',
                 ':hang_sanxuat' => $thietbi['hangsx'] ?? '',
                 ':so_may' => $thietbi['somay'] ?? '',
-                ':thang_thuchien' => (int)$selectedMonth,
+                ':thang_thuchien' => $thangThuchien ? (int)$thangThuchien : null,
+                ':thang_dot2' => $thangDot2 ? (int)$thangDot2 : null,
                 ':donvi_thuchien' => $donviThuchien,
                 ':ghichu' => 'Mã vật tư: ' . ($thietbi['mavattu'] ?? '') . ' - Chủ sở hữu: ' . ($thietbi['chusohuu'] ?? '')
             ]);
@@ -78,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
                     'stt' => $stt,
                     'ten_thietbi' => $thietbi['tenthietbi'],
                     'mavattu' => $thietbi['mavattu'] ?? '',
-                    'thang_thuchien' => (int)$selectedMonth,
+                    'thang_thuchien' => $thangThuchien ? (int)$thangThuchien : null,
+                    'thang_dot2' => $thangDot2 ? (int)$thangDot2 : null,
                     'nam_kehoach' => 2026
                 ]
             );
@@ -99,34 +107,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_plan'])) {
     try {
         $db->beginTransaction();
         
-        // Xóa kế hoạch cũ của năm 2026 (tùy chọn)
-        if (isset($_POST['clear_old'])) {
-            $db->exec("DELETE FROM kehoach_kiemdinh_2026_iso WHERE nam_kehoach = 2026");
-        }
-        
         $stmt = $db->prepare("
             INSERT INTO kehoach_kiemdinh_2026_iso 
-            (stt, ten_thietbi, ky_hieu, hang_sanxuat, so_may, thang_thuchien, donvi_thuchien, ghichu, nam_kehoach)
-            VALUES (:stt, :ten_thietbi, :ky_hieu, :hang_sanxuat, :so_may, :thang_thuchien, :donvi_thuchien, :ghichu, 2026)
+            (stt, ten_thietbi, ky_hieu, hang_sanxuat, so_may, thang_thuchien, thang_dot2, donvi_thuchien, ghichu, nam_kehoach)
+            VALUES (:stt, :ten_thietbi, :ky_hieu, :hang_sanxuat, :so_may, :thang_thuchien, :thang_dot2, :donvi_thuchien, :ghichu, 2026)
         ");
         
         $count = 0;
-        foreach ($_POST['thietbi'] ?? [] as $stt => $selectedMonth) {
+        foreach ($_POST['thietbi'] ?? [] as $stt => $selectedMonths) {
+            // Cập nhật chủ sở hữu vào master table nếu có
+            if (isset($_POST['chusohuu'][$stt]) && $_POST['chusohuu'][$stt] !== '') {
+                $stmtUpdateCSH = $db->prepare("UPDATE thietbihckd_iso SET chusohuu = :chusohuu WHERE stt = :stt");
+                $stmtUpdateCSH->execute([':chusohuu' => $_POST['chusohuu'][$stt], ':stt' => $stt]);
+            }
+            
             // Lấy thông tin thiết bị từ master table (join qua stt)
             $stmtTB = $db->prepare("SELECT * FROM thietbihckd_iso WHERE stt = :stt LIMIT 1");
             $stmtTB->execute([':stt' => $stt]);
             $thietbi = $stmtTB->fetch(PDO::FETCH_ASSOC);
             
-            if (!$thietbi || empty($selectedMonth)) continue;
+            if (!$thietbi || empty($selectedMonths) || !is_array($selectedMonths)) continue;
             
-            // Lưu tháng được chọn
+            // Xóa kế hoạch cũ của thiết bị này
+            $stmtDelete = $db->prepare("DELETE FROM kehoach_kiemdinh_2026_iso WHERE stt = :stt AND nam_kehoach = 2026");
+            $stmtDelete->execute([':stt' => $stt]);
+            
+            // Sắp xếp tháng đã chọn (nhỏ -> lớn)
+            $sortedMonths = array_map('intval', $selectedMonths);
+            sort($sortedMonths);
+            
+            // Tháng nhỏ hơn -> thang_thuchien, tháng lớn hơn -> thang_dot2
+            $thang1 = isset($sortedMonths[0]) ? $sortedMonths[0] : null;
+            $thang2 = isset($sortedMonths[1]) ? $sortedMonths[1] : null;
+            
+            // Lưu kế hoạch
             $stmt->execute([
                 ':stt' => $stt,
                 ':ten_thietbi' => $thietbi['tenthietbi'],
                 ':ky_hieu' => $thietbi['tenviettat'] ?? '',
                 ':hang_sanxuat' => $thietbi['hangsx'] ?? '',
                 ':so_may' => $thietbi['somay'] ?? '',
-                ':thang_thuchien' => (int)$selectedMonth,
+                ':thang_thuchien' => $thang1,
+                ':thang_dot2' => $thang2,
                 ':donvi_thuchien' => $_POST['donvi_thuchien'][$stt] ?? '',
                 ':ghichu' => 'Mã vật tư: ' . ($thietbi['mavattu'] ?? '') . ' - Chủ sở hữu: ' . ($thietbi['chusohuu'] ?? '')
             ]);
@@ -163,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_plan'])) {
 $search = $_GET['search'] ?? '';
 $loaitb = $_GET['loaitb'] ?? '';
 $bophansh = $_GET['bophansh'] ?? '';
+$kehoachFilter = $_GET['kehoach'] ?? ''; // 'all', 'co', 'chua'
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $limit = 50;
 $offset = ($page - 1) * $limit;
@@ -171,10 +194,11 @@ $where = ['1=1'];
 $params = [];
 
 if ($search) {
-    $where[] = "(mavattu LIKE :search OR tenthietbi LIKE :search2 OR somay LIKE :search3)";
+    $where[] = "(mavattu LIKE :search OR tenthietbi LIKE :search2 OR somay LIKE :search3 OR chusohuu LIKE :search4)";
     $params[':search'] = "%$search%";
     $params[':search2'] = "%$search%";
     $params[':search3'] = "%$search%";
+    $params[':search4'] = "%$search%";
 }
 
 if ($loaitb) {
@@ -188,6 +212,14 @@ if ($bophansh) {
 }
 
 $whereClause = implode(' AND ', $where);
+
+// Filter theo tình trạng kế hoạch
+$havingClause = '';
+if ($kehoachFilter === 'co') {
+    $havingClause = 'HAVING planned_months IS NOT NULL';
+} elseif ($kehoachFilter === 'chua') {
+    $havingClause = 'HAVING planned_months IS NULL';
+}
 
 // Đếm tổng số thiết bị
 $countSql = "SELECT COUNT(DISTINCT t.stt) as total
@@ -203,12 +235,14 @@ $limitClause = $search ? '' : "LIMIT $limit OFFSET $offset";
 
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months,
+        GROUP_CONCAT(DISTINCT k.thang_dot2 ORDER BY k.thang_dot2) as planned_months_dot2,
         MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
         LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         WHERE $whereClause
         GROUP BY t.stt
+        $havingClause
         ORDER BY first_month ASC, t.loaitb, t.tenthietbi
         $limitClause";
 
@@ -236,13 +270,14 @@ require_once __DIR__ . '/views/layouts/header.php';
         .filters button:hover { background: #0056b3; }
         .table-wrapper { overflow-x: auto; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; word-wrap: break-word; white-space: normal; }
         th { background: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
         .month-cell { text-align: center; width: auto; cursor: pointer; user-select: none; position: relative; }
         .month-header { text-align: center; background: #2196F3; width: auto; }
         .month-selected { background: #4CAF50 !important; }
+        .month-selected-dot2 { background: #FF9800 !important; }
         input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
-        input[type="radio"] { opacity: 0; position: absolute; pointer-events: none; }
+        input[type="text"].small { width: 150px; padding: 4px; font-size: 12px; white-space: nowrap; }
         .month-tooltip {
             position: fixed;
             background: #333;
@@ -267,15 +302,16 @@ require_once __DIR__ . '/views/layouts/header.php';
         }
         .btn-save-single:hover { background: #218838; }
         .btn-save-single:disabled { background: #6c757d; cursor: not-allowed; }
-        input[type="text"].small { width: 150px; padding: 4px; font-size: 12px; }
-        .btn-save { padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        input[type="text"].small { width: 100%; max-width: 180px; padding: 4px; font-size: 12px; box-sizing: border-box; }
+        td:has(input.small) { white-space: nowrap; }
+        .btn-save { padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; position: sticky; bottom: 20px; z-index: 100; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         .btn-save:hover { background: #218838; }
         .back-link { display: inline-block; margin-bottom: 15px; color: #007bff; text-decoration: none; }
         .back-link:hover { text-decoration: underline; }
         tr:nth-child(even) { background: #f9f9f9; }
         tr:hover { background: #f0f0f0; }
         .selected { background: #e3f2fd !important; }
-        .action-buttons { margin-top: 20px; display: flex; gap: 10px; }
+        .action-buttons { margin-top: 20px; display: flex; gap: 10px; position: sticky; bottom: 10px; z-index: 100; background: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
         .checkbox-label { display: flex; align-items: center; gap: 5px; margin-bottom: 15px; }
 </style>
 
@@ -294,7 +330,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         
         <!-- Bộ lọc -->
         <form method="GET" class="filters">
-            <input type="text" name="search" placeholder="Tìm kiếm thiết bị, số máy..." value="<?= htmlspecialchars($search) ?>">
+            <input type="text" name="search" placeholder="Tìm kiếm thiết bị, số máy, chủ sở hữu..." value="<?= htmlspecialchars($search) ?>">
             
             <select name="loaitb">
                 <option value="">-- Tất cả loại TB --</option>
@@ -314,13 +350,19 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endforeach; ?>
             </select>
             
+            <select name="kehoach">
+                <option value="">-- Tình trạng kế hoạch --</option>
+                <option value="co" <?= $kehoachFilter === 'co' ? 'selected' : '' ?>>Đã có kế hoạch</option>
+                <option value="chua" <?= $kehoachFilter === 'chua' ? 'selected' : '' ?>>Chưa có kế hoạch</option>
+            </select>
+            
             <button type="submit">Lọc</button>
             <a href="kehoach_thietbi_2026.php" style="padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Reset</a>
-            <a href="export_kehoach_2026_excel.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh]) ?>" 
+            <a href="export_kehoach_2026_excel.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter]) ?>" 
                style="padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-left: auto;">
                 📊 Xuất Excel
             </a>
-            <a href="export_kehoach_2026_word.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh]) ?>" 
+            <a href="export_kehoach_2026_word.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter]) ?>" 
                style="padding: 8px 16px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">
                 📝 Xuất Word
             </a>
@@ -328,24 +370,19 @@ require_once __DIR__ . '/views/layouts/header.php';
         
         <!-- Form nhập kế hoạch -->
         <form method="POST">
-            <label class="checkbox-label">
-                <input type="checkbox" name="clear_old" value="1">
-                <span>Xóa kế hoạch cũ năm 2026 trước khi lưu</span>
-            </label>
-            
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
                             <th rowspan="2" style="width: 3%;">STT</th>
-                            <th rowspan="2" style="width: 20%;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
+                            <th rowspan="2" style="width: 18%;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
                             <th rowspan="2" style="width: 8%;">Ký/Mã hiệu</th>
                             <th rowspan="2" style="width: 8%;">Số máy</th>
                             <th rowspan="2" style="width: 10%;">Nước/Hãng SX</th>
-                            <th rowspan="2" style="width: 7%;">Nơi thực hiện</th>
+                            <th rowspan="2" style="width: 12%;">Nơi thực hiện</th>
                             <th colspan="12" style="width: 30%;">Tháng</th>
-                            <th rowspan="2" style="width: 8%;">Chủ sở hữu</th>
-                            <th rowspan="2" style="width: 5%;">Lưu</th>
+                            <th rowspan="2" style="width: 6%;">Chủ sở hữu</th>
+                            <th rowspan="2" style="width: 5%; display: none;">Lưu</th>
                         </tr>
                         <tr>
                             <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -365,6 +402,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             $displaySTT = 1;
                             foreach ($thietbiList as $tb): 
                                 $plannedMonths = $tb['planned_months'] ? explode(',', $tb['planned_months']) : [];
+                                $plannedMonthsDot2 = $tb['planned_months_dot2'] ? explode(',', $tb['planned_months_dot2']) : [];
                             ?>
                             <tr>
                                 <td><?= $displaySTT++ ?></td>
@@ -381,14 +419,21 @@ require_once __DIR__ . '/views/layouts/header.php';
                                 </td>
                                 <?php for ($month = 1; $month <= 12; $month++): ?>
                                     <td class="month-cell">
-                                        <input type="radio" 
-                                               name="thietbi[<?= (int)$tb['stt'] ?>]" 
+                                        <input type="checkbox" 
+                                               name="thietbi[<?= (int)$tb['stt'] ?>][]" 
                                                value="<?= $month ?>"
-                                               <?= in_array((string)$month, $plannedMonths) ? 'checked' : '' ?>>
+                                               data-row="<?= (int)$tb['stt'] ?>"
+                                               <?= in_array((string)$month, $plannedMonths) || in_array((string)$month, $plannedMonthsDot2) ? 'checked' : '' ?>>
                                     </td>
                                 <?php endfor; ?>
-                                <td><?= htmlspecialchars($tb['chusohuu'] ?? '') ?></td>
-                                <td style="text-align: center;">
+                                <td>
+                                    <input type="text" 
+                                           name="chusohuu[<?= (int)$tb['stt'] ?>]" 
+                                           class="small" 
+                                           placeholder="Chủ sở hữu"
+                                           value="<?= htmlspecialchars($tb['chusohuu'] ?? '') ?>">
+                                </td>
+                                <td style="text-align: center; display: none;">
                                     <button type="button" 
                                             class="btn-save-single" 
                                             data-stt="<?= (int)$tb['stt'] ?>"
@@ -404,8 +449,8 @@ require_once __DIR__ . '/views/layouts/header.php';
             </div>
             
             <div class="action-buttons">
-                <button type="submit" name="save_plan" class="btn-save">💾 Lưu Kế hoạch 2026</button>
-                <a href="/iso2/thietbihckd.php" style="padding: 12px 24px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Hủy</a>
+                <button type="submit" name="save_plan" class="btn-save">💾 Lưu</button>
+                <a href="/iso2/thietbihckd.php" style="padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">Hủy</a>
             </div>
         </form>
         
@@ -449,10 +494,17 @@ require_once __DIR__ . '/views/layouts/header.php';
             const stt = button.getAttribute('data-stt');
             const row = button.closest('tr');
             const donviInput = row.querySelector('input[name="donvi_thuchien[' + stt + ']"]');
-            const selectedRadio = row.querySelector('input[name="thietbi[' + stt + ']"]:checked');
+            const chusohuuInput = row.querySelector('input[name="chusohuu[' + stt + ']"]');
+            
+            // Get all checked months for this equipment
+            const checkedMonths = Array.from(row.querySelectorAll('input[name="thietbi[' + stt + '][]"]:checked'))
+                .map(cb => parseInt(cb.value))
+                .sort((a, b) => a - b);
             
             const donviThuchien = donviInput ? donviInput.value : '';
-            const thangThuchien = selectedRadio ? selectedRadio.value : '';
+            const chusohuu = chusohuuInput ? chusohuuInput.value : '';
+            const thang1 = checkedMonths[0] || '';
+            const thang2 = checkedMonths[1] || '';
             
             // Disable button
             button.disabled = true;
@@ -466,8 +518,10 @@ require_once __DIR__ . '/views/layouts/header.php';
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: 'ajax_save=1&stt=' + encodeURIComponent(stt) + 
-                      '&thang_thuchien=' + encodeURIComponent(thangThuchien) + 
-                      '&donvi_thuchien=' + encodeURIComponent(donviThuchien)
+                      '&thang_thuchien=' + encodeURIComponent(thang1) + 
+                      '&thang_dot2=' + encodeURIComponent(thang2) +
+                      '&donvi_thuchien=' + encodeURIComponent(donviThuchien) +
+                      '&chusohuu=' + encodeURIComponent(chusohuu)
             })
             .then(response => response.json())
             .then(data => {
@@ -533,23 +587,62 @@ require_once __DIR__ . '/views/layouts/header.php';
         let lastChecked = {};
         
         // Initialize - highlight already selected cells
-        document.querySelectorAll('input[type="radio"]').forEach(radio => {
-            const name = radio.name;
-            if (radio.checked) {
-                lastChecked[name] = radio;
-                radio.closest('td').classList.add('month-selected');
-                radio.closest('tr').classList.add('selected');
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            if (checkbox.checked) {
+                updateCellColor(checkbox);
             }
         });
+        
+        // Limit to 2 checkboxes per row and color them
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const rowId = this.getAttribute('data-row');
+                const rowCheckboxes = document.querySelectorAll(`input[type="checkbox"][data-row="${rowId}"]`);
+                const checked = Array.from(rowCheckboxes).filter(cb => cb.checked);
+                
+                // Limit to 2 selections
+                if (checked.length > 2) {
+                    this.checked = false;
+                    alert('Chỉ được chọn tối đa 2 tháng cho mỗi thiết bị!');
+                    return;
+                }
+                
+                // Update colors for all checkboxes in this row
+                rowCheckboxes.forEach(cb => updateCellColor(cb));
+            });
+        });
+        
+        function updateCellColor(checkbox) {
+            const cell = checkbox.closest('td');
+            const rowId = checkbox.getAttribute('data-row');
+            const rowCheckboxes = document.querySelectorAll(`input[type="checkbox"][data-row="${rowId}"]`);
+            const checked = Array.from(rowCheckboxes).filter(cb => cb.checked).sort((a, b) => parseInt(a.value) - parseInt(b.value));
+            
+            // Remove all color classes first
+            cell.classList.remove('month-selected', 'month-selected-dot2');
+            
+            if (checkbox.checked) {
+                // First month (smallest) = green, second month = orange
+                if (checked.length === 1) {
+                    cell.classList.add('month-selected');
+                } else if (checked.length === 2) {
+                    if (checkbox === checked[0]) {
+                        cell.classList.add('month-selected');
+                    } else {
+                        cell.classList.add('month-selected-dot2');
+                    }
+                }
+            }
+        }
         
         // Handle cell clicks
         document.querySelectorAll('.month-cell').forEach(cell => {
             // Add tooltip on hover/click
             cell.addEventListener('mouseenter', function(e) {
-                const radio = this.querySelector('input[type="radio"]');
-                if (!radio) return;
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (!checkbox) return;
                 
-                const monthValue = radio.value;
+                const monthValue = checkbox.value;
                 const monthNames = ['', 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 
                                     'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
                 
@@ -571,30 +664,12 @@ require_once __DIR__ . '/views/layouts/header.php';
             });
             
             cell.addEventListener('click', function() {
-                const radio = this.querySelector('input[type="radio"]');
-                if (!radio) return;
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (!checkbox) return;
                 
-                const name = radio.name;
-                const row = this.closest('tr');
-                
-                // If clicking the same cell, uncheck it
-                if (lastChecked[name] === radio) {
-                    radio.checked = false;
-                    this.classList.remove('month-selected');
-                    lastChecked[name] = null;
-                    row.classList.remove('selected');
-                } else {
-                    // Remove highlight from previous selection
-                    if (lastChecked[name]) {
-                        lastChecked[name].closest('td').classList.remove('month-selected');
-                    }
-                    
-                    // Highlight new selection
-                    radio.checked = true;
-                    this.classList.add('month-selected');
-                    lastChecked[name] = radio;
-                    row.classList.add('selected');
-                }
+                // Toggle checkbox
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
             });
         });
     </script>

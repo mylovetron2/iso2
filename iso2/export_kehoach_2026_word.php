@@ -59,6 +59,7 @@ $whereClause = implode(' AND ', $where);
 // Lấy toàn bộ thiết bị với GROUP_CONCAT để gộp các tháng - chỉ lấy thiết bị có kế hoạch
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as thang_thuchien,
+        GROUP_CONCAT(DISTINCT k.thang_dot2 ORDER BY k.thang_dot2) as thang_dot2,
         MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
@@ -87,7 +88,8 @@ header('Cache-Control: max-age=0');
         th, td { border: 1px solid black; padding: 5px; text-align: center; }
         th { background-color: #CCCCCC; font-weight: bold; }
         .title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px; }
-        .highlight { background-color: #2196F3; }
+        .highlight-green { background-color: #4CAF50; }
+        .highlight-orange { background-color: #FF9800; }
     </style>
 </head>
 <body>
@@ -126,6 +128,7 @@ header('Cache-Control: max-age=0');
             $displaySTT = 1;
             foreach ($allData as $item): 
                 $selectedMonths = !empty($item['thang_thuchien']) ? explode(',', $item['thang_thuchien']) : [];
+                $selectedMonths2 = !empty($item['thang_dot2']) ? explode(',', $item['thang_dot2']) : [];
             ?>
             <tr>
                 <td><?= $displaySTT++ ?></td>
@@ -136,22 +139,36 @@ header('Cache-Control: max-age=0');
                 <td><?= htmlspecialchars($item['donvi_thuchien'] ?? '') ?></td>
                 
                 <?php for ($month = 1; $month <= 12; $month++): 
-                    // Kiểm tra xem tháng này có nằm trong nhóm 3 tháng được tô không
-                    $isHighlighted = false;
-                    foreach ($selectedMonths as $selectedMonth) {
-                        $selectedMonth = (int)trim($selectedMonth);
-                        // Tính tháng bắt đầu cho nhóm 3 tháng
-                        $startMonth = min($selectedMonth, 10);
-                        if ($month >= $startMonth && $month < $startMonth + 3) {
-                            $isHighlighted = true;
-                            break;
-                        }
+                    // Kiểm tra xem tháng này có trong đợt 1 (green) hoặc đợt 2 (orange)
+                    $isGreen = in_array((string)$month, $selectedMonths);
+                    $isOrange = in_array((string)$month, $selectedMonths2);
+                    
+                    $highlightClass = '';
+                    if ($isGreen) {
+                        $highlightClass = ' class="highlight-green"';
+                    } elseif ($isOrange) {
+                        $highlightClass = ' class="highlight-orange"';
                     }
                 ?>
-                    <td<?= $isHighlighted ? ' class="highlight"' : '' ?>>&nbsp;</td>
+                    <td<?= $highlightClass ?>>&nbsp;</td>
                 <?php endfor; ?>
                 
-                <td><?= htmlspecialchars($item['chusohuu'] ?? '') ?></td>
+                <?php 
+                // Chuyển đổi chủ sở hữu
+                $chusohuuValue = $item['chusohuu'] ?? '';
+                if ($chusohuuValue === 'TH') {
+                    $chusohuuValue = 'Đội TH';
+                } elseif ($chusohuuValue === 'CNC') {
+                    $chusohuuValue = 'Đội CNM';
+                } elseif ($chusohuuValue === 'TV') {
+                    $chusohuuValue = 'Đội TV';
+                } elseif ($chusohuuValue === 'KTKT') {
+                    $chusohuuValue = 'Đội KTKT';
+                } elseif ($chusohuuValue === 'VT') {
+                    $chusohuuValue = 'Phòng VT';
+                }
+                ?>
+                <td><?= htmlspecialchars($chusohuuValue) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>

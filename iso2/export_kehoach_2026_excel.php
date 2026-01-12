@@ -72,6 +72,7 @@ $whereClause = implode(' AND ', $where);
 // Lấy toàn bộ thiết bị với GROUP_CONCAT để gộp các tháng - chỉ lấy thiết bị có kế hoạch
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as thang_thuchien,
+        GROUP_CONCAT(DISTINCT k.thang_dot2 ORDER BY k.thang_dot2) as thang_dot2,
         MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien
         FROM thietbihckd_iso t
@@ -167,39 +168,70 @@ foreach ($allData as $item) {
     $sheet->setCellValue('E' . $row, $item['hangsx'] ?? '');
     $sheet->setCellValue('F' . $row, $item['donvi_thuchien'] ?? '');
     
-    // Tô màu xanh dương cho 3 tháng liên tiếp (tháng dữ liệu là tháng đầu tiên hoặc điều chỉnh nếu gần cuối năm)
+    // Tô màu cho các tháng kế hoạch
+    // Tháng đợt 1: màu xanh lá (green)
     if (!empty($item['thang_thuchien'])) {
         $selectedMonths = explode(',', $item['thang_thuchien']);
         foreach ($selectedMonths as $month) {
             $month = (int)trim($month);
             if ($month >= 1 && $month <= 12) {
-                // Đảm bảo luôn tô 3 ô, điều chỉnh nếu tháng 11 hoặc 12
-                // Tháng 1-10: tô từ tháng đó
-                // Tháng 11, 12: tô 10, 11, 12
-                $startMonth = min($month, 10);
+                $colIndex = ord('F') + $month; // G=1, H=2, ... R=12
+                $colLetter = chr($colIndex);
                 
-                for ($i = 0; $i < 3; $i++) {
-                    $currentMonth = $startMonth + $i;
-                    $colIndex = ord('F') + $currentMonth; // G=1, H=2, ... R=12
-                    $colLetter = chr($colIndex);
-                    
-                    // Tô nền xanh dương
-                    $sheet->getStyle($colLetter . $row)->applyFromArray([
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => '2196F3'] // Blue
-                        ],
-                        'alignment' => [
-                            'horizontal' => Alignment::HORIZONTAL_CENTER,
-                            'vertical' => Alignment::VERTICAL_CENTER
-                        ]
-                    ]);
-                }
+                // Tô nền xanh lá
+                $sheet->getStyle($colLetter . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4CAF50'] // Green
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER
+                    ]
+                ]);
             }
         }
     }
     
-    $sheet->setCellValue('S' . $row, $item['chusohuu'] ?? '');
+    // Tháng đợt 2: màu cam (orange)
+    if (!empty($item['thang_dot2'])) {
+        $selectedMonths2 = explode(',', $item['thang_dot2']);
+        foreach ($selectedMonths2 as $month) {
+            $month = (int)trim($month);
+            if ($month >= 1 && $month <= 12) {
+                $colIndex = ord('F') + $month; // G=1, H=2, ... R=12
+                $colLetter = chr($colIndex);
+                
+                // Tô nền cam
+                $sheet->getStyle($colLetter . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FF9800'] // Orange
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER
+                    ]
+                ]);
+            }
+        }
+    }
+    
+    // Chuyển đổi chủ sở hữu
+    $chusohuuValue = $item['chusohuu'] ?? '';
+    if ($chusohuuValue === 'TH') {
+        $chusohuuValue = 'Đội TH';
+    } elseif ($chusohuuValue === 'CNC') {
+        $chusohuuValue = 'Đội CNM';
+    } elseif ($chusohuuValue === 'TV') {
+        $chusohuuValue = 'Đội TV';
+    } elseif ($chusohuuValue === 'KTKT') {
+        $chusohuuValue = 'Đội KTKT';
+    } elseif ($chusohuuValue === 'VT') {
+        $chusohuuValue = 'Phòng VT';
+    }
+    
+    $sheet->setCellValue('S' . $row, $chusohuuValue);
     
     // Border for data row
     $sheet->getStyle('A' . $row . ':S' . $row)->applyFromArray([
