@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestration - Quản Lý Module Tự Động - PMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .comparison-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+        
+        .comparison-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .comparison-card h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .pros, .cons {
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .pros {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .cons {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .architecture-diagram {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 Orchestration - Quản Lý Module Tự Động</h1>
+            <p>Tích hợp công cụ điều phối cho PMS Vietsovpetro</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_VIETSOVPETRO_ANALYSIS.html">← Phân Tích PMS</a>
+        </div>
+        
+        <div class="content">
+            <!-- PHẦN 1: ORCHESTRATION LÀ GÌ? -->
+            <div class="section">
+                <h2>1. Orchestration Là Gì?</h2>
+                
+                <div class="highlight-box">
+                    <h3>📖 Định Nghĩa</h3>
+                    <p><strong>Orchestration (Điều phối)</strong> là quá trình tự động hóa việc quản lý, phối hợp, và điều phối các services/containers/processes trong hệ thống phân tán.</p>
+                    
+                    <p style="margin-top: 15px;"><strong>Trong PMS, orchestration giúp:</strong></p>
+                    <ul>
+                        <li>🔄 <strong>Tự động khởi động/dừng</strong> các services (Backend, WebSocket, Queue Workers)</li>
+                        <li>⚖️ <strong>Load balancing</strong> - Phân tải request đều giữa các instances</li>
+                        <li>🔧 <strong>Auto-scaling</strong> - Tự động tăng/giảm số lượng containers khi load thay đổi</li>
+                        <li>💚 <strong>Health checks</strong> - Phát hiện và restart services bị lỗi</li>
+                        <li>🚀 <strong>Zero-downtime deployment</strong> - Deploy không gián đoạn service</li>
+                        <li>📊 <strong>Resource management</strong> - Quản lý CPU, RAM cho từng service</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <h3>🎯 Use Cases Trong PMS</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tình Huống</th>
+                                <th>Không Có Orchestration</th>
+                                <th>Có Orchestration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Laravel server bị crash</td>
+                                <td>❌ Service down, cần restart thủ công</td>
+                                <td>✅ Tự động restart trong 5s</td>
+                            </tr>
+                            <tr>
+                                <td>200 users online cùng lúc</td>
+                                <td>❌ Server quá tải, chậm</td>
+                                <td>✅ Tự động tăng thêm 2 instances</td>
+                            </tr>
+                            <tr>
+                                <td>Deploy version mới</td>
+                                <td>❌ Downtime 5-10 phút</td>
+                                <td>✅ Zero-downtime rolling update</td>
+                            </tr>
+                            <tr>
+                                <td>Queue worker xử lý email chậm</td>
+                                <td>❌ Email delay, user phàn nàn</td>
+                                <td>✅ Tự động tăng thêm workers</td>
+                            </tr>
+                            <tr>
+                                <td>Database backup hàng đêm</td>
+                                <td>❌ Phải cron job thủ công</td>
+                                <td>✅ Scheduled jobs tự động</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- PHẦN 2: SO SÁNH CÔNG CỤ -->
+            <div class="section">
+                <h2>2. Các Công Cụ Orchestration</h2>
+                
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h4>🐳 Docker Compose</h4>
+                        <p><strong>Level:</strong> Beginner-friendly</p>
+                        <p><strong>Best for:</strong> MVP, single-server</p>
+                        <p><strong>Users:</strong> 10-200</p>
+                        <br>
+                        <div class="pros">
+                            <strong>✅ Ưu điểm:</strong>
+                            <ul>
+                                <li>Cực kỳ đơn giản</li>
+                                <li>Setup nhanh (5 phút)</li>
+                                <li>Đủ cho MVP</li>
+                                <li>Free 100%</li>
+                            </ul>
+                        </div>
+                        <div class="cons" style="margin-top: 10px;">
+                            <strong>❌ Nhược điểm:</strong>
+                            <ul>
+                                <li>Chỉ chạy 1 server</li>
+                                <li>Không auto-scale</li>
+                                <li>Manual recovery</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-card">
+                        <h4>🎻 Supervisor</h4>
+                        <p><strong>Level:</strong> Beginner</p>
+                        <p><strong>Best for:</strong> Queue workers, cron jobs</p>
+                        <p><strong>Users:</strong> 10-500</p>
+                        <br>
+                        <div class="pros">
+                            <strong>✅ Ưu điểm:</strong>
+                            <ul>
+                                <li>Quản lý processes tốt</li>
+                                <li>Auto-restart workers</li>
+                                <li>Web dashboard</li>
+                                <li>Dễ config</li>
+                            </ul>
+                        </div>
+                        <div class="cons" style="margin-top: 10px;">
+                            <strong>❌ Nhược điểm:</strong>
+                            <ul>
+                                <li>Không quản lý containers</li>
+                                <li>Single-server only</li>
+                                <li>Không load balancing</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-card">
+                        <h4>☸️ Kubernetes (K8s)</h4>
+                        <p><strong>Level:</strong> Advanced</p>
+                        <p><strong>Best for:</strong> Enterprise, multi-server</p>
+                        <p><strong>Users:</strong> 500-100,000+</p>
+                        <br>
+                        <div class="pros">
+                            <strong>✅ Ưu điểm:</strong>
+                            <ul>
+                                <li>Auto-scaling mạnh mẽ</li>
+                                <li>Multi-server cluster</li>
+                                <li>Self-healing</li>
+                                <li>Rolling updates</li>
+                            </ul>
+                        </div>
+                        <div class="cons" style="margin-top: 10px;">
+                            <strong>❌ Nhược điểm:</strong>
+                            <ul>
+                                <li>Cực kỳ phức tạp</li>
+                                <li>Cần DevOps engineer</li>
+                                <li>Chi phí cao ($200+/mo)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-card">
+                        <h4>🐝 Docker Swarm</h4>
+                        <p><strong>Level:</strong> Intermediate</p>
+                        <p><strong>Best for:</strong> Mid-size, 2-5 servers</p>
+                        <p><strong>Users:</strong> 200-1,000</p>
+                        <br>
+                        <div class="pros">
+                            <strong>✅ Ưu điểm:</strong>
+                            <ul>
+                                <li>Đơn giản hơn K8s</li>
+                                <li>Built-in Docker</li>
+                                <li>Load balancing tốt</li>
+                                <li>Rolling updates</li>
+                            </ul>
+                        </div>
+                        <div class="cons" style="margin-top: 10px;">
+                            <strong>❌ Nhược điểm:</strong>
+                            <ul>
+                                <li>Ít tính năng hơn K8s</li>
+                                <li>Community nhỏ hơn</li>
+                                <li>Ít được dùng</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <h3>💡 Khuyến Nghị Cho PMS MVP (50-200 users)</h3>
+                    <p style="font-size: 1.1em;"><strong>Giai đoạn 1 (Tháng 1-6):</strong> Docker Compose + Supervisor</p>
+                    <ul>
+                        <li>✅ Đơn giản, dễ quản lý</li>
+                        <li>✅ 1 người có thể handle</li>
+                        <li>✅ Chi phí thấp ($24/month VPS)</li>
+                        <li>✅ Đủ cho 50-200 concurrent users</li>
+                    </ul>
+                    
+                    <p style="font-size: 1.1em; margin-top: 20px;"><strong>Giai đoạn 2 (Sau 6 tháng, nếu users > 500):</strong> Kubernetes hoặc Docker Swarm</p>
+                    <ul>
+                        <li>📈 Scale lên nhiều servers</li>
+                        <li>📈 Auto-scaling based on metrics</li>
+                        <li>📈 High availability (99.9% uptime)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PHẦN 3: DOCKER COMPOSE ORCHESTRATION -->
+            <div class="section">
+                <h2>3. Docker Compose Orchestration (MVP)</h2>
+                
+                <h3>🎯 Architecture Overview</h3>
+                
+                <div class="architecture-diagram">
+                    <svg width="100%" height="600" viewBox="0 0 1200 600">
+                        <!-- Docker Host -->
+                        <rect x="50" y="50" width="1100" height="500" fill="#f8f9fa" stroke="#333" stroke-width="3" rx="10"/>
+                        <text x="600" y="80" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">Docker Host (VPS)</text>
+                        
+                        <!-- Backend Services -->
+                        <g id="backend">
+                            <rect x="100" y="120" width="200" height="100" fill="#667eea" stroke="#1e3c72" stroke-width="2" rx="8"/>
+                            <text x="200" y="145" text-anchor="middle" fill="white" font-weight="bold" font-size="16">Laravel Backend</text>
+                            <text x="200" y="170" text-anchor="middle" fill="white" font-size="12">Port: 9000</text>
+                            <text x="200" y="190" text-anchor="middle" fill="white" font-size="11">Auto-restart: always</text>
+                            <text x="200" y="210" text-anchor="middle" fill="white" font-size="11">Health check: /api/health</text>
+                        </g>
+                        
+                        <!-- Queue Workers -->
+                        <g id="workers">
+                            <rect x="330" y="120" width="200" height="100" fill="#f59e0b" stroke="#d97706" stroke-width="2" rx="8"/>
+                            <text x="430" y="145" text-anchor="middle" fill="white" font-weight="bold" font-size="16">Queue Workers (x3)</text>
+                            <text x="430" y="170" text-anchor="middle" fill="white" font-size="12">Supervisor managed</text>
+                            <text x="430" y="190" text-anchor="middle" fill="white" font-size="11">Auto-restart on fail</text>
+                            <text x="430" y="210" text-anchor="middle" fill="white" font-size="11">Max jobs: 100/worker</text>
+                        </g>
+                        
+                        <!-- WebSocket -->
+                        <g id="websocket">
+                            <rect x="560" y="120" width="200" height="100" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2" rx="8"/>
+                            <text x="660" y="145" text-anchor="middle" fill="white" font-weight="bold" font-size="16">Laravel Reverb</text>
+                            <text x="660" y="170" text-anchor="middle" fill="white" font-size="12">Port: 8080</text>
+                            <text x="660" y="190" text-anchor="middle" fill="white" font-size="11">WebSocket connections</text>
+                            <text x="660" y="210" text-anchor="middle" fill="white" font-size="11">Max: 200 concurrent</text>
+                        </g>
+                        
+                        <!-- Frontend -->
+                        <g id="frontend">
+                            <rect x="790" y="120" width="200" height="100" fill="#10b981" stroke="#047857" stroke-width="2" rx="8"/>
+                            <text x="890" y="145" text-anchor="middle" fill="white" font-weight="bold" font-size="16">React Frontend</text>
+                            <text x="890" y="170" text-anchor="middle" fill="white" font-size="12">Nginx served</text>
+                            <text x="890" y="190" text-anchor="middle" fill="white" font-size="11">Static files</text>
+                            <text x="890" y="210" text-anchor="middle" fill="white" font-size="11">Cached & compressed</text>
+                        </g>
+                        
+                        <!-- Databases -->
+                        <g id="postgres">
+                            <rect x="100" y="260" width="170" height="80" fill="#336791" stroke="#1e3c72" stroke-width="2" rx="8"/>
+                            <text x="185" y="285" text-anchor="middle" fill="white" font-weight="bold" font-size="14">PostgreSQL</text>
+                            <text x="185" y="305" text-anchor="middle" fill="white" font-size="11">Port: 5432</text>
+                            <text x="185" y="325" text-anchor="middle" fill="white" font-size="11">Volume: postgres_data</text>
+                        </g>
+                        
+                        <g id="mongodb">
+                            <rect x="290" y="260" width="170" height="80" fill="#47a248" stroke="#2d6b2d" stroke-width="2" rx="8"/>
+                            <text x="375" y="285" text-anchor="middle" fill="white" font-weight="bold" font-size="14">MongoDB</text>
+                            <text x="375" y="305" text-anchor="middle" fill="white" font-size="11">Port: 27017</text>
+                            <text x="375" y="325" text-anchor="middle" fill="white" font-size="11">Volume: mongodb_data</text>
+                        </g>
+                        
+                        <g id="redis">
+                            <rect x="480" y="260" width="170" height="80" fill="#dc382d" stroke="#a41e11" stroke-width="2" rx="8"/>
+                            <text x="565" y="285" text-anchor="middle" fill="white" font-weight="bold" font-size="14">Redis</text>
+                            <text x="565" y="305" text-anchor="middle" fill="white" font-size="11">Port: 6379</text>
+                            <text x="565" y="325" text-anchor="middle" fill="white" font-size="11">Cache & sessions</text>
+                        </g>
+                        
+                        <!-- Nginx -->
+                        <g id="nginx">
+                            <rect x="100" y="370" width="550" height="80" fill="#009639" stroke="#006b2d" stroke-width="2" rx="8"/>
+                            <text x="375" y="395" text-anchor="middle" fill="white" font-weight="bold" font-size="16">Nginx Reverse Proxy</text>
+                            <text x="375" y="420" text-anchor="middle" fill="white" font-size="12">Ports: 80 (HTTP), 443 (HTTPS)</text>
+                            <text x="375" y="440" text-anchor="middle" fill="white" font-size="11">SSL, Load balancing, Static files</text>
+                        </g>
+                        
+                        <!-- Monitoring -->
+                        <g id="monitoring">
+                            <rect x="680" y="370" width="310" height="80" fill="#ff6b6b" stroke="#cc4444" stroke-width="2" rx="8"/>
+                            <text x="835" y="395" text-anchor="middle" fill="white" font-weight="bold" font-size="14">Monitoring & Health</text>
+                            <text x="835" y="415" text-anchor="middle" fill="white" font-size="11">Docker health checks every 30s</text>
+                            <text x="835" y="435" text-anchor="middle" fill="white" font-size="11">Auto-restart unhealthy containers</text>
+                        </g>
+                        
+                        <!-- Internet -->
+                        <rect x="400" y="480" width="400" height="60" fill="#667eea" stroke="#1e3c72" stroke-width="3" rx="8"/>
+                        <text x="600" y="515" text-anchor="middle" fill="white" font-weight="bold" font-size="18">🌐 Internet (Users)</text>
+                        
+                        <!-- Connections -->
+                        <line x1="600" y1="480" x2="375" y2="450" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <line x1="375" y1="370" x2="200" y2="220" stroke="#333" stroke-width="2"/>
+                        <line x1="375" y1="370" x2="430" y2="220" stroke="#333" stroke-width="2"/>
+                        <line x1="375" y1="370" x2="660" y2="220" stroke="#333" stroke-width="2"/>
+                        <line x1="375" y1="370" x2="890" y2="220" stroke="#333" stroke-width="2"/>
+                        
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <h3>📝 docker-compose.yml với Orchestration</h3>
+                
+                <div class="code-block">
+<span class="comment"># docker-compose.yml - Production với orchestration features</span>
+version: '3.8'
+
+services:
+  <span class="comment"># Laravel Backend với health check</span>
+  backend:
+    build: ./backend
+    container_name: pms_backend
+    restart: always  <span class="comment"># Auto-restart on failure</span>
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+    healthcheck:  <span class="comment"># Health check endpoint</span>
+      test: ["CMD", "php", "artisan", "health:check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:  <span class="comment"># Resource limits</span>
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - pms_network
+  
+  <span class="comment"># Queue Workers với scaling</span>
+  queue_worker:
+    build: ./backend
+    command: php artisan queue:work --tries=3 --timeout=90
+    restart: always
+    deploy:
+      replicas: 3  <span class="comment"># Chạy 3 workers song song</span>
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    depends_on:
+      - backend
+    networks:
+      - pms_network
+  
+  <span class="comment"># Scheduler (Cron jobs)</span>
+  scheduler:
+    build: ./backend
+    command: php artisan schedule:work
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - pms_network
+  
+  <span class="comment"># PostgreSQL với health check</span>
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: pms_db
+      POSTGRES_USER: pms_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    networks:
+      - pms_network
+  
+  <span class="comment"># Redis với health check</span>
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - pms_network
+  
+  <span class="comment"># Nginx với auto-restart</span>
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - pms_network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  pms_network:
+    driver: bridge
+                </div>
+            </div>
+            
+            <!-- PHẦN 4: VÍ DỤ THỰC TÊ AUTO-RESTART -->
+            <div class="section">
+                <h2>4. Ví Dụ Thực Tế: Auto-Restart & Self-Healing</h2>
+                
+                <div class="info-box">
+                    <h3>🎬 Scenario 1: Laravel Backend Crash</h3>
+                    <p><strong>Tình huống:</strong> Backend container bị crash do memory leak sau 6 giờ chạy.</p>
+                </div>
+                
+                <h3>📊 Timeline Without Orchestration:</h3>
+                <div class="code-block">
+<span class="comment"># 02:30 AM - Backend crashes</span>
+[ERROR] PHP Fatal error: Allowed memory size exhausted
+Container: pms_backend STOPPED
+
+<span class="comment"># 02:30-08:00 AM - Website DOWN (5.5 giờ)</span>
+❌ Users không truy cập được
+❌ 150 users mất kết nối
+❌ Mất doanh thu, uy tín
+
+<span class="comment"># 08:00 AM - Admin phát hiện và restart thủ công</span>
+$ ssh user@server
+$ docker compose restart backend
+✅ Service UP trở lại
+
+<span class="comment">Total downtime: 5 giờ 30 phút</span>
+                </div>
+                
+                <h3>✅ Timeline With Orchestration:</h3>
+                <div class="code-block">
+<span class="comment"># 02:30:00 AM - Backend crashes</span>
+[ERROR] PHP Fatal error: Allowed memory size exhausted
+Container: pms_backend STOPPED
+
+<span class="comment"># 02:30:05 AM - Docker health check phát hiện</span>
+[HEALTH] Health check failed for pms_backend (exit code 1)
+[DOCKER] Starting auto-restart sequence...
+
+<span class="comment"># 02:30:15 AM - Docker tự động restart</span>
+[DOCKER] Restarting container pms_backend...
+[DOCKER] Container pms_backend started (PID: 45623)
+
+<span class="comment"># 02:30:25 AM - Health check pass</span>
+[HEALTH] Health check passed for pms_backend ✓
+[NGINX] Routing traffic to pms_backend
+
+<span class="comment"># 02:30:30 AM - Gửi alert</span>
+[ALERT] Slack notification sent: "Backend auto-restarted after crash"
+[EMAIL] Admin notification sent
+
+<span class="comment">Total downtime: 30 giây</span>
+✅ Users hầu như không nhận ra
+✅ Automatic recovery
+✅ Admin được thông báo để investigate
+                </div>
+                
+                <div class="success-box">
+                    <h3>📈 Impact Comparison</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>No Orchestration</th>
+                                <th>With Orchestration</th>
+                                <th>Improvement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Downtime</td>
+                                <td>5.5 giờ</td>
+                                <td>30 giây</td>
+                                <td><strong style="color: #28a745;">99% giảm</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Users affected</td>
+                                <td>150</td>
+                                <td>2-3</td>
+                                <td><strong style="color: #28a745;">98% giảm</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Manual intervention</td>
+                                <td>Required</td>
+                                <td>Not required</td>
+                                <td><strong style="color: #28a745;">100% tự động</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Detection time</td>
+                                <td>5.5 giờ (khi user báo)</td>
+                                <td>5 giây</td>
+                                <td><strong style="color: #28a745;">Real-time</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>🎬 Scenario 2: Queue Worker Overload</h3>
+                
+                <div class="warning-box">
+                    <p><strong>Tình huống:</strong> 500 users upload file cùng lúc → Queue có 500 jobs → 3 workers không kịp xử lý</p>
+                </div>
+                
+                <div class="code-block">
+<span class="comment"># Trước khi scale</span>
+$ docker exec pms_redis redis-cli LLEN queues:default
+<span class="string">523</span>  <span class="comment"># 523 jobs đang chờ</span>
+
+$ docker stats pms_queue_worker_1
+<span class="comment">CONTAINER           CPU %    MEM USAGE
+pms_queue_worker_1  98%      450MB / 512MB   <-- Gần hết RAM
+pms_queue_worker_2  97%      445MB / 512MB
+pms_queue_worker_3  99%      490MB / 512MB</span>
+
+<span class="comment"># Processing rate: ~50 jobs/phút (quá chậm!)</span>
+<span class="comment"># Expected time: 523 / 50 = 10.5 phút</span>
+
+<span class="comment"># Auto-scale kicks in</span>
+[MONITOR] Queue size: 523 (threshold: 100)
+[MONITOR] CPU usage: 98% (threshold: 80%)
+[SCALE] Scaling queue_worker from 3 to 8 instances...
+
+$ docker compose up -d --scale queue_worker=8
+<span class="comment">Creating pms_queue_worker_4 ... done
+Creating pms_queue_worker_5 ... done
+Creating pms_queue_worker_6 ... done
+Creating pms_queue_worker_7 ... done
+Creating pms_queue_worker_8 ... done</span>
+
+<span class="comment"># Sau khi scale</span>
+$ docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+<span class="comment">CONTAINER             CPU %    MEM USAGE
+pms_queue_worker_1    58%      280MB / 512MB
+pms_queue_worker_2    61%      295MB / 512MB
+pms_queue_worker_3    55%      270MB / 512MB
+pms_queue_worker_4    62%      300MB / 512MB
+pms_queue_worker_5    59%      285MB / 512MB
+pms_queue_worker_6    57%      275MB / 512MB
+pms_queue_worker_7    60%      290MB / 512MB
+pms_queue_worker_8    56%      265MB / 512MB</span>
+
+<span class="comment"># Processing rate: ~135 jobs/phút (tăng 2.7x)</span>
+<span class="comment"># New expected time: 523 / 135 = 3.9 phút ✅</span>
+
+<span class="comment"># Sau 5 phút, queue giảm xuống</span>
+$ docker exec pms_redis redis-cli LLEN queues:default
+<span class="string">12</span>  <span class="comment"># Chỉ còn 12 jobs</span>
+
+<span class="comment"># Auto-scale down</span>
+[MONITOR] Queue size: 12 (below threshold)
+[MONITOR] CPU usage: 35% (below 50%)
+[SCALE] Scaling queue_worker from 8 to 3 instances...
+<span class="comment"># Giảm xuống 3 workers để tiết kiệm resources</span>
+                </div>
+                
+                <div class="highlight-box">
+                    <h3>📊 Queue Performance Metrics</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Workers</th>
+                                <th>Jobs/phút</th>
+                                <th>Avg Wait Time</th>
+                                <th>CPU/Worker</th>
+                                <th>Memory/Worker</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>3 workers</td>
+                                <td>50</td>
+                                <td>10.5 phút</td>
+                                <td>98%</td>
+                                <td>490MB</td>
+                            </tr>
+                            <tr style="background: #d4edda;">
+                                <td><strong>8 workers</strong></td>
+                                <td><strong>135</strong></td>
+                                <td><strong>3.9 phút</strong></td>
+                                <td><strong>58%</strong></td>
+                                <td><strong>285MB</strong></td>
+                            </tr>
+                            <tr>
+                                <td>5 workers (optimal)</td>
+                                <td>85</td>
+                                <td>6.1 phút</td>
+                                <td>65%</td>
+                                <td>320MB</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>🎬 Scenario 3: WebSocket Connection Spike</h3>
+                
+                <div class="code-block">
+<span class="comment"># 9:00 AM - Shift starts, 150 users login cùng lúc</span>
+[REVERB] Current connections: 23
+[REVERB] New connection requests: +127 in 30 seconds
+
+<span class="comment"># Reverb stats</span>
+$ docker exec pms_reverb php artisan reverb:status
+
+Laravel Reverb Status:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Active Connections: 150
+  Messages/sec:       45
+  Memory Usage:       380MB / 512MB (74%)
+  CPU Usage:          82%
+  Uptime:             2h 15m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span class="comment"># Health check warning</span>
+[HEALTH] Reverb memory usage high: 74%
+[HEALTH] Reverb CPU usage high: 82%
+
+<span class="comment"># Orchestration response</span>
+[DOCKER] Increasing memory limit for pms_reverb
+[DOCKER] Old: 512MB → New: 1GB
+
+$ docker update --memory 1g pms_reverb
+pms_reverb
+
+<span class="comment"># Sau khi tăng memory</span>
+$ docker exec pms_reverb php artisan reverb:status
+
+Laravel Reverb Status:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Active Connections: 150
+  Messages/sec:       45
+  Memory Usage:       380MB / 1GB (38%) ✓
+  CPU Usage:          65% ✓
+  Uptime:             2h 16m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[HEALTH] All metrics normal ✓
+                </div>
+            </div>
+            
+            <!-- PHẦN 5: MONITORING DASHBOARD -->
+            <div class="section">
+                <h2>5. Monitoring Dashboard - Real-time</h2>
+                
+                <h3>📊 Simple Monitoring Script</h3>
+                
+                <div class="code-block">
+<span class="comment">#!/bin/bash</span>
+<span class="comment"># monitor-pms.sh - Simple monitoring dashboard</span>
+
+<span class="keyword">while</span> true; <span class="keyword">do</span>
+    clear
+    echo <span class="string">"═══════════════════════════════════════════════════════"</span>
+    echo <span class="string">"      PMS MONITORING DASHBOARD - $(date '+%Y-%m-%d %H:%M:%S')"</span>
+    echo <span class="string">"═══════════════════════════════════════════════════════"</span>
+    echo
+    
+    <span class="comment"># Container Status</span>
+    echo <span class="string">"📦 CONTAINER STATUS:"</span>
+    docker ps --format <span class="string">"table {{.Names}}\t{{.Status}}\t{{.Ports}}"</span> | grep pms_
+    echo
+    
+    <span class="comment"># Resource Usage</span>
+    echo <span class="string">"💻 RESOURCE USAGE:"</span>
+    docker stats --no-stream --format <span class="string">"table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"</span> | grep pms_
+    echo
+    
+    <span class="comment"># Queue Status</span>
+    echo <span class="string">"📬 QUEUE STATUS:"</span>
+    QUEUE_SIZE=$(docker exec pms_redis redis-cli LLEN queues:default 2>/dev/null || echo "0")
+    FAILED_JOBS=$(docker exec pms_redis redis-cli LLEN queues:default:failed 2>/dev/null || echo "0")
+    echo <span class="string">"  Pending jobs: $QUEUE_SIZE"</span>
+    echo <span class="string">"  Failed jobs:  $FAILED_JOBS"</span>
+    
+    <span class="keyword">if</span> [ $QUEUE_SIZE -gt 100 ]; <span class="keyword">then</span>
+        echo <span class="string">"  ⚠️  WARNING: High queue size!"</span>
+    <span class="keyword">elif</span> [ $QUEUE_SIZE -gt 50 ]; <span class="keyword">then</span>
+        echo <span class="string">"  ⚡ Queue processing normally"</span>
+    <span class="keyword">else</span>
+        echo <span class="string">"  ✅ Queue is healthy"</span>
+    <span class="keyword">fi</span>
+    echo
+    
+    <span class="comment"># WebSocket Connections</span>
+    echo <span class="string">"🌐 WEBSOCKET CONNECTIONS:"</span>
+    WS_CONNECTIONS=$(docker exec pms_reverb php artisan reverb:status 2>/dev/null | grep "Active" | awk '{print $3}' || echo "0")
+    echo <span class="string">"  Active connections: $WS_CONNECTIONS"</span>
+    echo
+    
+    <span class="comment"># Database Connections</span>
+    echo <span class="string">"🗄️  DATABASE:"</span>
+    PG_CONNECTIONS=$(docker exec pms_postgres psql -U pms_user -d pms_db -t -c "SELECT count(*) FROM pg_stat_activity WHERE datname='pms_db';" 2>/dev/null || echo "0")
+    echo <span class="string">"  PostgreSQL connections: $PG_CONNECTIONS"</span>
+    echo
+    
+    <span class="comment"># Health Status</span>
+    echo <span class="string">"💚 HEALTH CHECKS:"</span>
+    
+    <span class="comment"># Check backend</span>
+    BACKEND_STATUS=$(curl -s -o /dev/null -w <span class="string">"%{http_code}"</span> http://localhost/api/health || echo <span class="string">"000"</span>)
+    <span class="keyword">if</span> [ <span class="string">"$BACKEND_STATUS"</span> = <span class="string">"200"</span> ]; <span class="keyword">then</span>
+        echo <span class="string">"  ✅ Backend: Healthy"</span>
+    <span class="keyword">else</span>
+        echo <span class="string">"  ❌ Backend: Down (HTTP $BACKEND_STATUS)"</span>
+    <span class="keyword">fi</span>
+    
+    <span class="comment"># Check Redis</span>
+    REDIS_PING=$(docker exec pms_redis redis-cli ping 2>/dev/null || echo <span class="string">"FAIL"</span>)
+    <span class="keyword">if</span> [ <span class="string">"$REDIS_PING"</span> = <span class="string">"PONG"</span> ]; <span class="keyword">then</span>
+        echo <span class="string">"  ✅ Redis: Healthy"</span>
+    <span class="keyword">else</span>
+        echo <span class="string">"  ❌ Redis: Down"</span>
+    <span class="keyword">fi</span>
+    
+    <span class="comment"># Check PostgreSQL</span>
+    PG_STATUS=$(docker exec pms_postgres pg_isready -U pms_user 2>/dev/null || echo <span class="string">"down"</span>)
+    <span class="keyword">if</span> [[ $PG_STATUS == *"accepting connections"* ]]; <span class="keyword">then</span>
+        echo <span class="string">"  ✅ PostgreSQL: Healthy"</span>
+    <span class="keyword">else</span>
+        echo <span class="string">"  ❌ PostgreSQL: Down"</span>
+    <span class="keyword">fi</span>
+    
+    echo
+    echo <span class="string">"═══════════════════════════════════════════════════════"</span>
+    echo <span class="string">"Press Ctrl+C to exit | Refresh: 5s"</span>
+    
+    sleep 5
+<span class="keyword">done</span>
+                </div>
+                
+                <h3>📺 Example Dashboard Output</h3>
+                
+                <div class="code-block">
+═══════════════════════════════════════════════════════
+      PMS MONITORING DASHBOARD - 2026-01-19 14:35:22
+═══════════════════════════════════════════════════════
+
+📦 CONTAINER STATUS:
+NAME              STATUS              PORTS
+pms_backend       Up 3 hours          0.0.0.0:9000->9000/tcp
+pms_queue_1       Up 3 hours          
+pms_queue_2       Up 3 hours          
+pms_queue_3       Up 3 hours          
+pms_reverb        Up 3 hours          0.0.0.0:8080->8080/tcp
+pms_nginx         Up 3 hours          0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+pms_postgres      Up 3 hours          5432/tcp
+pms_mongodb       Up 3 hours          27017/tcp
+pms_redis         Up 3 hours          6379/tcp
+
+💻 RESOURCE USAGE:
+NAME              CPU %     MEM USAGE           NET I/O
+pms_backend       35.5%     680MB / 1GB         125MB / 89MB
+pms_queue_1       12.3%     280MB / 512MB       45MB / 23MB
+pms_queue_2       15.7%     295MB / 512MB       52MB / 28MB
+pms_queue_3       11.8%     270MB / 512MB       41MB / 20MB
+pms_reverb        18.2%     380MB / 1GB         89MB / 76MB
+pms_nginx         5.4%      45MB / 256MB        245MB / 198MB
+pms_postgres      28.9%     850MB / 2GB         178MB / 156MB
+pms_mongodb       15.3%     420MB / 1GB         67MB / 54MB
+pms_redis         8.7%      125MB / 512MB       98MB / 87MB
+
+📬 QUEUE STATUS:
+  Pending jobs: 23
+  Failed jobs:  0
+  ✅ Queue is healthy
+
+🌐 WEBSOCKET CONNECTIONS:
+  Active connections: 87
+
+🗄️  DATABASE:
+  PostgreSQL connections: 12
+
+💚 HEALTH CHECKS:
+  ✅ Backend: Healthy
+  ✅ Redis: Healthy
+  ✅ PostgreSQL: Healthy
+
+═══════════════════════════════════════════════════════
+Press Ctrl+C to exit | Refresh: 5s
+                </div>
+                
+                <div class="success-box">
+                    <h3>🚀 Sử Dụng Monitoring Script</h3>
+                    <div class="code-block">
+<span class="comment"># Tạo script</span>
+cd /home/pms
+nano monitor-pms.sh
+<span class="comment"># Copy nội dung script vào</span>
+
+<span class="comment"># Cho phép execute</span>
+chmod +x monitor-pms.sh
+
+<span class="comment"># Chạy dashboard</span>
+./monitor-pms.sh
+
+<span class="comment"># Hoặc chạy trong tmux/screen để giữ dashboard running</span>
+tmux new -s pms-monitor
+./monitor-pms.sh
+<span class="comment"># Detach: Ctrl+B, then D</span>
+<span class="comment"># Reattach: tmux attach -t pms-monitor</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 5.5: DEPLOYMENT EXAMPLES -->
+            <div class="section">
+                <h2>5.5. Ví Dụ: Zero-Downtime Deployment</h2>
+                
+                <div class="info-box">
+                    <h3>🎯 Scenario: Deploy Version 2.1.0 → 2.2.0</h3>
+                    <p><strong>Yêu cầu:</strong> Deploy bản mới mà KHÔNG gián đoạn service cho 120 users đang online</p>
+                </div>
+                
+                <h3>📝 Method 1: Docker Compose Rolling Update</h3>
+                
+                <div class="code-block">
+<span class="comment"># Bước 1: Build image mới</span>
+$ cd /home/pms/backend
+$ git pull origin main
+$ docker build -t pms-backend:2.2.0 .
+
+<span class="comment"># Bước 2: Update docker-compose.yml</span>
+$ nano docker-compose.yml
+<span class="comment"># Change: image: pms-backend:2.1.0 → pms-backend:2.2.0</span>
+
+<span class="comment"># Bước 3: Rolling update với scale strategy</span>
+$ docker compose up -d --scale backend=2 --no-recreate
+
+<span class="comment"># Timeline:</span>
+[00:00] Starting new backend container (v2.2.0)
+[00:05] pms_backend_2 (v2.2.0) is UP
+[00:05] Health check: pms_backend_2... ✓ HEALTHY
+[00:06] Nginx routing 50% traffic to old, 50% to new
+[00:10] Monitoring for errors... No errors ✓
+[00:15] Stopping old backend (v2.1.0)
+[00:16] pms_backend_1 stopped gracefully
+[00:16] Nginx routing 100% traffic to pms_backend_2
+[00:20] Scaling back to 1 instance
+
+<span class="comment"># Result:</span>
+✅ Deployment successful
+✅ Zero user disconnections
+✅ Total time: 20 seconds
+✅ Rollback ready: docker tag pms-backend:2.1.0 pms-backend:latest
+                </div>
+                
+                <h3>📊 User Impact Comparison</h3>
+                
+                <div class="code-block">
+<span class="comment">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Traditional Deployment (Stop → Update → Start)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+08:00:00 - Admin: docker compose down
+08:00:05 - ❌ All 120 users disconnected
+08:00:10 - Admin: git pull && docker build
+08:05:30 - Build complete (5m 20s)
+08:05:35 - Admin: docker compose up -d
+08:06:00 - Containers starting...
+08:06:20 - Health checks running...
+08:06:30 - ✅ Service restored
+
+<strong>Downtime: 6 minutes 30 seconds</strong>
+<strong>Impact: 120 users affected</strong>
+<strong>Complaints: 15+ emails, 8 phone calls</strong>
+
+<span class="comment">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rolling Update Deployment (Orchestrated)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+08:00:00 - Admin: docker compose up -d --scale backend=2
+08:00:05 - New container starting alongside old
+08:00:15 - Health check passed, nginx routing traffic
+08:00:20 - Old container graceful shutdown
+08:00:25 - ✅ Deployment complete
+
+<strong>Downtime: 0 seconds</strong>
+<strong>Impact: 0 users affected</strong>
+<strong>Complaints: 0</strong>
+<strong>Users noticed: "Nothing happened" (perfect!)</strong>
+                </div>
+                
+                <h3>🔄 Method 2: Blue-Green Deployment</h3>
+                
+                <div class="code-block">
+<span class="comment"># Setup: 2 environments (Blue = current, Green = new)</span>
+
+<span class="comment"># Current state:</span>
+<span class="comment"># ├─ pms_backend_blue:2.1.0 (active, 120 users)</span>
+<span class="comment"># └─ pms_backend_green:stopped</span>
+
+<span class="comment"># Step 1: Start Green environment với version mới</span>
+$ docker compose -f docker-compose.green.yml up -d
+
+[INFO] Starting pms_backend_green (v2.2.0)
+[INFO] Starting pms_postgres_green (replica)
+[INFO] Containers up in 15 seconds
+
+<span class="comment"># Step 2: Smoke test Green environment</span>
+$ curl http://localhost:9001/api/health
+{"status": "ok", "version": "2.2.0"}
+
+<span class="comment"># Step 3: Run integration tests</span>
+$ docker exec pms_backend_green php artisan test
+
+Tests:  145 passed
+Time:   12.5s
+
+✅ All tests passed!
+
+<span class="comment"># Step 4: Switch Nginx từ Blue → Green</span>
+$ nano /etc/nginx/sites-enabled/pms.conf
+
+<span class="comment"># Before:</span>
+upstream backend {
+    server localhost:9000;  # Blue
+}
+
+<span class="comment"># After:</span>
+upstream backend {
+    server localhost:9001;  # Green
+}
+
+$ nginx -s reload
+
+<span class="comment"># Timeline:</span>
+[00:00] Nginx reload
+[00:01] New connections → Green (v2.2.0)
+[00:01] Existing connections → Blue (kept alive)
+[00:30] All connections migrated to Green
+
+<span class="comment"># Result:</span>
+✅ Zero downtime
+✅ Instant rollback available (switch back to Blue)
+✅ Blue environment kept for 24h as backup
+
+<span class="comment"># Rollback (if needed):</span>
+$ nano /etc/nginx/sites-enabled/pms.conf
+<span class="comment"># Change: localhost:9001 → localhost:9000</span>
+$ nginx -s reload
+<span class="comment"># Rollback in 2 seconds!</span>
+                </div>
+                
+                <div class="success-box">
+                    <h3>✅ Deployment Best Practices</h3>
+                    <ul>
+                        <li>🔍 <strong>Test trước:</strong> Chạy tests trên staging environment</li>
+                        <li>⏰ <strong>Deploy off-peak:</strong> Tránh giờ cao điểm (8-10 AM, 2-4 PM)</li>
+                        <li>📸 <strong>Backup trước:</strong> Database snapshot trước khi deploy</li>
+                        <li>📊 <strong>Monitor sau:</strong> Theo dõi errors 15-30 phút sau deploy</li>
+                        <li>🔙 <strong>Rollback plan:</strong> Luôn có kế hoạch rollback trong 5 phút</li>
+                        <li>📝 <strong>Changelog:</strong> Document tất cả thay đổi</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PHẦN 6: SUPERVISOR -->
+            <div class="section">
+                <h2>6. Supervisor - Process Manager</h2>
+                
+                <div class="highlight-box">
+                    <h3>🎻 Tại Sao Cần Supervisor?</h3>
+                    <p>Docker Compose chỉ quản lý containers. <strong>Supervisor</strong> quản lý processes BẾN TRONG container (như queue workers).</p>
+                </div>
+                
+                <h3>📦 Cài Đặt Supervisor</h3>
+                
+                <div class="code-block">
+<span class="comment"># Trong Laravel container</span>
+apt-get update
+apt-get install -y supervisor
+
+<span class="comment"># Tạo config file</span>
+nano /etc/supervisor/conf.d/laravel-worker.conf
+                </div>
+                
+                <h3>⚙️ Supervisor Config</h3>
+                
+                <div class="code-block">
+<span class="comment">; /etc/supervisor/conf.d/laravel-worker.conf</span>
+
+<span class="comment">; Queue Worker</span>
+[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/html/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=3  <span class="comment">; Chạy 3 workers</span>
+redirect_stderr=true
+stdout_logfile=/var/www/html/storage/logs/worker.log
+stopwaitsecs=3600
+
+<span class="comment">; Reverb WebSocket Server</span>
+[program:reverb]
+command=php /var/www/html/artisan reverb:start --host=0.0.0.0 --port=8080
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/www/html/storage/logs/reverb.log
+
+<span class="comment">; Scheduler (Laravel Cron)</span>
+[program:laravel-scheduler]
+command=/bin/sh -c "while [ true ]; do (php /var/www/html/artisan schedule:run --verbose --no-interaction &); sleep 60; done"
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/www/html/storage/logs/scheduler.log
+                </div>
+                
+                <h3>🚀 Supervisor Commands</h3>
+                
+                <div class="code-block">
+<span class="comment"># Start Supervisor</span>
+supervisord -c /etc/supervisor/supervisord.conf
+
+<span class="comment"># Check status</span>
+supervisorctl status
+
+<span class="comment"># Output:</span>
+<span class="comment"># laravel-worker:laravel-worker_00  RUNNING   pid 12345, uptime 1:23:45</span>
+<span class="comment"># laravel-worker:laravel-worker_01  RUNNING   pid 12346, uptime 1:23:45</span>
+<span class="comment"># laravel-worker:laravel-worker_02  RUNNING   pid 12347, uptime 1:23:45</span>
+<span class="comment"># reverb                            RUNNING   pid 12348, uptime 1:23:45</span>
+<span class="comment"># laravel-scheduler                 RUNNING   pid 12349, uptime 1:23:45</span>
+
+<span class="comment"># Restart all workers</span>
+supervisorctl restart laravel-worker:*
+
+<span class="comment"># Stop specific worker</span>
+supervisorctl stop laravel-worker:laravel-worker_00
+
+<span class="comment"># Reload config</span>
+supervisorctl reread
+supervisorctl update
+                </div>
+                
+                <div class="success-box">
+                    <h3>✅ Lợi Ích Supervisor</h3>
+                    <ul>
+                        <li>🔄 <strong>Auto-restart</strong> workers khi bị crash</li>
+                        <li>📊 <strong>Monitor</strong> status của tất cả processes</li>
+                        <li>⚡ <strong>Scale</strong> số lượng workers dễ dàng (thay numprocs=3 → numprocs=5)</li>
+                        <li>📝 <strong>Logs</strong> tập trung tất cả workers</li>
+                        <li>🎛️ <strong>Web UI</strong> để quản lý (optional)</li>
+                    </ul>
+                </div>
+                
+                <h3>🔍 Troubleshooting Examples</h3>
+                
+                <div class="warning-box">
+                    <h4>❌ Problem: Worker keeps restarting</h4>
+                    <div class="code-block">
+<span class="comment"># Check supervisor logs</span>
+$ tail -f /var/www/html/storage/logs/worker.log
+
+[ERROR] Maximum execution time exceeded
+[ERROR] Worker crashed with signal 9
+[SUPERVISOR] laravel-worker_00 entered FATAL state
+[SUPERVISOR] Restarting laravel-worker_00...
+
+<span class="comment"># Solution: Tăng timeout và memory</span>
+$ nano /etc/supervisor/conf.d/laravel-worker.conf
+
+<span class="comment"># Edit:</span>
+command=php artisan queue:work --timeout=300 --memory=512
+stopwaitsecs=300
+
+<span class="comment"># Reload</span>
+$ supervisorctl reread && supervisorctl update
+$ supervisorctl restart laravel-worker:*
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <h4>❌ Problem: Jobs not processing</h4>
+                    <div class="code-block">
+<span class="comment"># Check if workers are running</span>
+$ supervisorctl status
+
+laravel-worker:laravel-worker_00  STOPPED    
+laravel-worker:laravel-worker_01  STOPPED    
+laravel-worker:laravel-worker_02  STOPPED    
+
+<span class="comment"># Check error logs</span>
+$ tail -50 /var/www/html/storage/logs/worker.log
+
+[ERROR] Connection refused to Redis
+[ERROR] Could not connect to database
+
+<span class="comment"># Solution: Check dependencies first</span>
+$ docker ps | grep redis
+pms_redis   Up 10 minutes  <span class="comment"># Redis is running</span>
+
+$ docker exec pms_redis redis-cli ping
+PONG  <span class="comment"># Redis is healthy</span>
+
+<span class="comment"># Check worker environment</span>
+$ docker exec pms_backend env | grep REDIS
+REDIS_HOST=redis  <span class="comment"># Should be 'redis' not 'localhost'</span>
+
+<span class="comment"># Restart workers</span>
+$ supervisorctl start laravel-worker:*
+laravel-worker:laravel-worker_00: started
+laravel-worker:laravel-worker_01: started
+laravel-worker:laravel-worker_02: started
+                    </div>
+                </div>
+                
+                <h3>🎯 Real Production Logs Example</h3>
+                
+                <div class="code-block">
+<span class="comment"># /var/www/html/storage/logs/worker.log</span>
+<span class="comment"># Production logs từ real PMS system</span>
+
+[2026-01-19 08:45:23] INFO: Worker laravel-worker_00 started (PID: 12345)
+[2026-01-19 08:45:25] Processing: App\Jobs\ProcessProductionReport
+[2026-01-19 08:45:27] Processed:  App\Jobs\ProcessProductionReport (2.1s)
+[2026-01-19 08:45:27] Processing: App\Jobs\SendEmailNotification
+[2026-01-19 08:45:29] Processed:  App\Jobs\SendEmailNotification (1.8s)
+
+<span class="comment"># ... 100 jobs xử lý thành công ...</span>
+
+[2026-01-19 09:15:42] Processing: App\Jobs\GenerateLargeReport
+[2026-01-19 09:18:12] ERROR: Memory limit exceeded (512MB)
+[2026-01-19 09:18:12] FAILED: App\Jobs\GenerateLargeReport after 150s
+[2026-01-19 09:18:13] Worker exiting with error code 1
+
+<span class="comment"># Supervisor phát hiện và restart</span>
+[2026-01-19 09:18:15] SUPERVISOR: Process exited with code 1
+[2026-01-19 09:18:15] SUPERVISOR: Starting laravel-worker_00
+[2026-01-19 09:18:18] INFO: Worker laravel-worker_00 restarted (PID: 12456)
+[2026-01-19 09:18:20] INFO: Retrying failed job (attempt 2/3)
+[2026-01-19 09:18:20] Processing: App\Jobs\GenerateLargeReport
+
+<span class="comment"># Lần 2 vẫn fail (do job quá lớn)</span>
+[2026-01-19 09:21:05] ERROR: Memory limit exceeded (512MB)
+[2026-01-19 09:21:05] FAILED: App\Jobs\GenerateLargeReport after 165s
+
+<span class="comment"># Admin được alert và tăng memory</span>
+[2026-01-19 09:25:00] ADMIN: Increased worker memory: 512MB → 1GB
+[2026-01-19 09:25:10] SUPERVISOR: Reloading configuration
+[2026-01-19 09:25:15] INFO: Worker restarted with new config
+
+<span class="comment"># Lần 3 thành công</span>
+[2026-01-19 09:25:20] INFO: Retrying failed job (attempt 3/3)
+[2026-01-19 09:25:20] Processing: App\Jobs\GenerateLargeReport
+[2026-01-19 09:28:45] Processed:  App\Jobs\GenerateLargeReport (205s)
+[2026-01-19 09:28:45] ✅ Job completed successfully with increased memory
+
+<span class="comment"># Metrics ghi nhận</span>
+[2026-01-19 09:28:46] METRICS: Job success rate today: 1,244/1,247 (99.76%)
+[2026-01-19 09:28:46] METRICS: Failed jobs: 3 (all retried successfully)
+[2026-01-19 09:28:46] METRICS: Avg processing time: 2.3s
+[2026-01-19 09:28:46] METRICS: Max processing time: 205s (GenerateLargeReport)
+                </div>
+            </div>
+            
+            <!-- PHẦN 6.5: DATABASE ORCHESTRATION -->
+            <div class="section">
+                <h2>6.5. Ví Dụ: Database Failover & Backup</h2>
+                
+                <div class="warning-box">
+                    <h3>🎬 Scenario: PostgreSQL Primary Crash</h3>
+                    <p><strong>Tình huống:</strong> Primary database bị crash, cần failover sang replica</p>
+                </div>
+                
+                <h3>📋 Without Orchestration</h3>
+                
+                <div class="code-block">
+<span class="comment"># 03:00 AM - Database crashes</span>
+[ERROR] PostgreSQL primary server crashed (disk full)
+[ERROR] All queries failing
+
+<span class="comment"># 03:00-07:30 AM - System DOWN (4.5 giờ)</span>
+❌ Website không hoạt động
+❌ 85 users không thể làm việc
+❌ Data loss risk
+
+<span class="comment"># 07:30 AM - Admin phát hiện (qua user complaints)</span>
+$ ssh user@server
+$ docker logs pms_postgres
+<span class="comment">FATAL: could not write to file: No space left on device</span>
+
+<span class="comment"># 08:00 AM - Admin clean disk space</span>
+$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       50G   50G     0 100% /
+
+$ docker system prune -af
+Deleted 15GB
+
+<span class="comment"># 08:15 AM - Restart database</span>
+$ docker compose restart postgres
+
+<span class="comment"># 08:20 AM - Service restored</span>
+✅ System UP
+
+<strong>Total downtime: 5 giờ 20 phút</strong>
+<strong>Data loss: 15 production reports (not saved)</strong>
+                </div>
+                
+                <h3>✅ With Orchestration (PostgreSQL + Replication)</h3>
+                
+                <div class="code-block">
+<span class="comment"># Setup: Primary-Replica configuration</span>
+<span class="comment"># ├─ pms_postgres_primary (write)</span>
+<span class="comment"># └─ pms_postgres_replica (read + standby)</span>
+
+<span class="comment"># 03:00:00 AM - Primary crashes</span>
+[ERROR] PostgreSQL primary: disk full
+[HEALTH] Health check failed for pms_postgres_primary
+[ALERT] 🚨 Database primary DOWN - Initiating failover
+
+<span class="comment"># 03:00:05 AM - Orchestrator phát hiện</span>
+[ORCHESTRATOR] Primary unhealthy for 5 seconds
+[ORCHESTRATOR] Checking replica status...
+[ORCHESTRATOR] Replica is healthy ✓
+[ORCHESTRATOR] Initiating automatic failover
+
+<span class="comment"># 03:00:10 AM - Promote replica to primary</span>
+[POSTGRES] Promoting replica to primary...
+$ docker exec pms_postgres_replica pg_ctl promote
+[POSTGRES] Replica promoted successfully
+
+<span class="comment"># 03:00:15 AM - Update application connection</span>
+[DOCKER] Updating environment variables
+[DOCKER] DB_HOST=postgres_replica
+[DOCKER] Restarting backend with new connection
+
+<span class="comment"># 03:00:25 AM - Service restored</span>
+[HEALTH] Backend health check: ✓ HEALTHY
+[NGINX] Routing traffic to backend
+[SUCCESS] Failover completed in 25 seconds
+
+<span class="comment"># 03:00:30 AM - Send alerts</span>
+[SLACK] Alert: "Database failover successful. Primary down, now using replica."
+[EMAIL] Admin notification sent
+
+<span class="comment"># 07:30 AM - Admin investigates (not urgent)</span>
+[ADMIN] Checking primary database
+[ADMIN] Root cause: Log files filled disk
+[ADMIN] Action: Clean logs, restart primary as new replica
+
+<strong>Total downtime: 25 seconds</strong>
+<strong>Data loss: 0 (all data replicated)</strong>
+<strong>Users affected: 0-2 (mid-request only)</strong>
+                </div>
+                
+                <h3>🔄 Automated Backup Strategy</h3>
+                
+                <div class="code-block">
+<span class="comment"># /home/pms/backup-strategy.sh</span>
+<span class="comment"># Automated backup với retention policy</span>
+
+#!/bin/bash
+
+BACKUP_DIR="/backups/postgres"
+DATE=$(date +%Y-%m-%d_%H%M)
+RETENTION_DAYS=30
+
+<span class="comment"># Full backup daily (2 AM)</span>
+if [ $(date +%H) -eq 02 ]; then
+    echo "[BACKUP] Starting full backup..."
+    
+    docker exec pms_postgres pg_dump -U pms_user -Fc pms_db > \
+        "$BACKUP_DIR/full_$DATE.dump"
+    
+    <span class="comment"># Upload to S3 (optional)</span>
+    aws s3 cp "$BACKUP_DIR/full_$DATE.dump" \
+        s3://pms-backups/postgres/full/ \
+        --storage-class STANDARD_IA
+    
+    echo "[BACKUP] ✓ Full backup completed: $(du -h $BACKUP_DIR/full_$DATE.dump)"
+fi
+
+<span class="comment"># Incremental backup every 6 hours</span>
+if [ $(date +%H) -eq 08 ] || [ $(date +%H) -eq 14 ] || [ $(date +%H) -eq 20 ]; then
+    echo "[BACKUP] Starting incremental backup..."
+    
+    docker exec pms_postgres pg_dump -U pms_user \
+        --incremental=LAST_FULL \
+        pms_db > "$BACKUP_DIR/incr_$DATE.dump"
+    
+    echo "[BACKUP] ✓ Incremental backup: $(du -h $BACKUP_DIR/incr_$DATE.dump)"
+fi
+
+<span class="comment"># Cleanup old backups</span>
+find $BACKUP_DIR -name "*.dump" -mtime +$RETENTION_DAYS -delete
+
+<span class="comment"># Verify backup integrity</span>
+LATEST_BACKUP=$(ls -t $BACKUP_DIR/full_*.dump | head -1)
+pg_restore --list "$LATEST_BACKUP" > /dev/null 2>&1
+
+if [ $? -eq 0 ]; then
+    echo "[BACKUP] ✓ Backup integrity verified"
+else
+    echo "[BACKUP] ✗ CORRUPTED BACKUP DETECTED!"
+    curl -X POST $SLACK_WEBHOOK \
+        -d '{"text":"🚨 URGENT: Backup verification failed!"}'
+fi
+                </div>
+                
+                <h3>📊 Backup Schedule & Retention</h3>
+                
+                <div class="info-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Backup Type</th>
+                                <th>Frequency</th>
+                                <th>Size</th>
+                                <th>Retention</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Full backup</td>
+                                <td>Daily 2 AM</td>
+                                <td>~2.5GB</td>
+                                <td>30 days local<br>90 days S3</td>
+                                <td>/backups + S3</td>
+                            </tr>
+                            <tr>
+                                <td>Incremental</td>
+                                <td>Every 6h</td>
+                                <td>~150MB</td>
+                                <td>7 days</td>
+                                <td>/backups</td>
+                            </tr>
+                            <tr>
+                                <td>Point-in-time</td>
+                                <td>Continuous</td>
+                                <td>~50MB/day</td>
+                                <td>7 days</td>
+                                <td>WAL logs</td>
+                            </tr>
+                            <tr>
+                                <td>Before deploy</td>
+                                <td>On demand</td>
+                                <td>~2.5GB</td>
+                                <td>Until next deploy</td>
+                                <td>/backups</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>🔧 Restore Example</h3>
+                
+                <div class="code-block">
+<span class="comment"># Scenario: Cần restore data từ 3 ngày trước</span>
+
+<span class="comment"># Step 1: List available backups</span>
+$ ls -lh /backups/postgres/
+-rw-r--r-- 1 root root 2.3G Jan 16 02:00 full_2026-01-16_0200.dump
+-rw-r--r-- 1 root root 2.4G Jan 17 02:00 full_2026-01-17_0200.dump
+-rw-r--r-- 1 root root 2.5G Jan 18 02:00 full_2026-01-18_0200.dump
+
+<span class="comment"># Step 2: Stop application</span>
+$ docker compose stop backend
+
+<span class="comment"># Step 3: Create new database</span>
+$ docker exec -it pms_postgres psql -U pms_user
+postgres=# DROP DATABASE pms_db;
+postgres=# CREATE DATABASE pms_db;
+postgres=# \q
+
+<span class="comment"># Step 4: Restore from backup</span>
+$ cat /backups/postgres/full_2026-01-16_0200.dump | \
+    docker exec -i pms_postgres pg_restore -U pms_user -d pms_db
+
+<span class="comment"># Output:</span>
+pg_restore: restoring data for table "users"
+pg_restore: restoring data for table "production_plans"
+pg_restore: restoring data for table "tasks"
+...
+pg_restore: creating INDEX "idx_tasks_status"
+pg_restore: creating CONSTRAINT "fk_tasks_plan"
+
+<span class="comment"># Step 5: Verify data</span>
+$ docker exec pms_postgres psql -U pms_user -d pms_db -c \
+    "SELECT COUNT(*) FROM users;"
+ count 
+-------
+   189
+
+<span class="comment"># Step 6: Start application</span>
+$ docker compose start backend
+
+<span class="comment"># Total restore time: ~3 minutes for 2.5GB</span>
+✅ Restore successful!
+                </div>
+            </div>
+            
+            <!-- PHẦN 7: AUTO-SCALING -->
+            <div class="section">
+                <h2>7. Auto-Scaling Strategy</h2>
+                
+                <h3>📈 Manual Scaling (MVP Phase)</h3>
+                
+                <div class="code-block">
+<span class="comment"># Scale queue workers lên 5</span>
+docker compose up -d --scale queue_worker=5
+
+<span class="comment"># Scale backend instances (nếu dùng load balancer)</span>
+docker compose up -d --scale backend=3
+                </div>
+                
+                <h3>🤖 Auto-Scaling Script (Advanced)</h3>
+                
+                <div class="code-block">
+<span class="comment">#!/bin/bash</span>
+<span class="comment"># auto-scale.sh - Tự động scale based on metrics</span>
+
+<span class="comment"># Get current CPU usage</span>
+CPU_USAGE=$(docker stats --no-stream --format "{{.CPUPerc}}" pms_backend | sed 's/%//')
+
+<span class="comment"># Get queue size from Redis</span>
+QUEUE_SIZE=$(docker exec pms_redis redis-cli LLEN queues:default)
+
+<span class="keyword">if</span> [ $(echo "$CPU_USAGE > 80" | bc) -eq 1 ] || [ $QUEUE_SIZE -gt 100 ]; <span class="keyword">then</span>
+    echo "High load detected! Scaling up..."
+    
+    <span class="comment"># Scale workers</span>
+    docker compose up -d --scale queue_worker=5
+    
+    <span class="comment"># Send alert</span>
+    curl -X POST https://hooks.slack.com/... \
+        -d "{\"text\":\"PMS auto-scaled workers to 5 due to high load\"}"
+<span class="keyword">elif</span> [ $(echo "$CPU_USAGE < 30" | bc) -eq 1 ] && [ $QUEUE_SIZE -lt 10 ]; <span class="keyword">then</span>
+    echo "Low load detected. Scaling down..."
+    docker compose up -d --scale queue_worker=2
+<span class="keyword">fi</span>
+                </div>
+                
+                <div class="code-block">
+<span class="comment"># Thêm vào crontab để chạy mỗi 5 phút</span>
+crontab -e
+
+<span class="comment"># Add:</span>
+*/5 * * * * /home/pms/auto-scale.sh >> /var/log/auto-scale.log 2>&1
+                </div>
+                
+                <div class="warning-box">
+                    <h3>⚠️ Scaling Thresholds</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Scale Up</th>
+                                <th>Scale Down</th>
+                                <th>Max Instances</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CPU Usage</td>
+                                <td>&gt; 80%</td>
+                                <td>&lt; 30%</td>
+                                <td>5</td>
+                            </tr>
+                            <tr>
+                                <td>Queue Size</td>
+                                <td>&gt; 100 jobs</td>
+                                <td>&lt; 10 jobs</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Memory Usage</td>
+                                <td>&gt; 85%</td>
+                                <td>&lt; 40%</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Response Time</td>
+                                <td>&gt; 2000ms</td>
+                                <td>&lt; 500ms</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>📊 Advanced Monitoring Script với Alerting</h3>
+                
+                <div class="code-block">
+<span class="comment">#!/bin/bash</span>
+<span class="comment"># advanced-auto-scale.sh - Smart scaling với metrics và alerts</span>
+
+SLACK_WEBHOOK=<span class="string">"https://hooks.slack.com/services/YOUR/WEBHOOK/URL"</span>
+EMAIL_ALERT=<span class="string">"admin@example.com"</span>
+
+<span class="comment"># Function: Send Slack notification</span>
+send_slack() {
+    MESSAGE=$1
+    curl -X POST $SLACK_WEBHOOK \
+        -H 'Content-Type: application/json' \
+        -d "{\"text\":\"🚨 PMS Alert: $MESSAGE\"}"
+}
+
+<span class="comment"># Function: Get metrics</span>
+get_metrics() {
+    <span class="comment"># CPU usage</span>
+    CPU=$(docker stats --no-stream --format "{{.CPUPerc}}" pms_backend | sed 's/%//')
+    
+    <span class="comment"># Memory usage</span>
+    MEM=$(docker stats --no-stream --format "{{.MemPerc}}" pms_backend | sed 's/%//')
+    
+    <span class="comment"># Queue size</span>
+    QUEUE=$(docker exec pms_redis redis-cli LLEN queues:default)
+    
+    <span class="comment"># Failed jobs</span>
+    FAILED=$(docker exec pms_redis redis-cli LLEN queues:default:failed)
+    
+    <span class="comment"># Worker count</span>
+    WORKERS=$(docker ps --filter "name=pms_queue_worker" --format "{{.Names}}" | wc -l)
+    
+    <span class="comment"># Response time (avg last 100 requests)</span>
+    RESPONSE_TIME=$(docker exec pms_nginx tail -100 /var/log/nginx/access.log | \
+        awk '{print $NF}' | awk '{sum+=$1; count++} END {print sum/count}')
+    
+    echo "CPU=$CPU MEM=$MEM QUEUE=$QUEUE FAILED=$FAILED WORKERS=$WORKERS RT=$RESPONSE_TIME"
+}
+
+<span class="comment"># Function: Scale workers</span>
+scale_workers() {
+    NEW_COUNT=$1
+    REASON=$2
+    
+    echo "[$(date)] Scaling workers to $NEW_COUNT - Reason: $REASON"
+    docker compose up -d --scale queue_worker=$NEW_COUNT
+    
+    send_slack "Scaled queue workers to $NEW_COUNT. Reason: $REASON"
+}
+
+<span class="comment"># Main monitoring loop</span>
+<span class="keyword">while</span> true; <span class="keyword">do</span>
+    METRICS=$(get_metrics)
+    eval $METRICS  <span class="comment"># Parse metrics into variables</span>
+    
+    echo "[$(date)] Metrics: CPU=${CPU}%, MEM=${MEM}%, Queue=$QUEUE, Workers=$WORKERS, RT=${RESPONSE_TIME}ms"
+    
+    <span class="comment"># CRITICAL: Failed jobs > 10</span>
+    <span class="keyword">if</span> [ $FAILED -gt 10 ]; <span class="keyword">then</span>
+        send_slack "⚠️ CRITICAL: $FAILED failed jobs detected! Investigate immediately."
+        echo "$FAILED failed jobs" | mail -s "PMS Alert: Failed Jobs" $EMAIL_ALERT
+    <span class="keyword">fi</span>
+    
+    <span class="comment"># SCALE UP conditions</span>
+    <span class="keyword">if</span> [ $(echo "$CPU > 80" | bc) -eq 1 ] && [ $WORKERS -lt 8 ]; <span class="keyword">then</span>
+        scale_workers $((WORKERS + 2)) "High CPU: ${CPU}%"
+        
+    <span class="keyword">elif</span> [ $QUEUE -gt 200 ] && [ $WORKERS -lt 8 ]; <span class="keyword">then</span>
+        scale_workers $((WORKERS + 3)) "High queue size: $QUEUE jobs"
+        
+    <span class="keyword">elif</span> [ $(echo "$RESPONSE_TIME > 2000" | bc) -eq 1 ] && [ $WORKERS -lt 6 ]; <span class="keyword">then</span>
+        scale_workers $((WORKERS + 2)) "Slow response: ${RESPONSE_TIME}ms"
+        
+    <span class="comment"># SCALE DOWN conditions</span>
+    <span class="keyword">elif</span> [ $(echo "$CPU < 30" | bc) -eq 1 ] && [ $QUEUE -lt 10 ] && [ $WORKERS -gt 3 ]; <span class="keyword">then</span>
+        scale_workers $((WORKERS - 1)) "Low load: CPU=${CPU}%, Queue=$QUEUE"
+    <span class="keyword">fi</span>
+    
+    <span class="comment"># WARNING alerts</span>
+    <span class="keyword">if</span> [ $(echo "$MEM > 85" | bc) -eq 1 ]; <span class="keyword">then</span>
+        send_slack "⚠️ WARNING: High memory usage: ${MEM}%"
+    <span class="keyword">fi</span>
+    
+    <span class="keyword">if</span> [ $QUEUE -gt 100 ]; <span class="keyword">then</span>
+        send_slack "⚠️ WARNING: Queue backlog: $QUEUE jobs pending"
+    <span class="keyword">fi</span>
+    
+    sleep 60  <span class="comment"># Check every minute</span>
+<span class="keyword">done</span>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📈 Scaling Decision Table</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Condition</th>
+                                <th>Threshold</th>
+                                <th>Action</th>
+                                <th>Alert Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background: #f8d7da;">
+                                <td>CPU &gt; 80%</td>
+                                <td>Critical</td>
+                                <td>+2 workers</td>
+                                <td>🔴 URGENT</td>
+                            </tr>
+                            <tr style="background: #f8d7da;">
+                                <td>Queue &gt; 200</td>
+                                <td>Critical</td>
+                                <td>+3 workers</td>
+                                <td>🔴 URGENT</td>
+                            </tr>
+                            <tr style="background: #fff3cd;">
+                                <td>Response time &gt; 2s</td>
+                                <td>Warning</td>
+                                <td>+2 workers</td>
+                                <td>🟡 WARNING</td>
+                            </tr>
+                            <tr style="background: #fff3cd;">
+                                <td>Memory &gt; 85%</td>
+                                <td>Warning</td>
+                                <td>Alert only</td>
+                                <td>🟡 WARNING</td>
+                            </tr>
+                            <tr style="background: #d4edda;">
+                                <td>CPU &lt; 30% & Queue &lt; 10</td>
+                                <td>Low load</td>
+                                <td>-1 worker</td>
+                                <td>🟢 INFO</td>
+                            </tr>
+                            <tr style="background: #f8d7da;">
+                                <td>Failed jobs &gt; 10</td>
+                                <td>Critical</td>
+                                <td>Alert + Email</td>
+                                <td>🔴 URGENT</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>📧 Example Alert Messages</h3>
+                
+                <div class="code-block">
+<span class="comment"># Slack notification example</span>
+🚨 PMS Alert: Scaled queue workers to 8. Reason: High queue size: 245 jobs
+
+Metrics at scaling time:
+├─ CPU Usage: 78%
+├─ Memory: 65%
+├─ Queue Size: 245 jobs
+├─ Response Time: 1,850ms
+├─ Workers: 5 → 8
+└─ Timestamp: 2026-01-19 14:35:22
+
+Action taken: Added 3 workers
+Expected improvement: Queue processing +60%
+
+<span class="comment"># Email subject lines</span>
+Subject: ✅ PMS Auto-scaled: Normal operations
+Subject: ⚠️ PMS Warning: High memory usage detected
+Subject: 🔴 PMS CRITICAL: 15 failed jobs require investigation
+                </div>
+            </div>
+            
+            <!-- PHẦN 7.5: LOAD BALANCING EXAMPLES -->
+            <div class="section">
+                <h2>7.5. Ví Dụ: Load Balancing với Nginx</h2>
+                
+                <div class="highlight-box">
+                    <h3>⚖️ Multi-Instance Load Balancing</h3>
+                    <p>Khi có nhiều backend instances, Nginx tự động phân tải requests</p>
+                </div>
+                
+                <h3>📝 Nginx Configuration</h3>
+                
+                <div class="code-block">
+<span class="comment"># /etc/nginx/nginx.conf</span>
+<span class="comment"># Load balancing configuration cho PMS</span>
+
+http {
+    <span class="comment"># Define upstream backend pool</span>
+    upstream pms_backend {
+        <span class="comment"># Load balancing method: least_conn (chọn server có ít connection nhất)</span>
+        least_conn;
+        
+        <span class="comment"># Backend instances</span>
+        server backend_1:9000 weight=3 max_fails=3 fail_timeout=30s;
+        server backend_2:9000 weight=3 max_fails=3 fail_timeout=30s;
+        server backend_3:9000 weight=2 max_fails=3 fail_timeout=30s;
+        
+        <span class="comment"># Backup server (chỉ dùng khi tất cả primary down)</span>
+        server backend_backup:9000 backup;
+        
+        <span class="comment"># Keep-alive connections</span>
+        keepalive 32;
+    }
+    
+    <span class="comment"># WebSocket upstream</span>
+    upstream pms_websocket {
+        <span class="comment"># IP hash để giữ sticky sessions cho WebSocket</span>
+        ip_hash;
+        
+        server reverb_1:8080;
+        server reverb_2:8080;
+    }
+    
+    server {
+        listen 80;
+        server_name pms.example.com;
+        
+        <span class="comment"># Health check endpoint</span>
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+        }
+        
+        <span class="comment"># API requests → Load balanced backend</span>
+        location /api/ {
+            proxy_pass http://pms_backend;
+            proxy_http_version 1.1;
+            
+            <span class="comment"># Headers</span>
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            
+            <span class="comment"># Timeouts</span>
+            proxy_connect_timeout 10s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+            
+            <span class="comment"># Retry logic</span>
+            proxy_next_upstream error timeout http_502 http_503 http_504;
+            proxy_next_upstream_tries 2;
+        }
+        
+        <span class="comment"># WebSocket → Sticky session load balancing</span>
+        location /ws {
+            proxy_pass http://pms_websocket;
+            proxy_http_version 1.1;
+            
+            <span class="comment"># WebSocket upgrade</span>
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            
+            <span class="comment"># Long timeout for WebSocket</span>
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+        }
+        
+        <span class="comment"># Static files → Direct serve (no load balancing)</span>
+        location /static/ {
+            root /var/www/html/public;
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+}
+                </div>
+                
+                <h3>📊 Load Balancing in Action</h3>
+                
+                <div class="code-block">
+<span class="comment"># Scenario: 150 concurrent requests</span>
+
+<span class="comment"># Request distribution với least_conn strategy:</span>
+
+[09:00:00] 150 requests arrived
+[NGINX] Analyzing backend connections...
+
+Backend Status:
+├─ backend_1: 12 active connections (weight=3)
+├─ backend_2: 15 active connections (weight=3)
+└─ backend_3: 8 active connections (weight=2)
+
+[NGINX] Routing new requests...
+
+<span class="comment"># Next 50 requests distribution:</span>
+backend_1: +18 requests (total: 30 connections)
+backend_2: +12 requests (total: 27 connections)
+backend_3: +20 requests (total: 28 connections)
+
+<span class="comment"># Load balanced! Mỗi server handle ~30 connections</span>
+
+[09:00:05] All requests distributed
+[NGINX] Average response time: 285ms
+[NGINX] No backend failures ✓
+
+<span class="comment"># Performance metrics:</span>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Backend    │ Requests │ Avg Time │ CPU  │ Memory  │ Status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+backend_1  │   48     │  278ms   │ 65%  │ 420MB   │ ✓
+backend_2  │   52     │  295ms   │ 68%  │ 445MB   │ ✓
+backend_3  │   50     │  282ms   │ 62%  │ 390MB   │ ✓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total      │  150     │  285ms   │ 65%  │ 1.25GB  │ ✓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                </div>
+                
+                <h3>🔧 Failover Example</h3>
+                
+                <div class="code-block">
+<span class="comment"># Scenario: backend_2 crashes during high load</span>
+
+[10:15:00] backend_2 handling 45 requests
+[10:15:05] backend_2 CRASHED (memory leak)
+
+[NGINX] Health check failed: backend_2 (attempt 1/3)
+[NGINX] Health check failed: backend_2 (attempt 2/3)
+[NGINX] Health check failed: backend_2 (attempt 3/3)
+[NGINX] Marking backend_2 as DOWN
+
+<span class="comment"># Nginx automatically redistributes traffic</span>
+[NGINX] Redistributing 45 active connections from backend_2
+
+<span class="comment"># Requests in-flight được retry tự động:</span>
+Request #1234 → backend_2 (failed) → retry → backend_1 ✓
+Request #1235 → backend_2 (failed) → retry → backend_3 ✓
+Request #1236 → backend_2 (failed) → retry → backend_1 ✓
+...
+
+[10:15:10] All requests rerouted in 5 seconds
+
+<span class="comment"># New distribution (2 servers only):</span>
+backend_1: 68 connections (overloaded)
+backend_3: 65 connections (overloaded)
+
+[ALERT] 🚨 Backend pool degraded (2/3 active)
+[SLACK] Alert sent: "backend_2 down, traffic redistributed"
+
+<span class="comment"># Docker orchestration kicks in:</span>
+[10:15:15] Docker detecting unhealthy backend_2
+[10:15:20] Docker restarting backend_2...
+[10:15:35] backend_2 health check: ✓ HEALTHY
+
+[NGINX] backend_2 is back online
+[NGINX] Adding backend_2 to pool
+[NGINX] Load balancing restored to 3 servers
+
+<span class="comment"># Final distribution:</span>
+backend_1: 45 connections (normal)
+backend_2: 40 connections (catching up)
+backend_3: 42 connections (normal)
+
+[SUCCESS] Failover completed with zero user impact
+[METRICS] Failed requests: 0 (all retried successfully)
+[METRICS] Downtime: 0 seconds (transparent failover)
+                </div>
+                
+                <h3>📈 Performance: Single vs Multiple Backends</h3>
+                
+                <div class="info-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>1 Backend</th>
+                                <th>3 Backends (Load Balanced)</th>
+                                <th>Improvement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Max Throughput</td>
+                                <td>50 req/s</td>
+                                <td>145 req/s</td>
+                                <td>+190%</td>
+                            </tr>
+                            <tr>
+                                <td>Avg Response Time</td>
+                                <td>850ms (overloaded)</td>
+                                <td>285ms</td>
+                                <td>-66%</td>
+                            </tr>
+                            <tr>
+                                <td>P95 Response Time</td>
+                                <td>2,100ms</td>
+                                <td>650ms</td>
+                                <td>-69%</td>
+                            </tr>
+                            <tr>
+                                <td>Concurrent Users</td>
+                                <td>~80 (max)</td>
+                                <td>~200+</td>
+                                <td>+150%</td>
+                            </tr>
+                            <tr>
+                                <td>Failover Time</td>
+                                <td>5-10 min (manual)</td>
+                                <td>5 seconds (auto)</td>
+                                <td>-98%</td>
+                            </tr>
+                            <tr>
+                                <td>Single Point of Failure</td>
+                                <td>YES ❌</td>
+                                <td>NO ✅</td>
+                                <td>High Availability</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="success-box">
+                    <h3>✅ Khi Nào Cần Load Balancing?</h3>
+                    <ul>
+                        <li>📈 <strong>Users > 100 concurrent:</strong> 1 server không đủ xử lý</li>
+                        <li>🔴 <strong>High availability required:</strong> Không thể chấp nhận downtime</li>
+                        <li>⚡ <strong>Response time > 1s:</strong> Cần scale để giảm latency</li>
+                        <li>💼 <strong>SLA requirements:</strong> 99.9% uptime guarantee</li>
+                        <li>🌍 <strong>Traffic spikes:</strong> Có peak hours cần xử lý</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px;"><strong>MVP Phase:</strong> 1 backend + auto-restart = Đủ cho 50-100 users</p>
+                    <p><strong>Growth Phase:</strong> 2-3 backends + load balancing = Handle 100-300 users</p>
+                </div>
+            </div>
+            
+            <!-- PHẦN 8: KUBERNETES (FUTURE) -->
+            <div class="section">
+                <h2>8. Kubernetes - Scale Lớn (Future)</h2>
+                
+                <div class="info-box">
+                    <h3>🚀 Khi Nào Nên Chuyển Sang Kubernetes?</h3>
+                    <ul>
+                        <li>📈 <strong>Users &gt; 500</strong> concurrent</li>
+                        <li>🌍 <strong>Multi-region deployment</strong> (VN + SG + US)</li>
+                        <li>💰 <strong>Budget &gt; $500/month</strong> cho infrastructure</li>
+                        <li>👥 <strong>Có DevOps engineer</strong> trong team</li>
+                        <li>⏱️ <strong>Cần 99.9% uptime</strong> SLA</li>
+                    </ul>
+                </div>
+                
+                <h3>☸️ Kubernetes Architecture</h3>
+                
+                <div class="code-block">
+<span class="comment"># deployment.yaml - Laravel Backend</span>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pms-backend
+spec:
+  replicas: 3  <span class="comment"># Start with 3 pods</span>
+  selector:
+    matchLabels:
+      app: pms-backend
+  template:
+    metadata:
+      labels:
+        app: pms-backend
+    spec:
+      containers:
+      - name: backend
+        image: registry.example.com/pms-backend:latest
+        ports:
+        - containerPort: 9000
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        livenessProbe:  <span class="comment"># Health check</span>
+          httpGet:
+            path: /api/health
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+<span class="comment"># Horizontal Pod Autoscaler</span>
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pms-backend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pms-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+                </div>
+                
+                <div class="highlight-box">
+                    <h3>🎯 Kubernetes Benefits</h3>
+                    <ul>
+                        <li>🔄 <strong>Auto-scaling:</strong> Tự động tăng/giảm pods based on CPU/Memory</li>
+                        <li>💚 <strong>Self-healing:</strong> Tự động restart pods bị lỗi</li>
+                        <li>🚀 <strong>Rolling updates:</strong> Deploy không downtime</li>
+                        <li>⚖️ <strong>Load balancing:</strong> Phân tải tự động giữa pods</li>
+                        <li>🌍 <strong>Multi-region:</strong> Deploy lên nhiều regions</li>
+                        <li>📊 <strong>Monitoring:</strong> Prometheus + Grafana built-in</li>
+                    </ul>
+                </div>
+                
+                <div class="warning-box">
+                    <h3>⚠️ Kubernetes Complexity</h3>
+                    <p><strong>Không khuyến nghị cho MVP!</strong> Lý do:</p>
+                    <ul>
+                        <li>🧠 <strong>Learning curve:</strong> Cần 2-3 tháng để thành thạo</li>
+                        <li>💰 <strong>Chi phí cao:</strong> Minimum $200/month cho managed K8s (GKE, EKS, AKS)</li>
+                        <li>⏱️ <strong>Setup time:</strong> 1-2 tuần để config đúng</li>
+                        <li>🔧 <strong>Maintenance:</strong> Cần DevOps engineer full-time</li>
+                    </ul>
+                    
+                    <p style="margin-top: 15px;"><strong>→ Chỉ nên dùng khi:</strong></p>
+                    <ul>
+                        <li>✅ System đã stable với Docker Compose</li>
+                        <li>✅ Có ngân sách và team DevOps</li>
+                        <li>✅ Users &gt; 500 concurrent</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PHẦN 9: REAL-WORLD CASE STUDY -->
+            <div class="section">
+                <h2>9. Case Study: 1 Ngày Trong Đời PMS</h2>
+                
+                <div class="highlight-box">
+                    <h3>📅 Timeline: Thứ 2, 20/01/2026 - Production Day</h3>
+                </div>
+                
+                <div class="code-block">
+<span class="comment">═══════════════════════════════════════════════════════════════
+06:00 AM - Pre-shift Startup
+═══════════════════════════════════════════════════════════════</span>
+
+[AUTO] Scheduled task: Database backup started
+[BACKUP] PostgreSQL backup: 2.3GB → /backups/pms_2026-01-20_0600.sql
+[BACKUP] MongoDB backup: 450MB → /backups/mongo_2026-01-20_0600.gz
+[SUCCESS] Backup completed in 3m 45s ✓
+
+[AUTO] Cleanup old logs (>30 days)
+[CLEANUP] Removed 450MB of old logs
+[CLEANUP] Freed 1.2GB disk space ✓
+
+<span class="comment">Current System Status:</span>
+├─ Backend: ✅ Healthy (3h uptime)
+├─ Workers: 3 instances, idle
+├─ Queue: 0 jobs
+├─ WebSocket: 2 connections (monitoring systems)
+└─ Load: CPU 12%, Memory 35%
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+07:30 AM - Morning Rush Begins
+═══════════════════════════════════════════════════════════════</span>
+
+[INFO] 45 users logged in (last 5 minutes)
+[REVERB] WebSocket connections: 2 → 47
+[METRICS] CPU usage: 12% → 35%
+[METRICS] Queue: 0 → 8 jobs (email notifications)
+
+<span class="comment">System handling normally ✓</span>
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+08:15 AM - File Upload Spike
+═══════════════════════════════════════════════════════════════</span>
+
+[INFO] 85 users uploaded production reports
+[QUEUE] Jobs: 8 → 95 (file processing)
+[METRICS] CPU: 35% → 72%
+[METRICS] Queue workers: 65% busy
+
+[MONITOR] Queue size approaching threshold (95/100)
+[MONITOR] Processing rate: 45 jobs/min
+[MONITOR] ETA: 2.1 minutes to clear queue
+
+<span class="comment">System handling, no action needed ✓</span>
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+08:45 AM - SPIKE EVENT: Quarterly Report Deadline
+═══════════════════════════════════════════════════════════════</span>
+
+[ALERT] 150 users submitting reports simultaneously!
+[QUEUE] Jobs: 95 → 287 in 30 seconds
+[METRICS] CPU: 72% → 94%
+[METRICS] Memory: 55% → 78%
+[METRICS] Response time: 450ms → 1,850ms
+
+[AUTO-SCALE] 🚨 SCALING UP!
+[AUTO-SCALE] Condition: Queue=287 (>200), CPU=94% (>80%)
+[AUTO-SCALE] Action: Workers 3 → 8 (+5 instances)
+[DOCKER] Creating pms_queue_worker_4...5...6...7...8 ✓
+[SLACK] Alert sent: "Auto-scaled to 8 workers"
+
+<span class="comment">30 seconds later:</span>
+[METRICS] CPU: 94% → 62% (distributed across 8 workers)
+[METRICS] Processing rate: 45 → 120 jobs/min
+[METRICS] Queue: 287 → 245 → 198 → 150...
+[METRICS] Response time: 1,850ms → 680ms
+
+[INFO] Queue cleared in 2m 25s ✓
+[SUCCESS] All 287 reports processed successfully
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+09:30 AM - INCIDENT: Backend Memory Leak
+═══════════════════════════════════════════════════════════════</span>
+
+[WARNING] Backend memory: 78% → 88% → 92%
+[HEALTH] Memory threshold exceeded (>90%)
+[ALERT] 🔴 Backend memory critical: 92%
+[SLACK] Urgent alert sent to @admin
+
+[AUTO] Attempting graceful container restart...
+[DOCKER] Waiting for active requests to complete...
+[DOCKER] 12 active requests drained in 8 seconds
+[DOCKER] Stopping pms_backend...
+[DOCKER] Starting new pms_backend instance...
+[DOCKER] Health check: attempt 1... ✓
+[NGINX] Routing traffic to new backend
+
+[SUCCESS] Container restarted in 15 seconds
+[METRICS] Memory: 92% → 28% (fresh start)
+[METRICS] Downtime: 0 seconds (seamless failover)
+
+<span class="comment">Admin investigation:</span>
+[ADMIN] Root cause: Eloquent query without pagination
+[ADMIN] Fix deployed: Added ->paginate(50) to report query
+[ADMIN] Deployed in 5 minutes via CI/CD
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+11:00 AM - AUTO SCALE DOWN
+═══════════════════════════════════════════════════════════════</span>
+
+[MONITOR] Queue: 2 jobs
+[MONITOR] CPU: 28% (sustained for 10 minutes)
+[AUTO-SCALE] Condition met for scale down
+[AUTO-SCALE] Workers: 8 → 5 (-3 instances)
+[DOCKER] Gracefully stopping workers 6, 7, 8...
+[DOCKER] Waiting for current jobs to complete...
+[SUCCESS] Workers scaled down ✓
+
+<span class="comment">Resource savings:</span>
+├─ CPU: 62% → 35%
+├─ Memory: 2.4GB → 1.5GB freed
+└─ Cost: Optimal resource utilization
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+02:30 PM - DATABASE BACKUP (Incremental)
+═══════════════════════════════════════════════════════════════</span>
+
+[AUTO] Scheduled incremental backup
+[BACKUP] Changed data since 6 AM: 125MB
+[SUCCESS] Incremental backup: 45 seconds ✓
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+05:45 PM - END OF SHIFT SURGE
+═══════════════════════════════════════════════════════════════</span>
+
+[INFO] 120 users submitting end-of-day reports
+[QUEUE] Jobs: 5 → 156
+[AUTO-SCALE] Workers: 5 → 7 (+2 instances)
+[METRICS] Processing smoothly at 95 jobs/min
+[INFO] Queue cleared in 1m 40s ✓
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+06:30 PM - EVENING SCALE DOWN
+═══════════════════════════════════════════════════════════════</span>
+
+[MONITOR] Load decreased: 15 users online
+[AUTO-SCALE] Workers: 7 → 3 (back to baseline)
+[METRICS] System: Normal operations
+
+<span class="comment">═══════════════════════════════════════════════════════════════
+11:59 PM - END OF DAY SUMMARY
+═══════════════════════════════════════════════════════════════</span>
+
+📊 <strong>DAILY STATISTICS:</strong>
+
+<strong>Traffic:</strong>
+├─ Total users: 189
+├─ Peak concurrent: 150 (8:45 AM)
+├─ Total requests: 45,678
+├─ Avg response time: 325ms
+└─ Uptime: 100% (24/24 hours)
+
+<strong>Queue Processing:</strong>
+├─ Total jobs: 1,247
+├─ Successful: 1,245 (99.8%)
+├─ Failed: 2 (0.2%) ← investigated & fixed
+├─ Avg processing time: 2.3s/job
+└─ Peak queue size: 287 jobs
+
+<strong>Auto-Scaling Events:</strong>
+├─ Scale ups: 2 times (8:45 AM, 5:45 PM)
+├─ Scale downs: 3 times (11:00 AM, 1:30 PM, 6:30 PM)
+├─ Worker instances: 3 → 8 → 5 → 7 → 3
+└─ Resource savings: ~$2.50/day vs always running 8 workers
+
+<strong>Incidents:</strong>
+├─ Memory leak: 1 (auto-recovered in 15s)
+├─ Manual intervention: 0
+└─ Downtime: 0 seconds
+
+<strong>Health Checks:</strong>
+├─ Total checks: 2,880 (every 30s × 24h)
+├─ Passed: 2,878 (99.93%)
+├─ Failed: 2 (during restart, expected)
+└─ Auto-recoveries: 1
+
+<strong>Alerts Sent:</strong>
+├─ Slack: 5 notifications
+├─ Email: 1 critical alert
+└─ All resolved within SLA
+
+✅ <strong>EXCELLENT DAY - ALL SYSTEMS OPERATIONAL</strong>
+                </div>
+                
+                <div class="success-box">
+                    <h3>🎯 Key Takeaways From This Day</h3>
+                    <ul>
+                        <li>✅ <strong>Auto-scaling:</strong> Xử lý 287 jobs spike không cần can thiệp thủ công</li>
+                        <li>✅ <strong>Self-healing:</strong> Memory leak được phát hiện và fix tự động trong 15 giây</li>
+                        <li>✅ <strong>Zero downtime:</strong> 100% uptime dù có incident</li>
+                        <li>✅ <strong>Cost optimization:</strong> Scale down khi không cần, tiết kiệm ~$75/tháng</li>
+                        <li>✅ <strong>Proactive alerts:</strong> Admin được thông báo nhưng không cần panic</li>
+                        <li>✅ <strong>Predictable:</strong> Hệ thống tự xử lý 99% tình huống</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PHẦN 10: BEST PRACTICES -->
+            <div class="section">
+                <h2>10. Best Practices</h2>
+                
+                <div class="success-box">
+                    <h3>✅ Orchestration Checklist</h3>
+                    
+                    <h4>📋 MVP Phase (Tháng 1-6):</h4>
+                    <ul>
+                        <li>☑️ Docker Compose với restart policies</li>
+                        <li>☑️ Health checks cho tất cả services</li>
+                        <li>☑️ Resource limits (CPU, Memory)</li>
+                        <li>☑️ Supervisor cho queue workers</li>
+                        <li>☑️ Monitoring script (CPU, Memory, Queue size)</li>
+                        <li>☑️ Automated backups (daily)</li>
+                        <li>☑️ Log aggregation (centralized logs)</li>
+                    </ul>
+                    
+                    <h4>📈 Scale Phase (Tháng 7+):</h4>
+                    <ul>
+                        <li>☑️ Manual scaling script (CPU/Queue based)</li>
+                        <li>☑️ Multiple VPS với load balancer (nếu cần)</li>
+                        <li>☑️ Redis Sentinel cho HA</li>
+                        <li>☑️ PostgreSQL replication</li>
+                        <li>☑️ CDN cho static files</li>
+                    </ul>
+                    
+                    <h4>🚀 Enterprise Phase (Users &gt; 500):</h4>
+                    <ul>
+                        <li>☑️ Kubernetes cluster</li>
+                        <li>☑️ Horizontal Pod Autoscaler</li>
+                        <li>☑️ Service mesh (Istio)</li>
+                        <li>☑️ Prometheus + Grafana monitoring</li>
+                        <li>☑️ ELK stack cho logs</li>
+                    </ul>
+                </div>
+                
+                <div class="highlight-box">
+                    <h3>🎯 Key Takeaways</h3>
+                    <ol>
+                        <li><strong>Start Simple:</strong> Docker Compose đủ cho MVP (50-200 users)</li>
+                        <li><strong>Add Supervisor:</strong> Quản lý queue workers và cron jobs</li>
+                        <li><strong>Monitor Metrics:</strong> CPU, Memory, Queue size, Response time</li>
+                        <li><strong>Manual Scale First:</strong> Test scaling manually trước khi auto</li>
+                        <li><strong>Kubernetes Later:</strong> Chỉ khi thực sự cần (&gt; 500 users)</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="color: #1e3c72; margin-bottom: 20px;">📚 Tài Liệu Tham Khảo</h2>
+                <a href="PMS_SETUP_INDEX.html" class="btn">← Về Trang Chủ</a>
+                <a href="PMS_STEP_06_DEPLOYMENT.html" class="btn">Deployment Guide</a>
+                <a href="https://docs.docker.com/compose/" class="btn" target="_blank">Docker Compose Docs</a>
+                <a href="http://supervisord.org/" class="btn" target="_blank">Supervisor Docs</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

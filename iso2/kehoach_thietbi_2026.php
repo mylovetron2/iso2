@@ -21,12 +21,15 @@ $error = '';
 
 // Xử lý AJAX - Lưu từng thiết bị
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
+    ob_clean();
     header('Content-Type: application/json');
     
     try {
         $stt = $_POST['stt'] ?? '';
-        $selectedMonth = $_POST['thang_thuchien'] ?? '';
+        $thangThuchien = $_POST['thang_thuchien'] ?? '';
+        $thangDot2 = $_POST['thang_dot2'] ?? '';
         $donviThuchien = $_POST['donvi_thuchien'] ?? '';
+        $chusohuuInput = $_POST['chusohuu'] ?? '';
         
         if (empty($stt)) {
             echo json_encode(['success' => false, 'message' => 'Thiếu STT thiết bị']);
@@ -100,6 +103,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
         echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
     }
     exit;
+}
+
+// Xử lý AJAX - Xóa kế hoạch của thiết bị
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_delete'])) {
+    ob_clean();
+    header('Content-Type: application/json');
+    
+    try {
+        $stt = $_POST['stt'] ?? '';
+        
+        if (empty($stt)) {
+            echo json_encode(['success' => false, 'message' => 'Thiếu STT thiết bị']);
+            exit;
+        }
+        
+        $db->beginTransaction();
+        
+        // Xóa tất cả kế hoạch của thiết bị này trong năm 2026
+        $stmtDelete = $db->prepare("DELETE FROM kehoach_kiemdinh_2026_iso WHERE stt = :stt AND nam_kehoach = 2026");
+        $stmtDelete->execute([':stt' => $stt]);
+        
+        $deletedCount = $stmtDelete->rowCount();
+        
+        // Log activity
+        $logger->log(
+            'kehoach_kiemdinh_2026_iso',
+            'DELETE',
+            null,
+            null,
+            [
+                'stt' => $stt,
+                'deleted_count' => $deletedCount,
+                'nam_kehoach' => 2026
+            ]
+        );
+        
+        $db->commit();
+        echo json_encode(['success' => true, 'message' => "Đã xóa {$deletedCount} kế hoạch thành công!"]);
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// AJAX: Bulk delete multiple equipment plans
+if (isset($_POST['ajax_bulk_delete'])) {
+    ob_clean(); // Clear any output buffer
+    header('Content-Type: application/json');
+    
+    $sttList = $_POST['stt_list'] ?? [];
+    
+    if (empty($sttList) || !is_array($sttList)) {
+        echo json_encode(['success' => false, 'message' => 'Không có thiết bị nào được chọn']);
+        exit;
+    }
+    
+    try {
+        $db->beginTransaction();
+        
+        $deletedCount = 0;
+        foreach ($sttList as $stt) {
+            // Get device info from master table
+            $stmtInfo = $db->prepare("SELECT tenthietbi FROM thietbihckd_iso WHERE stt = :stt LIMIT 1");
+            $stmtInfo->execute([':stt' => $stt]);
+            $deviceInfo = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+            
+            if ($deviceInfo) {
+                // Delete all planning records for this device
+                $stmtDelete = $db->prepare("DELETE FROM kehoach_kiemdinh_2026_iso WHERE stt = :stt AND nam_kehoach = 2026");
+                $stmtDelete->execute([':stt' => $stt]);
+                
+                $rowsDeleted = $stmtDelete->rowCount();
+                if ($rowsDeleted > 0) {
+                    $deletedCount++;
+                    
+                    // Log activity
+                    $logger->log(
+                        'kehoach_kiemdinh_2026',
+                        'delete_bulk',
+                        (int)$stt,
+                        null,
+                        ['ten_thietbi' => $deviceInfo['tenthietbi'], 'rows_deleted' => $rowsDeleted]
+                    );
+                }
+            }
+        }
+        
+        $db->commit();
+        
+        if ($deletedCount > 0) {
+            echo json_encode(['success' => true, 'message' => "Đã xóa kế hoạch của {$deletedCount} thiết bị"]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Không có kế hoạch nào để xóa. Các thiết bị đã chọn chưa có kế hoạch.']);
+        }
+        exit;
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
+        exit;
+    }
 }
 
 // Xử lý POST - Lưu kế hoạch
@@ -186,9 +292,26 @@ $search = $_GET['search'] ?? '';
 $loaitb = $_GET['loaitb'] ?? '';
 $bophansh = $_GET['bophansh'] ?? '';
 $kehoachFilter = $_GET['kehoach'] ?? ''; // 'all', 'co', 'chua'
+$sortOrder = $_GET['sort'] ?? 'default'; // 'default', 'doith'
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $limit = 50;
 $offset = ($page - 1) * $limit;
+
+// Nếu có search hoặc chọn sắp xếp Đội TH thì hiển thị tất cả (không phân trang)
+$showAll = $search || $sortOrder === 'doith';
+
+// Thứ tự số máy của Đội TH
+$doiThOrder = [
+    'EA15263', 'EA15268', 'EA15260', '4305', 'PJ1964', 'RG2817', 'RG2818', 'RG2819',
+    '14939', '15262', '15269', '15195', '16907', '1520', '1687',
+    '33710104', '33710108', '47510141', '60480178', '62340171', '260', '1',
+    '02(01694)', '03(01695)', '5',
+    'VSP-02 x 2 cái VSP-03 x 1 cái', 'VSP-03',
+    'VSP-02 x 2 cái VSP-03 x 1 cái', 'Máy nén khí di động', 'Bể test áp suất',
+    'WLU-16', 'WLU-18 x 2 cái', 'WLU-18', 'WLU-17', 'WLU-21',
+    'WLU – 10.1', 'WLU – 10.2', 'WLU – 11.1', 'WLU – 11.2',
+    'WLU – 12.1', 'WLU – 12.2', 'WLU – 22.1', 'WLU – 22.2', 'WLU – 22.4'
+];
 
 $where = ['1=1'];
 $params = [];
@@ -230,8 +353,11 @@ $countStmt->execute($params);
 $totalRecords = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 $totalPages = ceil($totalRecords / $limit);
 
-// Nếu có search thì không phân trang (hiển thị tất cả)
-$limitClause = $search ? '' : "LIMIT $limit OFFSET $offset";
+// Không phân trang nếu có search hoặc sắp xếp Đội TH
+$limitClause = $showAll ? '' : "LIMIT $limit OFFSET $offset";
+
+// Xác định ORDER BY clause
+$orderByClause = ($sortOrder === 'doith') ? 'ORDER BY t.stt' : 'ORDER BY first_month ASC, t.loaitb, t.tenthietbi';
 
 $sql = "SELECT t.*, 
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months,
@@ -243,12 +369,28 @@ $sql = "SELECT t.*,
         WHERE $whereClause
         GROUP BY t.stt
         $havingClause
-        ORDER BY first_month ASC, t.loaitb, t.tenthietbi
+        $orderByClause
         $limitClause";
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);
 $thietbiList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Sắp xếp theo thứ tự Đội TH nếu được chọn
+if ($sortOrder === 'doith') {
+    // Tạo map index cho sorting
+    $orderMap = array_flip($doiThOrder);
+    
+    usort($thietbiList, function($a, $b) use ($orderMap) {
+        $somayA = $a['somay'] ?? '';
+        $somayB = $b['somay'] ?? '';
+        
+        $indexA = isset($orderMap[$somayA]) ? $orderMap[$somayA] : 9999;
+        $indexB = isset($orderMap[$somayB]) ? $orderMap[$somayB] : 9999;
+        
+        return $indexA <=> $indexB;
+    });
+}
 
 // Lấy danh sách loại TB và bộ phận
 $loaiTBList = $db->query("SELECT DISTINCT loaitb FROM thietbihckd_iso WHERE loaitb != '' ORDER BY loaitb")->fetchAll(PDO::FETCH_COLUMN);
@@ -276,7 +418,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         .month-header { text-align: center; background: #2196F3; width: auto; }
         .month-selected { background: #2196F3 !important; }
         .month-selected-dot2 { background: #FF9800 !important; }
-        input[type="checkbox"] { opacity: 0; position: absolute; pointer-events: none; }
+        .month-cell input[type="checkbox"] { opacity: 0; position: absolute; pointer-events: none; }
+        .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
+        #selectAllCheckbox { cursor: pointer; width: 18px; height: 18px; }
         input[type="text"].small { width: 150px; padding: 4px; font-size: 12px; white-space: nowrap; }
         .month-tooltip {
             position: fixed;
@@ -356,17 +500,42 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <option value="chua" <?= $kehoachFilter === 'chua' ? 'selected' : '' ?>>Chưa có kế hoạch</option>
             </select>
             
+            <select name="sort">
+                <option value="default" <?= $sortOrder === 'default' ? 'selected' : '' ?>>Sắp xếp: Mặc định</option>
+                <option value="doith" <?= $sortOrder === 'doith' ? 'selected' : '' ?>>Sắp xếp: Đội TH</option>
+            </select>
+            
             <button type="submit">Lọc</button>
             <a href="kehoach_thietbi_2026.php" style="padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Reset</a>
-            <a href="export_kehoach_2026_excel.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter]) ?>" 
+            <a href="export_kehoach_2026_excel.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter, 'sort' => $sortOrder]) ?>" 
                style="padding: 8px 16px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-left: auto;">
                 📊 Xuất Excel
             </a>
-            <a href="export_kehoach_2026_word.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter]) ?>" 
+            <a href="export_kehoach_2026_word.php?<?= http_build_query(['search' => $search, 'loaitb' => $loaitb, 'bophansh' => $bophansh, 'kehoach' => $kehoachFilter, 'sort' => $sortOrder]) ?>" 
                style="padding: 8px 16px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">
                 📝 Xuất Word
             </a>
         </form>
+        
+        <!-- Bulk action button -->
+        <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px;">
+            <button type="button" 
+                    id="bulkDeleteBtn" 
+                    onclick="bulkDeleteEquipmentPlans()" 
+                    style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
+                🗑️ Xóa đã chọn (<span id="selectedCount">0</span>)
+            </button>
+            <button type="button" 
+                    onclick="selectAllCheckboxes()" 
+                    style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                ☑️ Chọn tất cả
+            </button>
+            <button type="button" 
+                    onclick="deselectAllCheckboxes()" 
+                    style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                ☐ Bỏ chọn tất cả
+            </button>
+        </div>
         
         <!-- Form nhập kế hoạch -->
         <form method="POST">
@@ -374,6 +543,12 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <table>
                     <thead>
                         <tr>
+                            <th rowspan="2" style="width: 2%;">
+                                <input type="checkbox" 
+                                       id="selectAllCheckbox" 
+                                       onchange="toggleSelectAll(this)"
+                                       title="Chọn/Bỏ chọn tất cả">
+                            </th>
                             <th rowspan="2" style="width: 3%;">STT</th>
                             <th rowspan="2" style="width: 18%;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
                             <th rowspan="2" style="width: 8%;">Ký/Mã hiệu</th>
@@ -383,6 +558,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             <th colspan="12" style="width: 30%;">Tháng</th>
                             <th rowspan="2" style="width: 6%;">Chủ sở hữu</th>
                             <th rowspan="2" style="width: 5%; display: none;">Lưu</th>
+                            <th rowspan="2" style="width: 4%;">Xóa</th>
                         </tr>
                         <tr>
                             <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -393,7 +569,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <tbody>
                         <?php if (empty($thietbiList)): ?>
                             <tr>
-                                <td colspan="19" style="text-align: center; padding: 20px;">
+                                <td colspan="21" style="text-align: center; padding: 20px;">
                                     Không có thiết bị nào. Vui lòng thêm thiết bị vào hệ thống trước.
                                 </td>
                             </tr>
@@ -405,6 +581,13 @@ require_once __DIR__ . '/views/layouts/header.php';
                                 $plannedMonthsDot2 = $tb['planned_months_dot2'] ? explode(',', $tb['planned_months_dot2']) : [];
                             ?>
                             <tr>
+                                <td style="text-align: center;">
+                                    <input type="checkbox" 
+                                           class="row-checkbox" 
+                                           data-stt="<?= (int)$tb['stt'] ?>"
+                                           data-ten="<?= htmlspecialchars($tb['tenthietbi']) ?>"
+                                           onchange="updateBulkDeleteButton()">
+                                </td>
                                 <td><?= $displaySTT++ ?></td>
                                 <td><?= htmlspecialchars($tb['tenthietbi']) ?></td>
                                 <td><?= htmlspecialchars($tb['tenviettat'] ?? '') ?></td>
@@ -439,6 +622,16 @@ require_once __DIR__ . '/views/layouts/header.php';
                                             data-stt="<?= (int)$tb['stt'] ?>"
                                             onclick="saveSingleEquipment(this)">
                                         💾
+                                    </button>
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" 
+                                            class="btn-delete" 
+                                            data-stt="<?= (int)$tb['stt'] ?>"
+                                            data-ten="<?= htmlspecialchars($tb['tenthietbi']) ?>"
+                                            onclick="deleteEquipmentPlan(this)"
+                                            title="Xóa kế hoạch của thiết bị này">
+                                        🗑️
                                     </button>
                                 </td>
                             </tr>
@@ -555,6 +748,252 @@ require_once __DIR__ . '/views/layouts/header.php';
                     button.innerHTML = originalText;
                     button.disabled = false;
                     button.style.background = '#28a745';
+                }, 2000);
+            });
+        }
+        
+        // Delete equipment plan via AJAX
+        function deleteEquipmentPlan(button) {
+            const stt = button.getAttribute('data-stt');
+            const tenThietBi = button.getAttribute('data-ten');
+            
+            // Confirm before delete
+            if (!confirm(`Bạn có chắc chắn muốn xóa kế hoạch của thiết bị "${tenThietBi}"?\n\nThao tác này không thể hoàn tác!`)) {
+                return;
+            }
+            
+            // Disable button
+            button.disabled = true;
+            const originalText = button.innerHTML;
+            button.innerHTML = '⏳';
+            
+            // Send AJAX request
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'ajax_delete=1&stt=' + encodeURIComponent(stt)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text().then(text => {
+                    if (!text) {
+                        throw new Error('Empty response from server');
+                    }
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Response text:', text);
+                        throw new Error('Invalid JSON: ' + text.substring(0, 100));
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showToast(data.message, 'success');
+                    
+                    // Clear all checkboxes in this row
+                    const row = button.closest('tr');
+                    const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => {
+                        cb.checked = false;
+                        const cell = cb.closest('td');
+                        cell.classList.remove('month-selected', 'month-selected-dot2');
+                    });
+                    
+                    // Reset button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    
+                    // Optional: Reload page after 1 second to refresh data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    button.innerHTML = '✗';
+                    button.style.background = '#dc3545';
+                    alert('Lỗi: ' + data.message);
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        button.style.background = '';
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                button.innerHTML = '✗';
+                button.style.background = '#dc3545';
+                alert('Lỗi kết nối: ' + error);
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+        
+        // Toggle select all from header checkbox
+        function toggleSelectAll(headerCheckbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = headerCheckbox.checked);
+            updateBulkDeleteButton();
+        }
+        
+        // Select all checkboxes
+        function selectAllCheckboxes() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            const headerCheckbox = document.getElementById('selectAllCheckbox');
+            checkboxes.forEach(cb => cb.checked = true);
+            if (headerCheckbox) headerCheckbox.checked = true;
+            updateBulkDeleteButton();
+        }
+        
+        // Deselect all checkboxes
+        function deselectAllCheckboxes() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            const headerCheckbox = document.getElementById('selectAllCheckbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            if (headerCheckbox) headerCheckbox.checked = false;
+            updateBulkDeleteButton();
+        }
+        
+        // Update bulk delete button visibility and count
+        function updateBulkDeleteButton() {
+            const allCheckboxes = document.querySelectorAll('.row-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+            const count = checkedCheckboxes.length;
+            const bulkBtn = document.getElementById('bulkDeleteBtn');
+            const countSpan = document.getElementById('selectedCount');
+            const headerCheckbox = document.getElementById('selectAllCheckbox');
+            
+            // Update header checkbox state
+            if (headerCheckbox) {
+                if (count === 0) {
+                    headerCheckbox.checked = false;
+                    headerCheckbox.indeterminate = false;
+                } else if (count === allCheckboxes.length) {
+                    headerCheckbox.checked = true;
+                    headerCheckbox.indeterminate = false;
+                } else {
+                    headerCheckbox.checked = false;
+                    headerCheckbox.indeterminate = true;
+                }
+            }
+            
+            // Update bulk delete button
+            if (count > 0) {
+                bulkBtn.style.display = 'block';
+                countSpan.textContent = count;
+            } else {
+                bulkBtn.style.display = 'none';
+            }
+        }
+        
+        // Bulk delete selected equipment plans
+        function bulkDeleteEquipmentPlans() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một thiết bị để xóa');
+                return;
+            }
+            
+            // Get device names for confirmation
+            const deviceNames = Array.from(checkboxes).map(cb => cb.getAttribute('data-ten'));
+            const confirmMsg = `Bạn có chắc chắn muốn xóa kế hoạch của ${checkboxes.length} thiết bị?\n\n` + 
+                              deviceNames.slice(0, 5).join('\n') + 
+                              (deviceNames.length > 5 ? `\n... và ${deviceNames.length - 5} thiết bị khác` : '') +
+                              `\n\nThao tác này không thể hoàn tác!`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            // Get STT list
+            const sttList = Array.from(checkboxes).map(cb => cb.getAttribute('data-stt'));
+            
+            // Disable bulk button
+            const bulkBtn = document.getElementById('bulkDeleteBtn');
+            const originalText = bulkBtn.innerHTML;
+            bulkBtn.disabled = true;
+            bulkBtn.innerHTML = '⏳ Đang xóa...';
+            
+            // Build POST data
+            const formData = new URLSearchParams();
+            formData.append('ajax_bulk_delete', '1');
+            sttList.forEach(stt => formData.append('stt_list[]', stt));
+            
+            // Send AJAX request
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString()
+            })
+            .then(response => {
+                // Check if response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                // Check if response has content
+                return response.text().then(text => {
+                    if (!text) {
+                        throw new Error('Empty response from server');
+                    }
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Response text:', text);
+                        throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    
+                    // Clear all checked rows
+                    checkboxes.forEach(cb => {
+                        const row = cb.closest('tr');
+                        const monthCheckboxes = row.querySelectorAll('input[type="checkbox"][name^="thietbi"]');
+                        monthCheckboxes.forEach(mcb => {
+                            mcb.checked = false;
+                            const cell = mcb.closest('td');
+                            cell.classList.remove('month-selected', 'month-selected-dot2');
+                        });
+                        cb.checked = false;
+                    });
+                    
+                    updateBulkDeleteButton();
+                    
+                    // Reload page after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    bulkBtn.innerHTML = '✗ Lỗi';
+                    bulkBtn.style.background = '#dc3545';
+                    alert('Lỗi: ' + data.message);
+                    setTimeout(() => {
+                        bulkBtn.innerHTML = originalText;
+                        bulkBtn.disabled = false;
+                        bulkBtn.style.background = '';
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                bulkBtn.innerHTML = '✗ Lỗi';
+                bulkBtn.style.background = '#dc3545';
+                alert('Lỗi kết nối: ' + error);
+                setTimeout(() => {
+                    bulkBtn.innerHTML = originalText;
+                    bulkBtn.disabled = false;
+                    bulkBtn.style.background = '';
                 }, 2000);
             });
         }

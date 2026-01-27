@@ -38,10 +38,11 @@ if (!$item) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $data = [
+            'cv' => trim($_POST['cv'] ?? 'SC'),
             'nhomsc' => trim($_POST['nhomsc'] ?? ''),
-            'ngaybdtt' => !empty(trim($_POST['ngaybdtt'] ?? '')) ? trim($_POST['ngaybdtt']) : null,
-            'ngayth' => !empty(trim($_POST['ngayth'] ?? '')) ? trim($_POST['ngayth']) : null,
-            'ngaykt' => !empty(trim($_POST['ngaykt'] ?? '')) ? trim($_POST['ngaykt']) : null,
+            'ngaybdtt' => !empty(trim($_POST['ngaybdtt'] ?? '')) ? trim($_POST['ngaybdtt']) : '0000-00-00',
+            'ngayth' => !empty(trim($_POST['ngayth'] ?? '')) ? trim($_POST['ngayth']) : '0000-00-00',
+            'ngaykt' => empty(trim($_POST['ngaykt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykt']),
             'solg' => (int)($_POST['solg'] ?? 0),
             'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
             'honghoc' => trim($_POST['honghoc'] ?? ''),
@@ -143,11 +144,20 @@ require_once __DIR__ . '/../layouts/header.php';
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Loại công việc <span class="text-red-500">*</span></label>
+                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <option value="SC" <?php echo ($item['cv'] ?? 'SC') === 'SC' ? 'selected' : ''; ?>>SC - Sửa chữa</option>
+                        <option value="BD" <?php echo ($item['cv'] ?? '') === 'BD' ? 'selected' : ''; ?>>BD - Bảo dưỡng</option>
+                        <option value="KT" <?php echo ($item['cv'] ?? '') === 'KT' ? 'selected' : ''; ?>>KT - Kiểm tra</option>
+                        <option value="BDDK" <?php echo ($item['cv'] ?? '') === 'BDDK' ? 'selected' : ''; ?>>BDDK - Bảo dưỡng định kỳ</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-gray-700 font-semibold mb-2">Nhóm SC <span class="text-red-500">*</span></label>
                     <input type="text" name="nhomsc" required value="<?php echo htmlspecialchars($item['nhomsc']); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
-                <div>
+                <div class="hidden">
                     <label class="block text-gray-700 font-semibold mb-2">Ngày bắt đầu TT</label>
                     <input type="date" name="ngaybdtt" value="<?php echo $item['ngaybdtt']; ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">

@@ -4,320 +4,155 @@ mb_internal_encoding('UTF-8');
 
 require_once __DIR__ . '/../../libs/tcpdf/tcpdf.php';
 
+// Custom PDF class with footer
+class MYPDF extends TCPDF {
+    public function Footer() {
+        $this->SetY(-25);
+        $this->SetFont('dejavusans', '', 12);
+        $html = '<div style="width: 100%; text-align: left;">BM.25.02<br/>01/01/2024</div>';
+        $this->writeHTML($html, true, false, true, false, '');
+    }
+}
+
 // Create new PDF document
-$pdf = new TCPDF('P', PDF_UNIT, 'A4', true, 'UTF-8', false);
+$pdf = new MYPDF('P', PDF_UNIT, 'A4', true, 'UTF-8', false);
 
 // Set document information
 $pdf->SetCreator('ISO System');
 $pdf->SetAuthor('ISO System');
-$pdf->SetTitle('Chi tiết Hồ sơ SCBĐ');
+$pdf->SetTitle('Phiếu yêu cầu dịch vụ');
 $pdf->SetSubject('Hồ sơ Sửa chữa Bảo dưỡng');
 
-// Remove default header/footer
+// Remove default header
 $pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
 
 // Set margins
-$pdf->SetMargins(15, 15, 15);
-$pdf->SetAutoPageBreak(TRUE, 15);
+$pdf->SetMargins(15, 15, 25);
+$pdf->SetAutoPageBreak(TRUE, 25);
 
 // Set font
-$pdf->SetFont('dejavusans', '', 9);
+$pdf->SetFont('dejavusans', '', 12);
 
 // Add a page
 $pdf->AddPage();
 
 // Helper function for text display
 function displayTextPdf($text) {
-    return !empty($text) ? htmlspecialchars($text) : '-';
+    return !empty($text) ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : '';
 }
 
-// Title
-$pdf->SetFont('dejavusans', 'B', 16);
-$pdf->Cell(0, 10, 'CHI TIẾT HỒ SƠ SCBĐ', 0, 1, 'C');
-$pdf->Ln(5);
-
-// Record Info Box
-$pdf->SetFillColor(220, 230, 241);
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->Cell(90, 8, 'Số phiếu: ' . displayTextPdf($item['phieu']), 1, 0, 'L', true);
-$pdf->Cell(90, 8, 'Thiết bị: ' . displayTextPdf($item['mavt'] . ' - ' . $item['somay']), 1, 1, 'L', true);
+// Header section with title
+$html = '<div style="width: 100%;">
+    <table nobr="true" style="width: 100%; border: none;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 35%; vertical-align: top; font-size: 10pt; border: none;">
+                XN Địa vật lý GK<br/>
+                Xưởng SCTBĐVL
+            </td>
+            <td style="width: 65%; text-align: left; vertical-align: top; border: none;">
+                <div style="text-align: center; font-size: 12pt; font-weight: bold;">PHIẾu YÊU CẦU DỊCH VỤ</div>
+                <br/>
+                <strong>Số hồ sơ: ' . displayTextPdf($item['phieu']) . '</strong>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <strong>Ngày, Датa: ' . ($item['ngayyc'] ? date('d/m/Y', strtotime($item['ngayyc'])) : '') . '</strong>
+            </td>
+        </tr>
+    </table>
+</div>';
+$pdf->writeHTML($html, true, false, true, false, '');
+$pdf->Ln(3);
 $pdf->Ln(3);
 
-// Section: Thông tin cơ bản
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->SetFillColor(41, 128, 185);
-$pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 7, 'THÔNG TIN CƠ BẢN', 0, 1, 'L', true);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('dejavusans', '', 9);
+// Basic info section
+$html = '<div style="width: 100%;">
+    <table nobr="true" style="width: 100%; border: none;" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="width: 60%; border: none;">
+                1. Người yêu cầu/bàn giao TB, Сдал: <strong>' . displayTextPdf($item['ngyeucau']) . '</strong>
+            </td>
+            <td style="width: 40%; border: none;">
+                Ký tên (Сдал /Подпись): .........
+            </td>
+        </tr>
+        <tr>
+            <td style="border: none;">
+                &nbsp;&nbsp;&nbsp;&nbsp;Đơn vị, Подр: <strong>' . displayTextPdf($item['madv']) . '</strong>
+            </td>
+            <td style="border: none;">
+                Điện thoại liên lạc (Tel): ' . displayTextPdf($item['dienthoai']) . '
+            </td>
+        </tr>
+        <tr>
+            <td style="border: none;">
+                2. Người nhận thiết bị, Принял: <strong>' . displayTextPdf($item['ngnhyeucau']) . '</strong>
+            </td>
+            <td style="border: none;">
+                Ký tên (Принял /Подпись): .........
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border: none;">
+                3. Nội dung:
+            </td>
+        </tr>
+    </table>
+</div>';
+$pdf->writeHTML($html, true, false, true, false, '');
 $pdf->Ln(2);
 
-$html = '<table cellpadding="4" style="border: 1px solid #ddd;">
-    <tr>
-        <td style="width: 30%; background-color: #f5f5f5; font-weight: bold;">Số phiếu:</td>
-        <td style="width: 70%;">' . displayTextPdf($item['phieu']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ngày yêu cầu:</td>
-        <td>' . ($item['ngayyc'] ? date('d/m/Y', strtotime($item['ngayyc'])) : '-') . '</td>
-    </tr>
+// Equipment table
+$html = '<table cellpadding="4" border="1" style="border-collapse: collapse; width: 100%;">
+    <thead>
+        <tr style="background-color: #f0f0f0; font-weight: bold; text-align: center;">
+            <th style="width: 5%; border: 1px solid #000;">STT<br/>П/П</th>
+            <th style="width: 23%; border: 1px solid #000;">Tên thiết bị - Model<br/>Наим-е оборудования</th>
+            <th style="width: 13%; border: 1px solid #000;">Số của thiết bị - Serial<br/>Номер</th>
+            <th style="width: 22%; border: 1px solid #000;">Mô tả chi tiết tình trạng kỹ thuật của thiết bị trước khi đưa về Xưởng<br/>Тех. состояние</th>
+            <th style="width: 14%; border: 1px solid #000;">Nội dung yêu cầu<br/>Требование</th>
+            <th style="width: 13%; border: 1px solid #000;">Thiết bị đo SC<br/>Оборудование</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="width: 5%; text-align: center; border: 1px solid #000;">1</td>
+            <td style="width: 23%; text-align: center; border: 1px solid #000;">' . displayTextPdf($item['mavt']) . ($item['model'] ? ' - ' . displayTextPdf($item['model']) : '') . '</td>
+            <td style="width: 13%; text-align: center; border: 1px solid #000;">' . displayTextPdf($item['somay']) . '</td>
+            <td style="width: 22%; text-align: center; border: 1px solid #000;">' . nl2br(displayTextPdf($item['ttktbefore'])) . '</td>
+            <td style="width: 14%; text-align: center; border: 1px solid #000;">' . displayTextPdf($item['cv']) . '</td>
+            <td style="width: 13%; text-align: center; border: 1px solid #000;">' . displayTextPdf($item['tbdosc']) . '</td>
+        </tr>
+    </tbody>
 </table>';
 $pdf->writeHTML($html, true, false, true, false, '');
 $pdf->Ln(3);
 
-// Section: Thông tin thiết bị
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->SetFillColor(46, 204, 113);
-$pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 7, 'THÔNG TIN THIẾT BỊ', 0, 1, 'L', true);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('dejavusans', '', 9);
+// Note section
+$html = '<p style="font-size: 9pt; font-style: italic;">
+    <strong>Ghi chú:</strong> Cột "Nội dung yêu cầu" được ghi như sau:<br/>
+    <strong>BD:</strong> Yêu cầu bảo dưỡng thiết bị / <strong>SC:</strong> Yêu cầu sửa chữa thiết bị bị hỏng / <strong>KT:</strong> Yêu cầu kiểm tra sự hoạt động của thiết bị mà không cần bảo dưỡng (VD như: KT để nghiệm thu TB mới, KT tình trạng của thiết bị đã được BD trước đây nhưng chưa thả đo trong giếng khoan, v.v.).
+</p>';
+$pdf->writeHTML($html, true, false, true, false, '');
 $pdf->Ln(2);
 
-$html = '<table cellpadding="4" style="border: 1px solid #ddd;">
-    <tr>
-        <td style="width: 30%; background-color: #f5f5f5; font-weight: bold;">Mã vật tư:</td>
-        <td style="width: 70%;">' . displayTextPdf($item['mavt']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Số máy:</td>
-        <td>' . displayTextPdf($item['somay']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Model:</td>
-        <td>' . displayTextPdf($item['model']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Vị trí máy BD:</td>
-        <td>' . displayTextPdf($item['vitrimaybd']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Lô:</td>
-        <td>' . displayTextPdf($item['lo']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Giếng:</td>
-        <td>' . displayTextPdf($item['gieng']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Mỏ:</td>
-        <td>' . displayTextPdf($item['mo']) . '</td>
-    </tr>
-</table>';
+// Additional requirements
+$html = '<p><strong>4. Các yêu cầu khác (nếu có):</strong> ' . nl2br(displayTextPdf($item['ycthemkh'])) . '</p>';
+$pdf->writeHTML($html, true, false, true, false, '');
+
+// Production service info
+$html = '<p><strong>5. Phục vụ sản xuất cho Lô/ Dịch vụ ngoài:</strong> ' . displayTextPdf($item['lo']) . '</p>';
+$pdf->writeHTML($html, true, false, true, false, '');
+
+$html = '<p><strong>Tên mỏ:</strong> ' . displayTextPdf($item['mo']) . ' &nbsp;&nbsp;&nbsp; <strong>Tên giếng:</strong> ' . displayTextPdf($item['gieng']) . '</p>';
+$pdf->writeHTML($html, true, false, true, false, '');
+
+// Workshop review
+$html = '<p><strong>6. Xem xét của lãnh đạo Xưởng (nếu có):</strong> ' . nl2br(displayTextPdf($item['xemxetxuong'])) . '</p>';
 $pdf->writeHTML($html, true, false, true, false, '');
 $pdf->Ln(3);
 
-// Section: Thông tin đơn vị & yêu cầu
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->SetFillColor(155, 89, 182);
-$pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 7, 'THÔNG TIN ĐƠN VỊ & YÊU CẦU', 0, 1, 'L', true);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('dejavusans', '', 9);
-$pdf->Ln(2);
-
-$html = '<table cellpadding="4" style="border: 1px solid #ddd;">
-    <tr>
-        <td style="width: 30%; background-color: #f5f5f5; font-weight: bold;">Đơn vị:</td>
-        <td style="width: 70%;">' . displayTextPdf($item['madv']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Điện thoại:</td>
-        <td>' . displayTextPdf($item['dienthoai'] ?? '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Người yêu cầu:</td>
-        <td>' . displayTextPdf($item['ngyeucau'] ?? '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Người nhận yêu cầu:</td>
-        <td>' . displayTextPdf($item['ngnhyeucau'] ?? '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Công việc:</td>
-        <td>' . nl2br(displayTextPdf($item['cv'])) . '</td>
-    </tr>';
-
-if ($item['ycthemkh']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">YC thêm của KH:</td>
-        <td>' . nl2br(displayTextPdf($item['ycthemkh'])) . '</td>
-    </tr>';
-}
-
-$html .= '</table>';
+// Signature section
+$html = '<p><strong>Lãnh đạo Xưởng / Trưởng nhóm</strong> <em>(ký ghi rõ họ tên)</em></p>';
 $pdf->writeHTML($html, true, false, true, false, '');
-$pdf->Ln(3);
-
-// Section: Thông tin sửa chữa
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->SetFillColor(230, 126, 34);
-$pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 7, 'THÔNG TIN SỬA CHỮA', 0, 1, 'L', true);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('dejavusans', '', 9);
-$pdf->Ln(2);
-
-$html = '<table cellpadding="4" style="border: 1px solid #ddd;">
-    <tr>
-        <td style="width: 30%; background-color: #f5f5f5; font-weight: bold;">Nhóm SC:</td>
-        <td style="width: 70%;">' . displayTextPdf($item['nhomsc']) . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ngày bắt đầu TT:</td>
-        <td>' . ($item['ngaybdtt'] ? date('d/m/Y', strtotime($item['ngaybdtt'])) : '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ngày thực hiện:</td>
-        <td>' . ($item['ngayth'] ? date('d/m/Y', strtotime($item['ngayth'])) : '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ngày kết thúc:</td>
-        <td>' . ($item['ngaykt'] ? date('d/m/Y', strtotime($item['ngaykt'])) : '-') . '</td>
-    </tr>
-    <tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Hồ sơ:</td>
-        <td>' . displayTextPdf($item['hoso'] ?? '-') . '</td>
-    </tr>';
-
-if ($item['ttktbefore']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">TT KT trước:</td>
-        <td>' . nl2br(displayTextPdf($item['ttktbefore'])) . '</td>
-    </tr>';
-}
-
-if ($item['honghoc']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Hỏng hóc:</td>
-        <td>' . nl2br(displayTextPdf($item['honghoc'])) . '</td>
-    </tr>';
-}
-
-if ($item['khacphuc']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Khắc phục:</td>
-        <td>' . nl2br(displayTextPdf($item['khacphuc'])) . '</td>
-    </tr>';
-}
-
-if ($item['ttktafter']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">TT KT sau SC/BĐ:</td>
-        <td>' . nl2br(displayTextPdf($item['ttktafter'])) . '</td>
-    </tr>';
-}
-
-if ($item['noidung']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Nội dung SC:</td>
-        <td>' . nl2br(displayTextPdf($item['noidung'])) . '</td>
-    </tr>';
-}
-
-if ($item['ketluan']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Kết luận:</td>
-        <td>' . nl2br(displayTextPdf($item['ketluan'])) . '</td>
-    </tr>';
-}
-
-if ($item['xemxetxuong']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Xem xét xưởng:</td>
-        <td>' . nl2br(displayTextPdf($item['xemxetxuong'])) . '</td>
-    </tr>';
-}
-
-$html .= '</table>';
-$pdf->writeHTML($html, true, false, true, false, '');
-$pdf->Ln(3);
-
-// Section: Thiết bị đo SC (if any)
-$hasTools = false;
-for ($i = 0; $i <= 4; $i++) {
-    $tbField = $i == 0 ? 'tbdosc' : "tbdosc$i";
-    $serialField = $i == 0 ? 'serialtbdosc' : "serialtbdosc$i";
-    if (!empty($item[$tbField]) || !empty($item[$serialField])) {
-        $hasTools = true;
-        break;
-    }
-}
-
-if ($hasTools) {
-    $pdf->SetFont('dejavusans', 'B', 11);
-    $pdf->SetFillColor(26, 188, 156);
-    $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(0, 7, 'THIẾT BỊ ĐO SỬA CHỮA', 0, 1, 'L', true);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFont('dejavusans', '', 9);
-    $pdf->Ln(2);
-
-    $html = '<table cellpadding="4" border="1" style="border-collapse: collapse;">
-        <thead>
-            <tr style="background-color: #f5f5f5; font-weight: bold;">
-                <th style="width: 10%; text-align: center;">STT</th>
-                <th style="width: 55%;">Thiết bị đo SC</th>
-                <th style="width: 35%;">Serial</th>
-            </tr>
-        </thead>
-        <tbody>';
-    
-    for ($i = 0; $i <= 4; $i++) {
-        $tbField = $i == 0 ? 'tbdosc' : "tbdosc$i";
-        $serialField = $i == 0 ? 'serialtbdosc' : "serialtbdosc$i";
-        if (!empty($item[$tbField]) || !empty($item[$serialField])) {
-            $html .= '<tr>
-                <td style="text-align: center;">' . ($i + 1) . '</td>
-                <td>' . displayTextPdf($item[$tbField] ?? '-') . '</td>
-                <td>' . displayTextPdf($item[$serialField] ?? '-') . '</td>
-            </tr>';
-        }
-    }
-    
-    $html .= '</tbody></table>';
-    $pdf->writeHTML($html, true, false, true, false, '');
-    $pdf->Ln(3);
-}
-
-// Section: Bàn giao
-$pdf->SetFont('dejavusans', 'B', 11);
-$pdf->SetFillColor(231, 76, 60);
-$pdf->SetTextColor(255, 255, 255);
-$pdf->Cell(0, 7, 'THÔNG TIN BÀN GIAO', 0, 1, 'L', true);
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('dejavusans', '', 9);
-$pdf->Ln(2);
-
-$bgStatus = $item['bg'] == 1 ? 'Đã bàn giao' : 'Chưa bàn giao';
-$html = '<table cellpadding="4" style="border: 1px solid #ddd;">
-    <tr>
-        <td style="width: 30%; background-color: #f5f5f5; font-weight: bold;">Trạng thái:</td>
-        <td style="width: 70%;">' . $bgStatus . '</td>
-    </tr>';
-
-if ($item['ghichu']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ghi chú:</td>
-        <td>' . nl2br(displayTextPdf($item['ghichu'])) . '</td>
-    </tr>';
-}
-
-if ($item['ghichufinal']) {
-    $html .= '<tr>
-        <td style="background-color: #f5f5f5; font-weight: bold;">Ghi chú cuối:</td>
-        <td>' . nl2br(displayTextPdf($item['ghichufinal'])) . '</td>
-    </tr>';
-}
-
-$html .= '</table>';
-$pdf->writeHTML($html, true, false, true, false, '');
-
-// Footer
-$pdf->Ln(5);
-$pdf->SetFont('dejavusans', 'I', 8);
-$pdf->Cell(0, 5, 'Xuất lúc: ' . date('d/m/Y H:i:s'), 0, 1, 'R');
 
 // Output PDF
 $filename = 'HoSoSCBD_' . $item['phieu'] . '_' . date('YmdHis') . '.pdf';

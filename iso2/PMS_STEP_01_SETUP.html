@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 1: Setup Môi Trường - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .tool-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s;
+        }
+        
+        .tool-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛠️ Bước 1: Setup Môi Trường</h1>
+            <p>Cài đặt tất cả công cụ cần thiết cho development</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_02_DATABASE.html">Bước 2 →</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Cài đặt PHP 8.2+ & Composer</li>
+                    <li>✅ Cài đặt Node.js 20+ & npm</li>
+                    <li>✅ Cài đặt Docker Desktop (cho PostgreSQL, MongoDB, Redis)</li>
+                    <li>✅ Cài đặt VS Code & Extensions</li>
+                    <li>✅ Setup Laravel project mới</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1: PHP -->
+            <div class="section">
+                <h2>1. Cài Đặt PHP 8.2 & Composer</h2>
+                
+                <div class="tool-card">
+                    <h3>📦 PHP 8.2 (Windows)</h3>
+                    
+                    <div class="highlight-box">
+                        <p><strong>Cách 1: Dùng XAMPP (Dễ nhất cho người mới)</strong></p>
+                        <ol>
+                            <li>Download: <a href="https://www.apachefriends.org/" target="_blank">https://www.apachefriends.org/</a></li>
+                            <li>Cài đặt XAMPP (chọn PHP 8.2)</li>
+                            <li>Thêm vào System PATH: <code>C:\xampp\php</code></li>
+                        </ol>
+                    </div>
+                    
+                    <div class="highlight-box">
+                        <p><strong>Cách 2: Dùng Laragon (Khuyến nghị cho Laravel)</strong></p>
+                        <ol>
+                            <li>Download: <a href="https://laragon.org/download/" target="_blank">https://laragon.org/download/</a></li>
+                            <li>Cài đặt Laragon Full (có sẵn PHP, MySQL, Node.js)</li>
+                            <li>Laragon tự động cấu hình PATH</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="code-block">
+<span class="comment"># Kiểm tra PHP đã cài đặt</span>
+php -v
+
+<span class="comment"># Output mong muốn:</span>
+<span class="comment"># PHP 8.2.x (cli) (built: ...)</span>
+                    </div>
+                    
+                    <h3>📦 Composer (PHP Package Manager)</h3>
+                    
+                    <ol>
+                        <li>Download: <a href="https://getcomposer.org/download/" target="_blank">https://getcomposer.org/download/</a></li>
+                        <li>Chạy <code>Composer-Setup.exe</code></li>
+                        <li>Chọn đường dẫn PHP đã cài (ví dụ: <code>C:\xampp\php\php.exe</code>)</li>
+                    </ol>
+                    
+                    <div class="code-block">
+<span class="comment"># Kiểm tra Composer</span>
+composer --version
+
+<span class="comment"># Output: Composer version 2.x.x</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 2: NODE.JS -->
+            <div class="section">
+                <h2>2. Cài Đặt Node.js & npm</h2>
+                
+                <div class="tool-card">
+                    <h3>🟢 Node.js 20 LTS</h3>
+                    
+                    <ol>
+                        <li>Download: <a href="https://nodejs.org/" target="_blank">https://nodejs.org/</a></li>
+                        <li>Chọn phiên bản <strong>LTS</strong> (Long Term Support)</li>
+                        <li>Cài đặt với tùy chọn mặc định</li>
+                    </ol>
+                    
+                    <div class="code-block">
+<span class="comment"># Kiểm tra Node.js và npm</span>
+node -v
+<span class="comment"># Output: v20.x.x</span>
+
+npm -v
+<span class="comment"># Output: 10.x.x</span>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4>⚠️ Nếu gặp lỗi "node not found"</h4>
+                        <p>Khởi động lại Command Prompt hoặc PowerShell sau khi cài đặt</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 3: DOCKER -->
+            <div class="section">
+                <h2>3. Cài Đặt Docker Desktop</h2>
+                
+                <div class="tool-card">
+                    <h3>🐳 Docker Desktop (PostgreSQL, MongoDB, Redis)</h3>
+                    
+                    <ol>
+                        <li>Download: <a href="https://www.docker.com/products/docker-desktop/" target="_blank">https://www.docker.com/products/docker-desktop/</a></li>
+                        <li>Cài đặt Docker Desktop for Windows</li>
+                        <li>Khởi động Docker Desktop</li>
+                        <li>Đợi Docker engine khởi động (icon ở system tray)</li>
+                    </ol>
+                    
+                    <div class="code-block">
+<span class="comment"># Kiểm tra Docker</span>
+docker --version
+<span class="comment"># Output: Docker version 24.x.x</span>
+
+docker-compose --version
+<span class="comment"># Output: Docker Compose version v2.x.x</span>
+                    </div>
+                    
+                    <div class="highlight-box">
+                        <h4>📝 Tại sao dùng Docker?</h4>
+                        <ul>
+                            <li>✅ Không cần cài PostgreSQL, MongoDB trực tiếp lên Windows</li>
+                            <li>✅ Dễ dàng start/stop services</li>
+                            <li>✅ Cấu hình giống production</li>
+                            <li>✅ Dễ deploy sau này</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 4: VS CODE -->
+            <div class="section">
+                <h2>4. Cài Đặt VS Code & Extensions</h2>
+                
+                <div class="tool-card">
+                    <h3>📝 Visual Studio Code</h3>
+                    
+                    <ol>
+                        <li>Download: <a href="https://code.visualstudio.com/" target="_blank">https://code.visualstudio.com/</a></li>
+                        <li>Cài đặt với các tùy chọn:
+                            <ul>
+                                <li>☑️ Add "Open with Code" to Windows Explorer context menu</li>
+                                <li>☑️ Add to PATH</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <h3>🔌 Extensions Cần Thiết</h3>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Extension</th>
+                                <th>Mục đích</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>PHP Intelephense</strong></td>
+                                <td>PHP autocomplete, syntax</td>
+                                <td><code>bmewburn.vscode-intelephense-client</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Laravel Blade</strong></td>
+                                <td>Blade template syntax</td>
+                                <td><code>amirmarmul.laravel-blade-vscode</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ES7+ React Snippets</strong></td>
+                                <td>React code snippets</td>
+                                <td><code>dsznajder.es7-react-js-snippets</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ESLint</strong></td>
+                                <td>JavaScript linting</td>
+                                <td><code>dbaeumer.vscode-eslint</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Prettier</strong></td>
+                                <td>Code formatter</td>
+                                <td><code>esbenp.prettier-vscode</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Docker</strong></td>
+                                <td>Docker files support</td>
+                                <td><code>ms-azuretools.vscode-docker</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>MongoDB for VS Code</strong></td>
+                                <td>MongoDB queries</td>
+                                <td><code>mongodb.mongodb-vscode</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Thunder Client</strong></td>
+                                <td>API testing (thay Postman)</td>
+                                <td><code>rangav.vscode-thunder-client</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="code-block">
+<span class="comment"># Cài extensions từ command line</span>
+code --install-extension bmewburn.vscode-intelephense-client
+code --install-extension amirmarmul.laravel-blade-vscode
+code --install-extension dsznajder.es7-react-js-snippets
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension ms-azuretools.vscode-docker
+code --install-extension mongodb.mongodb-vscode
+code --install-extension rangav.vscode-thunder-client
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 5: LARAVEL PROJECT -->
+            <div class="section">
+                <h2>5. Tạo Laravel Project Mới</h2>
+                
+                <div class="tool-card">
+                    <h3>🚀 Khởi Tạo Project</h3>
+                    
+                    <div class="code-block">
+<span class="comment"># Tạo project Laravel mới</span>
+composer create-project laravel/laravel pms-vietsovpetro
+
+<span class="comment"># Di chuyển vào thư mục project</span>
+cd pms-vietsovpetro
+
+<span class="comment"># Mở VS Code</span>
+code .
+                    </div>
+                    
+                    <h3>📦 Cài Đặt Dependencies</h3>
+                    
+                    <div class="code-block">
+<span class="comment"># Cài Laravel Sanctum (Authentication)</span>
+composer require laravel/sanctum
+
+<span class="comment"># Cài MongoDB driver</span>
+composer require mongodb/laravel-mongodb
+
+<span class="comment"># Cài Laravel Reverb (WebSocket)</span>
+composer require laravel/reverb
+
+<span class="comment"># Publish config files</span>
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+php artisan vendor:publish --provider="MongoDB\Laravel\MongoDBServiceProvider"
+php artisan reverb:install
+                    </div>
+                    
+                    <h3>🐳 Docker Compose Setup</h3>
+                    
+                    <p>Tạo file <code>docker-compose.yml</code> trong thư mục project:</p>
+                    
+                    <div class="code-block">
+<span class="comment"># docker-compose.yml</span>
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pms_db
+      POSTGRES_USER: pms_user
+      POSTGRES_PASSWORD: pms_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  mongodb:
+    image: mongo:7
+    container_name: pms_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+      MONGO_INITDB_DATABASE: pms_dynamic
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  
+  redis:
+    image: redis:7-alpine
+    container_name: pms_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+                    </div>
+                    
+                    <div class="code-block">
+<span class="comment"># Khởi động Docker containers</span>
+docker-compose up -d
+
+<span class="comment"># Kiểm tra containers đang chạy</span>
+docker-compose ps
+
+<span class="comment"># Output:</span>
+<span class="comment"># NAME           IMAGE               STATUS</span>
+<span class="comment"># pms_postgres   postgres:16-alpine  Up</span>
+<span class="comment"># pms_mongodb    mongo:7             Up</span>
+<span class="comment"># pms_redis      redis:7-alpine      Up</span>
+                    </div>
+                    
+                    <h3>⚙️ Cấu Hình .env</h3>
+                    
+                    <div class="code-block">
+<span class="comment"># .env - Database connections</span>
+<span class="keyword">DB_CONNECTION</span>=pgsql
+<span class="keyword">DB_HOST</span>=127.0.0.1
+<span class="keyword">DB_PORT</span>=5432
+<span class="keyword">DB_DATABASE</span>=pms_db
+<span class="keyword">DB_USERNAME</span>=pms_user
+<span class="keyword">DB_PASSWORD</span>=pms_password
+
+<span class="comment"># MongoDB connection</span>
+<span class="keyword">MONGODB_CONNECTION</span>=mongodb
+<span class="keyword">MONGODB_HOST</span>=127.0.0.1
+<span class="keyword">MONGODB_PORT</span>=27017
+<span class="keyword">MONGODB_DATABASE</span>=pms_dynamic
+<span class="keyword">MONGODB_USERNAME</span>=admin
+<span class="keyword">MONGODB_PASSWORD</span>=admin_password
+
+<span class="comment"># Redis</span>
+<span class="keyword">REDIS_HOST</span>=127.0.0.1
+<span class="keyword">REDIS_PASSWORD</span>=null
+<span class="keyword">REDIS_PORT</span>=6379
+
+<span class="comment"># Laravel Reverb</span>
+<span class="keyword">BROADCAST_CONNECTION</span>=reverb
+<span class="keyword">REVERB_APP_ID</span>=pms-app
+<span class="keyword">REVERB_APP_KEY</span>=pms-key-local
+<span class="keyword">REVERB_APP_SECRET</span>=pms-secret-local
+<span class="keyword">REVERB_HOST</span>=localhost
+<span class="keyword">REVERB_PORT</span>=8080
+<span class="keyword">REVERB_SCHEME</span>=http
+                    </div>
+                    
+                    <h3>🧪 Test Connection</h3>
+                    
+                    <div class="code-block">
+<span class="comment"># Test PostgreSQL connection</span>
+php artisan tinker
+
+<span class="keyword">&gt;&gt;&gt;</span> DB::connection('pgsql')->getPdo();
+<span class="comment"># Nếu không lỗi => kết nối thành công!</span>
+
+<span class="keyword">&gt;&gt;&gt;</span> DB::connection('mongodb')->getMongoDB();
+<span class="comment"># Nếu không lỗi => MongoDB OK!</span>
+
+<span class="keyword">&gt;&gt;&gt;</span> exit
+                    </div>
+                    
+                    <h3>🏃 Chạy Laravel Development Server</h3>
+                    
+                    <div class="code-block">
+<span class="comment"># Terminal 1: Laravel server</span>
+php artisan serve
+
+<span class="comment"># Terminal 2: Laravel Reverb (WebSocket)</span>
+php artisan reverb:start
+
+<span class="comment"># Output:</span>
+<span class="comment"># Laravel development server started: http://127.0.0.1:8000</span>
+<span class="comment"># Reverb server started on ws://localhost:8080</span>
+                    </div>
+                    
+                    <p>Mở trình duyệt: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a></p>
+                    <p>Nếu thấy trang Laravel chào mừng → ✅ Setup thành công!</p>
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ PHP 8.2+ installed & verified</li>
+                    <li>☑️ Composer installed</li>
+                    <li>☑️ Node.js 20+ & npm installed</li>
+                    <li>☑️ Docker Desktop installed & running</li>
+                    <li>☑️ VS Code + Extensions installed</li>
+                    <li>☑️ Laravel project created</li>
+                    <li>☑️ Docker containers running (PostgreSQL, MongoDB, Redis)</li>
+                    <li>☑️ .env configured</li>
+                    <li>☑️ Database connections tested</li>
+                    <li>☑️ Laravel server running on http://localhost:8000</li>
+                    <li>☑️ Reverb WebSocket running on ws://localhost:8080</li>
+                </ul>
+            </div>
+            
+            <div class="warning-box">
+                <h3>⚠️ Lưu Ý</h3>
+                <ul>
+                    <li>Mỗi lần bật máy, phải chạy <code>docker-compose up -d</code> để khởi động databases</li>
+                    <li>Commit code lên GitHub/GitLab ngay sau khi setup xong</li>
+                    <li>Backup file <code>.env</code> (nhưng không commit lên Git!)</li>
+                </ul>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_SETUP_INDEX.html" class="btn btn-secondary">← Trang Chủ</a>
+                <a href="PMS_STEP_02_DATABASE.html" class="btn">Bước 2: Database Design →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

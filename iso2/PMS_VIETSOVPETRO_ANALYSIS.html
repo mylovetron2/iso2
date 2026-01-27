@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân Tích Chi Tiết Hệ Thống PMS - Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 2em;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .subsection-title {
+            font-size: 1.5em;
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .tech-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .tech-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .tech-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin: 30px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #667eea;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 30px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -36px;
+            top: 5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+        }
+        
+        .timeline-item h4 {
+            color: #2a5298;
+            margin-bottom: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .badge-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .badge-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .badge-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .icon {
+            margin-right: 8px;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .architecture-diagram {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        
+        .team-structure {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .team-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .team-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .team-card p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+            
+            .tech-card:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .section-title {
+                font-size: 1.5em;
+            }
+            
+            .tech-stack {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏭 HỆ THỐNG QUẢN LÝ SẢN XUẤT (PMS)</h1>
+            <p>Phân Tích Chi Tiết - Vietsovpetro</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">📅 Thời gian: 12 tháng | 👥 Quy mô: 230 → 7,000 users</p>
+        </header>
+        
+        <div class="content">
+            <!-- I. TỔNG QUAN -->
+            <section class="section">
+                <h2 class="section-title">🎯 I. TỔNG QUAN DỰ ÁN</h2>
+                
+                <div class="highlight-box">
+                    <h3>📊 Phạm Vi Dự Án</h3>
+                    <ul>
+                        <li><strong>Quy mô:</strong> 230 users (Giai đoạn 1 - XN DVLGK) → 7,000 users (Toàn VSP)</li>
+                        <li><strong>Thời gian:</strong> 12 tháng triển khai + 12 tháng bảo hành</li>
+                        <li><strong>Kiến trúc:</strong> Microservices, Mini App trong My VSP</li>
+                        <li><strong>Đặc thù:</strong> Multi-tenant, quy trình đặc thù từng xí nghiệp, real-time tracking</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- II. KIẾN TRÚC CÔNG NGHỆ -->
+            <section class="section">
+                <h2 class="section-title">🏗️ II. KIẾN TRÚC CÔNG NGHỆ ĐỀ XUẤT</h2>
+                
+                <h3 class="subsection-title">1. Technology Stack Chính</h3>
+                
+                <div class="tech-stack">
+                    <div class="tech-card">
+                        <h4>⚙️ Backend Framework</h4>
+                        <div class="badge badge-primary">NestJS / Spring Boot</div>
+                        <p><strong>Ưu điểm NestJS:</strong></p>
+                        <ul style="text-align: left;">
+                            <li>Microservices native</li>
+                            <li>TypeScript (type-safe)</li>
+                            <li>Modular architecture</li>
+                            <li>WebSocket support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h4>🎨 Frontend Framework</h4>
+                        <div class="badge badge-primary">React + Next.js</div>
+                        <p><strong>Stack đầy đủ:</strong></p>
+                        <ul style="text-align: left;">
+                            <li>React 18+ (UI components)</li>
+                            <li>Next.js 14 (SSR, routing)</li>
+                            <li>TypeScript</li>
+                            <li>Tailwind CSS + Ant Design</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h4>💾 Database Hybrid</h4>
+                        <div class="badge badge-success">SQL + NoSQL</div>
+                        <p><strong>PostgreSQL 16:</strong> Core data</p>
+                        <p><strong>MongoDB 7:</strong> Dynamic schemas</p>
+                        <p><strong>Redis 7:</strong> Caching & Queue</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h4>🚀 Orchestration</h4>
+                        <div class="badge badge-warning">Kubernetes + Docker</div>
+                        <p><strong>Container:</strong> Docker</p>
+                        <p><strong>Orchestration:</strong> K8s</p>
+                        <p><strong>CI/CD:</strong> GitLab CI/Jenkins</p>
+                    </div>
+                </div>
+                
+                <h3 class="subsection-title">2. Kiến Trúc Hệ Thống</h3>
+                
+                <div class="architecture-diagram">
+┌──────────────────────────────────────────────────────────┐
+│         WEB INTERFACE (React + Next.js)                  │
+│  • Quản lý kế hoạch  • Dashboard  • Báo cáo             │
+└──────────────┬───────────────────────────────────────────┘
+               │
+┌──────────────▼───────────────────────────────────────────┐
+│              API GATEWAY (Kong / AWS)                     │
+│  • Authentication  • Rate limiting  • Load balancing     │
+└──────────────┬───────────────────────────────────────────┘
+               │
+       ┌───────┴───────┬───────────┬───────────┐
+       │               │           │           │
+┌──────▼──────┐ ┌─────▼─────┐ ┌──▼───────┐ ┌─▼────────┐
+│Plan Service │ │Task Service│ │Report   │ │Inter-    │
+│             │ │            │ │Service  │ │Enterprise│
+│• Kế hoạch   │ │• Nhiệm vụ  │ │         │ │Service   │
+│• Gantt      │ │• Kanban    │ │• BI     │ │          │
+│• Workflow   │ │• Real-time │ │• Export │ │• Giao    │
+│             │ │• WebSocket │ │         │ │  việc    │
+└─────────────┘ └────────────┘ └─────────┘ └──────────┘
+       │               │           │           │
+       └───────┬───────┴───────────┴───────────┘
+               │
+┌──────────────▼───────────────────────────────────────────┐
+│               MESSAGE QUEUE (RabbitMQ)                    │
+│  • Event-driven architecture  • Async processing         │
+└──────────────┬───────────────────────────────────────────┘
+               │
+       ┌───────┴───────┬───────────┐
+       │               │           │
+┌──────▼──────┐ ┌─────▼─────┐ ┌──▼───────┐
+│ PostgreSQL  │ │  MongoDB  │ │  Redis   │
+│             │ │           │ │          │
+│• Core data  │ │• Dynamic  │ │• Cache   │
+│• Relations  │ │  configs  │ │• Session │
+│• ACID       │ │• Audit    │ │• Queue   │
+└─────────────┘ └───────────┘ └──────────┘
+                </div>
+            </section>
+            
+            <!-- III. MODULE CHÍNH -->
+            <section class="section">
+                <h2 class="section-title">📋 III. CÁC MODULE CHÍNH</h2>
+                
+                <h3 class="subsection-title">Module 1: Quản Lý Kế Hoạch Sản Xuất (G1)</h3>
+                
+                <div class="highlight-box">
+                    <h4>🎯 Chức năng chính:</h4>
+                    <ul>
+                        <li>Lập kế hoạch sản xuất theo năm/quý/tháng</li>
+                        <li>Import CSV/Excel từ Oracle ERP</li>
+                        <li>Phân công nhiệm vụ với Gantt Chart</li>
+                        <li>Workflow phê duyệt (Kế hoạch → Trưởng phòng → Giám đốc)</li>
+                        <li>Cảnh báo vật tư, thiết bị, nhân lực thiếu</li>
+                    </ul>
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// Database Schema - PostgreSQL</span>
+<span class="keyword">CREATE TABLE</span> production_plans (
+    id UUID <span class="keyword">PRIMARY KEY</span>,
+    code VARCHAR(50) <span class="keyword">UNIQUE NOT NULL</span>,
+    name VARCHAR(255) <span class="keyword">NOT NULL</span>,
+    enterprise_id UUID <span class="keyword">REFERENCES</span> enterprises(id),
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    status VARCHAR(20), <span class="comment">-- draft, approved, in_progress, completed</span>
+    kpi_targets JSONB, <span class="comment">-- Flexible KPI storage</span>
+    created_by UUID,
+    approved_by UUID,
+    created_at TIMESTAMP <span class="keyword">DEFAULT</span> NOW()
+);
+
+<span class="keyword">CREATE TABLE</span> plan_tasks (
+    id UUID <span class="keyword">PRIMARY KEY</span>,
+    plan_id UUID <span class="keyword">REFERENCES</span> production_plans(id),
+    parent_task_id UUID, <span class="comment">-- For subtasks</span>
+    name VARCHAR(255),
+    assigned_to UUID[],
+    assigned_enterprise_id UUID, <span class="comment">-- Liên đơn vị</span>
+    priority INT,
+    dependencies UUID[], <span class="comment">-- Task dependencies</span>
+    status VARCHAR(20),
+    metadata JSONB <span class="comment">-- Dynamic fields per enterprise</span>
+);
+                </div>
+                
+                <h3 class="subsection-title">Module 2: Quản Lý Nhiệm Vụ & Theo Dõi (G2-G4)</h3>
+                
+                <div class="highlight-box">
+                    <h4>🎯 Chức năng chính:</h4>
+                    <ul>
+                        <li>Kanban Board (drag & drop)</li>
+                        <li>Real-time updates qua WebSocket</li>
+                        <li>Notification (Email + In-app)</li>
+                        <li>Theo dõi tiến độ theo thời gian thực</li>
+                        <li>SLA tracking & Escalation</li>
+                    </ul>
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// WebSocket Real-time Architecture</span>
+<span class="keyword">import</span> { WebSocketGateway } <span class="keyword">from</span> <span class="string">'@nestjs/websockets'</span>;
+
+@WebSocketGateway()
+<span class="keyword">export class</span> <span class="function">TaskGateway</span> {
+  @SubscribeMessage(<span class="string">'task:update'</span>)
+  <span class="function">handleTaskUpdate</span>(client, payload) {
+    <span class="comment">// Broadcast to all connected clients</span>
+    <span class="keyword">this</span>.server.emit(<span class="string">'task:status_changed'</span>, {
+      taskId: payload.taskId,
+      newStatus: payload.status,
+      updatedBy: payload.userId
+    });
+  }
+}
+                </div>
+                
+                <h3 class="subsection-title">Module 3: Giao Việc Liên Đơn Vị</h3>
+                
+                <div class="highlight-box">
+                    <h4>🎯 Chức năng chính:</h4>
+                    <ul>
+                        <li>Giao nhiệm vụ từ xí nghiệp này sang xí nghiệp khác</li>
+                        <li>Theo dõi tiến độ chéo đơn vị</li>
+                        <li>Message Queue (RabbitMQ) cho async communication</li>
+                        <li>SLA monitoring & Alert</li>
+                    </ul>
+                </div>
+                
+                <h3 class="subsection-title">Module 4: Báo Cáo & Dashboard (G5)</h3>
+                
+                <div class="highlight-box">
+                    <h4>🎯 Chức năng chính:</h4>
+                    <ul>
+                        <li>Dashboard real-time (KPI, SLA, Progress)</li>
+                        <li>Report generation (PDF, Excel)</li>
+                        <li>Cost analysis (Dự toán vs Thực tế)</li>
+                        <li>AI prediction (resource forecasting)</li>
+                        <li>Export API cho My VSP</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- IV. BẢO MẬT -->
+            <section class="section">
+                <h2 class="section-title">🔐 IV. BẢO MẬT & AUTHENTICATION</h2>
+                
+                <div class="tech-stack">
+                    <div class="tech-card">
+                        <h4>🔑 SSO & OAuth 2.0</h4>
+                        <p><strong>OpenID Connect (OIDC)</strong></p>
+                        <p>Keycloak / ORY Hydra</p>
+                        <p>JWT tokens (Access + Refresh)</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h4>🛡️ MFA (Multi-Factor)</h4>
+                        <p><strong>2-Factor Authentication</strong></p>
+                        <p>TOTP (Google Authenticator)</p>
+                        <p>SMS OTP</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h4>🔒 API Security</h4>
+                        <p><strong>Security Layers</strong></p>
+                        <p>Rate limiting</p>
+                        <p>RBAC (Role-Based Access)</p>
+                        <p>Row-Level Security</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- V. KẾ HOẠCH TRIỂN KHAI -->
+            <section class="section">
+                <h2 class="section-title">🚀 V. CÁC BƯỚC TRIỂN KHAI CHI TIẾT</h2>
+                
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 1: Phân Tích & Thiết Kế (Tháng 1-2)</h4>
+                        <ul>
+                            <li><strong>Week 1-2:</strong> Requirements Gathering (Workshop với XN DVLGK)</li>
+                            <li><strong>Week 3-4:</strong> System Design (Kiến trúc, ERD, API specs)</li>
+                            <li><strong>Week 5-6:</strong> Technical POC (Setup môi trường, test SSO)</li>
+                            <li><strong>Week 7-8:</strong> Review & Finalization</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 2: Development Sprint 1-4 (Tháng 3-6)</h4>
+                        <ul>
+                            <li><strong>Sprint 1 (Tháng 3):</strong> Core Infrastructure (K8s, API Gateway, Auth)</li>
+                            <li><strong>Sprint 2 (Tháng 4):</strong> Module Kế Hoạch Sản Xuất (G1)</li>
+                            <li><strong>Sprint 3 (Tháng 5):</strong> Module Nhiệm Vụ & Theo Dõi (G2-G4)</li>
+                            <li><strong>Sprint 4 (Tháng 6):</strong> Giao Việc Liên Đơn Vị</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 3: Development Sprint 5-7 (Tháng 7-9)</h4>
+                        <ul>
+                            <li><strong>Sprint 5 (Tháng 7):</strong> Báo Cáo & Dashboard (G5)</li>
+                            <li><strong>Sprint 6 (Tháng 8):</strong> Tích Hợp Hệ Thống (Oracle ERP, HR, Warehouse)</li>
+                            <li><strong>Sprint 7 (Tháng 9):</strong> Tính Năng Đặc Thù (HSE, Nguồn phóng xạ)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 4: Testing & UAT (Tháng 10)</h4>
+                        <ul>
+                            <li><strong>Week 1-2:</strong> System Testing (Load, Security, Performance)</li>
+                            <li><strong>Week 3-4:</strong> User Acceptance Testing (UAT với XN DVLGK)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 5: Deployment & Training (Tháng 11)</h4>
+                        <ul>
+                            <li><strong>Week 1-2:</strong> Production Deployment (Blue-green deployment)</li>
+                            <li><strong>Week 3-4:</strong> Training (Admin + End-users)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <h4>📅 GIAI ĐOẠN 6: Go-live & Support (Tháng 12)</h4>
+                        <ul>
+                            <li>24/7 support team on-site (30 ngày)</li>
+                            <li>Bug fixing (P1: 2h, P2: 8h)</li>
+                            <li>Performance optimization</li>
+                            <li>Handover to VSP IT team</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VI. ĐỘI NGŨ & KỸ NĂNG -->
+            <section class="section">
+                <h2 class="section-title">👥 VI. ĐỘI NGŨ & KỸ NĂNG CẦN THIẾT</h2>
+                
+                <h3 class="subsection-title">Team Structure (Tối thiểu 15 người)</h3>
+                
+                <div class="team-structure">
+                    <div class="team-card">
+                        <h4>👔 Project Manager</h4>
+                        <p>1 người</p>
+                        <p>PMP/Agile certified</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>🏗️ Solution Architect</h4>
+                        <p>1 người</p>
+                        <p>Microservices expert</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>⚙️ Backend Team</h4>
+                        <p>5 người</p>
+                        <p>NestJS/Spring Boot</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>🎨 Frontend Team</h4>
+                        <p>3 người</p>
+                        <p>React/Next.js</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>🧪 QA/Testing</h4>
+                        <p>2 người</p>
+                        <p>Automation + Manual</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>📊 Data/AI Team</h4>
+                        <p>2 người</p>
+                        <p>Data Engineer + ML</p>
+                    </div>
+                    
+                    <div class="team-card">
+                        <h4>📋 Business Analyst</h4>
+                        <p>1 người</p>
+                        <p>Domain knowledge</p>
+                    </div>
+                </div>
+                
+                <h3 class="subsection-title">Certifications Cần Có</h3>
+                
+                <div class="highlight-box">
+                    <h4>Technical Certifications:</h4>
+                    <div>
+                        <span class="badge badge-primary">AWS Solutions Architect</span>
+                        <span class="badge badge-primary">Kubernetes Administrator (CKA)</span>
+                        <span class="badge badge-primary">Oracle Certified Professional</span>
+                        <span class="badge badge-success">ISTQB (Testing)</span>
+                        <span class="badge badge-danger">CISSP (Security)</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 15px;">Process Certifications:</h4>
+                    <div>
+                        <span class="badge badge-warning">PMP (Project Management)</span>
+                        <span class="badge badge-warning">Certified Scrum Master</span>
+                        <span class="badge badge-warning">ITIL Foundation</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VII. HẠ TẦNG -->
+            <section class="section">
+                <h2 class="section-title">💻 VII. YÊU CẦU HẠ TẦNG</h2>
+                
+                <h3 class="subsection-title">Kubernetes Cluster (Production)</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành phần</th>
+                            <th>Số lượng</th>
+                            <th>Cấu hình</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Master Nodes</td>
+                            <td>3 VMs</td>
+                            <td>4 CPU, 16GB RAM, 200GB SSD</td>
+                            <td>High Availability</td>
+                        </tr>
+                        <tr>
+                            <td>Worker Nodes</td>
+                            <td>5-10 VMs</td>
+                            <td>8 CPU, 32GB RAM, 500GB SSD</td>
+                            <td>Auto-scaling</td>
+                        </tr>
+                        <tr>
+                            <td>PostgreSQL Primary</td>
+                            <td>1 VM</td>
+                            <td>16 CPU, 64GB RAM, 2TB SSD</td>
+                            <td>Master database</td>
+                        </tr>
+                        <tr>
+                            <td>PostgreSQL Replica</td>
+                            <td>1 VM</td>
+                            <td>16 CPU, 64GB RAM, 2TB SSD</td>
+                            <td>Read replica</td>
+                        </tr>
+                        <tr>
+                            <td>MongoDB Cluster</td>
+                            <td>3 VMs</td>
+                            <td>8 CPU, 32GB RAM, 1TB SSD each</td>
+                            <td>Replica Set</td>
+                        </tr>
+                        <tr>
+                            <td>Redis</td>
+                            <td>2 VMs</td>
+                            <td>4 CPU, 16GB RAM</td>
+                            <td>Master + Replica</td>
+                        </tr>
+                        <tr>
+                            <td>Load Balancer</td>
+                            <td>2 VMs</td>
+                            <td>4 CPU, 8GB RAM</td>
+                            <td>High Availability</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3 class="subsection-title">Phương Án Mở Rộng 3-5 Năm</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Năm</th>
+                            <th>Users</th>
+                            <th>Worker Nodes</th>
+                            <th>Database</th>
+                            <th>Chi phí/tháng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Year 1</td>
+                            <td>230</td>
+                            <td>5 nodes</td>
+                            <td>500GB</td>
+                            <td>$3,000 (cloud) / $100k (on-premise)</td>
+                        </tr>
+                        <tr>
+                            <td>Year 2</td>
+                            <td>1,000</td>
+                            <td>7 nodes</td>
+                            <td>1.5TB</td>
+                            <td>$6,000</td>
+                        </tr>
+                        <tr>
+                            <td>Year 3</td>
+                            <td>3,000</td>
+                            <td>10 nodes</td>
+                            <td>5TB</td>
+                            <td>$12,000</td>
+                        </tr>
+                        <tr>
+                            <td>Year 5</td>
+                            <td>7,000</td>
+                            <td>15 nodes</td>
+                            <td>12TB</td>
+                            <td>$20,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- VIII. RỦI RO -->
+            <section class="section">
+                <h2 class="section-title">⚠️ VIII. RỦI RO & GIẢM THIỂU</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rủi ro</th>
+                            <th>Mức độ</th>
+                            <th>Giảm thiểu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tích hợp Oracle ERP phức tạp</td>
+                            <td><span class="badge badge-danger">Cao</span></td>
+                            <td>
+                                • POC sớm (Sprint 1)<br>
+                                • Oracle consultant hỗ trợ<br>
+                                • Backup plan: Manual sync
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Dynamic module loading chưa ổn định</td>
+                            <td><span class="badge badge-warning">Trung bình</span></td>
+                            <td>
+                                • Extensive testing<br>
+                                • Fallback to manual config<br>
+                                • Gradual rollout
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Real-time performance không đạt</td>
+                            <td><span class="badge badge-warning">Trung bình</span></td>
+                            <td>
+                                • Load testing sớm<br>
+                                • Caching aggressive (Redis)<br>
+                                • WebSocket clustering
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>User adoption thấp</td>
+                            <td><span class="badge badge-success">Thấp</span></td>
+                            <td>
+                                • UX/UI thân thiện<br>
+                                • Training đầy đủ<br>
+                                • Change management plan
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <!-- IX. CHECKLIST BÀN GIAO -->
+            <section class="section">
+                <h2 class="section-title">✅ IX. CHECKLIST BÀN GIAO</h2>
+                
+                <div class="highlight-box">
+                    <h4>📦 Sản phẩm bàn giao:</h4>
+                    <ul>
+                        <li>☑️ Source code (Git repository với full history)</li>
+                        <li>☑️ Tài liệu kiến trúc hệ thống (System Architecture Document)</li>
+                        <li>☑️ ERD & Database schema documentation</li>
+                        <li>☑️ API documentation (Swagger/Postman collection)</li>
+                        <li>☑️ Deployment scripts (Helm charts, CI/CD pipeline)</li>
+                        <li>☑️ User manual (Admin + End-user, Việt/Nga)</li>
+                        <li>☑️ Training videos (10+ videos, mỗi video 15-30 phút)</li>
+                        <li>☑️ Load testing report (JMeter results)</li>
+                        <li>☑️ Security audit report (Penetration test)</li>
+                        <li>☑️ Disaster recovery plan & Backup procedures</li>
+                        <li>☑️ Warranty support SLA document (12 tháng)</li>
+                        <li>☑️ Module configuration guide (cho mở rộng)</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- X. KẾT LUẬN -->
+            <section class="section">
+                <h2 class="section-title">🎯 X. KẾT LUẬN</h2>
+                
+                <div class="highlight-box" style="background: linear-gradient(135deg, #10b98115 0%, #059669ff15 100%); border-left-color: #10b981;">
+                    <h3 style="color: #059669;">✨ Đây là dự án Enterprise-grade đòi hỏi:</h3>
+                    <ul style="font-size: 1.1em;">
+                        <li>✅ <strong>Kinh nghiệm:</strong> Microservices + Kubernetes production-ready</li>
+                        <li>✅ <strong>Domain knowledge:</strong> Manufacturing, Oil & Gas industry</li>
+                        <li>✅ <strong>Integration skills:</strong> Legacy systems (Oracle ERP)</li>
+                        <li>✅ <strong>DevOps culture:</strong> CI/CD, monitoring, security</li>
+                        <li>✅ <strong>Team size:</strong> 15-20 người với kinh nghiệm 3+ năm</li>
+                        <li>✅ <strong>Certifications:</strong> AWS, K8s, Oracle, PMP, CSM</li>
+                    </ul>
+                    
+                    <h3 style="color: #059669; margin-top: 25px;">⏱️ Thời gian 12 tháng là KHẢ THI nếu:</h3>
+                    <ul style="font-size: 1.1em;">
+                        <li>Team đủ mạnh và có kinh nghiệm tương tự</li>
+                        <li>VSP IT support tốt (infrastructure, domain knowledge)</li>
+                        <li>Oracle ERP integration được test sớm</li>
+                        <li>Requirement freeze sau tháng 2</li>
+                        <li>Agile methodology được tuân thủ nghiêm ngặt</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                    <h2 style="margin-bottom: 15px;">📞 LIÊN HỆ</h2>
+                    <p style="font-size: 1.1em;">Để được tư vấn chi tiết về triển khai dự án PMS</p>
+                    <p style="font-size: 1.2em; margin-top: 10px;"><strong>Email:</strong> pms-project@vietsov.com</p>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

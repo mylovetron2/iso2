@@ -58,18 +58,18 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
-                    Model <span class="text-red-500">*</span>
+                    Model
                 </label>
-                <input type="text" name="model" required
+                <input type="text" name="model"
                        value="<?php echo isset($_POST['model']) ? htmlspecialchars($_POST['model']) : htmlspecialchars($item['model']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
-                    Hộp máy <span class="text-red-500">*</span>
+                    Hộp máy
                 </label>
-                <input type="text" name="homay" required
+                <input type="text" name="homay"
                        value="<?php echo isset($_POST['homay']) ? htmlspecialchars($_POST['homay']) : htmlspecialchars($item['homay']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
@@ -78,9 +78,9 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
-                    Điện áp <span class="text-red-500">*</span>
+                    Điện áp
                 </label>
-                <input type="text" name="dienap" required
+                <input type="text" name="dienap"
                        value="<?php echo isset($_POST['dienap']) ? htmlspecialchars($_POST['dienap']) : htmlspecialchars($item['dienap']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
@@ -113,8 +113,8 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Mức dầu <span class="text-red-500">*</span></label>
-                <input type="text" name="mucdau" required
+                <label class="block text-gray-700 font-semibold mb-2">Mức dầu</label>
+                <input type="text" name="mucdau"
                        value="<?php echo isset($_POST['mucdau']) ? htmlspecialchars($_POST['mucdau']) : htmlspecialchars($item['mucdau']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
@@ -136,8 +136,8 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Mã máy <span class="text-red-500">*</span></label>
-                <input type="text" name="mamay" required
+                <label class="block text-gray-700 font-semibold mb-2">Mã máy</label>
+                <input type="text" name="mamay"
                        value="<?php echo isset($_POST['mamay']) ? htmlspecialchars($_POST['mamay']) : htmlspecialchars($item['mamay']); ?>"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>

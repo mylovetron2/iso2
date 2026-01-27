@@ -119,6 +119,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">CV</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Xem/Sửa</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Chi tiết</th>
@@ -127,7 +128,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có hồ sơ nào</p>
                     </td>
@@ -154,6 +155,35 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php echo htmlspecialchars($item['tendv'] ?? $item['madv']); ?>
+                    </td>
+                    <td class="px-2 md:px-4 py-2 border text-center">
+                        <?php 
+                        $cvValue = $item['cv'] ?? '';
+                        $cvDisplay = '';
+                        $cvColor = 'bg-gray-100 text-gray-800';
+                        
+                        switch ($cvValue) {
+                            case 'KT':
+                                $cvDisplay = 'KT';
+                                $cvColor = 'bg-blue-100 text-blue-800';
+                                break;
+                            case 'BD':
+                                $cvDisplay = 'BD';
+                                $cvColor = 'bg-green-100 text-green-800';
+                                break;
+                            case 'SC':
+                                $cvDisplay = 'SC';
+                                $cvColor = 'bg-red-100 text-red-800';
+                                break;
+                            case 'BDDK':
+                                $cvDisplay = 'BDDK';
+                                $cvColor = 'bg-purple-100 text-purple-800';
+                                break;
+                            default:
+                                $cvDisplay = $cvValue ?: '-';
+                        }
+                        echo '<span class="inline-block ' . $cvColor . ' text-xs font-bold px-2 py-1 rounded">' . htmlspecialchars($cvDisplay) . '</span>';
+                        ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php 

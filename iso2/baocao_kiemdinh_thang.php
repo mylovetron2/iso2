@@ -31,10 +31,12 @@ try {
             k.tenthietbi,
             k.hangsx,
             k.thang,
+            tb.chusohuu,
             h.ngayhc,
             MONTH(h.ngayhc) as thangkd,
             YEAR(h.ngayhc) as namkd
         FROM kehoach_iso k
+        LEFT JOIN thietbihckd_iso tb ON k.mahieu = tb.mavattu
         LEFT JOIN hosohckd_iso h ON k.mahieu = h.tenmay 
             AND YEAR(h.ngayhc) = ?
         WHERE k.namkh = ?
@@ -47,6 +49,19 @@ try {
     
     // Group devices and collect inspection months
     $devices = [];
+    $planCounts = []; // Count plans per device
+    
+    // First pass: count plans per device
+    foreach ($results as $row) {
+        $mahieu = $row['mahieu'];
+        if (!empty($row['thang'])) {
+            if (!isset($planCounts[$mahieu])) {
+                $planCounts[$mahieu] = [];
+            }
+            $planCounts[$mahieu][$row['thang']] = true;
+        }
+    }
+    
     foreach ($results as $row) {
         $mahieu = $row['mahieu'];
         
@@ -56,9 +71,33 @@ try {
                 'somay' => $row['somay'],
                 'tenvt' => $row['tenthietbi'],
                 'nuocsx' => $row['hangsx'],
-                'months' => array_fill(1, 12, false), // Initialize 12 months as false
-                'has_inspection' => false
+                'chusohuu' => $row['chusohuu'],
+                'months' => array_fill(1, 12, false), // Inspected months
+                'plan_months' => array_fill(1, 12, false), // Plan months
+                'has_inspection' => false,
+                'plan_count' => isset($planCounts[$mahieu]) ? count($planCounts[$mahieu]) : 0
             ];
+        }
+        
+        // Mark the plan months
+        if (!empty($row['thang'])) {
+            $thangKH = (int)$row['thang'];
+            $planCount = $devices[$mahieu]['plan_count'];
+            
+            if ($planCount >= 2) {
+                // If device has 2+ plans, only mark that specific month
+                if ($thangKH >= 1 && $thangKH <= 12) {
+                    $devices[$mahieu]['plan_months'][$thangKH] = true;
+                }
+            } else {
+                // If device has 1 plan, mark 3 consecutive months ending at thangKH
+                for ($i = -2; $i <= 0; $i++) {
+                    $month = $thangKH + $i;
+                    if ($month >= 1 && $month <= 12) {
+                        $devices[$mahieu]['plan_months'][$month] = true;
+                    }
+                }
+            }
         }
         
         // Mark the month as inspected
@@ -168,13 +207,21 @@ require_once __DIR__ . '/views/layouts/header.php';
 ?>
 
 <div class="max-w-full mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
-    <h1 class="text-xl md:text-2xl font-bold mb-4 text-center">
-        BÁO CÁO THỐNG KÊ KIỂM ĐỊNH THEO THÁNG
-    </h1>
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex-1"></div>
+        <h1 class="text-xl md:text-2xl font-bold flex-1 text-center text-blue-900">
+            BÁO CÁO HC/KĐ THEO KẾ HOẠCH
+        </h1>
+        <div class="flex-1 flex justify-end">
+            <button onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold no-print">
+                <i class="fas fa-file-pdf mr-2"></i>In PDF
+            </button>
+        </div>
+    </div>
     <p class="text-center text-gray-600 mb-6">Năm: <?php echo $nam; ?></p>
     
     <!-- Filters -->
-    <form method="GET" class="mb-6 bg-gray-50 p-4 rounded-lg">
+    <form method="GET" class="mb-6 bg-gray-50 p-4 rounded-lg no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Năm</label>
@@ -217,18 +264,18 @@ require_once __DIR__ . '/views/layouts/header.php';
     <div class="overflow-x-auto">
         <table class="min-w-full border-collapse border border-gray-400 text-sm">
             <thead>
-                <tr class="bg-cyan-200">
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Stt</th>
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Tên thiết bị,mẫu<br>chuẩn/vật chuẩn</th>
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Ký/Mã hiệu</th>
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Số máy</th>
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Nước/Hãng<br>SX</th>
-                    <th colspan="12" class="border border-gray-400 px-2 py-2">THÁNG</th>
-                    <th rowspan="2" class="border border-gray-400 px-2 py-2">Chú số<br>hữu</th>
+                <tr class="bg-blue-500 text-white">
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Stt</th>
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Tên thiết bị,mẫu<br>chuẩn/vật chuẩn</th>
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Ký/Mã hiệu</th>
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Số máy</th>
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Nước/Hãng<br>SX</th>
+                    <th colspan="12" class="border border-gray-400 px-2 py-2 text-center">THÁNG</th>
+                    <th rowspan="2" class="border border-gray-400 px-2 py-2 text-center">Chủ sở hữu</th>
                 </tr>
-                <tr class="bg-cyan-200">
+                <tr class="bg-blue-500 text-white">
                     <?php for ($m = 1; $m <= 12; $m++): ?>
-                        <th class="border border-gray-400 px-2 py-1"><?php echo $m; ?></th>
+                        <th class="border border-gray-400 px-2 py-1 text-center"><?php echo $m; ?></th>
                     <?php endfor; ?>
                 </tr>
             </thead>
@@ -247,13 +294,21 @@ require_once __DIR__ . '/views/layouts/header.php';
                         <td class="border border-gray-400 px-2 py-1 text-center"><?php echo htmlspecialchars($device['nuocsx']); ?></td>
                         
                         <!-- 12 month columns -->
-                        <?php for ($m = 1; $m <= 12; $m++): ?>
-                            <td class="border border-gray-400 px-1 py-1 text-center <?php echo $device['months'][$m] ? 'bg-blue-400' : ''; ?>">
-                                <?php echo $device['months'][$m] ? '✓' : ''; ?>
+                        <?php for ($m = 1; $m <= 12; $m++): 
+                            $isInspected = $device['months'][$m];
+                            $isPlanned = $device['plan_months'][$m];
+                            
+                            // Determine cell color: only gray for planned months
+                            $bgColor = $isPlanned ? 'bg-gray-300' : '';
+                        ?>
+                            <td class="border border-gray-400 px-1 py-1 text-center <?php echo $bgColor; ?>">
+                                <?php if ($isInspected): ?>
+                                    <span style="color: #2563eb; font-weight: bold;">✓</span>
+                                <?php endif; ?>
                             </td>
                         <?php endfor; ?>
                         
-                        <td class="border border-gray-400 px-2 py-1 text-center"></td>
+                        <td class="border border-gray-400 px-2 py-1 text-center"><?php echo htmlspecialchars($device['chusohuu'] ?? ''); ?></td>
                     </tr>
                     <?php endforeach; ?>
                 <?php endforeach; ?>
@@ -269,16 +324,6 @@ require_once __DIR__ . '/views/layouts/header.php';
             </tbody>
         </table>
     </div>
-    
-    <!-- Print Button -->
-    <div class="mt-6 flex justify-center gap-4">
-        <button onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded font-semibold">
-            <i class="fas fa-print mr-2"></i>In báo cáo
-        </button>
-        <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded font-semibold inline-block">
-            <i class="fas fa-arrow-left mr-2"></i>Quay lại
-        </a>
-    </div>
 </div>
 
 <style>
@@ -287,18 +332,77 @@ require_once __DIR__ . '/views/layouts/header.php';
         display: none !important;
     }
     
+    /* Hide header, sidebar, navigation, menu button */
+    header, nav, aside, .sidebar, form, button {
+        display: none !important;
+    }
+    
+    /* Hide hamburger menu and all navigation elements */
+    .hamburger, #mobileMenuBtn, [class*="menu"], [class*="Menu"] {
+        display: none !important;
+    }
+    
     body {
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+        margin: 0;
+        padding: 10px;
+        background: white !important;
+    }
+    
+    /* Remove all borders and shadows from container */
+    .max-w-full {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 10px !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+    }
+    
+    /* Remove rounded corners and shadows */
+    .rounded-lg, .shadow-md {
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
     
     table {
         page-break-inside: auto;
+        font-size: 9pt;
+        width: 100%;
     }
     
     tr {
         page-break-inside: avoid;
         page-break-after: auto;
+    }
+    
+    th, td {
+        font-size: 8pt;
+        padding: 2px 4px !important;
+    }
+    
+    h1 {
+        font-size: 16pt;
+        margin-bottom: 5pt;
+        margin-top: 0;
+    }
+    
+    p {
+        font-size: 10pt;
+        margin: 5pt 0;
+    }
+    
+    /* Ensure no extra padding/margin on body and html */
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    /* Hide the title text that appears above the main title */
+    .text-center.text-gray-600:first-of-type {
+        display: none !important;
     }
 }
 </style>

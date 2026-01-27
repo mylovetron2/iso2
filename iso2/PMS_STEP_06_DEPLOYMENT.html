@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 6: Deployment - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Bước 6: Deployment</h1>
+            <p>Deploy PMS lên production với Docker Compose</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_05_WEBSOCKET.html">← Bước 5</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Chuẩn bị VPS (Virtual Private Server)</li>
+                    <li>✅ Cài đặt Docker trên VPS</li>
+                    <li>✅ Setup Docker Compose production</li>
+                    <li>✅ Cấu hình Nginx reverse proxy</li>
+                    <li>✅ Setup SSL certificate (Let's Encrypt)</li>
+                    <li>✅ Deploy & monitoring</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1 -->
+            <div class="section">
+                <h2>1. Chọn VPS & Cấu Hình</h2>
+                
+                <div class="highlight-box">
+                    <h3>💰 VPS Recommendations (MVP - 50-200 users)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Plan</th>
+                                <th>Price</th>
+                                <th>Specs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>DigitalOcean</strong></td>
+                                <td>Droplet 4GB</td>
+                                <td>$24/month</td>
+                                <td>2 vCPU, 4GB RAM, 80GB SSD</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vultr</strong></td>
+                                <td>Cloud Compute</td>
+                                <td>$24/month</td>
+                                <td>2 vCPU, 4GB RAM, 80GB SSD</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Linode</strong></td>
+                                <td>Linode 4GB</td>
+                                <td>$24/month</td>
+                                <td>2 vCPU, 4GB RAM, 80GB SSD</td>
+                            </tr>
+                            <tr>
+                                <td><strong>AWS Lightsail</strong></td>
+                                <td>$20 plan</td>
+                                <td>$20/month</td>
+                                <td>1 vCPU, 2GB RAM, 60GB SSD</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <p><strong>Khuyến nghị:</strong> DigitalOcean hoặc Vultr (dễ setup, docs tốt)</p>
+                </div>
+                
+                <h3>🔧 Setup VPS Ban Đầu</h3>
+                
+                <div class="code-block">
+<span class="comment"># 1. SSH vào VPS (sau khi tạo)</span>
+ssh root@your-vps-ip
+
+<span class="comment"># 2. Update system</span>
+apt update && apt upgrade -y
+
+<span class="comment"># 3. Tạo user mới (không dùng root)</span>
+adduser pms
+usermod -aG sudo pms
+
+<span class="comment"># 4. Switch sang user mới</span>
+su - pms
+                </div>
+            </div>
+            
+            <!-- PHẦN 2 -->
+            <div class="section">
+                <h2>2. Cài Đặt Docker trên VPS</h2>
+                
+                <div class="code-block">
+<span class="comment"># 1. Install Docker</span>
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+<span class="comment"># 2. Add user to docker group</span>
+sudo usermod -aG docker $USER
+
+<span class="comment"># 3. Start Docker</span>
+sudo systemctl enable docker
+sudo systemctl start docker
+
+<span class="comment"># 4. Install Docker Compose</span>
+sudo apt install docker-compose-plugin
+
+<span class="comment"># 5. Verify</span>
+docker --version
+docker compose version
+                </div>
+            </div>
+            
+            <!-- PHẦN 3 -->
+            <div class="section">
+                <h2>3. Production Docker Compose</h2>
+                
+                <h3>📝 docker-compose.prod.yml</h3>
+                
+                <div class="code-block">
+<span class="comment"># docker-compose.prod.yml</span>
+version: '3.8'
+
+services:
+  <span class="comment"># PostgreSQL</span>
+  postgres:
+    image: postgres:16-alpine
+    container_name: pms_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pms_network
+  
+  <span class="comment"># MongoDB</span>
+  mongodb:
+    image: mongo:7
+    container_name: pms_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pms_network
+  
+  <span class="comment"># Redis</span>
+  redis:
+    image: redis:7-alpine
+    container_name: pms_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - pms_network
+  
+  <span class="comment"># Laravel Backend</span>
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: pms_backend
+    restart: always
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    environment:
+      APP_ENV: production
+      APP_DEBUG: false
+      DB_HOST: postgres
+      MONGODB_HOST: mongodb
+      REDIS_HOST: redis
+    volumes:
+      - ./backend:/var/www/html
+      - backend_storage:/var/www/html/storage
+    networks:
+      - pms_network
+  
+  <span class="comment"># Laravel Reverb (WebSocket)</span>
+  reverb:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: pms_reverb
+    restart: always
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    depends_on:
+      - backend
+    networks:
+      - pms_network
+  
+  <span class="comment"># React Frontend</span>
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: pms_frontend
+    restart: always
+    networks:
+      - pms_network
+  
+  <span class="comment"># Nginx Reverse Proxy</span>
+  nginx:
+    image: nginx:alpine
+    container_name: pms_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - certbot_data:/var/www/certbot
+    depends_on:
+      - backend
+      - frontend
+      - reverb
+    networks:
+      - pms_network
+  
+  <span class="comment"># Certbot for SSL</span>
+  certbot:
+    image: certbot/certbot
+    container_name: pms_certbot
+    volumes:
+      - certbot_data:/var/www/certbot
+      - ./nginx/ssl:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  backend_storage:
+  certbot_data:
+
+networks:
+  pms_network:
+    driver: bridge
+                </div>
+                
+                <h3>🐳 Laravel Dockerfile.prod</h3>
+                
+                <div class="code-block">
+<span class="comment"># backend/Dockerfile.prod</span>
+<span class="keyword">FROM</span> php:8.2-fpm-alpine
+
+<span class="comment"># Install dependencies</span>
+<span class="keyword">RUN</span> apk add --no-cache \
+    postgresql-dev \
+    zip \
+    unzip \
+    git \
+    curl
+
+<span class="comment"># Install PHP extensions</span>
+<span class="keyword">RUN</span> docker-php-ext-install pdo pdo_pgsql
+
+<span class="comment"># Install Composer</span>
+<span class="keyword">COPY</span> --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+<span class="comment"># Set working directory</span>
+<span class="keyword">WORKDIR</span> /var/www/html
+
+<span class="comment"># Copy application</span>
+<span class="keyword">COPY</span> . .
+
+<span class="comment"># Install dependencies</span>
+<span class="keyword">RUN</span> composer install --no-dev --optimize-autoloader
+
+<span class="comment"># Set permissions</span>
+<span class="keyword">RUN</span> chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+<span class="keyword">EXPOSE</span> 9000
+
+<span class="keyword">CMD</span> ["php-fpm"]
+                </div>
+                
+                <h3>⚛️ React Dockerfile.prod</h3>
+                
+                <div class="code-block">
+<span class="comment"># frontend/Dockerfile.prod</span>
+<span class="keyword">FROM</span> node:20-alpine <span class="keyword">AS</span> builder
+
+<span class="keyword">WORKDIR</span> /app
+
+<span class="keyword">COPY</span> package*.json ./
+<span class="keyword">RUN</span> npm ci
+
+<span class="keyword">COPY</span> . .
+<span class="keyword">RUN</span> npm run build
+
+<span class="comment"># Production stage</span>
+<span class="keyword">FROM</span> nginx:alpine
+
+<span class="keyword">COPY</span> --from=builder /app/dist /usr/share/nginx/html
+<span class="keyword">COPY</span> nginx.conf /etc/nginx/conf.d/default.conf
+
+<span class="keyword">EXPOSE</span> 80
+
+<span class="keyword">CMD</span> ["nginx", "-g", "daemon off;"]
+                </div>
+            </div>
+            
+            <!-- PHẦN 4 -->
+            <div class="section">
+                <h2>4. Nginx Configuration</h2>
+                
+                <div class="code-block">
+<span class="comment"># nginx/nginx.conf</span>
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream backend {
+        server backend:9000;
+    }
+    
+    upstream reverb {
+        server reverb:8080;
+    }
+    
+    upstream frontend {
+        server frontend:80;
+    }
+    
+    server {
+        listen 80;
+        server_name your-domain.com;
+        
+        <span class="comment"># Redirect HTTP to HTTPS</span>
+        return 301 https://$host$request_uri;
+    }
+    
+    server {
+        listen 443 ssl http2;
+        server_name your-domain.com;
+        
+        <span class="comment"># SSL certificates</span>
+        ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+        
+        <span class="comment"># Frontend (React)</span>
+        location / {
+            proxy_pass http://frontend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        
+        <span class="comment"># Backend API</span>
+        location /api {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        
+        <span class="comment"># WebSocket (Reverb)</span>
+        location /app {
+            proxy_pass http://reverb;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 5 -->
+            <div class="section">
+                <h2>5. Setup SSL Certificate</h2>
+                
+                <div class="code-block">
+<span class="comment"># 1. Đăng ký domain (ví dụ: Namecheap, GoDaddy)</span>
+<span class="comment"># 2. Point domain A record to VPS IP</span>
+
+<span class="comment"># 3. Generate SSL certificate</span>
+docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+  --webroot \
+  --webroot-path=/var/www/certbot \
+  -d your-domain.com \
+  -d www.your-domain.com \
+  --email your-email@example.com \
+  --agree-tos
+
+<span class="comment"># 4. Restart Nginx</span>
+docker compose -f docker-compose.prod.yml restart nginx
+                </div>
+                
+                <div class="warning-box">
+                    <h4>⚠️ SSL Certificate Auto-Renewal</h4>
+                    <p>Certbot container sẽ tự động renew certificate mỗi 12 giờ.</p>
+                    <p>Certificate Let's Encrypt có hiệu lực 90 ngày.</p>
+                </div>
+            </div>
+            
+            <!-- PHẦN 6 -->
+            <div class="section">
+                <h2>6. Deploy Application</h2>
+                
+                <h3>🚀 Initial Deploy</h3>
+                
+                <div class="code-block">
+<span class="comment"># 1. Clone repository to VPS</span>
+git clone https://github.com/your-username/pms-vietsovpetro.git
+cd pms-vietsovpetro
+
+<span class="comment"># 2. Setup environment variables</span>
+cp .env.example .env.production
+nano .env.production
+
+<span class="comment"># 3. Build & start containers</span>
+docker compose -f docker-compose.prod.yml up -d --build
+
+<span class="comment"># 4. Run migrations</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+
+<span class="comment"># 5. Generate app key</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan key:generate
+
+<span class="comment"># 6. Cache config</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan config:cache
+docker compose -f docker-compose.prod.yml exec backend php artisan route:cache
+docker compose -f docker-compose.prod.yml exec backend php artisan view:cache
+
+<span class="comment"># 7. Create storage link</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan storage:link
+                </div>
+                
+                <h3>🔄 Update/Redeploy</h3>
+                
+                <div class="code-block">
+<span class="comment"># 1. Pull latest code</span>
+git pull origin main
+
+<span class="comment"># 2. Rebuild containers</span>
+docker compose -f docker-compose.prod.yml up -d --build
+
+<span class="comment"># 3. Run new migrations</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan migrate --force
+
+<span class="comment"># 4. Clear & rebuild cache</span>
+docker compose -f docker-compose.prod.yml exec backend php artisan cache:clear
+docker compose -f docker-compose.prod.yml exec backend php artisan config:cache
+                </div>
+            </div>
+            
+            <!-- PHẦN 7 -->
+            <div class="section">
+                <h2>7. Monitoring & Maintenance</h2>
+                
+                <h3>📊 View Logs</h3>
+                
+                <div class="code-block">
+<span class="comment"># View all logs</span>
+docker compose -f docker-compose.prod.yml logs -f
+
+<span class="comment"># View specific service</span>
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f reverb
+
+<span class="comment"># View Laravel logs</span>
+docker compose -f docker-compose.prod.yml exec backend tail -f storage/logs/laravel.log
+                </div>
+                
+                <h3>💾 Backup Database</h3>
+                
+                <div class="code-block">
+<span class="comment"># PostgreSQL backup</span>
+docker compose -f docker-compose.prod.yml exec postgres pg_dump -U pms_user pms_db > backup_$(date +%Y%m%d).sql
+
+<span class="comment"># MongoDB backup</span>
+docker compose -f docker-compose.prod.yml exec mongodb mongodump --out=/backup
+
+<span class="comment"># Schedule daily backups (crontab)</span>
+crontab -e
+
+<span class="comment"># Add this line:</span>
+0 2 * * * cd /home/pms/pms-vietsovpetro && ./backup.sh
+                </div>
+                
+                <h3>🔍 Health Check</h3>
+                
+                <div class="code-block">
+<span class="comment"># Check running containers</span>
+docker compose -f docker-compose.prod.yml ps
+
+<span class="comment"># Check resource usage</span>
+docker stats
+
+<span class="comment"># Check disk space</span>
+df -h
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ VPS setup & Docker installed</li>
+                    <li>☑️ Docker Compose production configured</li>
+                    <li>☑️ Nginx reverse proxy setup</li>
+                    <li>☑️ SSL certificate (Let's Encrypt)</li>
+                    <li>☑️ Application deployed</li>
+                    <li>☑️ Database migrations run</li>
+                    <li>☑️ Monitoring & logging setup</li>
+                    <li>☑️ Backup strategy implemented</li>
+                    <li>☑️ Auto-renewal SSL configured</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box">
+                <h3>🎉 HOÀN THÀNH!</h3>
+                <p style="font-size: 1.1em; margin: 15px 0;">
+                    Bạn đã deploy thành công PMS Vietsovpetro MVP lên production!
+                </p>
+                <p><strong>Truy cập:</strong></p>
+                <ul>
+                    <li>Frontend: <code>https://your-domain.com</code></li>
+                    <li>API: <code>https://your-domain.com/api</code></li>
+                    <li>WebSocket: <code>wss://your-domain.com/app</code></li>
+                </ul>
+                
+                <p style="margin-top: 20px;"><strong>🚀 Next Steps:</strong></p>
+                <ul>
+                    <li>Setup monitoring (optional: Sentry, New Relic)</li>
+                    <li>Configure automated backups to cloud storage</li>
+                    <li>Add more features based on user feedback</li>
+                    <li>Scale up VPS nếu users tăng > 200</li>
+                </ul>
+            </div>
+            
+            <div class="warning-box">
+                <h3>💡 Tips Quan Trọng</h3>
+                <ul>
+                    <li>Thường xuyên backup database (tự động hàng ngày)</li>
+                    <li>Monitor server resources (CPU, RAM, Disk)</li>
+                    <li>Update Docker images thường xuyên (security patches)</li>
+                    <li>Test trên staging environment trước khi deploy production</li>
+                    <li>Document mọi thay đổi và configs</li>
+                </ul>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_STEP_05_WEBSOCKET.html" class="btn btn-secondary">← Bước 5: WebSocket</a>
+                <a href="PMS_SETUP_INDEX.html" class="btn">🏠 Về Trang Chủ</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

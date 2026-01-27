@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 3: Backend API - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Bước 3: Backend API</h1>
+            <p>Xây dựng Laravel REST API với Authentication</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_02_DATABASE.html">← Bước 2</a>
+            <a href="PMS_STEP_04_FRONTEND.html">Bước 4 →</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Setup Laravel Sanctum (Token Authentication)</li>
+                    <li>✅ Tạo Controllers & Request Validation</li>
+                    <li>✅ Định nghĩa API Routes</li>
+                    <li>✅ Implement CRUD cho Tasks & Plans</li>
+                    <li>✅ File upload handling</li>
+                    <li>✅ API testing với Thunder Client</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1 -->
+            <div class="section">
+                <h2>1. Laravel Sanctum - Authentication</h2>
+                
+                <h3>📦 Setup Sanctum</h3>
+                
+                <div class="code-block">
+<span class="comment"># 1. Install Sanctum (đã cài ở Bước 1)</span>
+composer require laravel/sanctum
+
+<span class="comment"># 2. Publish config</span>
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+<span class="comment"># 3. Run migration</span>
+php artisan migrate
+                </div>
+                
+                <h3>⚙️ Cấu Hình User Model</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Models/User.php</span>
+<span class="keyword">namespace</span> App\Models;
+
+<span class="keyword">use</span> Illuminate\Foundation\Auth\User <span class="keyword">as</span> Authenticatable;
+<span class="keyword">use</span> Laravel\Sanctum\HasApiTokens;
+
+<span class="keyword">class</span> <span class="function">User</span> <span class="keyword">extends</span> Authenticatable
+{
+    <span class="keyword">use</span> HasApiTokens; <span class="comment">// ← Thêm trait này</span>
+    
+    <span class="keyword">protected</span> $fillable = [
+        <span class="string">'name'</span>, <span class="string">'email'</span>, <span class="string">'password'</span>, <span class="string">'role_id'</span>, 
+        <span class="string">'enterprise_id'</span>, <span class="string">'avatar_url'</span>, <span class="string">'status'</span>
+    ];
+    
+    <span class="keyword">protected</span> $hidden = [
+        <span class="string">'password'</span>, <span class="string">'remember_token'</span>,
+    ];
+    
+    <span class="keyword">protected</span> $casts = [
+        <span class="string">'password'</span> => <span class="string">'hashed'</span>,
+        <span class="string">'last_login_at'</span> => <span class="string">'datetime'</span>,
+    ];
+    
+    <span class="keyword">public function</span> <span class="function">role</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">belongsTo</span>(Role::<span class="keyword">class</span>);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">enterprise</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">belongsTo</span>(Enterprise::<span class="keyword">class</span>);
+    }
+}
+                </div>
+                
+                <h3>🔐 Auth Controller</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Controllers/AuthController.php</span>
+<span class="keyword">namespace</span> App\Http\Controllers;
+
+<span class="keyword">use</span> App\Models\User;
+<span class="keyword">use</span> Illuminate\Http\Request;
+<span class="keyword">use</span> Illuminate\Support\Facades\Hash;
+<span class="keyword">use</span> Illuminate\Validation\ValidationException;
+
+<span class="keyword">class</span> <span class="function">AuthController</span> <span class="keyword">extends</span> Controller
+{
+    <span class="keyword">public function</span> <span class="function">login</span>(Request $request)
+    {
+        $request-><span class="function">validate</span>([
+            <span class="string">'email'</span> => <span class="string">'required|email'</span>,
+            <span class="string">'password'</span> => <span class="string">'required'</span>,
+        ]);
+        
+        $user = User::<span class="function">where</span>(<span class="string">'email'</span>, $request->email)-><span class="function">first</span>();
+        
+        <span class="keyword">if</span> (! $user || ! Hash::<span class="function">check</span>($request->password, $user->password)) {
+            <span class="keyword">throw</span> ValidationException::<span class="function">withMessages</span>([
+                <span class="string">'email'</span> => [<span class="string">'The provided credentials are incorrect.'</span>],
+            ]);
+        }
+        
+        <span class="comment">// Update last login</span>
+        $user-><span class="function">update</span>([<span class="string">'last_login_at'</span> => <span class="function">now</span>()]);
+        
+        <span class="comment">// Create token</span>
+        $token = $user-><span class="function">createToken</span>(<span class="string">'auth-token'</span>)-><span class="function">plainTextToken</span>;
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([
+            <span class="string">'user'</span> => $user-><span class="function">load</span>([<span class="string">'role'</span>, <span class="string">'enterprise'</span>]),
+            <span class="string">'token'</span> => $token,
+        ]);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">logout</span>(Request $request)
+    {
+        $request-><span class="function">user</span>()-><span class="function">currentAccessToken</span>()-><span class="function">delete</span>();
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([<span class="string">'message'</span> => <span class="string">'Logged out successfully'</span>]);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">me</span>(Request $request)
+    {
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([
+            <span class="string">'user'</span> => $request-><span class="function">user</span>()-><span class="function">load</span>([<span class="string">'role'</span>, <span class="string">'enterprise'</span>])
+        ]);
+    }
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 2 -->
+            <div class="section">
+                <h2>2. Production Plans API</h2>
+                
+                <h3>📋 Request Validation</h3>
+                
+                <div class="code-block">
+<span class="comment"># Tạo Form Request</span>
+php artisan make:request StoreProductionPlanRequest
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Requests/StoreProductionPlanRequest.php</span>
+<span class="keyword">namespace</span> App\Http\Requests;
+
+<span class="keyword">use</span> Illuminate\Foundation\Http\FormRequest;
+
+<span class="keyword">class</span> <span class="function">StoreProductionPlanRequest</span> <span class="keyword">extends</span> FormRequest
+{
+    <span class="keyword">public function</span> <span class="function">authorize</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">true</span>; <span class="comment">// Or check permissions</span>
+    }
+    
+    <span class="keyword">public function</span> <span class="function">rules</span>()
+    {
+        <span class="keyword">return</span> [
+            <span class="string">'name'</span> => <span class="string">'required|string|max:255'</span>,
+            <span class="string">'code'</span> => <span class="string">'required|string|unique:production_plans'</span>,
+            <span class="string">'description'</span> => <span class="string">'nullable|string'</span>,
+            <span class="string">'start_date'</span> => <span class="string">'required|date'</span>,
+            <span class="string">'end_date'</span> => <span class="string">'required|date|after:start_date'</span>,
+            <span class="string">'status'</span> => <span class="string">'in:draft,planning,in_progress,completed,cancelled'</span>,
+        ];
+    }
+}
+                </div>
+                
+                <h3>🎯 Controller</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Controllers/ProductionPlanController.php</span>
+<span class="keyword">namespace</span> App\Http\Controllers;
+
+<span class="keyword">use</span> App\Models\ProductionPlan;
+<span class="keyword">use</span> App\Http\Requests\StoreProductionPlanRequest;
+<span class="keyword">use</span> Illuminate\Http\Request;
+
+<span class="keyword">class</span> <span class="function">ProductionPlanController</span> <span class="keyword">extends</span> Controller
+{
+    <span class="keyword">public function</span> <span class="function">index</span>(Request $request)
+    {
+        $query = ProductionPlan::<span class="function">with</span>([<span class="string">'enterprise'</span>, <span class="string">'createdBy'</span>]);
+        
+        <span class="comment">// Filter by enterprise (if not admin)</span>
+        <span class="keyword">if</span> ($request-><span class="function">user</span>()->role->slug !== <span class="string">'admin'</span>) {
+            $query-><span class="function">where</span>(<span class="string">'enterprise_id'</span>, $request-><span class="function">user</span>()->enterprise_id);
+        }
+        
+        <span class="comment">// Filters</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'status'</span>)) {
+            $query-><span class="function">where</span>(<span class="string">'status'</span>, $request->status);
+        }
+        
+        <span class="comment">// Pagination</span>
+        $plans = $query-><span class="function">paginate</span>(20);
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($plans);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">store</span>(StoreProductionPlanRequest $request)
+    {
+        $plan = ProductionPlan::<span class="function">create</span>([
+            ...$request-><span class="function">validated</span>(),
+            <span class="string">'enterprise_id'</span> => $request-><span class="function">user</span>()->enterprise_id,
+            <span class="string">'created_by'</span> => $request-><span class="function">user</span>()->id,
+        ]);
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($plan-><span class="function">load</span>([<span class="string">'enterprise'</span>, <span class="string">'createdBy'</span>]), 201);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">show</span>($id)
+    {
+        $plan = ProductionPlan::<span class="function">with</span>([<span class="string">'enterprise'</span>, <span class="string">'createdBy'</span>, <span class="string">'tasks'</span>])
+            -><span class="function">findOrFail</span>($id);
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($plan);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">update</span>(Request $request, $id)
+    {
+        $plan = ProductionPlan::<span class="function">findOrFail</span>($id);
+        
+        $plan-><span class="function">update</span>($request-><span class="function">validated</span>());
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($plan-><span class="function">load</span>([<span class="string">'enterprise'</span>, <span class="string">'createdBy'</span>]));
+    }
+    
+    <span class="keyword">public function</span> <span class="function">destroy</span>($id)
+    {
+        $plan = ProductionPlan::<span class="function">findOrFail</span>($id);
+        $plan-><span class="function">delete</span>();
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([<span class="string">'message'</span> => <span class="string">'Plan deleted'</span>]);
+    }
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 3 -->
+            <div class="section">
+                <h2>3. Tasks API (với MongoDB)</h2>
+                
+                <h3>✅ Task Controller</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Controllers/TaskController.php</span>
+<span class="keyword">namespace</span> App\Http\Controllers;
+
+<span class="keyword">use</span> App\Models\Task;
+<span class="keyword">use</span> App\Models\TaskDetail;
+<span class="keyword">use</span> App\Events\TaskUpdated;
+<span class="keyword">use</span> Illuminate\Http\Request;
+
+<span class="keyword">class</span> <span class="function">TaskController</span> <span class="keyword">extends</span> Controller
+{
+    <span class="keyword">public function</span> <span class="function">index</span>(Request $request)
+    {
+        $query = Task::<span class="function">with</span>([<span class="string">'plan'</span>, <span class="string">'assignedUser'</span>]);
+        
+        <span class="comment">// Filter by plan</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'plan_id'</span>)) {
+            $query-><span class="function">where</span>(<span class="string">'plan_id'</span>, $request->plan_id);
+        }
+        
+        <span class="comment">// Filter by status</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'status'</span>)) {
+            $query-><span class="function">where</span>(<span class="string">'status'</span>, $request->status);
+        }
+        
+        <span class="comment">// Filter by assigned user</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'assigned_to'</span>)) {
+            $query-><span class="function">where</span>(<span class="string">'assigned_to'</span>, $request->assigned_to);
+        }
+        
+        $tasks = $query-><span class="function">orderBy</span>(<span class="string">'order'</span>)-><span class="function">get</span>();
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($tasks);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">store</span>(Request $request)
+    {
+        $validated = $request-><span class="function">validate</span>([
+            <span class="string">'plan_id'</span> => <span class="string">'required|exists:production_plans,id'</span>,
+            <span class="string">'name'</span> => <span class="string">'required|string|max:255'</span>,
+            <span class="string">'description'</span> => <span class="string">'nullable|string'</span>,
+            <span class="string">'assigned_to'</span> => <span class="string">'nullable|exists:users,id'</span>,
+            <span class="string">'status'</span> => <span class="string">'in:todo,in_progress,review,done'</span>,
+            <span class="string">'priority'</span> => <span class="string">'in:low,medium,high,urgent'</span>,
+            <span class="string">'start_date'</span> => <span class="string">'nullable|date'</span>,
+            <span class="string">'end_date'</span> => <span class="string">'nullable|date'</span>,
+            <span class="string">'custom_data'</span> => <span class="string">'nullable|array'</span>, <span class="comment">// For MongoDB</span>
+        ]);
+        
+        <span class="comment">// Create in PostgreSQL</span>
+        $task = Task::<span class="function">create</span>($validated);
+        
+        <span class="comment">// Save custom data to MongoDB</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'custom_data'</span>)) {
+            TaskDetail::<span class="function">create</span>([
+                <span class="string">'task_id'</span> => $task->id,
+                <span class="string">'custom_data'</span> => $request->custom_data,
+            ]);
+        }
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($task-><span class="function">load</span>([<span class="string">'plan'</span>, <span class="string">'assignedUser'</span>]), 201);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">show</span>($id)
+    {
+        $task = Task::<span class="function">with</span>([<span class="string">'plan'</span>, <span class="string">'assignedUser'</span>])-><span class="function">findOrFail</span>($id);
+        
+        <span class="comment">// Load MongoDB details</span>
+        $details = TaskDetail::<span class="function">where</span>(<span class="string">'task_id'</span>, $id)-><span class="function">first</span>();
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([
+            <span class="string">'task'</span> => $task,
+            <span class="string">'details'</span> => $details,
+        ]);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">update</span>(Request $request, $id)
+    {
+        $task = Task::<span class="function">findOrFail</span>($id);
+        
+        $oldStatus = $task->status;
+        
+        $task-><span class="function">update</span>($request-><span class="function">only</span>([
+            <span class="string">'name'</span>, <span class="string">'description'</span>, <span class="string">'assigned_to'</span>, <span class="string">'status'</span>,
+            <span class="string">'priority'</span>, <span class="string">'start_date'</span>, <span class="string">'end_date'</span>, <span class="string">'progress'</span>
+        ]));
+        
+        <span class="comment">// Update MongoDB details if needed</span>
+        <span class="keyword">if</span> ($request-><span class="function">has</span>(<span class="string">'custom_data'</span>)) {
+            TaskDetail::<span class="function">updateOrCreate</span>(
+                [<span class="string">'task_id'</span> => $id],
+                [<span class="string">'custom_data'</span> => $request->custom_data]
+            );
+        }
+        
+        <span class="comment">// Broadcast event (WebSocket)</span>
+        <span class="function">event</span>(<span class="keyword">new</span> <span class="function">TaskUpdated</span>(
+            $task, 
+            $oldStatus !== $task->status ? <span class="string">'status_changed'</span> : <span class="string">'updated'</span>
+        ));
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>($task-><span class="function">load</span>([<span class="string">'plan'</span>, <span class="string">'assignedUser'</span>]));
+    }
+    
+    <span class="keyword">public function</span> <span class="function">updateOrder</span>(Request $request)
+    {
+        <span class="comment">// Bulk update task order for Kanban drag & drop</span>
+        $request-><span class="function">validate</span>([
+            <span class="string">'tasks'</span> => <span class="string">'required|array'</span>,
+            <span class="string">'tasks.*.id'</span> => <span class="string">'required|exists:tasks,id'</span>,
+            <span class="string">'tasks.*.order'</span> => <span class="string">'required|integer'</span>,
+            <span class="string">'tasks.*.status'</span> => <span class="string">'required|string'</span>,
+        ]);
+        
+        <span class="keyword">foreach</span> ($request->tasks <span class="keyword">as</span> $taskData) {
+            Task::<span class="function">where</span>(<span class="string">'id'</span>, $taskData[<span class="string">'id'</span>])-><span class="function">update</span>([
+                <span class="string">'order'</span> => $taskData[<span class="string">'order'</span>],
+                <span class="string">'status'</span> => $taskData[<span class="string">'status'</span>],
+            ]);
+        }
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([<span class="string">'message'</span> => <span class="string">'Order updated'</span>]);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">destroy</span>($id)
+    {
+        $task = Task::<span class="function">findOrFail</span>($id);
+        
+        <span class="comment">// Delete MongoDB details</span>
+        TaskDetail::<span class="function">where</span>(<span class="string">'task_id'</span>, $id)-><span class="function">delete</span>();
+        
+        <span class="comment">// Delete task</span>
+        $task-><span class="function">delete</span>();
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([<span class="string">'message'</span> => <span class="string">'Task deleted'</span>]);
+    }
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 4 -->
+            <div class="section">
+                <h2>4. File Upload API</h2>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Controllers/FileUploadController.php</span>
+<span class="keyword">namespace</span> App\Http\Controllers;
+
+<span class="keyword">use</span> Illuminate\Http\Request;
+<span class="keyword">use</span> Illuminate\Support\Facades\Storage;
+
+<span class="keyword">class</span> <span class="function">FileUploadController</span> <span class="keyword">extends</span> Controller
+{
+    <span class="keyword">public function</span> <span class="function">upload</span>(Request $request)
+    {
+        $request-><span class="function">validate</span>([
+            <span class="string">'file'</span> => <span class="string">'required|file|max:10240'</span>, <span class="comment">// Max 10MB</span>
+        ]);
+        
+        $file = $request-><span class="function">file</span>(<span class="string">'file'</span>);
+        $filename = <span class="function">time</span>() . <span class="string">'_'</span> . $file-><span class="function">getClientOriginalName</span>();
+        
+        <span class="comment">// Store in public disk</span>
+        $path = $file-><span class="function">storeAs</span>(<span class="string">'uploads'</span>, $filename, <span class="string">'public'</span>);
+        
+        <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([
+            <span class="string">'filename'</span> => $filename,
+            <span class="string">'url'</span> => Storage::<span class="function">url</span>($path),
+            <span class="string">'size'</span> => $file-><span class="function">getSize</span>(),
+        ]);
+    }
+}
+                </div>
+                
+                <div class="code-block">
+<span class="comment"># Tạo symbolic link cho storage/public</span>
+php artisan storage:link
+                </div>
+            </div>
+            
+            <!-- PHẦN 5 -->
+            <div class="section">
+                <h2>5. API Routes</h2>
+                
+                <div class="code-block">
+<span class="comment">// routes/api.php</span>
+<span class="keyword">use</span> App\Http\Controllers\AuthController;
+<span class="keyword">use</span> App\Http\Controllers\ProductionPlanController;
+<span class="keyword">use</span> App\Http\Controllers\TaskController;
+<span class="keyword">use</span> App\Http\Controllers\FileUploadController;
+
+<span class="comment">// Public routes</span>
+Route::<span class="function">post</span>(<span class="string">'/login'</span>, [AuthController::<span class="keyword">class</span>, <span class="string">'login'</span>]);
+
+<span class="comment">// Protected routes</span>
+Route::<span class="function">middleware</span>(<span class="string">'auth:sanctum'</span>)-><span class="function">group</span>(<span class="keyword">function</span> () {
+    <span class="comment">// Auth</span>
+    Route::<span class="function">post</span>(<span class="string">'/logout'</span>, [AuthController::<span class="keyword">class</span>, <span class="string">'logout'</span>]);
+    Route::<span class="function">get</span>(<span class="string">'/me'</span>, [AuthController::<span class="keyword">class</span>, <span class="string">'me'</span>]);
+    
+    <span class="comment">// Production Plans</span>
+    Route::<span class="function">apiResource</span>(<span class="string">'plans'</span>, ProductionPlanController::<span class="keyword">class</span>);
+    
+    <span class="comment">// Tasks</span>
+    Route::<span class="function">apiResource</span>(<span class="string">'tasks'</span>, TaskController::<span class="keyword">class</span>);
+    Route::<span class="function">post</span>(<span class="string">'/tasks/update-order'</span>, [TaskController::<span class="keyword">class</span>, <span class="string">'updateOrder'</span>]);
+    
+    <span class="comment">// File upload</span>
+    Route::<span class="function">post</span>(<span class="string">'/upload'</span>, [FileUploadController::<span class="keyword">class</span>, <span class="string">'upload'</span>]);
+});
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>📋 API Endpoints Summary</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>POST</td><td>/api/login</td><td>Login & get token</td></tr>
+                            <tr><td>POST</td><td>/api/logout</td><td>Logout (revoke token)</td></tr>
+                            <tr><td>GET</td><td>/api/me</td><td>Get current user</td></tr>
+                            <tr><td>GET</td><td>/api/plans</td><td>List all plans</td></tr>
+                            <tr><td>POST</td><td>/api/plans</td><td>Create plan</td></tr>
+                            <tr><td>GET</td><td>/api/plans/{id}</td><td>Get plan details</td></tr>
+                            <tr><td>PUT</td><td>/api/plans/{id}</td><td>Update plan</td></tr>
+                            <tr><td>DELETE</td><td>/api/plans/{id}</td><td>Delete plan</td></tr>
+                            <tr><td>GET</td><td>/api/tasks</td><td>List tasks (with filters)</td></tr>
+                            <tr><td>POST</td><td>/api/tasks</td><td>Create task</td></tr>
+                            <tr><td>GET</td><td>/api/tasks/{id}</td><td>Get task with MongoDB details</td></tr>
+                            <tr><td>PUT</td><td>/api/tasks/{id}</td><td>Update task + broadcast event</td></tr>
+                            <tr><td>POST</td><td>/api/tasks/update-order</td><td>Bulk update order (Kanban)</td></tr>
+                            <tr><td>DELETE</td><td>/api/tasks/{id}</td><td>Delete task + MongoDB data</td></tr>
+                            <tr><td>POST</td><td>/api/upload</td><td>Upload file</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- PHẦN 6 -->
+            <div class="section">
+                <h2>6. Testing với Thunder Client</h2>
+                
+                <div class="warning-box">
+                    <h3>🧪 Thunder Client Setup</h3>
+                    <ol>
+                        <li>Mở VS Code</li>
+                        <li>Click icon Thunder Client ở sidebar</li>
+                        <li>New Request</li>
+                    </ol>
+                </div>
+                
+                <h3>1️⃣ Test Login</h3>
+                
+                <div class="code-block">
+<span class="keyword">POST</span> http://localhost:8000/api/login
+<span class="keyword">Content-Type:</span> application/json
+
+{
+    <span class="string">"email"</span>: <span class="string">"admin@vsp.com"</span>,
+    <span class="string">"password"</span>: <span class="string">"password"</span>
+}
+
+<span class="comment">// Response:</span>
+{
+    <span class="string">"user"</span>: { ... },
+    <span class="string">"token"</span>: <span class="string">"1|xxxxxxxxxxxxxxxxxxxxx"</span>
+}
+                </div>
+                
+                <h3>2️⃣ Test Create Task (với token)</h3>
+                
+                <div class="code-block">
+<span class="keyword">POST</span> http://localhost:8000/api/tasks
+<span class="keyword">Authorization:</span> Bearer 1|xxxxxxxxxxxxxxxxxxxxx
+<span class="keyword">Content-Type:</span> application/json
+
+{
+    <span class="string">"plan_id"</span>: 1,
+    <span class="string">"name"</span>: <span class="string">"Khoan giếng thăm dò A1"</span>,
+    <span class="string">"description"</span>: <span class="string">"Khoan giếng thăm dò tại vị trí A1"</span>,
+    <span class="string">"assigned_to"</span>: 2,
+    <span class="string">"status"</span>: <span class="string">"todo"</span>,
+    <span class="string">"priority"</span>: <span class="string">"high"</span>,
+    <span class="string">"custom_data"</span>: {
+        <span class="string">"well_depth"</span>: 3500,
+        <span class="string">"oil_type"</span>: <span class="string">"Crude"</span>
+    }
+}
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ Laravel Sanctum setup</li>
+                    <li>☑️ Auth endpoints (login, logout, me)</li>
+                    <li>☑️ Production Plans CRUD API</li>
+                    <li>☑️ Tasks CRUD API with MongoDB integration</li>
+                    <li>☑️ File upload API</li>
+                    <li>☑️ API routes defined</li>
+                    <li>☑️ Request validation implemented</li>
+                    <li>☑️ WebSocket event broadcasting (TaskUpdated)</li>
+                    <li>☑️ Tested với Thunder Client</li>
+                </ul>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_STEP_02_DATABASE.html" class="btn btn-secondary">← Bước 2: Database</a>
+                <a href="PMS_STEP_04_FRONTEND.html" class="btn">Bước 4: Frontend UI →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

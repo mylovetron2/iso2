@@ -82,17 +82,46 @@ header('Cache-Control: max-age=0');
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
     <meta charset="utf-8">
+    <xml>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+        </w:WordDocument>
+    </xml>
     <style>
-        body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid black; padding: 5px; text-align: center; }
+        @page {
+            size: A4 landscape;
+            margin: 1cm 0.5cm 1cm 0.5cm;
+            mso-page-orientation: landscape;
+        }
+        @page Section1 {
+            size: 297mm 210mm;
+            mso-page-orientation: landscape;
+        }
+        div.Section1 { page: Section1; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            font-size: 12pt;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%;
+            table-layout: fixed;
+        }
+        th, td { 
+            border: 1px solid black; 
+            padding: 3px; 
+            text-align: center;
+            font-size: 12pt;
+        }
         th { background-color: #CCCCCC; font-weight: bold; }
-        .title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px; }
+        .title { text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 15px; }
         .highlight-green { background-color: #2196F3; }
         .highlight-orange { background-color: #FF9800; }
     </style>
 </head>
 <body>
+<div class="Section1">
     <div style="position: relative;">
         <img src="logo.jpg" alt="Logo" style="position: absolute; left: 20px; top: 10px; height: 80px;">
     </div>
@@ -106,20 +135,32 @@ header('Cache-Control: max-age=0');
     </div>
     
     <table>
+        <colgroup>
+            <col style="width: 30px;">  <!-- STT -->
+            <col style="width: 200px;"> <!-- Tên thiết bị -->
+            <col style="width: 80px;">  <!-- Ký hiệu -->
+            <col style="width: 80px;">  <!-- Số máy -->
+            <col style="width: 100px;"> <!-- Hãng SX -->
+            <col style="width: 120px;"> <!-- Nơi thực hiện -->
+            <?php for ($i = 1; $i <= 12; $i++): ?>
+                <col style="width: 60px;"> <!-- Tháng <?= $i ?> -->
+            <?php endfor; ?>
+            <col style="width: 120px;"> <!-- Chủ sở hữu -->
+        </colgroup>
         <thead>
             <tr>
-                <th rowspan="2" style="width: 30px;">STT</th>
-                <th rowspan="2" style="width: 200px;">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
-                <th rowspan="2" style="width: 80px;">Ký/Mã hiệu</th>
-                <th rowspan="2" style="width: 80px;">Số máy</th>
-                <th rowspan="2" style="width: 100px;">Nước/Hãng SX</th>
-                <th rowspan="2" style="width: 120px;">Nơi thực hiện</th>
+                <th rowspan="2">STT</th>
+                <th rowspan="2">Tên thiết bị, mẫu chuẩn/Vật chuẩn</th>
+                <th rowspan="2">Ký/Mã hiệu</th>
+                <th rowspan="2">Số máy</th>
+                <th rowspan="2">Nước/Hãng SX</th>
+                <th rowspan="2">Nơi thực hiện</th>
                 <th colspan="12">Tháng</th>
-                <th rowspan="2" style="width: 120px;">Chủ sở hữu</th>
+                <th rowspan="2">Chủ sở hữu</th>
             </tr>
             <tr>
                 <?php for ($i = 1; $i <= 12; $i++): ?>
-                    <th style="width: 30px;"><?= $i ?></th>
+                    <th><?= $i ?></th>
                 <?php endfor; ?>
             </tr>
         </thead>
@@ -172,13 +213,16 @@ header('Cache-Control: max-age=0');
                     }
                     
                     $highlightClass = '';
+                    $styleAttr = ' style="width: 60px; min-width: 60px;"';
                     if ($isGreen) {
                         $highlightClass = ' class="highlight-green"';
+                        $styleAttr = ' style="width: 60px; min-width: 60px; background-color: #2196F3;"';
                     } elseif ($isOrange) {
                         $highlightClass = ' class="highlight-orange"';
+                        $styleAttr = ' style="width: 60px; min-width: 60px; background-color: #FF9800;"';
                     }
                 ?>
-                    <td<?= $highlightClass ?>>&nbsp;</td>
+                    <td<?= $styleAttr ?>>&nbsp;</td>
                 <?php endfor; ?>
                 
                 <?php 
@@ -201,5 +245,6 @@ header('Cache-Control: max-age=0');
             <?php endforeach; ?>
         </tbody>
     </table>
+</div>
 </body>
 </html>

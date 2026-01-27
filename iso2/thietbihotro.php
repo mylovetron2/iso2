@@ -41,6 +41,9 @@ switch ($action) {
             header('Location: thietbihotro.php');
         }
         break;
+    case 'exportpdf':
+        $controller->exportPdf();
+        break;
     default:
         $controller->index();
         break;

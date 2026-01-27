@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 1: Setup Môi Trường - PMS Tutorial</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+        .container { max-width: 1200px; margin: 0 auto; background: white; }
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px 40px;
+        }
+        .breadcrumb {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .breadcrumb a { color: white; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .content { padding: 40px; }
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .section:last-child { border-bottom: none; }
+        h2 {
+            color: #1e3c72;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+        }
+        h3 {
+            color: #2a5298;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            position: relative;
+        }
+        .code-block .comment { color: #75715e; }
+        .code-block .command { color: #66d9ef; }
+        .code-block .string { color: #e6db74; }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .copy-btn:hover { background: #5568d3; }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9fafb;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .checklist li::before {
+            content: '☐ ';
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table tr:hover { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="breadcrumb">
+                <a href="index.html">🏠 Trang chủ</a> / Bước 1
+            </div>
+            <h1>🔧 Bước 1: Setup Môi Trường Phát Triển</h1>
+            <p>Thời gian: 1-2 tuần | Cấu hình đầy đủ Laravel, PostgreSQL, MongoDB và Docker</p>
+        </header>
+        
+        <div class="content">
+            <!-- PHẦN 1: YÊU CẦU HỆ THỐNG -->
+            <section class="section">
+                <h2>💻 1. Yêu Cầu Hệ Thống</h2>
+                
+                <h3>Phần cứng tối thiểu:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành phần</th>
+                            <th>Yêu cầu</th>
+                            <th>Khuyến nghị</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CPU</td>
+                            <td>2 cores</td>
+                            <td>4+ cores (Intel i5/i7, AMD Ryzen 5/7)</td>
+                        </tr>
+                        <tr>
+                            <td>RAM</td>
+                            <td>8 GB</td>
+                            <td>16 GB+</td>
+                        </tr>
+                        <tr>
+                            <td>Ổ cứng</td>
+                            <td>50 GB trống</td>
+                            <td>100 GB+ SSD</td>
+                        </tr>
+                        <tr>
+                            <td>Hệ điều hành</td>
+                            <td colspan="2">Windows 10/11, macOS 12+, Ubuntu 20.04+</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="info-box">
+                    <strong>💡 Lưu ý:</strong> Với Docker Desktop, bạn cần tối thiểu 8GB RAM. Nếu máy có 8GB, nên tắt các ứng dụng nặng khác khi phát triển.
+                </div>
+            </section>
+            
+            <!-- PHẦN 2: CÀI ĐẶT PHP & COMPOSER -->
+            <section class="section">
+                <h2>🐘 2. Cài Đặt PHP 8.2 & Composer</h2>
+                
+                <h3>Windows:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># 1. Download PHP 8.2 từ https://windows.php.net/download/</span>
+<span class="comment"># 2. Giải nén vào C:\php82</span>
+<span class="comment"># 3. Thêm C:\php82 vào PATH</span>
+
+<span class="comment"># 4. Copy php.ini-development thành php.ini</span>
+copy C:\php82\php.ini-development C:\php82\php.ini
+
+<span class="comment"># 5. Bật các extension cần thiết trong php.ini</span>
+<span class="comment"># Mở file C:\php82\php.ini và uncomment các dòng sau:</span>
+extension=pdo_pgsql
+extension=pgsql
+extension=mongodb
+extension=redis
+extension=curl
+extension=mbstring
+extension=fileinfo
+
+<span class="comment"># 6. Kiểm tra</span>
+php -v
+                </div>
+                
+                <h3>macOS (với Homebrew):</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+brew install php@8.2
+brew link php@8.2
+brew install mongodb/brew/mongodb-community
+pecl install mongodb redis
+
+<span class="comment"># Kiểm tra</span>
+php -v
+                </div>
+                
+                <h3>Ubuntu/Debian:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+sudo apt update
+sudo apt install php8.2 php8.2-cli php8.2-fpm php8.2-pgsql php8.2-mbstring \
+    php8.2-xml php8.2-curl php8.2-zip php8.2-redis
+
+<span class="comment"># Cài MongoDB extension</span>
+sudo pecl install mongodb
+echo "extension=mongodb.so" | sudo tee /etc/php/8.2/mods-available/mongodb.ini
+sudo phpenmod mongodb
+
+<span class="comment"># Kiểm tra</span>
+php -v
+                </div>
+                
+                <h3>Cài đặt Composer:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># Download và cài đặt Composer</span>
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+
+<span class="comment"># Di chuyển vào PATH (Linux/macOS)</span>
+sudo mv composer.phar /usr/local/bin/composer
+
+<span class="comment"># Windows: Di chuyển vào C:\php82\composer.bat</span>
+
+<span class="comment"># Kiểm tra</span>
+composer --version
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Kiểm tra thành công:</strong>
+                    <div class="code-block" style="margin-top: 10px;">
+$ php -v
+PHP 8.2.15 (cli)
+
+$ composer --version
+Composer version 2.6.6
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PHẦN 3: CÀI ĐẶT NODE.JS -->
+            <section class="section">
+                <h2>⚡ 3. Cài Đặt Node.js & npm</h2>
+                
+                <div class="info-box">
+                    <strong>💡 Khuyến nghị:</strong> Sử dụng Node.js v18 LTS hoặc v20 LTS
+                </div>
+                
+                <h3>Windows/macOS:</h3>
+                <p>Download installer từ <a href="https://nodejs.org" target="_blank">https://nodejs.org</a> và cài đặt</p>
+                
+                <h3>Ubuntu/Debian:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># Sử dụng NVM (Node Version Manager) - Khuyến nghị</span>
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+
+nvm install 20
+nvm use 20
+
+<span class="comment"># Kiểm tra</span>
+node -v
+npm -v
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Kiểm tra thành công:</strong>
+                    <div class="code-block" style="margin-top: 10px;">
+$ node -v
+v20.11.0
+
+$ npm -v
+10.2.4
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PHẦN 4: CÀI ĐẶT DOCKER -->
+            <section class="section">
+                <h2>🐳 4. Cài Đặt Docker Desktop</h2>
+                
+                <h3>Windows/macOS:</h3>
+                <ol>
+                    <li>Download Docker Desktop từ <a href="https://www.docker.com/products/docker-desktop" target="_blank">https://www.docker.com/products/docker-desktop</a></li>
+                    <li>Cài đặt và khởi động Docker Desktop</li>
+                    <li>Chờ Docker daemon khởi động (có thể mất vài phút)</li>
+                </ol>
+                
+                <h3>Ubuntu:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># Cài đặt Docker Engine</span>
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+<span class="comment"># Thêm user vào docker group</span>
+sudo usermod -aG docker $USER
+
+<span class="comment"># Cài Docker Compose</span>
+sudo apt install docker-compose-plugin
+
+<span class="comment"># Khởi động Docker service</span>
+sudo systemctl start docker
+sudo systemctl enable docker
+
+<span class="comment"># Kiểm tra</span>
+docker --version
+docker compose version
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Kiểm tra thành công:</strong>
+                    <div class="code-block" style="margin-top: 10px;">
+$ docker --version
+Docker version 24.0.7
+
+$ docker compose version
+Docker Compose version v2.23.3
+
+<span class="comment"># Test chạy container</span>
+$ docker run hello-world
+Hello from Docker!
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PHẦN 5: CÀI ĐẶT DATABASE -->
+            <section class="section">
+                <h2>🗄️ 5. Setup PostgreSQL & MongoDB</h2>
+                
+                <div class="info-box">
+                    <strong>💡 Khuyến nghị:</strong> Sử dụng Docker để chạy databases thay vì cài đặt trực tiếp. Dễ quản lý và xóa bỏ hơn.
+                </div>
+                
+                <h3>Tạo file docker-compose.yml:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># docker-compose.yml</span>
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pms_postgres
+    environment:
+      POSTGRES_DB: pms_core
+      POSTGRES_USER: pms_user
+      POSTGRES_PASSWORD: pms_pass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pms_network
+
+  mongodb:
+    image: mongo:7
+    container_name: pms_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: pms_dynamic
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - pms_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pms_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pms_network
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+
+networks:
+  pms_network:
+    driver: bridge
+                </div>
+                
+                <h3>Khởi động databases:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># Khởi động tất cả services</span>
+docker compose up -d
+
+<span class="comment"># Kiểm tra services đang chạy</span>
+docker compose ps
+
+<span class="comment"># Xem logs</span>
+docker compose logs -f
+
+<span class="comment"># Dừng services</span>
+docker compose down
+
+<span class="comment"># Dừng và xóa data</span>
+docker compose down -v
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Test kết nối:</strong>
+                    <div class="code-block" style="margin-top: 10px;">
+<span class="comment"># Test PostgreSQL</span>
+docker exec -it pms_postgres psql -U pms_user -d pms_core
+
+<span class="comment"># Test MongoDB</span>
+docker exec -it pms_mongodb mongosh -u admin -p admin123
+
+<span class="comment"># Test Redis</span>
+docker exec -it pms_redis redis-cli ping
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PHẦN 6: IDE SETUP -->
+            <section class="section">
+                <h2>💻 6. IDE Setup - VS Code</h2>
+                
+                <h3>Download & Cài đặt:</h3>
+                <p>Download từ <a href="https://code.visualstudio.com" target="_blank">https://code.visualstudio.com</a></p>
+                
+                <h3>Extensions cần thiết:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># PHP Extensions</span>
+- PHP Intelephense
+- Laravel Extension Pack
+- Laravel Blade Snippets
+
+<span class="comment"># JavaScript/React Extensions</span>
+- ES7+ React/Redux/React-Native snippets
+- ESLint
+- Prettier - Code formatter
+
+<span class="comment"># Database Extensions</span>
+- PostgreSQL (by Chris Kolkman)
+- MongoDB for VS Code
+
+<span class="comment"># Docker Extensions</span>
+- Docker
+- Docker Compose
+
+<span class="comment"># Git Extensions</span>
+- GitLens
+- Git Graph
+
+<span class="comment"># Productivity</span>
+- Path Intellisense
+- Auto Rename Tag
+- Better Comments
+                </div>
+                
+                <h3>VS Code Settings (settings.json):</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  "files.associations": {
+    "*.blade.php": "blade"
+  },
+  "emmet.includeLanguages": {
+    "blade": "html"
+  }
+}
+                </div>
+            </section>
+            
+            <!-- PHẦN 7: GIT SETUP -->
+            <section class="section">
+                <h2>📦 7. Git & GitHub Setup</h2>
+                
+                <h3>Cài đặt Git:</h3>
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<span class="comment"># Windows: Download từ https://git-scm.com/download/win</span>
+
+<span class="comment"># macOS</span>
+brew install git
+
+<span class="comment"># Ubuntu</span>
+sudo apt install git
+
+<span class="comment"># Cấu hình Git</span>
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+<span class="comment"># Kiểm tra</span>
+git --version
+git config --list
+                </div>
+                
+                <h3>Tạo GitHub Repository:</h3>
+                <ol>
+                    <li>Truy cập <a href="https://github.com" target="_blank">GitHub.com</a></li>
+                    <li>Click "New repository"</li>
+                    <li>Tên repository: <code>pms-vietsovpetro</code></li>
+                    <li>Private repository</li>
+                    <li>Add README.md</li>
+                    <li>Add .gitignore: Laravel</li>
+                </ol>
+            </section>
+            
+            <!-- PHẦN 8: CHECKLIST -->
+            <section class="section" id="checklist">
+                <h2>✅ 8. Checklist Hoàn Thành</h2>
+                
+                <div class="info-box">
+                    <strong>Hoàn thành tất cả các mục sau trước khi chuyển sang Bước 2:</strong>
+                </div>
+                
+                <ul class="checklist">
+                    <li>PHP 8.2 đã cài đặt và cấu hình (php -v)</li>
+                    <li>Composer đã cài đặt (composer --version)</li>
+                    <li>Node.js & npm đã cài đặt (node -v, npm -v)</li>
+                    <li>Docker Desktop đã cài đặt và đang chạy</li>
+                    <li>PostgreSQL container đang chạy và kết nối OK</li>
+                    <li>MongoDB container đang chạy và kết nối OK</li>
+                    <li>Redis container đang chạy</li>
+                    <li>VS Code đã cài đặt với đầy đủ extensions</li>
+                    <li>Git đã cài đặt và cấu hình</li>
+                    <li>GitHub repository đã tạo</li>
+                </ul>
+                
+                <div class="success-box" style="margin-top: 30px;">
+                    <h3 style="margin-top: 0;">🎉 Chúc mừng!</h3>
+                    <p>Bạn đã hoàn thành setup môi trường phát triển. Bây giờ bạn có thể chuyển sang Bước 2: Database Design.</p>
+                </div>
+            </section>
+            
+            <!-- NAVIGATION -->
+            <div class="nav-buttons">
+                <a href="index.html" class="btn btn-secondary">← Về Trang Chủ</a>
+                <a href="step2-database.html" class="btn btn-primary">Bước 2: Database Design →</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copyCode(button) {
+            const codeBlock = button.parentElement;
+            const code = codeBlock.textContent.replace('Copy', '').trim();
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

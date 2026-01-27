@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 5: WebSocket Real-time - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Bước 5: WebSocket Real-time</h1>
+            <p>Tích hợp Laravel Reverb cho real-time updates</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_04_FRONTEND.html">← Bước 4</a>
+            <a href="PMS_STEP_06_DEPLOYMENT.html">Bước 6 →</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Cài đặt Laravel Reverb (WebSocket server)</li>
+                    <li>✅ Broadcast events từ Backend</li>
+                    <li>✅ Kết nối WebSocket từ React</li>
+                    <li>✅ Real-time notifications</li>
+                    <li>✅ Real-time task updates</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1 -->
+            <div class="section">
+                <h2>1. Laravel Reverb - Setup WebSocket Server</h2>
+                
+                <h3>📦 Cài Đặt Laravel Reverb</h3>
+                
+                <div class="code-block">
+<span class="comment"># 1. Install Laravel Reverb</span>
+composer require laravel/reverb
+
+<span class="comment"># 2. Publish config</span>
+php artisan reverb:install
+
+<span class="comment"># 3. Migrate database (for presence channels)</span>
+php artisan migrate
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>📝 Laravel Reverb là gì?</h4>
+                    <p><strong>Laravel Reverb</strong> là WebSocket server chính thức của Laravel (ra mắt Laravel 11), thay thế cho Pusher/Socket.io.</p>
+                    <p><strong>Ưu điểm:</strong></p>
+                    <ul>
+                        <li>✅ Miễn phí, không giới hạn connections</li>
+                        <li>✅ Tích hợp sẵn với Laravel Broadcasting</li>
+                        <li>✅ Hỗ trợ Presence Channels (theo dõi users online)</li>
+                        <li>✅ Performance tốt (built trên ReactPHP)</li>
+                    </ul>
+                </div>
+                
+                <h3>⚙️ Cấu Hình .env</h3>
+                
+                <div class="code-block">
+<span class="comment"># .env</span>
+BROADCAST_CONNECTION=reverb
+
+REVERB_APP_ID=your-app-id
+REVERB_APP_KEY=your-app-key
+REVERB_APP_SECRET=your-app-secret
+REVERB_HOST=localhost
+REVERB_PORT=8080
+REVERB_SCHEME=http
+
+<span class="comment"># For production (SSL)</span>
+<span class="comment"># REVERB_SCHEME=https</span>
+                </div>
+                
+                <h3>🚀 Chạy Reverb Server</h3>
+                
+                <div class="code-block">
+<span class="comment"># Terminal riêng cho Reverb (để chạy background)</span>
+php artisan reverb:start
+
+<span class="comment"># Hoặc với debug mode</span>
+php artisan reverb:start --debug
+
+<span class="comment"># Output:</span>
+<span class="comment"># [2026-01-19 10:00:00] Reverb server started on ws://localhost:8080</span>
+                </div>
+            </div>
+            
+            <!-- PHẦN 2 -->
+            <div class="section">
+                <h2>2. Broadcasting Events - Backend</h2>
+                
+                <h3>📡 Tạo Event Class</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Events/TaskUpdated.php</span>
+<span class="keyword">namespace</span> App\Events;
+
+<span class="keyword">use</span> App\Models\Task;
+<span class="keyword">use</span> Illuminate\Broadcasting\Channel;
+<span class="keyword">use</span> Illuminate\Broadcasting\InteractsWithSockets;
+<span class="keyword">use</span> Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+<span class="keyword">use</span> Illuminate\Foundation\Events\Dispatchable;
+<span class="keyword">use</span> Illuminate\Queue\SerializesModels;
+
+<span class="keyword">class</span> <span class="function">TaskUpdated</span> <span class="keyword">implements</span> ShouldBroadcast
+{
+    <span class="keyword">use</span> Dispatchable, InteractsWithSockets, SerializesModels;
+
+    <span class="keyword">public</span> Task $task;
+    <span class="keyword">public</span> <span class="keyword">string</span> $action; <span class="comment">// 'updated', 'status_changed', 'assigned'</span>
+
+    <span class="keyword">public function</span> <span class="function">__construct</span>(Task $task, <span class="keyword">string</span> $action = <span class="string">'updated'</span>)
+    {
+        <span class="keyword">$this</span>->task = $task;
+        <span class="keyword">$this</span>->action = $action;
+    }
+
+    <span class="comment">// Broadcast on public channel (all users can listen)</span>
+    <span class="keyword">public function</span> <span class="function">broadcastOn</span>(): Channel
+    {
+        <span class="keyword">return new</span> <span class="function">Channel</span>(<span class="string">'tasks'</span>);
+    }
+
+    <span class="comment">// Custom event name</span>
+    <span class="keyword">public function</span> <span class="function">broadcastAs</span>(): <span class="keyword">string</span>
+    {
+        <span class="keyword">return</span> <span class="string">'task.updated'</span>;
+    }
+
+    <span class="comment">// Data to broadcast</span>
+    <span class="keyword">public function</span> <span class="function">broadcastWith</span>(): <span class="keyword">array</span>
+    {
+        <span class="keyword">return</span> [
+            <span class="string">'id'</span> => <span class="keyword">$this</span>->task->id,
+            <span class="string">'name'</span> => <span class="keyword">$this</span>->task->name,
+            <span class="string">'status'</span> => <span class="keyword">$this</span>->task->status,
+            <span class="string">'action'</span> => <span class="keyword">$this</span>->action,
+            <span class="string">'updated_at'</span> => <span class="keyword">$this</span>->task->updated_at->toISOString(),
+            <span class="string">'updated_by'</span> => <span class="keyword">$this</span>->task->updatedBy->name ?? <span class="keyword">null</span>,
+        ];
+    }
+}
+                </div>
+                
+                <h3>🔥 Dispatch Event trong Controller</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Http/Controllers/TaskController.php</span>
+<span class="keyword">use</span> App\Events\TaskUpdated;
+
+<span class="keyword">public function</span> <span class="function">update</span>(Request $request, $id)
+{
+    $task = Task::<span class="function">findOrFail</span>($id);
+    
+    $oldStatus = $task->status;
+    
+    $task-><span class="function">update</span>($request-><span class="function">validated</span>());
+    
+    <span class="comment">// Broadcast event to all connected clients</span>
+    <span class="function">event</span>(<span class="keyword">new</span> <span class="function">TaskUpdated</span>(
+        $task, 
+        $oldStatus !== $task->status ? <span class="string">'status_changed'</span> : <span class="string">'updated'</span>
+    ));
+    
+    <span class="keyword">return</span> <span class="function">response</span>()-><span class="function">json</span>([<span class="string">'task'</span> => $task]);
+}
+                </div>
+                
+                <h3>💬 Private Channel (Chỉ user được assign mới nhận)</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Events/TaskAssigned.php</span>
+<span class="keyword">public function</span> <span class="function">broadcastOn</span>(): Channel
+{
+    <span class="comment">// Private channel cho từng user</span>
+    <span class="keyword">return new</span> <span class="function">PrivateChannel</span>(<span class="string">'user.'</span> . <span class="keyword">$this</span>->task->assigned_to);
+}
+
+<span class="comment">// routes/channels.php - Authorize private channels</span>
+Broadcast::<span class="function">channel</span>(<span class="string">'user.{userId}'</span>, <span class="keyword">function</span> ($user, $userId) {
+    <span class="keyword">return</span> (<span class="keyword">int</span>) $user->id === (<span class="keyword">int</span>) $userId;
+});
+                </div>
+            </div>
+            
+            <!-- PHẦN 3 -->
+            <div class="section">
+                <h2>3. React WebSocket Client</h2>
+                
+                <h3>📦 Install Laravel Echo & Pusher JS</h3>
+                
+                <div class="code-block">
+<span class="comment"># Frontend (React project)</span>
+npm install laravel-echo pusher-js
+                </div>
+                
+                <h3>⚙️ Setup Echo Instance</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/lib/echo.js</span>
+<span class="keyword">import</span> Echo <span class="keyword">from</span> <span class="string">'laravel-echo'</span>;
+<span class="keyword">import</span> Pusher <span class="keyword">from</span> <span class="string">'pusher-js'</span>;
+
+window.Pusher = Pusher;
+
+<span class="keyword">const</span> echo = <span class="keyword">new</span> <span class="function">Echo</span>({
+    broadcaster: <span class="string">'reverb'</span>,
+    key: <span class="keyword">import</span>.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: <span class="keyword">import</span>.meta.env.VITE_REVERB_HOST,
+    wsPort: <span class="keyword">import</span>.meta.env.VITE_REVERB_PORT ?? 8080,
+    wssPort: <span class="keyword">import</span>.meta.env.VITE_REVERB_PORT ?? 8080,
+    forceTLS: (<span class="keyword">import</span>.meta.env.VITE_REVERB_SCHEME ?? <span class="string">'https'</span>) === <span class="string">'https'</span>,
+    enabledTransports: [<span class="string">'ws'</span>, <span class="string">'wss'</span>],
+    
+    <span class="comment">// Auth for private channels</span>
+    authEndpoint: <span class="string">'http://localhost:8000/broadcasting/auth'</span>,
+    auth: {
+        headers: {
+            Authorization: <span class="string">`Bearer ${localStorage.getItem('token')}`</span>,
+        },
+    },
+});
+
+<span class="keyword">export default</span> echo;
+                </div>
+                
+                <div class="code-block">
+<span class="comment"># .env.local (React)</span>
+VITE_REVERB_APP_KEY=your-app-key
+VITE_REVERB_HOST=localhost
+VITE_REVERB_PORT=8080
+VITE_REVERB_SCHEME=http
+                </div>
+                
+                <h3>🎧 Listen to Events trong React Component</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/pages/TaskBoard.jsx</span>
+<span class="keyword">import</span> { useEffect } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { useQueryClient } <span class="keyword">from</span> <span class="string">'@tanstack/react-query'</span>;
+<span class="keyword">import</span> { message } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> echo <span class="keyword">from</span> <span class="string">'../lib/echo'</span>;
+
+<span class="keyword">function</span> <span class="function">TaskBoard</span>() {
+    <span class="keyword">const</span> queryClient = <span class="function">useQueryClient</span>();
+    
+    <span class="function">useEffect</span>(() => {
+        <span class="comment">// Listen to public channel 'tasks'</span>
+        echo.<span class="function">channel</span>(<span class="string">'tasks'</span>)
+            .<span class="function">listen</span>(<span class="string">'.task.updated'</span>, (event) => {
+                console.<span class="function">log</span>(<span class="string">'Task updated:'</span>, event);
+                
+                <span class="comment">// Show notification</span>
+                <span class="keyword">if</span> (event.action === <span class="string">'status_changed'</span>) {
+                    message.<span class="function">info</span>(
+                        <span class="string">`Task "${event.name}" status changed to ${event.status}`</span>
+                    );
+                }
+                
+                <span class="comment">// Invalidate React Query cache to refetch</span>
+                queryClient.<span class="function">invalidateQueries</span>([<span class="string">'tasks'</span>]);
+            });
+        
+        <span class="comment">// Cleanup on unmount</span>
+        <span class="keyword">return</span> () => {
+            echo.<span class="function">leaveChannel</span>(<span class="string">'tasks'</span>);
+        };
+    }, [queryClient]);
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;div&gt;</span>
+            <span class="comment">{/* Your Kanban board */}</span>
+        <span class="string">&lt;/div&gt;</span>
+    );
+}
+                </div>
+                
+                <h3>🔔 Real-time Notifications</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/components/NotificationBell.jsx</span>
+<span class="keyword">import</span> { useState, useEffect } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { Badge, Dropdown, List } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> { BellOutlined } <span class="keyword">from</span> <span class="string">'@ant-design/icons'</span>;
+<span class="keyword">import</span> echo <span class="keyword">from</span> <span class="string">'../lib/echo'</span>;
+
+<span class="keyword">function</span> <span class="function">NotificationBell</span>({ userId }) {
+    <span class="keyword">const</span> [notifications, setNotifications] = <span class="function">useState</span>([]);
+    <span class="keyword">const</span> [unreadCount, setUnreadCount] = <span class="function">useState</span>(0);
+    
+    <span class="function">useEffect</span>(() => {
+        <span class="comment">// Listen to private channel for this user</span>
+        echo.<span class="function">private</span>(<span class="string">`user.${userId}`</span>)
+            .<span class="function">listen</span>(<span class="string">'.task.assigned'</span>, (event) => {
+                <span class="keyword">const</span> newNotif = {
+                    id: Date.<span class="function">now</span>(),
+                    message: <span class="string">`Bạn được giao nhiệm vụ: ${event.task_name}`</span>,
+                    time: <span class="keyword">new</span> <span class="function">Date</span>(),
+                    unread: <span class="keyword">true</span>
+                };
+                
+                <span class="function">setNotifications</span>(prev => [newNotif, ...prev]);
+                <span class="function">setUnreadCount</span>(prev => prev + 1);
+                
+                <span class="comment">// Browser notification</span>
+                <span class="keyword">if</span> (Notification.permission === <span class="string">'granted'</span>) {
+                    <span class="keyword">new</span> <span class="function">Notification</span>(<span class="string">'Nhiệm vụ mới'</span>, {
+                        body: newNotif.message,
+                        icon: <span class="string">'/logo.png'</span>
+                    });
+                }
+            });
+        
+        <span class="keyword">return</span> () => echo.<span class="function">leaveChannel</span>(<span class="string">`user.${userId}`</span>);
+    }, [userId]);
+    
+    <span class="keyword">const</span> menu = (
+        <span class="string">&lt;List
+            dataSource={notifications.slice(0, 5)}
+            renderItem={item =&gt; (
+                &lt;List.Item&gt;{item.message}&lt;/List.Item&gt;
+            )}
+        /&gt;</span>
+    );
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;Dropdown overlay={menu}&gt;
+            &lt;Badge count={unreadCount}&gt;
+                &lt;BellOutlined style={{ fontSize: 20 }} /&gt;
+            &lt;/Badge&gt;
+        &lt;/Dropdown&gt;</span>
+    );
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 4 -->
+            <div class="section">
+                <h2>4. Presence Channels (Users Online)</h2>
+                
+                <h3>👥 Theo Dõi Users Online</h3>
+                
+                <div class="code-block">
+<span class="comment">// Backend - routes/channels.php</span>
+Broadcast::<span class="function">channel</span>(<span class="string">'online-users'</span>, <span class="keyword">function</span> ($user) {
+    <span class="keyword">return</span> [
+        <span class="string">'id'</span> => $user->id,
+        <span class="string">'name'</span> => $user->name,
+        <span class="string">'avatar'</span> => $user->avatar_url,
+    ];
+});
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// Frontend - Track online users</span>
+<span class="keyword">import</span> { useState, useEffect } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { Avatar, Tooltip } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> echo <span class="keyword">from</span> <span class="string">'../lib/echo'</span>;
+
+<span class="keyword">function</span> <span class="function">OnlineUsers</span>() {
+    <span class="keyword">const</span> [users, setUsers] = <span class="function">useState</span>([]);
+    
+    <span class="function">useEffect</span>(() => {
+        <span class="keyword">const</span> channel = echo.<span class="function">join</span>(<span class="string">'online-users'</span>)
+            .<span class="function">here</span>((users) => {
+                <span class="comment">// Initial list of online users</span>
+                <span class="function">setUsers</span>(users);
+            })
+            .<span class="function">joining</span>((user) => {
+                <span class="comment">// User joined</span>
+                <span class="function">setUsers</span>(prev => [...prev, user]);
+            })
+            .<span class="function">leaving</span>((user) => {
+                <span class="comment">// User left</span>
+                <span class="function">setUsers</span>(prev => prev.<span class="function">filter</span>(u => u.id !== user.id));
+            });
+        
+        <span class="keyword">return</span> () => echo.<span class="function">leave</span>(<span class="string">'online-users'</span>);
+    }, []);
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;div style={{ display: 'flex', gap: 8 }}&gt;
+            {users.map(user =&gt; (
+                &lt;Tooltip key={user.id} title={user.name}&gt;
+                    &lt;Avatar src={user.avatar} /&gt;
+                &lt;/Tooltip&gt;
+            ))}
+            &lt;span&gt;{users.length} online&lt;/span&gt;
+        &lt;/div&gt;</span>
+    );
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 5 -->
+            <div class="section">
+                <h2>5. Testing & Debugging</h2>
+                
+                <div class="warning-box">
+                    <h3>🐛 Debug WebSocket Connection</h3>
+                    <p><strong>Chrome DevTools:</strong></p>
+                    <ul>
+                        <li>F12 → Network tab → Filter: WS (WebSocket)</li>
+                        <li>Xem messages được gửi/nhận</li>
+                        <li>Check connection status</li>
+                    </ul>
+                </div>
+                
+                <h3>🧪 Test Broadcasting</h3>
+                
+                <div class="code-block">
+<span class="comment">// Test trong Tinker</span>
+php artisan tinker
+
+<span class="comment">// Broadcast test event</span>
+$task = Task::<span class="function">first</span>();
+<span class="function">event</span>(<span class="keyword">new</span> App\Events\<span class="function">TaskUpdated</span>($task, <span class="string">'test'</span>));
+
+<span class="comment">// Check Reverb logs to see if event was broadcasted</span>
+                </div>
+                
+                <h3>📊 Performance Monitoring</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Target</th>
+                            <th>Monitoring</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>WebSocket connections</td>
+                            <td>50-200 concurrent</td>
+                            <td>Reverb dashboard</td>
+                        </tr>
+                        <tr>
+                            <td>Event latency</td>
+                            <td>&lt; 100ms</td>
+                            <td>Browser DevTools</td>
+                        </tr>
+                        <tr>
+                            <td>Memory usage</td>
+                            <td>&lt; 512MB</td>
+                            <td>htop / docker stats</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ Laravel Reverb installed & running</li>
+                    <li>☑️ Broadcasting configured (.env)</li>
+                    <li>☑️ Events created (TaskUpdated, TaskAssigned)</li>
+                    <li>☑️ Events dispatched trong controllers</li>
+                    <li>☑️ Laravel Echo setup trong React</li>
+                    <li>☑️ WebSocket connection established</li>
+                    <li>☑️ Real-time task updates working</li>
+                    <li>☑️ Notifications working</li>
+                    <li>☑️ Presence channels (online users) working</li>
+                    <li>☑️ Tested & debugged</li>
+                </ul>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_STEP_04_FRONTEND.html" class="btn btn-secondary">← Bước 4: Frontend</a>
+                <a href="PMS_STEP_06_DEPLOYMENT.html" class="btn">Bước 6: Deployment →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng Dẫn Triển Khai PMS - Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 40px;
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .hero h2 {
+            color: #1e3c72;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card .label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            transform: translateX(-50%);
+        }
+        
+        .step {
+            position: relative;
+            margin-bottom: 50px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step:nth-child(odd) {
+            flex-direction: row;
+        }
+        
+        .step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        
+        .step-marker {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            z-index: 2;
+        }
+        
+        .step-content {
+            width: 45%;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .step-content:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+        
+        .step:nth-child(odd) .step-content {
+            margin-right: auto;
+        }
+        
+        .step:nth-child(even) .step-content {
+            margin-left: auto;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .step-title {
+            font-size: 1.5em;
+            color: #1e3c72;
+            font-weight: bold;
+        }
+        
+        .step-duration {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .step-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .step-features {
+            list-style: none;
+            margin: 15px 0;
+        }
+        
+        .step-features li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .step-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .step-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tech-stack {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .tech-stack h3 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+        }
+        
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .tech-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        .tech-item:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+        }
+        
+        .tech-item .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .resources {
+            background: linear-gradient(135deg, #10b98115 0%, #059669ff15 100%);
+            padding: 40px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .resources h3 {
+            color: #059669;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .resource-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .resource-card h4 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            background: #1e3c72;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 30px;
+            }
+            
+            .step {
+                flex-direction: column !important;
+                align-items: flex-start;
+                padding-left: 60px;
+            }
+            
+            .step-marker {
+                left: 30px;
+            }
+            
+            .step-content {
+                width: 100%;
+                margin: 0 !important;
+            }
+            
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 HƯỚNG DẪN TRIỂN KHAI HỆ THỐNG PMS</h1>
+            <p>Production Management System - Vietsovpetro MVP</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Laravel + React + PostgreSQL + MongoDB</p>
+        </header>
+        
+        <div class="hero">
+            <h2>🎯 Dự Án MVP - 1 Người + AI Assistant</h2>
+            <p style="color: #666; font-size: 1.1em; margin-top: 10px;">
+                Hệ thống quản lý sản xuất với kiến trúc Hybrid Database<br>
+                Hỗ trợ dynamic configuration cho nhiều xí nghiệp
+            </p>
+            
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="number">7-9</div>
+                    <div class="label">Tháng triển khai</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">50-200</div>
+                    <div class="label">Users (Giai đoạn 1)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">70%</div>
+                    <div class="label">Core Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">$48</div>
+                    <div class="label">Chi phí/tháng (VPS)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="tech-stack">
+                <h3>🛠️ Technology Stack</h3>
+                <div class="tech-grid">
+                    <div class="tech-item">
+                        <div class="icon">🐘</div>
+                        <strong>Laravel 11</strong>
+                        <div style="font-size: 0.9em; color: #666;">Backend Framework</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">⚛️</div>
+                        <strong>React 18</strong>
+                        <div style="font-size: 0.9em; color: #666;">Frontend UI</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">🐘</div>
+                        <strong>PostgreSQL 16</strong>
+                        <div style="font-size: 0.9em; color: #666;">SQL Database</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">🍃</div>
+                        <strong>MongoDB 7</strong>
+                        <div style="font-size: 0.9em; color: #666;">NoSQL Database</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">🐳</div>
+                        <strong>Docker</strong>
+                        <div style="font-size: 0.9em; color: #666;">Containerization</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">📦</div>
+                        <strong>Redis</strong>
+                        <div style="font-size: 0.9em; color: #666;">Caching & Queue</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 style="text-align: center; color: #1e3c72; margin: 40px 0; font-size: 2em;">
+                📋 Lộ Trình Triển Khai Chi Tiết
+            </h2>
+            
+            <div class="timeline">
+                <!-- BƯỚC 1 -->
+                <div class="step">
+                    <div class="step-marker">1</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">🔧 Setup Môi Trường</div>
+                            <div class="step-duration">1-2 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Cài đặt và cấu hình môi trường phát triển đầy đủ với Laravel, PostgreSQL, MongoDB và Docker.
+                        </div>
+                        <ul class="step-features">
+                            <li>Cài đặt PHP 8.2, Composer, Node.js</li>
+                            <li>Setup Docker Desktop & Docker Compose</li>
+                            <li>Cài đặt PostgreSQL và MongoDB</li>
+                            <li>IDE setup (VS Code extensions)</li>
+                            <li>Git repository initialization</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step1-setup.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step1-setup.html#checklist" class="btn btn-secondary">✅ Checklist</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BƯỚC 2 -->
+                <div class="step">
+                    <div class="step-marker">2</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">🗄️ Database Design</div>
+                            <div class="step-duration">1 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Thiết kế schema cho PostgreSQL (structured data) và MongoDB (dynamic data) với kiến trúc hybrid.
+                        </div>
+                        <ul class="step-features">
+                            <li>ERD cho PostgreSQL (Users, Plans, Tasks)</li>
+                            <li>MongoDB collections (Configs, Logs, Details)</li>
+                            <li>Migrations & Seeders</li>
+                            <li>Database relationships mapping</li>
+                            <li>Indexing strategy</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step2-database.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step2-database.html#schema" class="btn btn-secondary">📊 Schema</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BƯỚC 3 -->
+                <div class="step">
+                    <div class="step-marker">3</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">⚙️ Laravel Backend</div>
+                            <div class="step-duration">3-4 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Xây dựng RESTful API với Laravel, tích hợp PostgreSQL và MongoDB, authentication với Sanctum.
+                        </div>
+                        <ul class="step-features">
+                            <li>Laravel project structure</li>
+                            <li>Models & Eloquent ORM (PostgreSQL)</li>
+                            <li>MongoDB integration (jenssegers/mongodb)</li>
+                            <li>RESTful API endpoints</li>
+                            <li>Authentication & Authorization</li>
+                            <li>File upload handling</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step3-backend.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step3-backend.html#api" class="btn btn-secondary">🔌 API Docs</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BƯỚC 4 -->
+                <div class="step">
+                    <div class="step-marker">4</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">🎨 React Frontend</div>
+                            <div class="step-duration">4-5 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Xây dựng giao diện người dùng với React, Ant Design, và tích hợp với Laravel API.
+                        </div>
+                        <ul class="step-features">
+                            <li>React project setup (Vite)</li>
+                            <li>Ant Design UI components</li>
+                            <li>React Router for navigation</li>
+                            <li>React Query for data fetching</li>
+                            <li>Dynamic form rendering</li>
+                            <li>Kanban board & Gantt chart</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step4-frontend.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step4-frontend.html#components" class="btn btn-secondary">🧩 Components</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BƯỚC 5 -->
+                <div class="step">
+                    <div class="step-marker">5</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">📊 Features Development</div>
+                            <div class="step-duration">6-8 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Phát triển các tính năng chính: Quản lý kế hoạch, nhiệm vụ, báo cáo và dashboard.
+                        </div>
+                        <ul class="step-features">
+                            <li>Module Quản lý Kế Hoạch</li>
+                            <li>Module Nhiệm Vụ (Kanban)</li>
+                            <li>Dynamic form theo enterprise config</li>
+                            <li>Dashboard & KPI tracking</li>
+                            <li>Export PDF/Excel reports</li>
+                            <li>Audit logging</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step5-features.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step5-features.html#modules" class="btn btn-secondary">📦 Modules</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- BƯỚC 6 -->
+                <div class="step">
+                    <div class="step-marker">6</div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <div class="step-title">🚀 Deployment & Testing</div>
+                            <div class="step-duration">2-3 tuần</div>
+                        </div>
+                        <div class="step-description">
+                            Deploy lên production server, testing, optimization và bàn giao tài liệu.
+                        </div>
+                        <ul class="step-features">
+                            <li>Docker Compose production setup</li>
+                            <li>VPS deployment (DigitalOcean/Vultr)</li>
+                            <li>SSL certificate setup</li>
+                            <li>Backup & monitoring</li>
+                            <li>Load testing & optimization</li>
+                            <li>User documentation</li>
+                        </ul>
+                        <div class="step-actions">
+                            <a href="step6-deployment.html" class="btn btn-primary">📖 Chi Tiết</a>
+                            <a href="step6-deployment.html#checklist" class="btn btn-secondary">✅ Checklist</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="resources">
+                <h3>📚 Tài Nguyên & Công Cụ</h3>
+                <div class="resource-grid">
+                    <div class="resource-card">
+                        <h4>🎓 Học Laravel</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><a href="https://laravel.com/docs" target="_blank">Laravel Official Docs</a></li>
+                            <li><a href="https://laracasts.com" target="_blank">Laracasts (Video)</a></li>
+                            <li><a href="https://github.com/chiraggude/awesome-laravel" target="_blank">Awesome Laravel</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resource-card">
+                        <h4>⚛️ Học React</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><a href="https://react.dev" target="_blank">React Official Docs</a></li>
+                            <li><a href="https://ant.design" target="_blank">Ant Design</a></li>
+                            <li><a href="https://tanstack.com/query" target="_blank">React Query</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resource-card">
+                        <h4>🗄️ Database</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><a href="https://www.postgresql.org/docs/" target="_blank">PostgreSQL Docs</a></li>
+                            <li><a href="https://www.mongodb.com/docs/" target="_blank">MongoDB Docs</a></li>
+                            <li><a href="https://github.com/jenssegers/laravel-mongodb" target="_blank">Laravel MongoDB</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resource-card">
+                        <h4>🐳 DevOps</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><a href="https://docs.docker.com" target="_blank">Docker Docs</a></li>
+                            <li><a href="https://www.digitalocean.com/community" target="_blank">DigitalOcean Tutorials</a></li>
+                            <li><a href="https://github.com" target="_blank">GitHub</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white; margin: 40px 0;">
+                <h2 style="margin-bottom: 20px;">🚀 Sẵn Sàng Bắt Đầu?</h2>
+                <p style="font-size: 1.2em; margin-bottom: 30px;">
+                    Bắt đầu với Bước 1: Setup môi trường phát triển
+                </p>
+                <a href="step1-setup.html" class="btn" style="background: white; color: #667eea; font-size: 1.1em; padding: 15px 40px;">
+                    📖 Bắt Đầu Ngay →
+                </a>
+            </div>
+        </div>
+        
+        <footer>
+            <p><strong>💡 Lưu ý:</strong> Đây là MVP version dành cho 1 người phát triển với sự hỗ trợ của AI.</p>
+            <p style="margin-top: 10px;">Thời gian ước tính: <strong>7-9 tháng</strong> | Chi phí infrastructure: <strong>~$48/tháng</strong></p>
+            <p style="margin-top: 20px; opacity: 0.8;">© 2026 PMS Tutorial - Made with ❤️ by Claude AI</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -31,6 +31,11 @@ if (!$item) {
                target="_blank">
                 <i class="fas fa-file-pdf mr-1"></i> In PDF
             </a>
+            <a href="hososcbd.php?action=exportword&id=<?php echo $item['stt']; ?>" 
+               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+               target="_blank">
+                <i class="fas fa-file-word mr-1"></i> In Word
+            </a>
             <a href="hososcbd.php?action=edit&id=<?php echo $item['stt']; ?>" 
                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-edit mr-1"></i> Sửa

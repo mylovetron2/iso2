@@ -38,9 +38,15 @@ require_once __DIR__ . '/../layouts/header.php';
                     <?php 
                     $currentChusohuu = isset($_POST['chusohuu']) ? $_POST['chusohuu'] : $device['chusohuu'];
                     foreach ($chusohuuList as $value => $label): 
+                        // Check if database value (name only) matches the name part after dash in dropdown value
+                        $isSelected = ($currentChusohuu === $value);
+                        if (!$isSelected && $currentChusohuu && strpos($value, '-') !== false) {
+                            $namePart = substr($value, strpos($value, '-') + 1);
+                            $isSelected = ($currentChusohuu === $namePart);
+                        }
                     ?>
                         <option value="<?php echo htmlspecialchars($value); ?>" 
-                                <?php echo ($currentChusohuu === $value) ? 'selected' : ''; ?>>
+                                <?php echo $isSelected ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($label); ?>
                         </option>
                     <?php endforeach; ?>

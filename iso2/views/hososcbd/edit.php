@@ -2,6 +2,14 @@
 header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 $title = 'Sửa Hồ sơ SCBĐ';
+
+// Helper function to safely display text
+if (!function_exists('displayText')) {
+    function displayText($text) {
+        return htmlspecialchars($text ?? '', ENT_QUOTES, 'UTF-8');
+    }
+}
+
 require_once __DIR__ . '/../layouts/header.php'; 
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
@@ -14,6 +22,18 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php echo htmlspecialchars($error); ?>
     </div>
     <?php endif; ?>
+
+    <!-- Action Buttons at Top -->
+    <div class="flex gap-3 mb-6 p-4 bg-gray-50 rounded border-2 border-blue-500">
+        <button type="button" id="saveButton" onclick="document.querySelector('form').submit();" 
+                style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; display: inline-block;">
+            <i class="fas fa-save" style="margin-right: 8px;"></i>Cập nhật hồ sơ
+        </button>
+        <a href="hososcbd.php" 
+           style="background-color: #6b7280; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block;">
+            <i class="fas fa-times" style="margin-right: 8px;"></i>Hủy
+        </a>
+    </div>
 
     <form method="POST" class="space-y-6">
         <!-- Thông tin cơ bản -->
@@ -62,38 +82,51 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Mã vật tư <span class="text-red-500">*</span></label>
-                    <input type="text" name="mavt" required value="<?php echo isset($error) && isset($_POST['mavt']) ? htmlspecialchars($_POST['mavt']) : htmlspecialchars($item['mavt'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <div class="flex gap-2">
+                        <input type="text" name="mavt" id="mavt" required readonly value="<?php echo isset($error) && isset($_POST['mavt']) ? htmlspecialchars($_POST['mavt']) : htmlspecialchars($item['mavt'] ?? ''); ?>"
+                               class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 bg-blue-50">
+                        <button type="button" onclick="openDeviceSearch()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition-colors">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Nhấn nút tìm kiếm để thay đổi thiết bị</p>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Số máy <span class="text-red-500">*</span></label>
-                    <input type="text" name="somay" required value="<?php echo isset($error) && isset($_POST['somay']) ? htmlspecialchars($_POST['somay']) : htmlspecialchars($item['somay'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <input type="text" name="somay" id="somay" required readonly value="<?php echo isset($error) && isset($_POST['somay']) ? htmlspecialchars($_POST['somay']) : htmlspecialchars($item['somay'] ?? ''); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 bg-blue-50">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Model <span class="text-red-500">*</span></label>
-                    <input type="text" name="model" required value="<?php echo isset($error) && isset($_POST['model']) ? htmlspecialchars($_POST['model']) : htmlspecialchars($item['model'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <input type="text" name="model" id="model" required readonly value="<?php echo isset($error) && isset($_POST['model']) ? htmlspecialchars($_POST['model']) : htmlspecialchars($item['model'] ?? ''); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 bg-blue-50">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Vị trí máy BD <span class="text-red-500">*</span></label>
-                    <input type="text" name="vitrimaybd" required value="<?php echo isset($error) && isset($_POST['vitrimaybd']) ? htmlspecialchars($_POST['vitrimaybd']) : htmlspecialchars($item['vitrimaybd'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">Vị trí máy BD</label>
+                    <select name="vitrimaybd" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 vitri-select"
+                            data-current="<?php echo isset($error) && isset($_POST['vitrimaybd']) ? htmlspecialchars($_POST['vitrimaybd']) : htmlspecialchars($item['vitrimaybd'] ?? ''); ?>">
+                        <option value="">-- Chọn vị trí --</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Lô <span class="text-red-500">*</span></label>
-                    <input type="text" name="lo" required value="<?php echo isset($error) && isset($_POST['lo']) ? htmlspecialchars($_POST['lo']) : htmlspecialchars($item['lo'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">Lô</label>
+                    <select name="lo" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 lo-select"
+                            data-current="<?php echo isset($error) && isset($_POST['lo']) ? htmlspecialchars($_POST['lo']) : htmlspecialchars($item['lo'] ?? ''); ?>">
+                        <option value="">-- Chọn lô --</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Giếng <span class="text-red-500">*</span></label>
-                    <input type="text" name="gieng" required value="<?php echo isset($error) && isset($_POST['gieng']) ? htmlspecialchars($_POST['gieng']) : htmlspecialchars($item['gieng'] ?? ''); ?>"
+                    <label class="block text-gray-700 font-semibold mb-2">Giếng</label>
+                    <input type="text" name="gieng" value="<?php echo isset($error) && isset($_POST['gieng']) ? htmlspecialchars($_POST['gieng']) : htmlspecialchars($item['gieng'] ?? ''); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Mỏ <span class="text-red-500">*</span></label>
-                    <input type="text" name="mo" required value="<?php echo isset($error) && isset($_POST['mo']) ? htmlspecialchars($_POST['mo']) : htmlspecialchars($item['mo'] ?? ''); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">Mỏ</label>
+                    <select name="mo" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 mo-select"
+                            data-current="<?php echo isset($error) && isset($_POST['mo']) ? htmlspecialchars($_POST['mo']) : htmlspecialchars($item['mo'] ?? ''); ?>">
+                        <option value="">-- Chọn mỏ --</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -136,7 +169,15 @@ require_once __DIR__ . '/../layouts/header.php';
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Công việc <span class="text-red-500">*</span></label>
-                    <textarea name="cv" required rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['cv']) ? htmlspecialchars($_POST['cv']) : displayText($item['cv'] ?? ''); ?></textarea>
+                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <?php 
+                        $currentCv = isset($error) && isset($_POST['cv']) ? $_POST['cv'] : ($item['cv'] ?? 'SC');
+                        ?>
+                        <option value="KT" <?php echo ($currentCv === 'KT') ? 'selected' : ''; ?>>KT - Kiểm Tra</option>
+                        <option value="BD" <?php echo ($currentCv === 'BD') ? 'selected' : ''; ?>>BD - Bảo Dưỡng</option>
+                        <option value="SC" <?php echo ($currentCv === 'SC') ? 'selected' : ''; ?>>SC - Sửa Chữa</option>
+                        <option value="BDDK" <?php echo ($currentCv === 'BDDK') ? 'selected' : ''; ?>>BDDK - Bảo Dưỡng Định Kỳ</option>
+                    </select>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Yêu cầu thêm của KH</label>
@@ -145,8 +186,8 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Thông tin sửa chữa -->
-        <div class="border-l-4 border-orange-500 pl-4">
+        <!-- Thông tin sửa chữa (HIDDEN) -->
+        <div class="hidden border-l-4 border-orange-500 pl-4">
             <h2 class="text-lg font-bold mb-3 text-orange-700">
                 <i class="fas fa-wrench mr-2"></i>Thông tin sửa chữa
             </h2>
@@ -214,8 +255,8 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Thiết bị đo SC -->
-        <div class="border-l-4 border-teal-500 pl-4">
+        <!-- Thiết bị đo SC (HIDDEN) -->
+        <div class="hidden border-l-4 border-teal-500 pl-4">
             <div class="flex justify-between items-center mb-3">
                 <h2 class="text-lg font-bold text-teal-700">
                     <i class="fas fa-tools mr-2"></i>Thiết bị hỗ trợ
@@ -335,8 +376,8 @@ require_once __DIR__ . '/../layouts/header.php';
         }
         </script>
 
-        <!-- Bàn giao -->
-        <div class="border-l-4 border-red-500 pl-4">
+        <!-- Bàn giao (HIDDEN) -->
+        <div class="hidden border-l-4 border-red-500 pl-4">
             <h2 class="text-lg font-bold mb-3 text-red-700">
                 <i class="fas fa-handshake mr-2"></i>Thông tin bàn giao
             </h2>
@@ -372,17 +413,325 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Buttons -->
-        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
-                <i class="fas fa-save mr-2"></i> Cập nhật hồ sơ
-            </button>
-            <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded text-base font-semibold text-center w-full md:w-auto">
-                <i class="fas fa-times mr-2"></i> Hủy
-            </a>
-        </div>
     </form>
+
+    <!-- Quick Device Search Panel -->
+    <div id="deviceSearchPanel" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="if(event.target === this) closeDeviceSearch()">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-search mr-3"></i>Tìm kiếm và chọn thiết bị
+                </h3>
+                <button onclick="closeDeviceSearch()" class="text-white hover:text-gray-200 text-3xl font-bold leading-none">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="p-4 border-b bg-gray-50">
+                <div class="relative">
+                    <input type="text" id="deviceSearchInput" 
+                           placeholder="Nhập mã thiết bị, số máy, model..."
+                           class="w-full px-4 py-3 pl-12 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
+                           onkeyup="searchDevices()">
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></i>
+                </div>
+                <p class="text-sm text-gray-600 mt-2" id="deviceSearchCount"></p>
+            </div>
+            
+            <!-- Results -->
+            <div id="deviceSearchResults" class="flex-1 overflow-y-auto p-4">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+// Store available devices
+let availableDevices = [];
+
+// Load devices for selected unit
+function loadDevicesForUnit() {
+    const madvSelect = document.querySelector('select[name="madv"]');
+    if (!madvSelect || !madvSelect.value) return;
+    
+    const madv = madvSelect.value;
+    
+    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                availableDevices = data.data || [];
+                console.log(`Loaded ${availableDevices.length} devices for unit ${madv}`);
+            }
+        })
+        .catch(error => console.error('Error loading devices:', error));
+}
+
+// Open device search panel
+function openDeviceSearch() {
+    const madvSelect = document.querySelector('select[name="madv"]');
+    
+    if (!madvSelect || !madvSelect.value) {
+        alert('Vui lòng chọn đơn vị trước');
+        return;
+    }
+    
+    const panel = document.getElementById('deviceSearchPanel');
+    panel.classList.remove('hidden');
+    
+    // Load devices and show results
+    const madv = madvSelect.value;
+    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                availableDevices = data.data || [];
+                console.log(`Loaded ${availableDevices.length} devices for unit ${madv}`);
+                
+                // Show all devices initially
+                const input = document.getElementById('deviceSearchInput');
+                input.focus();
+                displayDeviceResults(availableDevices, '');
+            } else {
+                alert('Không thể tải danh sách thiết bị');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading devices:', error);
+            alert('Lỗi khi tải danh sách thiết bị');
+        });
+}
+
+// Close device search panel
+function closeDeviceSearch() {
+    document.getElementById('deviceSearchPanel').classList.add('hidden');
+    document.getElementById('deviceSearchInput').value = '';
+    document.getElementById('deviceSearchResults').innerHTML = '';
+}
+
+// Search devices
+function searchDevices() {
+    const query = document.getElementById('deviceSearchInput').value.toLowerCase().trim();
+    
+    let filtered = availableDevices;
+    if (query) {
+        // Split query into keywords
+        const keywords = query.split(/\s+/).filter(k => k.length > 0);
+        
+        filtered = availableDevices.filter(device => {
+            const searchText = [
+                device.mavt || '',
+                device.somay || '',
+                device.model || '',
+                device.mamay || ''
+            ].join(' ').toLowerCase();
+            
+            // All keywords must be found in the combined text
+            return keywords.every(keyword => searchText.includes(keyword));
+        });
+    }
+    
+    displayDeviceResults(filtered, query);
+}
+
+// Display device search results
+function displayDeviceResults(devices, query = '') {
+    const resultsDiv = document.getElementById('deviceSearchResults');
+    const countDiv = document.getElementById('deviceSearchCount');
+    
+    countDiv.textContent = `Tìm thấy ${devices.length} thiết bị`;
+    
+    if (devices.length === 0) {
+        resultsDiv.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-search text-gray-300 text-5xl mb-3"></i>
+                <p class="text-gray-500 text-lg">Không tìm thấy thiết bị nào</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = devices.map(device => {
+        const mavtText = highlightText(device.mavt || '', query);
+        const somayText = highlightText(device.somay || '', query);
+        const modelText = highlightText(device.model || '', query);
+        
+        return `
+            <div class="border rounded-lg p-4 mb-3 hover:bg-blue-50 cursor-pointer transition-colors"
+                 onclick="selectDevice('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay)}', '${escapeHtml(device.model)}')">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-semibold text-lg text-blue-600 mb-1">${mavtText}</div>
+                        <div class="text-gray-700"><strong>Số máy:</strong> ${somayText}</div>
+                        <div class="text-gray-700"><strong>Model:</strong> ${modelText}</div>
+                    </div>
+                    <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold text-sm">
+                        <i class="fas fa-check mr-1"></i>Chọn
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    resultsDiv.innerHTML = html;
+}
+
+// Select device
+function selectDevice(mavt, somay, model) {
+    document.getElementById('mavt').value = mavt;
+    document.getElementById('somay').value = somay;
+    document.getElementById('model').value = model;
+    
+    closeDeviceSearch();
+    
+    // Show notification
+    showNotification('Đã cập nhật thông tin thiết bị', 'success');
+}
+
+// Helper functions
+function highlightText(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-300 font-semibold">$1</mark>');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: 'bg-green-100 border-green-400 text-green-700',
+        error: 'bg-red-100 border-red-400 text-red-700',
+        info: 'bg-blue-100 border-blue-400 text-blue-700'
+    };
+    
+    const notification = document.createElement('div');
+    notification.className = `${colors[type]} border px-4 py-3 rounded mb-4 fixed top-4 right-4 z-50 shadow-lg max-w-md`;
+    notification.innerHTML = `
+        <span class="block sm:inline">${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-4 font-bold">&times;</button>
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+}
+
+// Load positions from vitri_iso table
+function loadPositions() {
+    fetch('/iso2/api/vitri.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateVitriSelect(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading positions:', error));
+}
+
+// Populate vitri select dropdowns
+function populateVitriSelect(positions) {
+    const selects = document.querySelectorAll('.vitri-select');
+    selects.forEach(select => {
+        const currentValue = select.getAttribute('data-current');
+        positions.forEach(pos => {
+            const option = document.createElement('option');
+            option.value = pos.tenvitri;
+            option.textContent = `[${pos.mavitri}] - ${pos.tenvitri}`;
+            if (currentValue && pos.tenvitri === currentValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    });
+}
+
+// Load lo from lo_iso table
+function loadLo() {
+    fetch('/iso2/api/lo.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateLoSelect(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading lo:', error));
+}
+
+// Populate lo select dropdowns
+function populateLoSelect(loList) {
+    const selects = document.querySelectorAll('.lo-select');
+    selects.forEach(select => {
+        const currentValue = select.getAttribute('data-current');
+        loList.forEach(lo => {
+            const option = document.createElement('option');
+            option.value = lo.tenlo;
+            option.textContent = `[${lo.malo}] - ${lo.tenlo}`;
+            if (currentValue && lo.tenlo === currentValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    });
+}
+
+// Load mo from mo_iso table
+function loadMo() {
+    fetch('/iso2/api/mo.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateMoSelect(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading mo:', error));
+}
+
+// Populate mo select dropdowns
+function populateMoSelect(moList) {
+    const selects = document.querySelectorAll('.mo-select');
+    selects.forEach(select => {
+        const currentValue = select.getAttribute('data-current');
+        moList.forEach(mo => {
+            const option = document.createElement('option');
+            option.value = mo.tenmo;
+            option.textContent = `[${mo.mamo}] - ${mo.tenmo}`;
+            if (currentValue && mo.tenmo === currentValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadPositions();
+    loadLo();
+    loadMo();
+    
+    // Load devices for current unit
+    const madvSelect = document.querySelector('select[name="madv"]');
+    if (madvSelect && madvSelect.value) {
+        loadDevicesForUnit();
+    }
+    
+    // Reload devices when unit changes
+    if (madvSelect) {
+        madvSelect.addEventListener('change', function() {
+            availableDevices = [];
+            if (this.value) {
+                loadDevicesForUnit();
+            }
+        });
+    }
+});
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 

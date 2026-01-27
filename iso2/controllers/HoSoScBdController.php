@@ -72,35 +72,41 @@ class HoSoScBdController
                 
                 // Insert each device
                 $successCount = 0;
-                foreach ($devicesData as $index => $device) {
-                    $data = array_merge($commonData, $device);
-                    
-                    // Auto-generate maql with index suffix (N1, N2, N3, etc.)
-                    $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu'], $index);
-                    $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
-                    
-                    $id = $this->model->create($data);
-                    if ($id) {
-                        $successCount++;
+                try {
+                    foreach ($devicesData as $index => $device) {
+                        $data = array_merge($commonData, $device);
                         
-                        // Log the creation
-                        $this->logHistory('CREATE', [
-                            'record_id' => $id,
-                            'maql' => $data['maql'],
-                            'phieu' => $data['phieu'],
-                            'mavt' => $data['mavt'],
-                            'somay' => $data['somay'],
-                            'madv' => $data['madv'],
-                            'description' => "Tạo hồ sơ mới: {$data['maql']} - Thiết bị {$index}/{count($devicesData)}"
-                        ]);
+                        // Auto-generate maql (same for all devices in same phieu)
+                        $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
+                        $data['hoso'] = $this->generateHoSo($data['phieu'], $index);
+                        
+                        $id = $this->model->create($data);
+                        if ($id) {
+                            $successCount++;
+                            
+                            // Log the creation
+                            $this->logHistory('CREATE', [
+                                'record_id' => $id,
+                                'maql' => $data['maql'],
+                                'phieu' => $data['phieu'],
+                                'mavt' => $data['mavt'],
+                                'somay' => $data['somay'],
+                                'madv' => $data['madv'],
+                                'description' => "Tạo hồ sơ mới: {$data['maql']} - Thiết bị {$index}/{count($devicesData)}"
+                            ]);
+                        }
                     }
+                    
+                    if ($successCount > 0) {
+                        header("Location: /iso2/hososcbd.php?success=created&count={$successCount}");
+                        exit;
+                    }
+                    $errors[] = 'Có lỗi xảy ra khi tạo hồ sơ';
+                } catch (PDOException $e) {
+                    error_log("HoSoScBd create error: " . $e->getMessage());
+                    error_log("Data: " . print_r($data ?? [], true));
+                    $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
                 }
-                
-                if ($successCount > 0) {
-                    header("Location: /iso2/hososcbd.php?success=created&count={$successCount}");
-                    exit;
-                }
-                $errors[] = 'Có lỗi xảy ra khi tạo hồ sơ';
             }
 
             $error = implode('<br>', $errors);
@@ -134,25 +140,32 @@ class HoSoScBdController
             if (empty($errors)) {
                 // Auto-generate maql and hoso for edit
                 $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
-                $data['hoso'] = $this->generateHoSo($data['madv'], $data['phieu'], $data['mavt'], $data['somay']);
+                // Use stt as index for uniqueness in edit mode
+                $data['hoso'] = $this->generateHoSo($data['phieu'], $stt);
                 
-                $success = $this->model->update($stt, $data);
-                if ($success) {
-                    // Log the update
-                    $this->logHistory('UPDATE', [
-                        'record_id' => $stt,
-                        'maql' => $data['maql'],
-                        'phieu' => $data['phieu'],
-                        'mavt' => $data['mavt'],
-                        'somay' => $data['somay'],
-                        'madv' => $data['madv'],
-                        'description' => "Cập nhật hồ sơ: {$data['maql']}"
-                    ]);
-                    
-                    header('Location: /iso2/hososcbd.php?success=updated');
-                    exit;
+                try {
+                    $success = $this->model->update($stt, $data);
+                    if ($success) {
+                        // Log the update
+                        $this->logHistory('UPDATE', [
+                            'record_id' => $stt,
+                            'maql' => $data['maql'],
+                            'phieu' => $data['phieu'],
+                            'mavt' => $data['mavt'],
+                            'somay' => $data['somay'],
+                            'madv' => $data['madv'],
+                            'description' => "Cập nhật hồ sơ: {$data['maql']}"
+                        ]);
+                        
+                        header('Location: /iso2/hososcbd.php?success=updated');
+                        exit;
+                    }
+                    $errors[] = 'Có lỗi xảy ra khi cập nhật hồ sơ';
+                } catch (PDOException $e) {
+                    error_log("HoSoScBd edit error: " . $e->getMessage());
+                    error_log("Data: " . print_r($data, true));
+                    $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
                 }
-                $errors[] = 'Có lỗi xảy ra khi cập nhật hồ sơ';
             }
 
             $error = implode(', ', $errors);
@@ -219,13 +232,13 @@ class HoSoScBdController
             'cv' => trim($_POST['cv'] ?? ''),
             'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
             'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
-            'ngaykt' => trim($_POST['ngaykt'] ?? ''),
+            'ngaykt' => empty(trim($_POST['ngaykt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykt']),
             'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
             'honghoc' => trim($_POST['honghoc'] ?? ''),
             'khacphuc' => trim($_POST['khacphuc'] ?? ''),
             'ttktafter' => trim($_POST['ttktafter'] ?? ''),
             'ghichu' => trim($_POST['ghichu'] ?? ''),
-            'ngayth' => trim($_POST['ngayth'] ?? date('Y-m-d')),
+            'ngayth' => empty(trim($_POST['ngayth'] ?? '')) ? '0000-00-00' : trim($_POST['ngayth']),
             'tbdosc' => trim($_POST['tbdosc'] ?? ''),
             'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
             'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
@@ -236,9 +249,9 @@ class HoSoScBdController
             'serialtbdosc3' => trim($_POST['serialtbdosc3'] ?? ''),
             'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
             'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? ''),
-            'nhomsc' => trim($_POST['nhomsc'] ?? ''),
+            'nhomsc' => trim($_POST['nhomsc'] ?? 'RDNGA'),
             'bg' => (int)($_POST['bg'] ?? 0),
-            'ngaybdtt' => trim($_POST['ngaybdtt'] ?? date('Y-m-d')),
+            'ngaybdtt' => empty(trim($_POST['ngaybdtt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaybdtt']),
             'dong' => trim($_POST['dong'] ?? ''),
             'noidung' => trim($_POST['noidung'] ?? ''),
             'ketluan' => trim($_POST['ketluan'] ?? ''),
@@ -292,13 +305,13 @@ class HoSoScBdController
             'cv' => trim($_POST['cv'] ?? ''),
             'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
             'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
-            'ngaykt' => trim($_POST['ngaykt'] ?? ''),
+            'ngaykt' => empty(trim($_POST['ngaykt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykt']),
             'ttktbefore' => trim($_POST['ttktbefore'] ?? ''),
             'honghoc' => trim($_POST['honghoc'] ?? ''),
             'khacphuc' => trim($_POST['khacphuc'] ?? ''),
             'ttktafter' => trim($_POST['ttktafter'] ?? ''),
             'ghichu' => trim($_POST['ghichu'] ?? ''),
-            'ngayth' => trim($_POST['ngayth'] ?? date('Y-m-d')),
+            'ngayth' => empty(trim($_POST['ngayth'] ?? '')) ? '0000-00-00' : trim($_POST['ngayth']),
             'tbdosc' => trim($_POST['tbdosc'] ?? ''),
             'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
             'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
@@ -309,9 +322,9 @@ class HoSoScBdController
             'serialtbdosc3' => trim($_POST['serialtbdosc3'] ?? ''),
             'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
             'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? ''),
-            'nhomsc' => trim($_POST['nhomsc'] ?? ''),
+            'nhomsc' => trim($_POST['nhomsc'] ?? 'RDNGA'),
             'bg' => (int)($_POST['bg'] ?? 0),
-            'ngaybdtt' => trim($_POST['ngaybdtt'] ?? date('Y-m-d')),
+            'ngaybdtt' => empty(trim($_POST['ngaybdtt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaybdtt']),
             'dong' => trim($_POST['dong'] ?? ''),
             'noidung' => trim($_POST['noidung'] ?? ''),
             'ketluan' => trim($_POST['ketluan'] ?? ''),
@@ -354,11 +367,7 @@ class HoSoScBdController
         // Required fields
         if (empty($device['mavt'])) $errors[] = "{$label}: Mã vật tư không được để trống";
         if (empty($device['somay'])) $errors[] = "{$label}: Số máy không được để trống";
-        if (empty($device['model'])) $errors[] = "{$label}: Model không được để trống";
-        if (empty($device['vitrimaybd'])) $errors[] = "{$label}: Vị trí máy bàn dịch không được để trống";
-        if (empty($device['lo'])) $errors[] = "{$label}: Lô không được để trống";
-        if (empty($device['gieng'])) $errors[] = "{$label}: Giếng không được để trống";
-        if (empty($device['mo'])) $errors[] = "{$label}: Mỏ không được để trống";
+        // model, vitrimaybd, lo, gieng, mo are optional - no validation
         
         // Check device availability (bg=0 means device is busy)
         if (!empty($device['mavt']) && !empty($device['somay'])) {
@@ -383,12 +392,7 @@ class HoSoScBdController
         if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
         if (empty($data['madv'])) $errors[] = 'Mã đơn vị không được để trống';
         if (empty($data['cv'])) $errors[] = 'Công việc không được để trống';
-        if (empty($data['nhomsc'])) $errors[] = 'Nhóm sửa chữa không được để trống';
-        if (empty($data['vitrimaybd'])) $errors[] = 'Vị trí máy bàn dịch không được để trống';
-        if (empty($data['model'])) $errors[] = 'Model không được để trống';
-        if (empty($data['lo'])) $errors[] = 'Lô không được để trống';
-        if (empty($data['gieng'])) $errors[] = 'Giếng không được để trống';
-        if (empty($data['mo'])) $errors[] = 'Mỏ không được để trống';
+        // model, vitrimaybd, lo, gieng, mo, nhomsc are optional - no validation
         
         // Check device availability (bg=0 means device is busy)
         if (!empty($data['mavt']) && !empty($data['somay'])) {
@@ -402,23 +406,23 @@ class HoSoScBdController
 
     /**
      * Generate mã quản lý (maql)
-     * Format: YYYYMMDD-MADV-PHIEU-N1
-     * Example: 20251121-XDT-0126-N1
+     * Format: YYYYMMDD-MADV-PHIEU
+     * Example: 20251121-XDT-0126
      */
-    private function generateMaQL(string $madv, string $phieu, int $index = 1): string
+    private function generateMaQL(string $madv, string $phieu): string
     {
         $date = date('Ymd');
-        return "{$date}-{$madv}-{$phieu}-N{$index}";
+        return "{$date}-{$madv}-{$phieu}";
     }
 
     /**
      * Generate mã hồ sơ (hoso)
-     * Format: MADV-PHIEU-MAVT-SOMAY
-     * Example: XDT-0126-PM001-SN12345
+     * Format: PHIEU-1, PHIEU-2, PHIEU-3...
+     * Example: 0126-1, 0126-2, 0126-3
      */
-    private function generateHoSo(string $madv, string $phieu, string $mavt, string $somay): string
+    private function generateHoSo(string $phieu, int $index): string
     {
-        return "{$madv}-{$phieu}-{$mavt}-{$somay}";
+        return "{$phieu}-{$index}";
     }
     
     /**
@@ -455,6 +459,26 @@ class HoSoScBdController
         }
 
         require_once __DIR__ . '/../views/hososcbd/export_pdf.php';
+    }
+
+    /**
+     * Export single record as Word document
+     */
+    public function exportWord(): void
+    {
+        $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if (!$stt) {
+            header('Location: /iso2/hososcbd.php?error=invalid');
+            exit;
+        }
+
+        $item = $this->model->findById($stt);
+        if (!$item) {
+            header('Location: /iso2/hososcbd.php?error=notfound');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/hososcbd/export_word.php';
     }
 
     /**

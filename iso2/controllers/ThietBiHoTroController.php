@@ -55,14 +55,20 @@ class ThietBiHoTroController {
         $hosomayFile = $this->handleFileUpload('hosomay', 'hosomay');
         $tlktFile = $this->handleFileUpload('tlkt', 'tlkt');
         
+        // Strip "danhso-" prefix from chusohuu (e.g., "16394-VŨ ANH ĐỨC" -> "VŨ ANH ĐỨC")
+        $chusohuu = $_POST['chusohuu'] ?? '';
+        if ($chusohuu && preg_match('/^\d+-(.+)$/', $chusohuu, $matches)) {
+            $chusohuu = $matches[1];
+        }
+        
         $data = [
             'tenthietbi' => $_POST['tenthietbi'] ?? '',
             'tenvt' => $_POST['tenvt'] ?? '',
-            'chusohuu' => $_POST['chusohuu'] ?? '',
+            'chusohuu' => $chusohuu,
             'serialnumber' => $_POST['serialnumber'] ?? '',
-            'ngaykd' => $_POST['ngaykd'] ?? null,
+            'ngaykd' => empty(trim($_POST['ngaykd'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykd']),
             'hankd' => (int)($_POST['hankd'] ?? 0),
-            'ngaykdtt' => $_POST['ngaykdtt'] ?? null,
+            'ngaykdtt' => empty(trim($_POST['ngaykdtt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykdtt']),
             'tlkt' => $tlktFile,
             'hosomay' => $hosomayFile,
             'cdung' => isset($_POST['cdung']) && $_POST['cdung'] == 1 ? 1 : 0,
@@ -110,14 +116,20 @@ class ThietBiHoTroController {
         $hosomayFile = $this->handleFileUpload('hosomay', 'hosomay') ?: $device['hosomay'];
         $tlktFile = $this->handleFileUpload('tlkt', 'tlkt') ?: $device['tlkt'];
         
+        // Strip "danhso-" prefix from chusohuu (e.g., "16394-VŨ ANH ĐỨC" -> "VŨ ANH ĐỨC")
+        $chusohuu = $_POST['chusohuu'] ?? '';
+        if ($chusohuu && preg_match('/^\d+-(.+)$/', $chusohuu, $matches)) {
+            $chusohuu = $matches[1];
+        }
+        
         $data = [
             'tenthietbi' => $_POST['tenthietbi'] ?? '',
             'tenvt' => $_POST['tenvt'] ?? '',
-            'chusohuu' => $_POST['chusohuu'] ?? '',
+            'chusohuu' => $chusohuu,
             'serialnumber' => $_POST['serialnumber'] ?? '',
-            'ngaykd' => $_POST['ngaykd'] ?? null,
+            'ngaykd' => empty(trim($_POST['ngaykd'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykd']),
             'hankd' => (int)($_POST['hankd'] ?? 0),
-            'ngaykdtt' => $_POST['ngaykdtt'] ?? null,
+            'ngaykdtt' => empty(trim($_POST['ngaykdtt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykdtt']),
             'tlkt' => $tlktFile,
             'hosomay' => $hosomayFile,
             'cdung' => isset($_POST['cdung']) && $_POST['cdung'] == 1 ? 1 : 0,
@@ -127,16 +139,42 @@ class ThietBiHoTroController {
         $errors = $this->validate($data);
         
         if (empty($errors)) {
-            $updated = $this->model->update($id, $data);
-            if ($updated) {
-                header('Location: thietbihotro.php?success=Cập nhật thiết bị thành công');
-                exit;
-            } else {
-                $errors[] = 'Không thể cập nhật thiết bị';
+            try {
+                // Log data trước khi update
+                $logFile = __DIR__ . '/../logs/thietbihotro_update.log';
+                $logDir = dirname($logFile);
+                if (!is_dir($logDir)) {
+                    mkdir($logDir, 0755, true);
+                }
+                
+                $logMsg = date('Y-m-d H:i:s') . " === ThietBiHoTro Update Debug ===\n";
+                $logMsg .= "ID: " . $id . "\n";
+                $logMsg .= "Data to update: " . print_r($data, true) . "\n";
+                $logMsg .= "POST data: " . print_r($_POST, true) . "\n";
+                file_put_contents($logFile, $logMsg, FILE_APPEND);
+                
+                $updated = $this->model->update($id, $data);
+                
+                $logMsg = "Update result (rowCount): " . $updated . "\n\n";
+                file_put_contents($logFile, $logMsg, FILE_APPEND);
+                
+                if ($updated !== false) {
+                    header('Location: thietbihotro.php?success=Cập nhật thiết bị thành công');
+                    exit;
+                } else {
+                    $errors[] = 'Không thể cập nhật thiết bị';
+                }
+            } catch (PDOException $e) {
+                file_put_contents($logFile, "Error: " . $e->getMessage() . "\n\n", FILE_APPEND);
+                $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
             }
+        } else {
+            $logFile = __DIR__ . '/../logs/thietbihotro_update.log';
+            file_put_contents($logFile, date('Y-m-d H:i:s') . " Validation errors: " . print_r($errors, true) . "\n\n", FILE_APPEND);
         }
         
         $device = $this->model->find($id);
+        $chusohuuList = $this->model->getChuSoHuuFromResume();
         $title = 'Sửa Thiết bị Hỗ trợ';
         include __DIR__ . '/../views/thietbihotro/edit.php';
     }
@@ -163,6 +201,21 @@ class ThietBiHoTroController {
         
         $title = 'Chi tiết Thiết bị';
         include __DIR__ . '/../views/thietbihotro/view.php';
+    }
+
+    public function exportPdf(): void {
+        requirePermission(PERMISSION_PROJECT_VIEW);
+        
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $chusohuu = isset($_GET['chusohuu']) ? trim($_GET['chusohuu']) : '';
+        $trangthai = isset($_GET['trangthai']) ? trim($_GET['trangthai']) : '';
+
+        // Get all devices (max 1000)
+        $devices = $this->model->getList($search, $chusohuu, $trangthai, 0, 1000);
+        $stats = $this->model->getStats();
+        $chusohuuList = $this->model->getChuSoHuuFromResume();
+
+        require_once __DIR__ . '/../views/thietbihotro/export_pdf.php';
     }
 
     private function validate(array $data): array {

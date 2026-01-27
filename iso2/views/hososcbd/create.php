@@ -15,6 +15,18 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <?php endif; ?>
 
+    <!-- Action Buttons at Top -->
+    <div class="flex gap-3 mb-6 p-4 bg-gray-50 rounded border-2 border-blue-500">
+        <button type="button" id="saveButton" onclick="document.querySelector('form').submit();" 
+                style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; display: inline-block;">
+            <i class="fas fa-save" style="margin-right: 8px;"></i>Lưu hồ sơ
+        </button>
+        <a href="hososcbd.php" 
+           style="background-color: #6b7280; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block;">
+            <i class="fas fa-times" style="margin-right: 8px;"></i>Hủy
+        </a>
+    </div>
+
     <form method="POST" class="space-y-6">
         <!-- Thông tin cơ bản -->
         <div class="border-l-4 border-blue-500 pl-4">
@@ -61,11 +73,6 @@ require_once __DIR__ . '/../layouts/header.php';
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="button" onclick="openAddUnitModal()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded font-bold text-lg"
-                                title="Thêm đơn vị mới">
-                            <i class="fas fa-plus"></i>
-                        </button>
                     </div>
                 </div>
                 <div>
@@ -85,7 +92,13 @@ require_once __DIR__ . '/../layouts/header.php';
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Công việc <span class="text-red-500">*</span></label>
-                    <textarea name="cv" required rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['cv']) ? htmlspecialchars($_POST['cv']) : ''; ?></textarea>
+                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <?php $currentCv = isset($_POST['cv']) ? $_POST['cv'] : 'SC'; ?>
+                        <option value="KT" <?php echo ($currentCv === 'KT') ? 'selected' : ''; ?>>KT - Kiểm Tra</option>
+                        <option value="BD" <?php echo ($currentCv === 'BD') ? 'selected' : ''; ?>>BD - Bảo Dưỡng</option>
+                        <option value="SC" <?php echo ($currentCv === 'SC') ? 'selected' : ''; ?>>SC - Sửa Chữa</option>
+                        <option value="BDDK" <?php echo ($currentCv === 'BDDK') ? 'selected' : ''; ?>>BDDK - Bảo Dưỡng Định Kỳ</option>
+                    </select>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Yêu cầu thêm của KH</label>
@@ -168,15 +181,11 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Thông tin thiết bị (Dynamic) -->
         <div class="border-l-4 border-green-500 pl-4">
-            <div class="flex items-center justify-between mb-3">
+            <div class="mb-3">
                 <h2 class="text-lg font-bold text-green-700">
                     <i class="fas fa-cogs mr-2"></i>Thông tin thiết bị
                     <span class="text-sm font-normal text-gray-600 ml-2">(<span id="deviceCount">0</span> thiết bị)</span>
                 </h2>
-                <button type="button" onclick="openAddDevicePanel()" 
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition-colors flex items-center shadow-md hover:shadow-lg">
-                    <i class="fas fa-plus mr-2"></i>Chọn thiết bị
-                </button>
             </div>
             
             <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-4">
@@ -184,7 +193,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-0.5"></i>
                     <span>
                         Bạn có thể thêm không giới hạn số lượng thiết bị. 
-                        Sử dụng nút <strong class="text-green-700">"Chọn thiết bị"</strong> để thêm và nút 
+                        Sử dụng nút <strong class="text-green-700">"Chọn thiết bị"</strong> ở phía dưới để thêm và nút 
                         <strong class="text-red-700">"Xóa"</strong> để xóa thiết bị không cần thiết.
                     </span>
                 </p>
@@ -192,6 +201,14 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div id="deviceContainer" class="space-y-4" style="display: none;">
                 <!-- Devices will be added here dynamically -->
+            </div>
+
+            <!-- Nút thêm thiết bị ở phía dưới -->
+            <div class="mt-4">
+                <button type="button" onclick="openAddDevicePanel()" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold transition-colors flex items-center shadow-md hover:shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>Chọn thiết bị
+                </button>
             </div>
         </div>
 
@@ -392,158 +409,10 @@ function renumberDevices() {
                 <i class="fas fa-arrow-right mr-2"></i>Nhập thông tin bàn giao sau
             </a>
         </div>
-
-        <!-- Buttons -->
-        <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
-                <i class="fas fa-save mr-2"></i> Lưu hồ sơ
-            </button>
-            <a href="hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded text-base font-semibold text-center w-full md:w-auto">
-                <i class="fas fa-times mr-2"></i> Hủy
-            </a>
-        </div>
     </form>
 </div>
 
-<!-- Modal: Add Unit -->
-<div id="addUnitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-lg font-bold">
-                <i class="fas fa-plus-circle mr-2"></i>Thêm đơn vị mới
-            </h3>
-            <button onclick="closeAddUnitModal()" class="text-white hover:text-gray-200 text-2xl font-bold">
-                &times;
-            </button>
-        </div>
-        
-        <form id="addUnitForm" class="p-6 space-y-4">
-            <div id="modalMessage" class="hidden"></div>
-            
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Mã đơn vị <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="newMadv" required 
-                       placeholder="Ví dụ: XDT, PCC, etc."
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                <p class="text-xs text-gray-500 mt-1">Mã viết tắt, không dấu, chữ hoa</p>
-            </div>
-            
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Tên đơn vị <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="newTendv" required 
-                       placeholder="Ví dụ: Xưởng Điện Tử"
-                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-            </div>
-            
-            <div class="flex gap-2 pt-4 border-t">
-                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">
-                    <i class="fas fa-save mr-2"></i>Lưu
-                </button>
-                <button type="button" onclick="closeAddUnitModal()" 
-                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded font-semibold">
-                    <i class="fas fa-times mr-2"></i>Hủy
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
-// Modal functions for Add Unit
-function openAddUnitModal() {
-    document.getElementById('addUnitModal').classList.remove('hidden');
-    document.getElementById('newMadv').focus();
-}
-
-function closeAddUnitModal() {
-    document.getElementById('addUnitModal').classList.add('hidden');
-    document.getElementById('addUnitForm').reset();
-    document.getElementById('modalMessage').classList.add('hidden');
-}
-
-// Close modal on escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeAddUnitModal();
-    }
-});
-
-// Close modal on background click
-document.getElementById('addUnitModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeAddUnitModal();
-    }
-});
-
-// Handle Add Unit Form Submit
-document.getElementById('addUnitForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const madv = document.getElementById('newMadv').value.trim().toUpperCase();
-    const tendv = document.getElementById('newTendv').value.trim();
-    
-    if (!madv || !tendv) {
-        showModalMessage('Vui lòng điền đầy đủ thông tin', 'error');
-        return;
-    }
-    
-    // Create FormData
-    const formData = new FormData();
-    formData.append('madv', madv);
-    formData.append('tendv', tendv);
-    
-    // Submit to API
-    fetch('/iso2/api/donvi.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showModalMessage(data.message, 'success');
-            
-            // Add new option to select
-            const madvSelect = document.getElementById('madvSelect');
-            const newOption = document.createElement('option');
-            newOption.value = data.data.madv;
-            newOption.textContent = data.data.tendv;
-            newOption.selected = true;
-            madvSelect.appendChild(newOption);
-            
-            // Trigger change event to reload devices
-            madvSelect.dispatchEvent(new Event('change'));
-            
-            // Close modal after 1 second
-            setTimeout(() => {
-                closeAddUnitModal();
-                showNotification('Đơn vị mới đã được thêm và chọn', 'success');
-            }, 1000);
-        } else {
-            showModalMessage(data.message, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showModalMessage('Có lỗi xảy ra khi thêm đơn vị', 'error');
-    });
-});
-
-function showModalMessage(message, type) {
-    const messageDiv = document.getElementById('modalMessage');
-    const colors = {
-        success: 'bg-green-100 border-green-400 text-green-700',
-        error: 'bg-red-100 border-red-400 text-red-700'
-    };
-    
-    messageDiv.className = `border px-4 py-3 rounded mb-4 ${colors[type]}`;
-    messageDiv.textContent = message;
-    messageDiv.classList.remove('hidden');
-}
-
 // Load positions from vitri_iso table
 function loadPositions() {
     console.log('Loading positions from API...');

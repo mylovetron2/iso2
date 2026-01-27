@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 2: Database Design - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .db-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .db-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        
+        .db-card.postgres {
+            border-color: #336791;
+        }
+        
+        .db-card.mongo {
+            border-color: #47a248;
+        }
+        
+        .db-card h4 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .erd-diagram {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💾 Bước 2: Database Design</h1>
+            <p>Thiết kế hybrid PostgreSQL + MongoDB</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_01_SETUP.html">← Bước 1</a>
+            <a href="PMS_STEP_03_BACKEND.html">Bước 3 →</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Hiểu hybrid database architecture (tại sao cần cả SQL & NoSQL)</li>
+                    <li>✅ Thiết kế PostgreSQL schema (structured data)</li>
+                    <li>✅ Thiết kế MongoDB collections (dynamic data)</li>
+                    <li>✅ Tạo migrations cho PostgreSQL</li>
+                    <li>✅ Setup models với dual connections</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1 -->
+            <div class="section">
+                <h2>1. Hybrid Database Strategy</h2>
+                
+                <div class="highlight-box">
+                    <h3>🤔 Tại Sao Cần Cả PostgreSQL VÀ MongoDB?</h3>
+                    
+                    <div class="db-split">
+                        <div class="db-card postgres">
+                            <h4>🐘 PostgreSQL (Structured)</h4>
+                            <p><strong>Dùng cho:</strong></p>
+                            <ul>
+                                <li>✅ Core business data (users, plans, tasks)</li>
+                                <li>✅ Dữ liệu có relationships chặt chẽ</li>
+                                <li>✅ Cần ACID transactions</li>
+                                <li>✅ Queries phức tạp (JOINs, aggregations)</li>
+                                <li>✅ Reporting & analytics</li>
+                            </ul>
+                            <p><strong>Ví dụ:</strong> Thông tin người dùng, kế hoạch sản xuất, nhiệm vụ</p>
+                        </div>
+                        
+                        <div class="db-card mongo">
+                            <h4>🍃 MongoDB (Dynamic)</h4>
+                            <p><strong>Dùng cho:</strong></p>
+                            <ul>
+                                <li>✅ Cấu hình động theo từng Enterprise</li>
+                                <li>✅ Custom fields & workflows</li>
+                                <li>✅ Logs & audit trails</li>
+                                <li>✅ Temporary data & caching</li>
+                                <li>✅ Dữ liệu không cố định schema</li>
+                            </ul>
+                            <p><strong>Ví dụ:</strong> Enterprise configs, custom form fields, activity logs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PHẦN 2 -->
+            <div class="section">
+                <h2>2. PostgreSQL Schema</h2>
+                
+                <h3>📊 ERD Diagram</h3>
+                
+                <div class="erd-diagram">
+                    <svg width="100%" height="500" viewBox="0 0 1200 500">
+                        <!-- Users -->
+                        <rect x="50" y="50" width="200" height="150" fill="#667eea" stroke="#1e3c72" stroke-width="2" rx="5"/>
+                        <text x="150" y="75" text-anchor="middle" fill="white" font-weight="bold">users</text>
+                        <text x="60" y="100" fill="white" font-size="12">id (PK)</text>
+                        <text x="60" y="120" fill="white" font-size="12">name</text>
+                        <text x="60" y="140" fill="white" font-size="12">email</text>
+                        <text x="60" y="160" fill="white" font-size="12">role_id (FK)</text>
+                        <text x="60" y="180" fill="white" font-size="12">enterprise_id (FK)</text>
+                        
+                        <!-- Enterprises -->
+                        <rect x="350" y="50" width="200" height="120" fill="#10b981" stroke="#047857" stroke-width="2" rx="5"/>
+                        <text x="450" y="75" text-anchor="middle" fill="white" font-weight="bold">enterprises</text>
+                        <text x="360" y="100" fill="white" font-size="12">id (PK)</text>
+                        <text x="360" y="120" fill="white" font-size="12">name</text>
+                        <text x="360" y="140" fill="white" font-size="12">code</text>
+                        <text x="360" y="160" fill="white" font-size="12">status</text>
+                        
+                        <!-- Plans -->
+                        <rect x="650" y="50" width="200" height="180" fill="#f59e0b" stroke="#d97706" stroke-width="2" rx="5"/>
+                        <text x="750" y="75" text-anchor="middle" fill="white" font-weight="bold">production_plans</text>
+                        <text x="660" y="100" fill="white" font-size="12">id (PK)</text>
+                        <text x="660" y="120" fill="white" font-size="12">enterprise_id (FK)</text>
+                        <text x="660" y="140" fill="white" font-size="12">name</text>
+                        <text x="660" y="160" fill="white" font-size="12">start_date</text>
+                        <text x="660" y="180" fill="white" font-size="12">end_date</text>
+                        <text x="660" y="200" fill="white" font-size="12">status</text>
+                        <text x="660" y="220" fill="white" font-size="12">created_by (FK)</text>
+                        
+                        <!-- Tasks -->
+                        <rect x="950" y="50" width="200" height="200" fill="#ef4444" stroke="#dc2626" stroke-width="2" rx="5"/>
+                        <text x="1050" y="75" text-anchor="middle" fill="white" font-weight="bold">tasks</text>
+                        <text x="960" y="100" fill="white" font-size="12">id (PK)</text>
+                        <text x="960" y="120" fill="white" font-size="12">plan_id (FK)</text>
+                        <text x="960" y="140" fill="white" font-size="12">name</text>
+                        <text x="960" y="160" fill="white" font-size="12">assigned_to (FK)</text>
+                        <text x="960" y="180" fill="white" font-size="12">status</text>
+                        <text x="960" y="200" fill="white" font-size="12">priority</text>
+                        <text x="960" y="220" fill="white" font-size="12">start_date</text>
+                        <text x="960" y="240" fill="white" font-size="12">end_date</text>
+                        
+                        <!-- Relationships -->
+                        <line x1="250" y1="125" x2="350" y2="125" stroke="#333" stroke-width="2"/>
+                        <text x="290" y="115" fill="#333" font-size="11">belongs to</text>
+                        
+                        <line x1="550" y1="110" x2="650" y2="110" stroke="#333" stroke-width="2"/>
+                        <text x="590" y="100" fill="#333" font-size="11">has many</text>
+                        
+                        <line x1="850" y1="150" x2="950" y2="150" stroke="#333" stroke-width="2"/>
+                        <text x="890" y="140" fill="#333" font-size="11">has many</text>
+                        
+                        <!-- Roles -->
+                        <rect x="50" y="300" width="200" height="100" fill="#8b5cf6" stroke="#7c3aed" stroke-width="2" rx="5"/>
+                        <text x="150" y="325" text-anchor="middle" fill="white" font-weight="bold">roles</text>
+                        <text x="60" y="350" fill="white" font-size="12">id (PK)</text>
+                        <text x="60" y="370" fill="white" font-size="12">name</text>
+                        <text x="60" y="390" fill="white" font-size="12">permissions (JSON)</text>
+                        
+                        <line x1="150" y1="200" x2="150" y2="300" stroke="#333" stroke-width="2"/>
+                    </svg>
+                </div>
+                
+                <h3>📝 Migration Files</h3>
+                
+                <div class="code-block">
+<span class="comment"># Tạo migrations</span>
+php artisan make:migration create_enterprises_table
+php artisan make:migration create_roles_table
+php artisan make:migration create_users_table
+php artisan make:migration create_production_plans_table
+php artisan make:migration create_tasks_table
+                </div>
+                
+                <h3>🏢 Table: enterprises</h3>
+                
+                <div class="code-block">
+<span class="comment">// database/migrations/xxxx_create_enterprises_table.php</span>
+<span class="keyword">public function</span> <span class="function">up</span>()
+{
+    Schema::<span class="function">create</span>(<span class="string">'enterprises'</span>, <span class="keyword">function</span> (Blueprint $table) {
+        $table-><span class="function">id</span>();
+        $table-><span class="function">string</span>(<span class="string">'name'</span>);
+        $table-><span class="function">string</span>(<span class="string">'code'</span>)-><span class="function">unique</span>(); <span class="comment">// VSP, PVEP, etc.</span>
+        $table-><span class="function">string</span>(<span class="string">'status'</span>)-><span class="function">default</span>(<span class="string">'active'</span>); <span class="comment">// active, inactive</span>
+        $table-><span class="function">text</span>(<span class="string">'description'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">timestamps</span>();
+        $table-><span class="function">softDeletes</span>();
+    });
+}
+                </div>
+                
+                <h3>👥 Table: roles</h3>
+                
+                <div class="code-block">
+<span class="comment">// database/migrations/xxxx_create_roles_table.php</span>
+<span class="keyword">public function</span> <span class="function">up</span>()
+{
+    Schema::<span class="function">create</span>(<span class="string">'roles'</span>, <span class="keyword">function</span> (Blueprint $table) {
+        $table-><span class="function">id</span>();
+        $table-><span class="function">string</span>(<span class="string">'name'</span>); <span class="comment">// Admin, Manager, Staff</span>
+        $table-><span class="function">string</span>(<span class="string">'slug'</span>)-><span class="function">unique</span>();
+        $table-><span class="function">json</span>(<span class="string">'permissions'</span>)-><span class="function">nullable</span>(); <span class="comment">// ['plans.create', 'tasks.edit']</span>
+        $table-><span class="function">timestamps</span>();
+    });
+}
+                </div>
+                
+                <h3>👤 Table: users</h3>
+                
+                <div class="code-block">
+<span class="comment">// database/migrations/xxxx_create_users_table.php</span>
+<span class="keyword">public function</span> <span class="function">up</span>()
+{
+    Schema::<span class="function">create</span>(<span class="string">'users'</span>, <span class="keyword">function</span> (Blueprint $table) {
+        $table-><span class="function">id</span>();
+        $table-><span class="function">string</span>(<span class="string">'name'</span>);
+        $table-><span class="function">string</span>(<span class="string">'email'</span>)-><span class="function">unique</span>();
+        $table-><span class="function">string</span>(<span class="string">'password'</span>);
+        $table-><span class="function">foreignId</span>(<span class="string">'role_id'</span>)-><span class="function">constrained</span>();
+        $table-><span class="function">foreignId</span>(<span class="string">'enterprise_id'</span>)-><span class="function">constrained</span>();
+        $table-><span class="function">string</span>(<span class="string">'avatar_url'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">string</span>(<span class="string">'status'</span>)-><span class="function">default</span>(<span class="string">'active'</span>); <span class="comment">// active, inactive</span>
+        $table-><span class="function">timestamp</span>(<span class="string">'last_login_at'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">rememberToken</span>();
+        $table-><span class="function">timestamps</span>();
+        $table-><span class="function">softDeletes</span>();
+    });
+}
+                </div>
+                
+                <h3>📋 Table: production_plans</h3>
+                
+                <div class="code-block">
+<span class="comment">// database/migrations/xxxx_create_production_plans_table.php</span>
+<span class="keyword">public function</span> <span class="function">up</span>()
+{
+    Schema::<span class="function">create</span>(<span class="string">'production_plans'</span>, <span class="keyword">function</span> (Blueprint $table) {
+        $table-><span class="function">id</span>();
+        $table-><span class="function">foreignId</span>(<span class="string">'enterprise_id'</span>)-><span class="function">constrained</span>();
+        $table-><span class="function">string</span>(<span class="string">'name'</span>);
+        $table-><span class="function">string</span>(<span class="string">'code'</span>)-><span class="function">unique</span>(); <span class="comment">// PLAN-2026-001</span>
+        $table-><span class="function">text</span>(<span class="string">'description'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">date</span>(<span class="string">'start_date'</span>);
+        $table-><span class="function">date</span>(<span class="string">'end_date'</span>);
+        $table-><span class="function">enum</span>(<span class="string">'status'</span>, [<span class="string">'draft'</span>, <span class="string">'planning'</span>, <span class="string">'in_progress'</span>, <span class="string">'completed'</span>, <span class="string">'cancelled'</span>])
+              -><span class="function">default</span>(<span class="string">'draft'</span>);
+        $table-><span class="function">integer</span>(<span class="string">'progress'</span>)-><span class="function">default</span>(0); <span class="comment">// 0-100%</span>
+        $table-><span class="function">foreignId</span>(<span class="string">'created_by'</span>)-><span class="function">constrained</span>(<span class="string">'users'</span>);
+        $table-><span class="function">foreignId</span>(<span class="string">'approved_by'</span>)-><span class="function">nullable</span>()-><span class="function">constrained</span>(<span class="string">'users'</span>);
+        $table-><span class="function">timestamp</span>(<span class="string">'approved_at'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">timestamps</span>();
+        $table-><span class="function">softDeletes</span>();
+    });
+}
+                </div>
+                
+                <h3>✅ Table: tasks</h3>
+                
+                <div class="code-block">
+<span class="comment">// database/migrations/xxxx_create_tasks_table.php</span>
+<span class="keyword">public function</span> <span class="function">up</span>()
+{
+    Schema::<span class="function">create</span>(<span class="string">'tasks'</span>, <span class="keyword">function</span> (Blueprint $table) {
+        $table-><span class="function">id</span>();
+        $table-><span class="function">foreignId</span>(<span class="string">'plan_id'</span>)-><span class="function">constrained</span>(<span class="string">'production_plans'</span>)-><span class="function">onDelete</span>(<span class="string">'cascade'</span>);
+        $table-><span class="function">string</span>(<span class="string">'name'</span>);
+        $table-><span class="function">text</span>(<span class="string">'description'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">foreignId</span>(<span class="string">'assigned_to'</span>)-><span class="function">nullable</span>()-><span class="function">constrained</span>(<span class="string">'users'</span>);
+        $table-><span class="function">enum</span>(<span class="string">'status'</span>, [<span class="string">'todo'</span>, <span class="string">'in_progress'</span>, <span class="string">'review'</span>, <span class="string">'done'</span>])
+              -><span class="function">default</span>(<span class="string">'todo'</span>);
+        $table-><span class="function">enum</span>(<span class="string">'priority'</span>, [<span class="string">'low'</span>, <span class="string">'medium'</span>, <span class="string">'high'</span>, <span class="string">'urgent'</span>])
+              -><span class="function">default</span>(<span class="string">'medium'</span>);
+        $table-><span class="function">date</span>(<span class="string">'start_date'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">date</span>(<span class="string">'end_date'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">integer</span>(<span class="string">'estimated_hours'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">integer</span>(<span class="string">'actual_hours'</span>)-><span class="function">nullable</span>();
+        $table-><span class="function">integer</span>(<span class="string">'progress'</span>)-><span class="function">default</span>(0); <span class="comment">// 0-100%</span>
+        $table-><span class="function">integer</span>(<span class="string">'order'</span>)-><span class="function">default</span>(0); <span class="comment">// For Kanban sorting</span>
+        $table-><span class="function">timestamps</span>();
+        $table-><span class="function">softDeletes</span>();
+    });
+}
+                </div>
+                
+                <h3>🚀 Chạy Migrations</h3>
+                
+                <div class="code-block">
+<span class="comment"># Chạy tất cả migrations</span>
+php artisan migrate
+
+<span class="comment"># Output:</span>
+<span class="comment"># Migrating: xxxx_create_enterprises_table</span>
+<span class="comment"># Migrated:  xxxx_create_enterprises_table (25.34ms)</span>
+<span class="comment"># Migrating: xxxx_create_roles_table</span>
+<span class="comment"># ...</span>
+                </div>
+            </div>
+            
+            <!-- PHẦN 3 -->
+            <div class="section">
+                <h2>3. MongoDB Collections</h2>
+                
+                <div class="highlight-box">
+                    <h3>🍃 Tại Sao MongoDB Cho Dynamic Data?</h3>
+                    <p>Mỗi Enterprise có thể có cấu hình khác nhau:</p>
+                    <ul>
+                        <li>✅ Enterprise A cần track "Số giàn khoan"</li>
+                        <li>✅ Enterprise B cần track "Độ sâu giếng"</li>
+                        <li>✅ Enterprise C cần cả hai + thêm "Loại dầu"</li>
+                    </ul>
+                    <p>→ Không thể dùng PostgreSQL với schema cố định!</p>
+                </div>
+                
+                <h3>⚙️ Collection: enterprise_configs</h3>
+                
+                <div class="code-block">
+<span class="comment">// MongoDB collection structure</span>
+{
+    <span class="string">"_id"</span>: ObjectId(<span class="string">"..."</span>),
+    <span class="string">"enterprise_id"</span>: 1,
+    <span class="string">"custom_fields"</span>: [
+        {
+            <span class="string">"key"</span>: <span class="string">"well_depth"</span>,
+            <span class="string">"label"</span>: <span class="string">"Độ sâu giếng (m)"</span>,
+            <span class="string">"type"</span>: <span class="string">"number"</span>,
+            <span class="string">"required"</span>: <span class="keyword">true</span>
+        },
+        {
+            <span class="string">"key"</span>: <span class="string">"oil_type"</span>,
+            <span class="string">"label"</span>: <span class="string">"Loại dầu"</span>,
+            <span class="string">"type"</span>: <span class="string">"select"</span>,
+            <span class="string">"options"</span>: [<span class="string">"Crude"</span>, <span class="string">"Condensate"</span>],
+            <span class="string">"required"</span>: <span class="keyword">false</span>
+        }
+    ],
+    <span class="string">"workflow_stages"</span>: [
+        { <span class="string">"name"</span>: <span class="string">"Khảo sát"</span>, <span class="string">"color"</span>: <span class="string">"#3b82f6"</span> },
+        { <span class="string">"name"</span>: <span class="string">"Khoan thăm dò"</span>, <span class="string">"color"</span>: <span class="string">"#f59e0b"</span> },
+        { <span class="string">"name"</span>: <span class="string">"Sản xuất"</span>, <span class="string">"color"</span>: <span class="string">"#10b981"</span> }
+    ],
+    <span class="string">"created_at"</span>: ISODate(<span class="string">"2026-01-19T00:00:00Z"</span>),
+    <span class="string">"updated_at"</span>: ISODate(<span class="string">"2026-01-19T00:00:00Z"</span>)
+}
+                </div>
+                
+                <h3>📝 Collection: task_details</h3>
+                
+                <div class="code-block">
+<span class="comment">// Lưu custom fields data cho từng task</span>
+{
+    <span class="string">"_id"</span>: ObjectId(<span class="string">"..."</span>),
+    <span class="string">"task_id"</span>: 123, <span class="comment">// Reference to PostgreSQL tasks.id</span>
+    <span class="string">"custom_data"</span>: {
+        <span class="string">"well_depth"</span>: 3500,
+        <span class="string">"oil_type"</span>: <span class="string">"Crude"</span>,
+        <span class="string">"rig_name"</span>: <span class="string">"VSP-RIG-01"</span>
+    },
+    <span class="string">"attachments"</span>: [
+        {
+            <span class="string">"name"</span>: <span class="string">"geological_survey.pdf"</span>,
+            <span class="string">"url"</span>: <span class="string">"/uploads/files/..."</span>,
+            <span class="string">"size"</span>: 2048576,
+            <span class="string">"uploaded_at"</span>: ISODate(<span class="string">"2026-01-19T10:00:00Z"</span>)
+        }
+    ],
+    <span class="string">"comments"</span>: [
+        {
+            <span class="string">"user_id"</span>: 5,
+            <span class="string">"user_name"</span>: <span class="string">"Nguyễn Văn A"</span>,
+            <span class="string">"message"</span>: <span class="string">"Đã hoàn thành khảo sát địa chất"</span>,
+            <span class="string">"created_at"</span>: ISODate(<span class="string">"2026-01-19T11:00:00Z"</span>)
+        }
+    ],
+    <span class="string">"created_at"</span>: ISODate(<span class="string">"2026-01-19T00:00:00Z"</span>),
+    <span class="string">"updated_at"</span>: ISODate(<span class="string">"2026-01-19T12:00:00Z"</span>)
+}
+                </div>
+                
+                <h3>📊 Collection: audit_logs</h3>
+                
+                <div class="code-block">
+<span class="comment">// Track all user activities</span>
+{
+    <span class="string">"_id"</span>: ObjectId(<span class="string">"..."</span>),
+    <span class="string">"user_id"</span>: 5,
+    <span class="string">"action"</span>: <span class="string">"task.status_changed"</span>,
+    <span class="string">"resource_type"</span>: <span class="string">"Task"</span>,
+    <span class="string">"resource_id"</span>: 123,
+    <span class="string">"old_value"</span>: { <span class="string">"status"</span>: <span class="string">"todo"</span> },
+    <span class="string">"new_value"</span>: { <span class="string">"status"</span>: <span class="string">"in_progress"</span> },
+    <span class="string">"ip_address"</span>: <span class="string">"192.168.1.100"</span>,
+    <span class="string">"user_agent"</span>: <span class="string">"Mozilla/5.0..."</span>,
+    <span class="string">"created_at"</span>: ISODate(<span class="string">"2026-01-19T12:30:00Z"</span>)
+}
+                </div>
+            </div>
+            
+            <!-- PHẦN 4 -->
+            <div class="section">
+                <h2>4. Laravel Models với Dual Connections</h2>
+                
+                <h3>🐘 PostgreSQL Models</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Models/Enterprise.php</span>
+<span class="keyword">namespace</span> App\Models;
+
+<span class="keyword">use</span> Illuminate\Database\Eloquent\Model;
+<span class="keyword">use</span> Illuminate\Database\Eloquent\SoftDeletes;
+
+<span class="keyword">class</span> <span class="function">Enterprise</span> <span class="keyword">extends</span> Model
+{
+    <span class="keyword">use</span> SoftDeletes;
+    
+    <span class="keyword">protected</span> $connection = <span class="string">'pgsql'</span>;
+    
+    <span class="keyword">protected</span> $fillable = [
+        <span class="string">'name'</span>, <span class="string">'code'</span>, <span class="string">'status'</span>, <span class="string">'description'</span>
+    ];
+    
+    <span class="keyword">public function</span> <span class="function">users</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">hasMany</span>(User::<span class="keyword">class</span>);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">plans</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">hasMany</span>(ProductionPlan::<span class="keyword">class</span>);
+    }
+    
+    <span class="comment">// Get config from MongoDB</span>
+    <span class="keyword">public function</span> <span class="function">config</span>()
+    {
+        <span class="keyword">return</span> EnterpriseConfig::<span class="function">where</span>(<span class="string">'enterprise_id'</span>, <span class="keyword">$this</span>->id)-><span class="function">first</span>();
+    }
+}
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// app/Models/Task.php</span>
+<span class="keyword">namespace</span> App\Models;
+
+<span class="keyword">use</span> Illuminate\Database\Eloquent\Model;
+<span class="keyword">use</span> Illuminate\Database\Eloquent\SoftDeletes;
+
+<span class="keyword">class</span> <span class="function">Task</span> <span class="keyword">extends</span> Model
+{
+    <span class="keyword">use</span> SoftDeletes;
+    
+    <span class="keyword">protected</span> $connection = <span class="string">'pgsql'</span>;
+    
+    <span class="keyword">protected</span> $fillable = [
+        <span class="string">'plan_id'</span>, <span class="string">'name'</span>, <span class="string">'description'</span>, <span class="string">'assigned_to'</span>,
+        <span class="string">'status'</span>, <span class="string">'priority'</span>, <span class="string">'start_date'</span>, <span class="string">'end_date'</span>,
+        <span class="string">'estimated_hours'</span>, <span class="string">'actual_hours'</span>, <span class="string">'progress'</span>, <span class="string">'order'</span>
+    ];
+    
+    <span class="keyword">protected</span> $casts = [
+        <span class="string">'start_date'</span> => <span class="string">'date'</span>,
+        <span class="string">'end_date'</span> => <span class="string">'date'</span>,
+    ];
+    
+    <span class="keyword">public function</span> <span class="function">plan</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">belongsTo</span>(ProductionPlan::<span class="keyword">class</span>, <span class="string">'plan_id'</span>);
+    }
+    
+    <span class="keyword">public function</span> <span class="function">assignedUser</span>()
+    {
+        <span class="keyword">return</span> <span class="keyword">$this</span>-><span class="function">belongsTo</span>(User::<span class="keyword">class</span>, <span class="string">'assigned_to'</span>);
+    }
+    
+    <span class="comment">// Get custom data from MongoDB</span>
+    <span class="keyword">public function</span> <span class="function">details</span>()
+    {
+        <span class="keyword">return</span> TaskDetail::<span class="function">where</span>(<span class="string">'task_id'</span>, <span class="keyword">$this</span>->id)-><span class="function">first</span>();
+    }
+}
+                </div>
+                
+                <h3>🍃 MongoDB Models</h3>
+                
+                <div class="code-block">
+<span class="comment">// app/Models/EnterpriseConfig.php</span>
+<span class="keyword">namespace</span> App\Models;
+
+<span class="keyword">use</span> MongoDB\Laravel\Eloquent\Model;
+
+<span class="keyword">class</span> <span class="function">EnterpriseConfig</span> <span class="keyword">extends</span> Model
+{
+    <span class="keyword">protected</span> $connection = <span class="string">'mongodb'</span>;
+    <span class="keyword">protected</span> $collection = <span class="string">'enterprise_configs'</span>;
+    
+    <span class="keyword">protected</span> $fillable = [
+        <span class="string">'enterprise_id'</span>, <span class="string">'custom_fields'</span>, <span class="string">'workflow_stages'</span>
+    ];
+    
+    <span class="keyword">protected</span> $casts = [
+        <span class="string">'custom_fields'</span> => <span class="string">'array'</span>,
+        <span class="string">'workflow_stages'</span> => <span class="string">'array'</span>,
+    ];
+}
+                </div>
+                
+                <div class="code-block">
+<span class="comment">// app/Models/TaskDetail.php</span>
+<span class="keyword">namespace</span> App\Models;
+
+<span class="keyword">use</span> MongoDB\Laravel\Eloquent\Model;
+
+<span class="keyword">class</span> <span class="function">TaskDetail</span> <span class="keyword">extends</span> Model
+{
+    <span class="keyword">protected</span> $connection = <span class="string">'mongodb'</span>;
+    <span class="keyword">protected</span> $collection = <span class="string">'task_details'</span>;
+    
+    <span class="keyword">protected</span> $fillable = [
+        <span class="string">'task_id'</span>, <span class="string">'custom_data'</span>, <span class="string">'attachments'</span>, <span class="string">'comments'</span>
+    ];
+    
+    <span class="keyword">protected</span> $casts = [
+        <span class="string">'custom_data'</span> => <span class="string">'array'</span>,
+        <span class="string">'attachments'</span> => <span class="string">'array'</span>,
+        <span class="string">'comments'</span> => <span class="string">'array'</span>,
+    ];
+}
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ Hiểu hybrid database strategy</li>
+                    <li>☑️ ERD diagram cho PostgreSQL</li>
+                    <li>☑️ Migrations created (enterprises, roles, users, plans, tasks)</li>
+                    <li>☑️ Migrations chạy thành công</li>
+                    <li>☑️ MongoDB collections designed (configs, task_details, audit_logs)</li>
+                    <li>☑️ PostgreSQL models created</li>
+                    <li>☑️ MongoDB models created</li>
+                    <li>☑️ Cross-database relationships setup</li>
+                </ul>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_STEP_01_SETUP.html" class="btn btn-secondary">← Bước 1: Setup</a>
+                <a href="PMS_STEP_03_BACKEND.html" class="btn">Bước 3: Backend API →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

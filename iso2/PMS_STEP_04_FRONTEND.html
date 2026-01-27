@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bước 4: Frontend UI - PMS Vietsovpetro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        
+        .nav a:hover {
+            color: #764ba2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 5px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #2a5298;
+            margin: 25px 0 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #75715e;
+        }
+        
+        .code-block .keyword {
+            color: #f92672;
+        }
+        
+        .code-block .string {
+            color: #e6db74;
+        }
+        
+        .code-block .function {
+            color: #66d9ef;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Bước 4: Frontend UI</h1>
+            <p>Xây dựng React app với Ant Design, Gantt & Kanban</p>
+        </header>
+        
+        <div class="nav">
+            <a href="PMS_SETUP_INDEX.html">← Trang Chủ</a>
+            <a href="PMS_STEP_03_BACKEND.html">← Bước 3</a>
+            <a href="PMS_STEP_05_WEBSOCKET.html">Bước 5 →</a>
+        </div>
+        
+        <div class="content">
+            <div class="success-box">
+                <h3>🎯 Mục Tiêu Bước Này</h3>
+                <ul>
+                    <li>✅ Setup React + Vite project</li>
+                    <li>✅ Cài đặt Ant Design + Icons</li>
+                    <li>✅ Setup React Query (data fetching)</li>
+                    <li>✅ Tạo Auth pages (Login, Dashboard)</li>
+                    <li>✅ Tạo Gantt chart cho Plans</li>
+                    <li>✅ Tạo Kanban board cho Tasks</li>
+                </ul>
+            </div>
+            
+            <!-- PHẦN 1 -->
+            <div class="section">
+                <h2>1. Setup React + Vite Project</h2>
+                
+                <div class="code-block">
+<span class="comment"># Tạo React project với Vite (trong thư mục riêng)</span>
+npm create vite@latest pms-frontend -- --template react
+
+cd pms-frontend
+npm install
+                </div>
+                
+                <h3>📦 Install Dependencies</h3>
+                
+                <div class="code-block">
+<span class="comment"># UI Framework</span>
+npm install antd @ant-design/icons
+
+<span class="comment"># Routing</span>
+npm install react-router-dom
+
+<span class="comment"># Data fetching & state</span>
+npm install @tanstack/react-query axios
+
+<span class="comment"># Date handling</span>
+npm install dayjs
+
+<span class="comment"># WebSocket (Laravel Echo)</span>
+npm install laravel-echo pusher-js
+
+<span class="comment"># Gantt chart</span>
+npm install @dhtmlx/trial-react-gantt
+
+<span class="comment"># Kanban board (React DnD)</span>
+npm install react-beautiful-dnd
+                </div>
+                
+                <h3>📂 Folder Structure</h3>
+                
+                <div class="code-block">
+src/
+├── api/
+│   ├── axios.js          <span class="comment"># Axios instance with token</span>
+│   └── endpoints.js      <span class="comment"># API functions</span>
+├── components/
+│   ├── Layout.jsx        <span class="comment"># Main layout with sidebar</span>
+│   ├── GanttChart.jsx    <span class="comment"># Gantt component</span>
+│   └── KanbanBoard.jsx   <span class="comment"># Kanban component</span>
+├── pages/
+│   ├── Login.jsx
+│   ├── Dashboard.jsx
+│   ├── Plans.jsx
+│   └── Tasks.jsx
+├── lib/
+│   └── echo.js           <span class="comment"># WebSocket setup</span>
+├── App.jsx
+└── main.jsx
+                </div>
+            </div>
+            
+            <!-- PHẦN 2 -->
+            <div class="section">
+                <h2>2. API Setup & Authentication</h2>
+                
+                <h3>🔌 Axios Instance</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/api/axios.js</span>
+<span class="keyword">import</span> axios <span class="keyword">from</span> <span class="string">'axios'</span>;
+
+<span class="keyword">const</span> api = axios.<span class="function">create</span>({
+    baseURL: <span class="keyword">import</span>.meta.env.VITE_API_URL || <span class="string">'http://localhost:8000/api'</span>,
+    headers: {
+        <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+    },
+});
+
+<span class="comment">// Add token to requests</span>
+api.interceptors.request.<span class="function">use</span>((config) => {
+    <span class="keyword">const</span> token = localStorage.<span class="function">getItem</span>(<span class="string">'token'</span>);
+    <span class="keyword">if</span> (token) {
+        config.headers.Authorization = <span class="string">`Bearer ${token}`</span>;
+    }
+    <span class="keyword">return</span> config;
+});
+
+<span class="comment">// Handle 401 errors</span>
+api.interceptors.response.<span class="function">use</span>(
+    (response) => response,
+    (error) => {
+        <span class="keyword">if</span> (error.response?.status === 401) {
+            localStorage.<span class="function">removeItem</span>(<span class="string">'token'</span>);
+            window.location.href = <span class="string">'/login'</span>;
+        }
+        <span class="keyword">return</span> Promise.<span class="function">reject</span>(error);
+    }
+);
+
+<span class="keyword">export default</span> api;
+                </div>
+                
+                <h3>🌐 API Endpoints</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/api/endpoints.js</span>
+<span class="keyword">import</span> api <span class="keyword">from</span> <span class="string">'./axios'</span>;
+
+<span class="keyword">export const</span> auth = {
+    login: (data) => api.<span class="function">post</span>(<span class="string">'/login'</span>, data),
+    logout: () => api.<span class="function">post</span>(<span class="string">'/logout'</span>),
+    me: () => api.<span class="function">get</span>(<span class="string">'/me'</span>),
+};
+
+<span class="keyword">export const</span> plans = {
+    getAll: (params) => api.<span class="function">get</span>(<span class="string">'/plans'</span>, { params }),
+    getOne: (id) => api.<span class="function">get</span>(<span class="string">`/plans/${id}`</span>),
+    create: (data) => api.<span class="function">post</span>(<span class="string">'/plans'</span>, data),
+    update: (id, data) => api.<span class="function">put</span>(<span class="string">`/plans/${id}`</span>, data),
+    delete: (id) => api.<span class="function">delete</span>(<span class="string">`/plans/${id}`</span>),
+};
+
+<span class="keyword">export const</span> tasks = {
+    getAll: (params) => api.<span class="function">get</span>(<span class="string">'/tasks'</span>, { params }),
+    getOne: (id) => api.<span class="function">get</span>(<span class="string">`/tasks/${id}`</span>),
+    create: (data) => api.<span class="function">post</span>(<span class="string">'/tasks'</span>, data),
+    update: (id, data) => api.<span class="function">put</span>(<span class="string">`/tasks/${id}`</span>, data),
+    updateOrder: (data) => api.<span class="function">post</span>(<span class="string">'/tasks/update-order'</span>, data),
+    delete: (id) => api.<span class="function">delete</span>(<span class="string">`/tasks/${id}`</span>),
+};
+                </div>
+                
+                <h3>🔑 Login Page</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/pages/Login.jsx</span>
+<span class="keyword">import</span> { useState } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { useNavigate } <span class="keyword">from</span> <span class="string">'react-router-dom'</span>;
+<span class="keyword">import</span> { Form, Input, Button, Card, message } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> { UserOutlined, LockOutlined } <span class="keyword">from</span> <span class="string">'@ant-design/icons'</span>;
+<span class="keyword">import</span> { auth } <span class="keyword">from</span> <span class="string">'../api/endpoints'</span>;
+
+<span class="keyword">function</span> <span class="function">Login</span>() {
+    <span class="keyword">const</span> [loading, setLoading] = <span class="function">useState</span>(<span class="keyword">false</span>);
+    <span class="keyword">const</span> navigate = <span class="function">useNavigate</span>();
+    
+    <span class="keyword">const</span> <span class="function">onFinish</span> = <span class="keyword">async</span> (values) => {
+        <span class="function">setLoading</span>(<span class="keyword">true</span>);
+        <span class="keyword">try</span> {
+            <span class="keyword">const</span> response = <span class="keyword">await</span> auth.<span class="function">login</span>(values);
+            localStorage.<span class="function">setItem</span>(<span class="string">'token'</span>, response.data.token);
+            message.<span class="function">success</span>(<span class="string">'Login successful!'</span>);
+            <span class="function">navigate</span>(<span class="string">'/dashboard'</span>);
+        } <span class="keyword">catch</span> (error) {
+            message.<span class="function">error</span>(error.response?.data?.message || <span class="string">'Login failed'</span>);
+        } <span class="keyword">finally</span> {
+            <span class="function">setLoading</span>(<span class="keyword">false</span>);
+        }
+    };
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', 
+                     justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}&gt;
+            &lt;Card style={{ width: 400 }}&gt;
+                &lt;h2 style={{ textAlign: 'center', marginBottom: 30 }}&gt;PMS Vietsovpetro&lt;/h2&gt;
+                &lt;Form onFinish={onFinish} autoComplete="off"&gt;
+                    &lt;Form.Item name="email" rules={[{ required: true, type: 'email' }]}&gt;
+                        &lt;Input prefix={&lt;UserOutlined /&gt;} placeholder="Email" /&gt;
+                    &lt;/Form.Item&gt;
+                    &lt;Form.Item name="password" rules={[{ required: true }]}&gt;
+                        &lt;Input.Password prefix={&lt;LockOutlined /&gt;} placeholder="Password" /&gt;
+                    &lt;/Form.Item&gt;
+                    &lt;Form.Item&gt;
+                        &lt;Button type="primary" htmlType="submit" loading={loading} block&gt;
+                            Login
+                        &lt;/Button&gt;
+                    &lt;/Form.Item&gt;
+                &lt;/Form&gt;
+            &lt;/Card&gt;
+        &lt;/div&gt;</span>
+    );
+}
+
+<span class="keyword">export default</span> Login;
+                </div>
+            </div>
+            
+            <!-- PHẦN 3 -->
+            <div class="section">
+                <h2>3. Gantt Chart Component</h2>
+                
+                <div class="code-block">
+<span class="comment">// src/components/GanttChart.jsx</span>
+<span class="keyword">import</span> { useEffect, useRef } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { Gantt } <span class="keyword">from</span> <span class="string">'@dhtmlx/trial-react-gantt'</span>;
+<span class="keyword">import</span> <span class="string">'@dhtmlx/trial-react-gantt/dist/dhtmlxgantt.css'</span>;
+
+<span class="keyword">function</span> <span class="function">GanttChart</span>({ tasks, onTaskUpdate }) {
+    <span class="keyword">const</span> ganttRef = <span class="function">useRef</span>(<span class="keyword">null</span>);
+    
+    <span class="comment">// Convert API data to Gantt format</span>
+    <span class="keyword">const</span> ganttData = {
+        data: tasks.<span class="function">map</span>(task => ({
+            id: task.id,
+            text: task.name,
+            start_date: task.start_date,
+            duration: <span class="function">calculateDuration</span>(task.start_date, task.end_date),
+            progress: task.progress / 100,
+            assigned_to: task.assigned_user?.name,
+        })),
+    };
+    
+    <span class="function">useEffect</span>(() => {
+        <span class="keyword">if</span> (ganttRef.current) {
+            <span class="comment">// Configure Gantt</span>
+            ganttRef.current.config.columns = [
+                { name: <span class="string">'text'</span>, label: <span class="string">'Task'</span>, width: 200, tree: <span class="keyword">true</span> },
+                { name: <span class="string">'assigned_to'</span>, label: <span class="string">'Assigned'</span>, width: 100 },
+                { name: <span class="string">'start_date'</span>, label: <span class="string">'Start'</span>, width: 80 },
+                { name: <span class="string">'duration'</span>, label: <span class="string">'Days'</span>, width: 60 },
+            ];
+            
+            ganttRef.current.config.date_format = <span class="string">'%Y-%m-%d'</span>;
+            
+            <span class="comment">// Event handlers</span>
+            ganttRef.current.attachEvent(<span class="string">'onAfterTaskUpdate'</span>, (id, task) => {
+                <span class="function">onTaskUpdate</span>(id, {
+                    start_date: task.start_date,
+                    end_date: ganttRef.current.<span class="function">calculateEndDate</span>(task.start_date, task.duration),
+                    progress: task.progress * 100,
+                });
+            });
+        }
+    }, [onTaskUpdate]);
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;div style={{ height: '600px', width: '100%' }}&gt;
+            &lt;Gantt ref={ganttRef} tasks={ganttData} /&gt;
+        &lt;/div&gt;</span>
+    );
+}
+
+<span class="keyword">function</span> <span class="function">calculateDuration</span>(startDate, endDate) {
+    <span class="keyword">const</span> start = <span class="keyword">new</span> <span class="function">Date</span>(startDate);
+    <span class="keyword">const</span> end = <span class="keyword">new</span> <span class="function">Date</span>(endDate);
+    <span class="keyword">return</span> Math.<span class="function">ceil</span>((end - start) / (1000 * 60 * 60 * 24));
+}
+
+<span class="keyword">export default</span> GanttChart;
+                </div>
+                
+                <div class="highlight-box">
+                    <h4>📊 Gantt Chart Features</h4>
+                    <ul>
+                        <li>✅ Drag & drop để thay đổi thời gian tasks</li>
+                        <li>✅ Progress bar hiển thị % hoàn thành</li>
+                        <li>✅ Dependencies giữa các tasks (nếu cần)</li>
+                        <li>✅ Timeline view (days, weeks, months)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PHẦN 4 -->
+            <div class="section">
+                <h2>4. Kanban Board Component</h2>
+                
+                <div class="code-block">
+<span class="comment">// src/components/KanbanBoard.jsx</span>
+<span class="keyword">import</span> { useState } <span class="keyword">from</span> <span class="string">'react'</span>;
+<span class="keyword">import</span> { DragDropContext, Droppable, Draggable } <span class="keyword">from</span> <span class="string">'react-beautiful-dnd'</span>;
+<span class="keyword">import</span> { Card, Tag, Avatar, Tooltip } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> { UserOutlined } <span class="keyword">from</span> <span class="string">'@ant-design/icons'</span>;
+
+<span class="keyword">const</span> columns = [
+    { id: <span class="string">'todo'</span>, title: <span class="string">'To Do'</span>, color: <span class="string">'#1890ff'</span> },
+    { id: <span class="string">'in_progress'</span>, title: <span class="string">'In Progress'</span>, color: <span class="string">'#faad14'</span> },
+    { id: <span class="string">'review'</span>, title: <span class="string">'Review'</span>, color: <span class="string">'#722ed1'</span> },
+    { id: <span class="string">'done'</span>, title: <span class="string">'Done'</span>, color: <span class="string">'#52c41a'</span> },
+];
+
+<span class="keyword">function</span> <span class="function">KanbanBoard</span>({ tasks, onTaskMove }) {
+    <span class="keyword">const</span> [localTasks, setLocalTasks] = <span class="function">useState</span>(tasks);
+    
+    <span class="keyword">const</span> <span class="function">onDragEnd</span> = (result) => {
+        <span class="keyword">if</span> (!result.destination) <span class="keyword">return</span>;
+        
+        <span class="keyword">const</span> { source, destination, draggableId } = result;
+        
+        <span class="comment">// Update local state</span>
+        <span class="keyword">const</span> newTasks = <span class="function">Array</span>.<span class="function">from</span>(localTasks);
+        <span class="keyword">const</span> taskIndex = newTasks.<span class="function">findIndex</span>(t => t.id === <span class="function">parseInt</span>(draggableId));
+        newTasks[taskIndex].status = destination.droppableId;
+        newTasks[taskIndex].order = destination.index;
+        
+        <span class="function">setLocalTasks</span>(newTasks);
+        
+        <span class="comment">// Call API to update</span>
+        <span class="function">onTaskMove</span>(newTasks);
+    };
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;DragDropContext onDragEnd={onDragEnd}&gt;
+            &lt;div style={{ display: 'flex', gap: 16, overflowX: 'auto' }}&gt;
+                {columns.map(column =&gt; (
+                    &lt;div key={column.id} style={{ minWidth: 300, flex: 1 }}&gt;
+                        &lt;h3 style={{ 
+                            padding: 16, 
+                            background: column.color, 
+                            color: 'white',
+                            borderRadius: '8px 8px 0 0'
+                        }}&gt;
+                            {column.title} ({localTasks.filter(t =&gt; t.status === column.id).length})
+                        &lt;/h3&gt;
+                        
+                        &lt;Droppable droppableId={column.id}&gt;
+                            {(provided, snapshot) =&gt; (
+                                &lt;div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    style={{
+                                        background: snapshot.isDraggingOver ? '#f0f0f0' : 'white',
+                                        padding: 8,
+                                        minHeight: 500,
+                                        borderRadius: '0 0 8px 8px'
+                                    }}
+                                &gt;
+                                    {localTasks
+                                        .filter(task =&gt; task.status === column.id)
+                                        .sort((a, b) =&gt; a.order - b.order)
+                                        .map((task, index) =&gt; (
+                                            &lt;Draggable key={task.id} draggableId={task.id.toString()} index={index}&gt;
+                                                {(provided) =&gt; (
+                                                    &lt;Card
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        style={{
+                                                            marginBottom: 8,
+                                                            ...provided.draggableProps.style
+                                                        }}
+                                                        size="small"
+                                                    &gt;
+                                                        &lt;div style={{ marginBottom: 8 }}&gt;
+                                                            &lt;strong&gt;{task.name}&lt;/strong&gt;
+                                                        &lt;/div&gt;
+                                                        &lt;div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}&gt;
+                                                            &lt;Tag color={getPriorityColor(task.priority)}&gt;
+                                                                {task.priority}
+                                                            &lt;/Tag&gt;
+                                                            {task.assigned_user &amp;&amp; (
+                                                                &lt;Tooltip title={task.assigned_user.name}&gt;
+                                                                    &lt;Avatar size="small" icon={&lt;UserOutlined /&gt;} /&gt;
+                                                                &lt;/Tooltip&gt;
+                                                            )}
+                                                        &lt;/div&gt;
+                                                    &lt;/Card&gt;
+                                                )}
+                                            &lt;/Draggable&gt;
+                                        ))}
+                                    {provided.placeholder}
+                                &lt;/div&gt;
+                            )}
+                        &lt;/Droppable&gt;
+                    &lt;/div&gt;
+                ))}
+            &lt;/div&gt;
+        &lt;/DragDropContext&gt;</span>
+    );
+}
+
+<span class="keyword">function</span> <span class="function">getPriorityColor</span>(priority) {
+    <span class="keyword">const</span> colors = { low: <span class="string">'green'</span>, medium: <span class="string">'blue'</span>, high: <span class="string">'orange'</span>, urgent: <span class="string">'red'</span> };
+    <span class="keyword">return</span> colors[priority] || <span class="string">'default'</span>;
+}
+
+<span class="keyword">export default</span> KanbanBoard;
+                </div>
+            </div>
+            
+            <!-- PHẦN 5 -->
+            <div class="section">
+                <h2>5. Main App Setup</h2>
+                
+                <h3>🚀 App.jsx với React Router</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/App.jsx</span>
+<span class="keyword">import</span> { BrowserRouter, Routes, Route, Navigate } <span class="keyword">from</span> <span class="string">'react-router-dom'</span>;
+<span class="keyword">import</span> { QueryClient, QueryClientProvider } <span class="keyword">from</span> <span class="string">'@tanstack/react-query'</span>;
+<span class="keyword">import</span> { ConfigProvider } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> viVN <span class="keyword">from</span> <span class="string">'antd/locale/vi_VN'</span>;
+
+<span class="keyword">import</span> Login <span class="keyword">from</span> <span class="string">'./pages/Login'</span>;
+<span class="keyword">import</span> Dashboard <span class="keyword">from</span> <span class="string">'./pages/Dashboard'</span>;
+<span class="keyword">import</span> Plans <span class="keyword">from</span> <span class="string">'./pages/Plans'</span>;
+<span class="keyword">import</span> Tasks <span class="keyword">from</span> <span class="string">'./pages/Tasks'</span>;
+<span class="keyword">import</span> Layout <span class="keyword">from</span> <span class="string">'./components/Layout'</span>;
+
+<span class="keyword">const</span> queryClient = <span class="keyword">new</span> <span class="function">QueryClient</span>();
+
+<span class="keyword">function</span> <span class="function">ProtectedRoute</span>({ children }) {
+    <span class="keyword">const</span> token = localStorage.<span class="function">getItem</span>(<span class="string">'token'</span>);
+    <span class="keyword">return</span> token ? children : <span class="string">&lt;Navigate to="/login" /&gt;</span>;
+}
+
+<span class="keyword">function</span> <span class="function">App</span>() {
+    <span class="keyword">return</span> (
+        <span class="string">&lt;ConfigProvider locale={viVN}&gt;
+            &lt;QueryClientProvider client={queryClient}&gt;
+                &lt;BrowserRouter&gt;
+                    &lt;Routes&gt;
+                        &lt;Route path="/login" element={&lt;Login /&gt;} /&gt;
+                        
+                        &lt;Route path="/" element={
+                            &lt;ProtectedRoute&gt;
+                                &lt;Layout /&gt;
+                            &lt;/ProtectedRoute&gt;
+                        }&gt;
+                            &lt;Route index element={&lt;Navigate to="/dashboard" /&gt;} /&gt;
+                            &lt;Route path="dashboard" element={&lt;Dashboard /&gt;} /&gt;
+                            &lt;Route path="plans" element={&lt;Plans /&gt;} /&gt;
+                            &lt;Route path="tasks" element={&lt;Tasks /&gt;} /&gt;
+                        &lt;/Route&gt;
+                    &lt;/Routes&gt;
+                &lt;/BrowserRouter&gt;
+            &lt;/QueryClientProvider&gt;
+        &lt;/ConfigProvider&gt;</span>
+    );
+}
+
+<span class="keyword">export default</span> App;
+                </div>
+                
+                <h3>🎨 Layout Component</h3>
+                
+                <div class="code-block">
+<span class="comment">// src/components/Layout.jsx</span>
+<span class="keyword">import</span> { Outlet, useNavigate } <span class="keyword">from</span> <span class="string">'react-router-dom'</span>;
+<span class="keyword">import</span> { Layout <span class="keyword">as</span> AntLayout, Menu } <span class="keyword">from</span> <span class="string">'antd'</span>;
+<span class="keyword">import</span> { DashboardOutlined, ProjectOutlined, CheckSquareOutlined } <span class="keyword">from</span> <span class="string">'@ant-design/icons'</span>;
+
+<span class="keyword">const</span> { Sider, Content } = AntLayout;
+
+<span class="keyword">function</span> <span class="function">Layout</span>() {
+    <span class="keyword">const</span> navigate = <span class="function">useNavigate</span>();
+    
+    <span class="keyword">return</span> (
+        <span class="string">&lt;AntLayout style={{ minHeight: '100vh' }}&gt;
+            &lt;Sider theme="dark"&gt;
+                &lt;div style={{ padding: 20, color: 'white', textAlign: 'center' }}&gt;
+                    &lt;h2&gt;PMS&lt;/h2&gt;
+                &lt;/div&gt;
+                &lt;Menu
+                    theme="dark"
+                    mode="inline"
+                    items={[
+                        { key: 'dashboard', icon: &lt;DashboardOutlined /&gt;, label: 'Dashboard' },
+                        { key: 'plans', icon: &lt;ProjectOutlined /&gt;, label: 'Plans' },
+                        { key: 'tasks', icon: &lt;CheckSquareOutlined /&gt;, label: 'Tasks' },
+                    ]}
+                    onClick={({ key }) =&gt; navigate(`/${key}`)}
+                /&gt;
+            &lt;/Sider&gt;
+            &lt;Content style={{ padding: 24, background: '#f0f2f5' }}&gt;
+                &lt;Outlet /&gt;
+            &lt;/Content&gt;
+        &lt;/AntLayout&gt;</span>
+    );
+}
+
+<span class="keyword">export default</span> Layout;
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <h3>✅ Checklist Hoàn Thành</h3>
+                <ul>
+                    <li>☑️ React + Vite project setup</li>
+                    <li>☑️ Ant Design installed & configured</li>
+                    <li>☑️ React Router setup</li>
+                    <li>☑️ Axios API client with authentication</li>
+                    <li>☑️ Login page working</li>
+                    <li>☑️ Protected routes implemented</li>
+                    <li>☑️ Layout with sidebar navigation</li>
+                    <li>☑️ Gantt chart component</li>
+                    <li>☑️ Kanban board component</li>
+                    <li>☑️ Ready cho WebSocket integration (Bước 5)</li>
+                </ul>
+            </div>
+            
+            <div class="warning-box">
+                <h3>🚀 Run Frontend</h3>
+                <div class="code-block">
+<span class="comment"># Development mode</span>
+npm run dev
+
+<span class="comment"># Output:</span>
+<span class="comment"># ➜  Local:   http://localhost:5173/</span>
+                </div>
+            </div>
+            
+            <div class="step-nav">
+                <a href="PMS_STEP_03_BACKEND.html" class="btn btn-secondary">← Bước 3: Backend</a>
+                <a href="PMS_STEP_05_WEBSOCKET.html" class="btn">Bước 5: WebSocket →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

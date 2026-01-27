@@ -26,6 +26,10 @@ class ThietBiHoTro extends BaseModel {
         }
         
         if ($chusohuu) {
+            // Strip "danhso-" prefix if exists (e.g., "16394-VŨ ANH ĐỨC" -> "VŨ ANH ĐỨC")
+            if (preg_match('/^\d+-(.+)$/', $chusohuu, $matches)) {
+                $chusohuu = $matches[1];
+            }
             $chusohuuEscaped = $this->db->quote("%$chusohuu%");
             $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
         }
@@ -62,6 +66,10 @@ class ThietBiHoTro extends BaseModel {
         }
         
         if ($chusohuu) {
+            // Strip "danhso-" prefix if exists (e.g., "16394-VŨ ANH ĐỨC" -> "VŨ ANH ĐỨC")
+            if (preg_match('/^\d+-(.+)$/', $chusohuu, $matches)) {
+                $chusohuu = $matches[1];
+            }
             $chusohuuEscaped = $this->db->quote("%$chusohuu%");
             $sql .= " AND chusohuu LIKE {$chusohuuEscaped}";
         }

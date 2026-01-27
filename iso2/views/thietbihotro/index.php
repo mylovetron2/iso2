@@ -70,13 +70,26 @@ require_once __DIR__ . '/../layouts/header.php';
         <a href="thietbihotro.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto">
             <i class="fas fa-redo mr-1"></i> Xóa lọc
         </a>
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col md:flex-row gap-2 mb-4">
+        <a href="thietbihotro.php?action=exportpdf<?php 
+            echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '';
+            echo !empty($_GET['chusohuu']) ? '&chusohuu=' . urlencode($_GET['chusohuu']) : '';
+            echo !empty($_GET['trangthai']) ? '&trangthai=' . urlencode($_GET['trangthai']) : '';
+        ?>" 
+           target="_blank"
+           class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm md:text-base text-center inline-flex items-center justify-center">
+            <i class="fas fa-file-pdf mr-2"></i> In PDF
+        </a>
         
         <?php if (hasPermission(PERMISSION_PROJECT_CREATE)): ?>
         <a href="thietbihotro.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto md:ml-auto">
             <i class="fas fa-plus mr-1"></i> Thêm thiết bị
         </a>
         <?php endif; ?>
-    </form>
+    </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">

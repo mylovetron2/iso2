@@ -52,6 +52,14 @@ switch ($action) {
         $controller->exportPdf();
         break;
 
+    case 'exportword':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportWord();
+        break;
+
     case 'exportlistpdf':
         if (!hasPermission('hososcbd.view')) {
             header('Location: /iso2/hososcbd.php?error=permission_denied');

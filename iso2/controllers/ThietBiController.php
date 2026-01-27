@@ -105,12 +105,7 @@ class ThietBiController
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
             if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';
             if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
-            if (empty($data['model'])) $errors[] = 'Model không được để trống';
-            if (empty($data['homay'])) $errors[] = 'Hộp máy không được để trống';
-            if (empty($data['dienap'])) $errors[] = 'Điện áp không được để trống';
-            if (empty($data['mucdau'])) $errors[] = 'Mức dầu không được để trống';
             if (empty($data['madv'])) $errors[] = 'Đơn vị không được để trống';
-            if (empty($data['mamay'])) $errors[] = 'Mã máy không được để trống';
 
             if (empty($errors)) {
                 $id = $this->model->create($data);
@@ -165,12 +160,7 @@ class ThietBiController
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
             if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';
             if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
-            if (empty($data['model'])) $errors[] = 'Model không được để trống';
-            if (empty($data['homay'])) $errors[] = 'Hộp máy không được để trống';
-            if (empty($data['dienap'])) $errors[] = 'Điện áp không được để trống';
-            if (empty($data['mucdau'])) $errors[] = 'Mức dầu không được để trống';
             if (empty($data['madv'])) $errors[] = 'Đơn vị không được để trống';
-            if (empty($data['mamay'])) $errors[] = 'Mã máy không được để trống';
 
             if (empty($errors)) {
                 $success = $this->model->update($stt, $data);

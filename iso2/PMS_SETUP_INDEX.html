@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng Dẫn Chi Tiết - PMS Vietsovpetro MVP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .intro {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 5px solid #667eea;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+        }
+        
+        .intro h2 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+        }
+        
+        .tech-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .tech-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .tech-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .tech-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .tech-card .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+        
+        .step-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .step-card::before {
+            content: attr(data-step);
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 8em;
+            font-weight: bold;
+            color: rgba(102, 126, 234, 0.05);
+            z-index: 0;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .step-header {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 20px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            line-height: 50px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .step-card h3 {
+            color: #1e3c72;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+        
+        .step-card p {
+            color: #666;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-card ul {
+            list-style: none;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .step-card li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .timeline {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 40px 0;
+        }
+        
+        .timeline h2 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .timeline-item strong {
+            min-width: 120px;
+            color: #667eea;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box h3 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 HƯỚNG DẪN TRIỂN KHAI PMS</h1>
+            <p>Production Management System - MVP Version</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Laravel + React + PostgreSQL + MongoDB + WebSocket</p>
+        </header>
+        
+        <div class="content">
+            <div class="intro">
+                <h2>📖 Giới Thiệu</h2>
+                <p>Hệ thống hướng dẫn này sẽ giúp bạn xây dựng <strong>Production Management System (PMS)</strong> từ đầu đến cuối với:</p>
+                <ul style="margin-left: 25px; margin-top: 15px;">
+                    <li>✅ <strong>1 người</strong> có thể triển khai (với hỗ trợ AI)</li>
+                    <li>✅ <strong>MVP version</strong> với 70% tính năng core</li>
+                    <li>✅ <strong>Thời gian:</strong> 7-9 tháng</li>
+                    <li>✅ <strong>Quy mô:</strong> 50-200 users</li>
+                    <li>✅ <strong>Real-time</strong> với WebSocket</li>
+                    <li>✅ <strong>Hybrid database</strong> (PostgreSQL + MongoDB)</li>
+                </ul>
+            </div>
+            
+            <div class="success-box">
+                <h3>✨ Công Nghệ Sử Dụng</h3>
+                <div class="tech-overview">
+                    <div class="tech-card">
+                        <div class="icon">⚙️</div>
+                        <h3>Backend</h3>
+                        <p><strong>Laravel 11</strong></p>
+                        <p>PHP framework mạnh mẽ</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <div class="icon">🎨</div>
+                        <h3>Frontend</h3>
+                        <p><strong>React + Vite</strong></p>
+                        <p>Modern UI library</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <div class="icon">💾</div>
+                        <h3>Databases</h3>
+                        <p><strong>PostgreSQL</strong> + <strong>MongoDB</strong></p>
+                        <p>Hybrid approach</p>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <div class="icon">⚡</div>
+                        <h3>Real-time</h3>
+                        <p><strong>Laravel Reverb</strong></p>
+                        <p>WebSocket server</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 style="text-align: center; color: #1e3c72; margin: 50px 0 30px 0;">📚 CÁC BƯỚC TRIỂN KHAI</h2>
+            
+            <div class="steps-grid">
+                <div class="step-card" data-step="1">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h3>Setup Môi Trường</h3>
+                    </div>
+                    <p>Cài đặt các công cụ cần thiết và thiết lập workspace</p>
+                    <ul>
+                        <li>PHP 8.2, Composer</li>
+                        <li>Node.js, npm</li>
+                        <li>Docker Desktop</li>
+                        <li>VS Code + Extensions</li>
+                    </ul>
+                    <a href="PMS_STEP_01_SETUP.html" class="btn">Chi Tiết →</a>
+                </div>
+                
+                <div class="step-card" data-step="2">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h3>Database Design</h3>
+                    </div>
+                    <p>Thiết kế cơ sở dữ liệu hybrid PostgreSQL + MongoDB</p>
+                    <ul>
+                        <li>ERD diagram</li>
+                        <li>PostgreSQL schema</li>
+                        <li>MongoDB collections</li>
+                        <li>Migrations</li>
+                    </ul>
+                    <a href="PMS_STEP_02_DATABASE.html" class="btn">Chi Tiết →</a>
+                </div>
+                
+                <div class="step-card" data-step="3">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h3>Backend API</h3>
+                    </div>
+                    <p>Xây dựng Laravel API với authentication & authorization</p>
+                    <ul>
+                        <li>Laravel Sanctum (Auth)</li>
+                        <li>RESTful APIs</li>
+                        <li>MongoDB integration</li>
+                        <li>File uploads</li>
+                    </ul>
+                    <a href="PMS_STEP_03_BACKEND.html" class="btn">Chi Tiết →</a>
+                </div>
+                
+                <div class="step-card" data-step="4">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h3>Frontend UI</h3>
+                    </div>
+                    <p>Xây dựng giao diện React với Ant Design</p>
+                    <ul>
+                        <li>React + Vite setup</li>
+                        <li>Ant Design components</li>
+                        <li>React Query</li>
+                        <li>Gantt & Kanban</li>
+                    </ul>
+                    <a href="PMS_STEP_04_FRONTEND.html" class="btn">Chi Tiết →</a>
+                </div>
+                
+                <div class="step-card" data-step="5">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <h3>WebSocket Real-time</h3>
+                    </div>
+                    <p>Tích hợp Laravel Reverb cho real-time updates</p>
+                    <ul>
+                        <li>Laravel Reverb setup</li>
+                        <li>Broadcasting events</li>
+                        <li>React WebSocket client</li>
+                        <li>Real-time notifications</li>
+                    </ul>
+                    <a href="PMS_STEP_05_WEBSOCKET.html" class="btn">Chi Tiết →</a>
+                </div>
+                
+                <div class="step-card" data-step="6">
+                    <div class="step-header">
+                        <div class="step-number">6</div>
+                        <h3>Deployment</h3>
+                    </div>
+                    <p>Deploy lên production với Docker Compose</p>
+                    <ul>
+                        <li>Docker Compose config</li>
+                        <li>VPS setup</li>
+                        <li>SSL certificate</li>
+                        <li>Monitoring</li>
+                    </ul>
+                    <a href="PMS_STEP_06_DEPLOYMENT.html" class="btn">Chi Tiết →</a>
+                </div>
+            </div>
+            
+            <div class="timeline">
+                <h2>⏱️ Timeline Ước Tính (7-9 tháng)</h2>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 1:</strong>
+                    <span>Setup môi trường, học công nghệ mới (Laravel Reverb, MongoDB)</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 2:</strong>
+                    <span>Database design, setup project structure, authentication</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 3:</strong>
+                    <span>Module Quản lý Kế hoạch (Backend API + Frontend UI + Gantt)</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 4:</strong>
+                    <span>Module Quản lý Nhiệm vụ (Kanban board + CRUD)</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 5:</strong>
+                    <span>WebSocket real-time (Laravel Reverb + notifications)</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 6:</strong>
+                    <span>Module Báo cáo (Dashboard + Charts + Export PDF/Excel)</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 7:</strong>
+                    <span>Enterprise dynamic configs (MongoDB) + Workflow customization</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 8:</strong>
+                    <span>Testing, bug fixing, optimization</span>
+                </div>
+                
+                <div class="timeline-item">
+                    <strong>Tháng 9:</strong>
+                    <span>Deployment, documentation, user training</span>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <h3>⚠️ Lưu Ý Quan Trọng</h3>
+                <ul style="margin-left: 25px;">
+                    <li>Làm việc <strong>8 giờ/ngày</strong>, không OT quá 2 giờ để tránh burn-out</li>
+                    <li>Commit code hàng ngày lên GitHub (backup + version control)</li>
+                    <li>Test từng feature ngay sau khi hoàn thành</li>
+                    <li>Document code và API endpoints đầy đủ</li>
+                    <li>Sử dụng Claude AI để generate code và debug</li>
+                    <li>Nếu stuck > 2 giờ, hỏi trên Stack Overflow hoặc Discord</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 50px 0;">
+                <h2 style="color: #1e3c72; margin-bottom: 20px;">🚀 Sẵn Sàng Bắt Đầu?</h2>
+                <p style="font-size: 1.1em; margin-bottom: 30px;">Bắt đầu với Bước 1: Setup Môi Trường</p>
+                <a href="PMS_STEP_01_SETUP.html" class="btn" style="font-size: 1.2em; padding: 15px 40px;">Bắt Đầu Ngay →</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
