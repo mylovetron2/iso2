@@ -118,6 +118,13 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-certificate mr-2"></i> Thiết bị HC/KĐ
                             </a>
                         </li>
+                        <?php if (hasPermission('vattu.view')): ?>
+                        <li>
+                            <a href="/iso2/vattuthanhly.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-boxes mr-2"></i> Vật tư thanh lý
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </li>
                 <?php endif; ?>

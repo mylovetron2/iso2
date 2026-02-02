@@ -29,6 +29,11 @@ $allPermissions = [
     'thietbi.edit' => 'Sửa thiết bị',
     'thietbi.delete' => 'Xóa thiết bị',
     
+    'vattu.view' => 'Xem vật tư thanh lý',
+    'vattu.create' => 'Tạo vật tư thanh lý',
+    'vattu.edit' => 'Sửa vật tư thanh lý',
+    'vattu.delete' => 'Xóa vật tư thanh lý',
+    
     'thietbihotro.view' => 'Xem thiết bị hỗ trợ',
     'thietbihotro.create' => 'Tạo thiết bị hỗ trợ',
     'thietbihotro.edit' => 'Sửa thiết bị hỗ trợ',
@@ -91,6 +96,7 @@ $permissionGroups = [
     'Project' => ['project.view', 'project.create', 'project.edit', 'project.delete', 'project.manage'],
     'Tiến độ công việc' => ['tiendocongviec.view', 'tiendocongviec.create', 'tiendocongviec.edit', 'tiendocongviec.delete', 'tiendocongviec.pause'],
     'Thiết bị' => ['thietbi.view', 'thietbi.create', 'thietbi.edit', 'thietbi.delete'],
+    'Vật tư thanh lý' => ['vattu.view', 'vattu.create', 'vattu.edit', 'vattu.delete'],
     'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete'],

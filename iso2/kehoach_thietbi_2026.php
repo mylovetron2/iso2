@@ -298,7 +298,7 @@ $limit = 50;
 $offset = ($page - 1) * $limit;
 
 // Nếu có search hoặc chọn sắp xếp Đội TH thì hiển thị tất cả (không phân trang)
-$showAll = $search || $sortOrder === 'doith';
+$showAll = !empty($search) || $sortOrder === 'doith';
 
 // Thứ tự số máy của Đội TH
 $doiThOrder = [

@@ -177,10 +177,12 @@ header('Cache-Control: max-age=0');
                 <td><?= htmlspecialchars($item['tenviettat'] ?? '') ?></td>
                 <td><?= htmlspecialchars($item['somay'] ?? '') ?></td>
                 <td><?= htmlspecialchars($item['hangsx'] ?? '') ?></td>
-                <td><?= htmlspecialchars($item['donvi_thuchien'] ?? '') ?></td>
+                <td><?= htmlspecialchars(($item['donvi_thuchien'] ?? '') === 'Xí nghiệp CĐ' ? 'XNCĐ' : ($item['donvi_thuchien'] ?? '')) ?></td>
                 
                 <?php for ($month = 1; $month <= 12; $month++): 
-                    // Kiểm tra xem tháng này có được tô màu không (3 tháng liên tiếp)
+                    // Kiểm tra xem tháng này có được tô màu không
+                    // Logic: tháng kế hoạch là tháng cuối
+                    // VD: thangkh=10 thì tô 8,9,10; thangkh=2 thì tô 1,2; thangkh=1 thì chỉ tô 1
                     $isGreen = false;
                     $isOrange = false;
                     
@@ -188,9 +190,23 @@ header('Cache-Control: max-age=0');
                     foreach ($selectedMonths as $selectedMonth) {
                         $selectedMonth = (int)trim($selectedMonth);
                         if ($selectedMonth >= 1 && $selectedMonth <= 12) {
-                            $startMonth = ($selectedMonth >= 11) ? 10 : $selectedMonth;
-                            // Kiểm tra nếu tháng hiện tại nằm trong 3 tháng liên tiếp
-                            if ($month >= $startMonth && $month < $startMonth + 3) {
+                            // Tháng kế hoạch là tháng cuối
+                            // Tính tháng bắt đầu: nếu tháng kế hoạch = 1 thì chỉ tô tháng 1
+                            // nếu tháng kế hoạch = 2 thì tô tháng 1,2
+                            // nếu tháng kế hoạch >= 3 thì tô 3 tháng liên tiếp
+                            if ($selectedMonth == 1) {
+                                $startMonth = 1;
+                                $endMonth = 1;
+                            } elseif ($selectedMonth == 2) {
+                                $startMonth = 1;
+                                $endMonth = 2;
+                            } else {
+                                $startMonth = $selectedMonth - 2;
+                                $endMonth = $selectedMonth;
+                            }
+                            
+                            // Kiểm tra nếu tháng hiện tại nằm trong khoảng
+                            if ($month >= $startMonth && $month <= $endMonth) {
                                 $isGreen = true;
                                 break;
                             }
@@ -202,9 +218,20 @@ header('Cache-Control: max-age=0');
                         foreach ($selectedMonths2 as $selectedMonth2) {
                             $selectedMonth2 = (int)trim($selectedMonth2);
                             if ($selectedMonth2 >= 1 && $selectedMonth2 <= 12) {
-                                $startMonth = ($selectedMonth2 >= 11) ? 10 : $selectedMonth2;
-                                // Kiểm tra nếu tháng hiện tại nằm trong 3 tháng liên tiếp
-                                if ($month >= $startMonth && $month < $startMonth + 3) {
+                                // Tháng kế hoạch là tháng cuối
+                                if ($selectedMonth2 == 1) {
+                                    $startMonth = 1;
+                                    $endMonth = 1;
+                                } elseif ($selectedMonth2 == 2) {
+                                    $startMonth = 1;
+                                    $endMonth = 2;
+                                } else {
+                                    $startMonth = $selectedMonth2 - 2;
+                                    $endMonth = $selectedMonth2;
+                                }
+                                
+                                // Kiểm tra nếu tháng hiện tại nằm trong khoảng
+                                if ($month >= $startMonth && $month <= $endMonth) {
                                     $isOrange = true;
                                     break;
                                 }

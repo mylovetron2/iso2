@@ -86,6 +86,19 @@ require_once __DIR__ . '/../layouts/header.php';
                 <i class="fas fa-redo mr-1"></i> Xóa lọc
             </a>
             
+            <?php
+            // Build export URL with current filters
+            $exportParams = [];
+            if (!empty($_GET['search'])) $exportParams['search'] = $_GET['search'];
+            if (!empty($_GET['bophansh'])) $exportParams['bophansh'] = $_GET['bophansh'];
+            if (!empty($_GET['loaitb'])) $exportParams['loaitb'] = $_GET['loaitb'];
+            if (!empty($_GET['filter'])) $exportParams['filter'] = $_GET['filter'];
+            $exportUrl = 'views/thietbihckd/export_pdf.php' . (!empty($exportParams) ? '?' . http_build_query($exportParams) : '');
+            ?>
+            <a href="<?php echo $exportUrl; ?>" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm md:text-base">
+                <i class="fas fa-file-pdf mr-1"></i> In PDF
+            </a>
+            
             <?php if (hasPermission('thietbi.create')): ?>
             <a href="thietbihckd.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm md:text-base ml-auto">
                 <i class="fas fa-plus mr-1"></i> Thêm thiết bị
