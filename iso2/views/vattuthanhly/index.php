@@ -6,75 +6,322 @@ require_once __DIR__ . '/../layouts/header.php';
 ?>
 
 <style>
+/* Master Table Styling */
+#masterTable {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background: transparent;
+}
+
+#masterTable thead th {
+    background: #2196F3;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    border: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#masterTable thead th:first-child {
+    border-radius: 8px 0 0 8px;
+    background: #1565C0 !important;
+    font-size: 0.85rem;
+}
+
+#masterTable tbody td:first-child {
+    background: #f0f8ff;
+    font-weight: 700;
+}
+
+#masterTable thead th:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+/* Master Row - Card Style */
 .master-row {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.master-row td {
+    padding: 16px;
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+}
+
+.master-row td:first-child {
+    border-left: 1px solid #f0f0f0;
+    border-radius: 8px 0 0 8px;
+    font-weight: 700;
+    color: #2196F3;
+    position: relative;
+    padding-left: 24px;
+}
+
+.master-row td:last-child {
+    border-right: 1px solid #f0f0f0;
+    border-radius: 0 8px 8px 0;
 }
 
 .master-row:hover {
-    background-color: #e3f2fd !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+    transform: translateY(-2px);
 }
 
 .master-row.active {
-    background-color: #bbdefb !important;
-    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.25);
+    background: #e3f2fd;
 }
 
-.master-row td:first-child::before {
-    content: '▶';
-    display: inline-block;
-    margin-right: 8px;
-    transition: transform 0.3s;
-    font-size: 10px;
-    color: #666;
+.master-row.active td {
+    border-color: #2196F3;
 }
 
-.master-row.active td:first-child::before {
-    transform: rotate(90deg);
-}
-
+/* Detail Row */
 .detail-row {
     display: none;
-    background-color: #f8f9fa;
+    background: transparent;
 }
 
 .detail-row.active {
     display: table-row;
+    animation: fadeIn 0.4s ease-out;
 }
 
 .detail-row td {
-    padding: 0 !important;
+    padding: 0 0 16px 0 !important;
     border: none !important;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Detail Content */
 .detail-content {
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-left: 4px solid #4299e1;
-    animation: slideDown 0.3s ease-out;
+    margin-left: 60px;
+    margin-right: 20px;
+    padding: 0;
+    background: transparent;
+    animation: slideDown 0.4s ease-out;
 }
 
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        max-height: 0;
+        transform: translateY(-20px);
     }
     to {
         opacity: 1;
+        max-height: 2000px;
         transform: translateY(0);
     }
 }
 
-.badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
+.detail-content > .bg-white {
+    background: #fafbfc !important;
+    border: 2px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
-.badge-success { background-color: #d4edda; color: #155724; }
-.badge-warning { background-color: #fff3cd; color: #856404; }
-.badge-danger { background-color: #f8d7da; color: #721c24; }
+.detail-content button[onclick*="showAddForm"] {
+    background: #2196F3;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.detail-content button[onclick*="showAddForm"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    background: #1976D2;
+}
+
+/* Detail Form */
+.detail-content #addForm_\\d+ {
+    background: white;
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.detail-content form h5 {
+    color: #2196F3;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.detail-content form label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #4b5563;
+    margin-bottom: 4px;
+}
+
+.detail-content form input,
+.detail-content form select,
+.detail-content form textarea {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    transition: all 0.2s ease;
+}
+
+.detail-content form input:focus,
+.detail-content form select:focus,
+.detail-content form textarea:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    outline: none;
+}
+
+/* Detail Table */
+.detail-content table {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.82rem;
+}
+
+.detail-content thead th {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 8px;
+    border-bottom: 2px solid #d1d5db;
+}
+
+.detail-content tbody tr {
+    transition: background 0.2s ease;
+}
+
+.detail-content tbody tr:hover {
+    background: #f9fafb;
+}
+
+.detail-content tbody td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-warning { 
+    background: #f59e0b;
+    color: white;
+}
+
+.badge-danger { 
+    background: #ef4444;
+    color: white;
+}
+
+/* Code Badge */
+code.bg-blue-100 {
+    background: #2196F3 !important;
+    color: white;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+/* Language Tags */
+.master-row td strong {
+    color: #2196F3;
+    font-weight: 700;
+}
+
+/* Empty State */
+td[colspan] {
+    text-align: center;
+    padding: 40px !important;
+    color: #9ca3af;
+}
+
+/* Buttons */
+button[type="submit"] {
+    background: #10b981;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    background: #059669;
+}
+
+button[type="button"] {
+    background: #6b7280;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+button[type="button"]:hover {
+    background: #4b5563;
+}
+
+/* Delete Button */
+button.text-red-600 {
+    transition: all 0.2s ease;
+}
+
+button.text-red-600:hover {
+    transform: scale(1.2);
+}
 </style>
 
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -131,21 +378,20 @@ require_once __DIR__ . '/../layouts/header.php';
             <table class="min-w-full bg-white border" id="masterTable">
                 <thead class="bg-gray-100">
                     <tr>
-                        <th class="px-4 py-2 border text-left">STT</th>
                         <th class="px-4 py-2 border text-left">Mã VT</th>
                         <th class="px-4 py-2 border text-left">Tên (TA/Nga/Việt)</th>
                         <th class="px-4 py-2 border text-center">ĐVT</th>
                         <th class="px-4 py-2 border text-right">SL còn lại</th>
                         <th class="px-4 py-2 border text-right">Đơn giá</th>
                         <th class="px-4 py-2 border text-center">Ngày nhận</th>
-                        <th class="px-4 py-2 border text-center">Số lần SD</th>
+                        <th class="px-4 py-2 border text-center">Số lần thanh lý</th>
                         <th class="px-4 py-2 border text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>Không có vật tư nào</p>
                         </td>
@@ -155,7 +401,6 @@ require_once __DIR__ . '/../layouts/header.php';
                     <tr class="master-row" data-vattu-stt="<?php echo $item['stt']; ?>" 
                         data-mavattu="<?php echo htmlspecialchars($item['mavattu']); ?>"
                         data-tenkyhieu="<?php echo htmlspecialchars($item['ten_tiengviet'] ?? $item['ten_tienganh'] ?? ''); ?>">
-                        <td class="px-4 py-2 border"><?php echo $item['stt']; ?></td>
                         <td class="px-4 py-2 border">
                             <code class="bg-blue-100 px-2 py-1 rounded text-sm font-semibold">
                                 <?php echo htmlspecialchars($item['mavattu']); ?>
@@ -198,10 +443,10 @@ require_once __DIR__ . '/../layouts/header.php';
                             <?php endif; ?>
                             <?php if (hasPermission('vattu.delete')): ?>
                             <form method="POST" action="vattuthanhly.php?action=delete" 
-                                  onsubmit="event.stopPropagation(); return confirm('Bạn có chắc muốn xóa vật tư này?');" 
+                                  onsubmit="return handleDeleteVatTu(event);" 
                                   class="inline">
                                 <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
-                                <button type="submit" class="text-red-600 hover:text-red-800 mx-1" title="Xóa">
+                                <button type="submit" class="delete-vattu-btn text-red-600 hover:text-red-800 mx-1" title="Xóa">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -256,6 +501,28 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <script>
+// Handle delete vat tu with loading indicator
+function handleDeleteVatTu(event) {
+    event.stopPropagation();
+    
+    if (!confirm('Bạn có chắc muốn xóa vật tư này?')) {
+        event.preventDefault();
+        return false;
+    }
+    
+    const form = event.target;
+    const button = form.querySelector('button[type="submit"]');
+    
+    if (button) {
+        // Show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+    
+    // The form will submit naturally, but we've shown the loading state
+    return true;
+}
+
 // Click vào master row để toggle detail
 document.querySelectorAll('.master-row').forEach(row => {
     row.addEventListener('click', function(e) {
@@ -290,20 +557,18 @@ document.querySelectorAll('.master-row').forEach(row => {
 });
 
 function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
+    // Get available quantity from master row
+    const qtyCell = masterRow.querySelector('td:nth-child(4)');
+    const availableQty = qtyCell ? qtyCell.textContent.trim().replace(/,/g, '') : '0';
+    
     // Create detail row
     const detailRow = document.createElement('tr');
     detailRow.id = `detail-row-${vattuStt}`;
     detailRow.className = 'detail-row active';
     detailRow.innerHTML = `
-        <td colspan="9">
+        <td colspan="8">
             <div class="detail-content">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-lg font-semibold text-gray-800">
-                        <i class="fas fa-info-circle mr-2"></i>Chi tiết sử dụng: 
-                        <span class="text-blue-600">${mavattu} - ${tenkyhieu}</span>
-                    </h4>
-                </div>
-                
+
                 <div class="bg-white rounded-lg p-4 shadow">
                     <?php if (hasPermission('vattu.edit')): ?>
                     <button onclick="showAddForm_${vattuStt}()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-3">
@@ -314,6 +579,10 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                     <!-- Form thêm chi tiết -->
                     <div id="addForm_${vattuStt}" style="display: none;" class="mb-4 p-4 bg-gray-50 rounded border">
                         <h5 class="font-semibold mb-3">Thêm chi tiết sử dụng mới</h5>
+                        <div class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <span class="font-semibold text-blue-800">Số lượng còn lại: </span>
+                            <span id="availableQty_${vattuStt}" class="text-xl font-bold text-blue-600">${availableQty}</span>
+                        </div>
                         <form id="chiTietForm_${vattuStt}" class="grid grid-cols-2 gap-3">
                             <input type="hidden" name="vattu_stt" value="${vattuStt}">
                             
@@ -328,8 +597,11 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium mb-1">Số lượng</label>
-                                <input type="number" step="0.01" name="soluong" class="w-full border rounded px-3 py-2" required>
+                                <label class="block text-sm font-medium mb-1">Số lượng thanh lý <span class="text-red-600">*</span></label>
+                                <input type="number" step="0.01" name="soluong" max="${availableQty}" 
+                                       class="w-full border rounded px-3 py-2" required
+                                       onchange="validateQuantity_${vattuStt}(this)">
+                                <small class="text-gray-500">Tối đa: ${availableQty}</small>
                             </div>
                             
                             <div>
@@ -342,16 +614,7 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                                 <textarea name="mucdich_sudung" class="w-full border rounded px-3 py-2" rows="2"></textarea>
                             </div>
                             
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Trạng thái</label>
-                                <select name="trangthai" class="w-full border rounded px-3 py-2">
-                                    <option value="dangdung">Đang dùng</option>
-                                    <option value="dahoan">Đã hoàn</option>
-                                    <option value="thanh_ly">Thanh lý</option>
-                                </select>
-                            </div>
-                            
-                            <div>
+                            <div class="col-span-2">
                                 <label class="block text-sm font-medium mb-1">Ghi chú</label>
                                 <input type="text" name="ghichu" class="w-full border rounded px-3 py-2">
                             </div>
@@ -377,13 +640,12 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                                     <th class="px-3 py-2 border text-right">Số lượng</th>
                                     <th class="px-3 py-2 border text-left">Bộ phận</th>
                                     <th class="px-3 py-2 border text-left">Mục đích</th>
-                                    <th class="px-3 py-2 border text-center">Trạng thái</th>
                                     <th class="px-3 py-2 border text-center">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="detailTableBody_${vattuStt}">
                                 <tr>
-                                    <td colspan="7" class="px-4 py-4 text-center text-gray-400">
+                                    <td colspan="6" class="px-4 py-4 text-center text-gray-400">
                                         <i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...
                                     </td>
                                 </tr>
@@ -397,6 +659,20 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
     
     // Insert after master row
     masterRow.parentNode.insertBefore(detailRow, masterRow.nextSibling);
+    
+    // Create validation function for this form
+    window[`validateQuantity_${vattuStt}`] = function(input) {
+        const maxQty = parseFloat(availableQty);
+        const value = parseFloat(input.value);
+        if (value > maxQty) {
+            alert(`Số lượng thanh lý không được vượt quá ${maxQty}`);
+            input.value = maxQty;
+        }
+        if (value <= 0) {
+            alert('Số lượng phải lớn hơn 0');
+            input.value = '';
+        }
+    };
     
     // Create dynamic functions for this specific detail
     window[`showAddForm_${vattuStt}`] = function() {
@@ -413,6 +689,12 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
         e.preventDefault();
         
         const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang xử lý...';
         
         fetch('vattuthanhly.php?action=addChiTiet', {
             method: 'POST',
@@ -424,6 +706,33 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                 alert('Thêm chi tiết thành công!');
                 window[`hideAddForm_${vattuStt}`]();
                 loadDetail(vattuStt);
+                
+                // Cập nhật số lượng còn lại trên master row
+                if (data.soluong_conlai_moi !== undefined) {
+                    const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
+                    const qtyCell = masterRow.querySelector('td:nth-child(4)');
+                    if (qtyCell) {
+                        const formatted = parseFloat(data.soluong_conlai_moi).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
+                    }
+                    
+                    // Cập nhật số lượng còn lại trong form
+                    const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
+                    if (qtyDisplay) {
+                        qtyDisplay.textContent = data.soluong_conlai_moi.toFixed(2);
+                    }
+                    const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
+                    if (qtyInput) {
+                        qtyInput.max = data.soluong_conlai_moi;
+                        const smallEl = qtyInput.parentElement.querySelector('small');
+                        if (smallEl) {
+                            smallEl.textContent = `Tối đa: ${data.soluong_conlai_moi.toFixed(2)}`;
+                        }
+                    }
+                }
             } else {
                 alert('Lỗi: ' + (data.error || 'Unknown error'));
             }
@@ -431,6 +740,11 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
         .catch(error => {
             console.error('Error:', error);
             alert('Có lỗi xảy ra');
+        })
+        .finally(() => {
+            // Re-enable button and restore text
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
         });
     });
     
@@ -460,25 +774,23 @@ function renderDetailTable(vattuStt, items) {
     if (!tbody) return;
     
     if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-4 text-center text-gray-400">Chưa có chi tiết sử dụng</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-center text-gray-400">Chưa có chi tiết sử dụng</td></tr>';
         return;
     }
     
-    const trangthaiMap = {
-        'dangdung': '<span class="badge badge-success">Đang dùng</span>',
-        'dahoan': '<span class="badge badge-warning">Đã hoàn</span>',
-        'thanh_ly': '<span class="badge badge-danger">Thanh lý</span>'
-    };
-    
     tbody.innerHTML = items.map(item => `
-        <tr>
+        <tr id="detailRow_${item.id}">
             <td class="px-3 py-2 border">${item.nguoisudung || '-'}</td>
             <td class="px-3 py-2 border text-center">${item.ngaysd_nhan ? new Date(item.ngaysd_nhan).toLocaleDateString('vi-VN') : '-'}</td>
             <td class="px-3 py-2 border text-right font-semibold">${parseFloat(item.soluong || 0).toFixed(2)}</td>
             <td class="px-3 py-2 border">${item.bophan || '-'}</td>
             <td class="px-3 py-2 border">${item.mucdich_sudung || '-'}</td>
-            <td class="px-3 py-2 border text-center">${trangthaiMap[item.trangthai] || item.trangthai}</td>
             <td class="px-3 py-2 border text-center">
+                <?php if (hasPermission('vattu.edit')): ?>
+                <button onclick="editChiTiet(${item.id}, ${vattuStt}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" class="text-blue-600 hover:text-blue-800 mr-2" title="Sửa">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <?php endif; ?>
                 <?php if (hasPermission('vattu.delete')): ?>
                 <button onclick="deleteChiTiet(${item.id}, ${vattuStt})" class="text-red-600 hover:text-red-800" title="Xóa">
                     <i class="fas fa-trash"></i>
@@ -486,11 +798,122 @@ function renderDetailTable(vattuStt, items) {
                 <?php endif; ?>
             </td>
         </tr>
+        <tr id="editRow_${item.id}" style="display: none;">
+            <td colspan="6" class="px-3 py-2 border bg-yellow-50">
+                <form id="editForm_${item.id}" class="grid grid-cols-2 gap-3">
+                    <input type="hidden" name="id" value="${item.id}">
+                    <input type="hidden" name="vattu_stt" value="${vattuStt}">
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Người sử dụng</label>
+                        <input type="text" name="nguoisudung" value="${item.nguoisudung || ''}" class="w-full border rounded px-2 py-1 text-sm" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Ngày SD/Nhận</label>
+                        <input type="date" name="ngaysd_nhan" value="${item.ngaysd_nhan || ''}" class="w-full border rounded px-2 py-1 text-sm" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Số lượng</label>
+                        <input type="number" step="0.01" name="soluong" value="${item.soluong || ''}" class="w-full border rounded px-2 py-1 text-sm" required readonly>
+                        <small class="text-gray-500">Không cho phép sửa số lượng</small>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Bộ phận</label>
+                        <input type="text" name="bophan" value="${item.bophan || ''}" class="w-full border rounded px-2 py-1 text-sm">
+                    </div>
+                    
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium mb-1">Mục đích sử dụng</label>
+                        <textarea name="mucdich_sudung" class="w-full border rounded px-2 py-1 text-sm" rows="2">${item.mucdich_sudung || ''}</textarea>
+                    </div>
+                    
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium mb-1">Ghi chú</label>
+                        <input type="text" name="ghichu" value="${item.ghichu || ''}" class="w-full border rounded px-2 py-1 text-sm">
+                    </div>
+                    
+                    <div class="col-span-2 flex gap-2">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-save mr-1"></i> Lưu
+                        </button>
+                        <button type="button" onclick="cancelEdit(${item.id})" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
+            </td>
+        </tr>
     `).join('');
+    
+    // Add event listeners for all edit forms
+    items.forEach(item => {
+        const form = document.getElementById(`editForm_${item.id}`);
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveEditChiTiet(item.id, vattuStt);
+            });
+        }
+    });
+}
+
+function editChiTiet(id, vattuStt, item) {
+    // Hide detail row and show edit row
+    document.getElementById(`detailRow_${id}`).style.display = 'none';
+    document.getElementById(`editRow_${id}`).style.display = 'table-row';
+}
+
+function cancelEdit(id) {
+    // Show detail row and hide edit row
+    document.getElementById(`detailRow_${id}`).style.display = 'table-row';
+    document.getElementById(`editRow_${id}`).style.display = 'none';
+}
+
+function saveEditChiTiet(id, vattuStt) {
+    const form = document.getElementById(`editForm_${id}`);
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang lưu...';
+    
+    fetch('vattuthanhly.php?action=editChiTiet', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Cập nhật chi tiết thành công!');
+            cancelEdit(id);
+            loadDetail(vattuStt);
+        } else {
+            alert('Lỗi: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
 }
 
 function deleteChiTiet(id, vattuStt) {
     if (!confirm('Bạn có chắc muốn xóa chi tiết này?')) return;
+    
+    // Show loading indicator on the delete button
+    const deleteBtn = event.target.closest('button');
+    const originalHTML = deleteBtn.innerHTML;
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     const formData = new FormData();
     formData.append('id', id);
@@ -504,6 +927,33 @@ function deleteChiTiet(id, vattuStt) {
         if (data.success) {
             alert('Xóa thành công!');
             loadDetail(vattuStt);
+            
+            // Cập nhật lại số lượng còn lại sau khi xóa (cộng lại)
+            if (data.soluong_conlai_moi !== undefined) {
+                const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
+                const qtyCell = masterRow.querySelector('td:nth-child(4)');
+                if (qtyCell) {
+                    const formatted = parseFloat(data.soluong_conlai_moi).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
+                }
+                
+                // Cập nhật trong form nếu đang hiển thị
+                const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
+                if (qtyDisplay) {
+                    qtyDisplay.textContent = data.soluong_conlai_moi.toFixed(2);
+                }
+                const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
+                if (qtyInput) {
+                    qtyInput.max = data.soluong_conlai_moi;
+                    const smallEl = qtyInput.parentElement.querySelector('small');
+                    if (smallEl) {
+                        smallEl.textContent = `Tối đa: ${data.soluong_conlai_moi.toFixed(2)}`;
+                    }
+                }
+            }
         } else {
             alert('Lỗi: ' + (data.error || 'Unknown error'));
         }
@@ -511,6 +961,11 @@ function deleteChiTiet(id, vattuStt) {
     .catch(error => {
         console.error('Error:', error);
         alert('Có lỗi xảy ra');
+    })
+    .finally(() => {
+        // Restore button state
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = originalHTML;
     });
 }
 </script>

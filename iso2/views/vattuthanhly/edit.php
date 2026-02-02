@@ -32,6 +32,34 @@ require_once __DIR__ . '/../layouts/header.php';
                        class="w-full border rounded px-3 py-2">
             </div>
 
+            <!-- Tên vật tư - 3 ngôn ngữ -->
+            <div class="md:col-span-2">
+                <label class="block font-medium mb-2 text-blue-600">
+                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Anh
+                </label>
+                <textarea name="ten_tienganh" rows="2"
+                          class="w-full border-2 border-blue-200 rounded px-3 py-2" 
+                          placeholder="English name"><?php echo htmlspecialchars($item['ten_tienganh'] ?? ''); ?></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block font-medium mb-2 text-red-600">
+                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Nga
+                </label>
+                <textarea name="ten_tiengnga" rows="2"
+                          class="w-full border-2 border-red-200 rounded px-3 py-2" 
+                          placeholder="Название на русском"><?php echo htmlspecialchars($item['ten_tiengnga'] ?? ''); ?></textarea>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block font-medium mb-2 text-green-600">
+                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Việt
+                </label>
+                <textarea name="ten_tiengviet" rows="2"
+                          class="w-full border-2 border-green-200 rounded px-3 py-2" 
+                          placeholder="Tên tiếng Việt"><?php echo htmlspecialchars($item['ten_tiengviet'] ?? ''); ?></textarea>
+            </div>
+
             <div>
                 <label class="block font-medium mb-2">ĐVT Tiếng Nga</label>
                 <input type="text" name="dvt_tiengnga" 
@@ -46,34 +74,6 @@ require_once __DIR__ . '/../layouts/header.php';
                        value="<?php echo htmlspecialchars($item['dvt_tiengviet'] ?? ''); ?>"
                        class="w-full border rounded px-3 py-2" 
                        placeholder="cái / bộ / kg">
-            </div>
-
-            <!-- Tên vật tư - 3 ngôn ngữ -->
-            <div class="md:col-span-2">
-                <label class="block font-medium mb-2 text-blue-600">
-                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Anh
-                </label>
-                <textarea name="ten_tienganh" rows="2"
-                          class="w-full border-2 border-blue-200 rounded px-3 py-2" 
-                          placeholder="English name"><?php echo htmlspecialchars($item['ten_tienganh'] ?? ''); ?></textarea>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block font-medium mb-2 text-red-600">
-                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Nga <span class="text-red-500">*</span>
-                </label>
-                <textarea name="ten_tiengnga" required rows="2"
-                          class="w-full border-2 border-red-200 rounded px-3 py-2" 
-                          placeholder="Название на русском"><?php echo htmlspecialchars($item['ten_tiengnga'] ?? ''); ?></textarea>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block font-medium mb-2 text-green-600">
-                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Việt
-                </label>
-                <textarea name="ten_tiengviet" rows="2"
-                          class="w-full border-2 border-green-200 rounded px-3 py-2" 
-                          placeholder="Tên tiếng Việt"><?php echo htmlspecialchars($item['ten_tiengviet'] ?? ''); ?></textarea>
             </div>
 
             <!-- Đặc tính kỹ thuật - 2 ngôn ngữ -->

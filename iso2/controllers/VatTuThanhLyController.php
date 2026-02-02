@@ -197,11 +197,38 @@ class VatTuThanhLyController
             exit;
         }
         
+        $vattu_stt = $_POST['vattu_stt'] ?? null;
+        $soluong_thanhly = floatval($_POST['soluong'] ?? 0);
+        
+        // Kiểm tra số lượng thanh lý có hợp lệ không
+        if ($soluong_thanhly <= 0) {
+            echo json_encode(['error' => 'Số lượng thanh lý phải lớn hơn 0']);
+            exit;
+        }
+        
+        // Lấy thông tin vật tư master
+        $vattu = $this->model->findById((int)$vattu_stt);
+        if (!$vattu) {
+            echo json_encode(['error' => 'Không tìm thấy vật tư']);
+            exit;
+        }
+        
+        $soluong_conlai = floatval($vattu['soluong_conlai'] ?? 0);
+        
+        // Kiểm tra số lượng thanh lý không được lớn hơn số lượng còn lại
+        if ($soluong_thanhly > $soluong_conlai) {
+            echo json_encode([
+                'error' => 'Số lượng thanh lý (' . number_format($soluong_thanhly, 2) . 
+                          ') không được lớn hơn số lượng còn lại (' . number_format($soluong_conlai, 2) . ')'
+            ]);
+            exit;
+        }
+        
         $data = [
-            'vattu_stt' => $_POST['vattu_stt'] ?? null,
+            'vattu_stt' => $vattu_stt,
             'nguoisudung' => $_POST['nguoisudung'] ?? null,
             'ngaysd_nhan' => $_POST['ngaysd_nhan'] ?? null,
-            'soluong' => $_POST['soluong'] ?? null,
+            'soluong' => $soluong_thanhly,
             'bophan' => $_POST['bophan'] ?? null,
             'mucdich_sudung' => $_POST['mucdich_sudung'] ?? null,
             'trangthai' => $_POST['trangthai'] ?? 'dangdung',
@@ -209,7 +236,12 @@ class VatTuThanhLyController
         ];
         
         if ($this->model->addChiTietSuDung($data)) {
-            echo json_encode(['success' => true]);
+            // Lấy số lượng còn lại mới sau khi cập nhật
+            $vattu_updated = $this->model->findById((int)$vattu_stt);
+            echo json_encode([
+                'success' => true,
+                'soluong_conlai_moi' => floatval($vattu_updated['soluong_conlai'] ?? 0)
+            ]);
         } else {
             echo json_encode(['error' => 'Failed to add chi tiet']);
         }
@@ -235,10 +267,58 @@ class VatTuThanhLyController
             exit;
         }
         
+        // Lấy thông tin chi tiết trước khi xóa để lấy vattu_stt
+        $detail = $this->model->getChiTietById((int)$id);
+        
         if ($this->model->deleteChiTietSuDung((int)$id)) {
-            echo json_encode(['success' => true]);
+            // Lấy số lượng còn lại mới sau khi xóa (đã được cộng lại)
+            if ($detail) {
+                $vattu_updated = $this->model->findById((int)$detail['vattu_stt']);
+                echo json_encode([
+                    'success' => true,
+                    'soluong_conlai_moi' => floatval($vattu_updated['soluong_conlai'] ?? 0)
+                ]);
+            } else {
+                echo json_encode(['success' => true]);
+            }
         } else {
             echo json_encode(['error' => 'Failed to delete chi tiet']);
+        }
+        exit;
+    }
+    
+    /**
+     * API: Sửa chi tiết sử dụng
+     */
+    public function editChiTiet(): void
+    {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['error' => 'Invalid request method']);
+            exit;
+        }
+        
+        $id = $_POST['id'] ?? null;
+        
+        if (!$id) {
+            echo json_encode(['error' => 'Missing id']);
+            exit;
+        }
+        
+        // Không cho phép sửa số lượng để tránh inconsistency
+        $data = [
+            'nguoisudung' => $_POST['nguoisudung'] ?? null,
+            'ngaysd_nhan' => $_POST['ngaysd_nhan'] ?? null,
+            'bophan' => $_POST['bophan'] ?? null,
+            'mucdich_sudung' => $_POST['mucdich_sudung'] ?? null,
+            'ghichu' => $_POST['ghichu'] ?? null,
+        ];
+        
+        if ($this->model->updateChiTietSuDung((int)$id, $data)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['error' => 'Failed to update chi tiet']);
         }
         exit;
     }

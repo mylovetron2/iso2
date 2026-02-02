@@ -53,6 +53,14 @@ switch ($action) {
         $controller->addChiTiet();
         break;
         
+    case 'editChiTiet':
+        if (!hasPermission('vattu.edit')) {
+            echo json_encode(['error' => 'No permission']);
+            exit;
+        }
+        $controller->editChiTiet();
+        break;
+        
     case 'deleteChiTiet':
         if (!hasPermission('vattu.delete')) {
             echo json_encode(['error' => 'No permission']);

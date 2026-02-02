@@ -72,8 +72,8 @@ class VatTuThanhLy extends BaseModel
                 ':ghichu' => $data['ghichu'] ?? null
             ]);
             
-            // Cập nhật số lượng còn lại
-            $this->updateSoLuongConLai((int)$data['vattu_stt']);
+            // Trừ số lượng thanh lý từ số lượng còn lại của master
+            $this->deductSoLuongConLai((int)$data['vattu_stt'], floatval($data['soluong'] ?? 0));
             
             return true;
         } catch (PDOException $e) {
@@ -83,18 +83,15 @@ class VatTuThanhLy extends BaseModel
     }
     
     /**
-     * Cập nhật chi tiết sử dụng
+     * Cập nhật chi tiết sử dụng (không cho phép sửa số lượng)
      */
     public function updateChiTietSuDung(int $id, array $data): bool
     {
         $sql = "UPDATE vattu_thanh_ly_sudung_iso SET
                 nguoisudung = :nguoisudung,
                 ngaysd_nhan = :ngaysd_nhan,
-                soluong = :soluong,
                 bophan = :bophan,
                 mucdich_sudung = :mucdich_sudung,
-                trangthai = :trangthai,
-                ngayhoanthanh = :ngayhoanthanh,
                 ghichu = :ghichu
                 WHERE id = :id";
         
@@ -103,19 +100,10 @@ class VatTuThanhLy extends BaseModel
                 ':id' => $id,
                 ':nguoisudung' => $data['nguoisudung'] ?? null,
                 ':ngaysd_nhan' => $data['ngaysd_nhan'] ?? null,
-                ':soluong' => $data['soluong'] ?? 0,
                 ':bophan' => $data['bophan'] ?? null,
                 ':mucdich_sudung' => $data['mucdich_sudung'] ?? null,
-                ':trangthai' => $data['trangthai'] ?? 'dangdung',
-                ':ngayhoanthanh' => $data['ngayhoanthanh'] ?? null,
                 ':ghichu' => $data['ghichu'] ?? null
             ]);
-            
-            // Lấy vattu_stt và cập nhật số lượng
-            $detail = $this->getChiTietById($id);
-            if ($detail) {
-                $this->updateSoLuongConLai((int)$detail['vattu_stt']);
-            }
             
             return true;
         } catch (PDOException $e) {
@@ -132,15 +120,17 @@ class VatTuThanhLy extends BaseModel
         // Lấy thông tin trước khi xóa
         $detail = $this->getChiTietById($id);
         
+        if (!$detail) {
+            return false;
+        }
+        
         $sql = "DELETE FROM vattu_thanh_ly_sudung_iso WHERE id = :id";
         
         try {
             $this->query($sql, [':id' => $id]);
             
-            // Cập nhật số lượng còn lại
-            if ($detail) {
-                $this->updateSoLuongConLai((int)$detail['vattu_stt']);
-            }
+            // Cộng lại số lượng đã thanh lý vào số lượng còn lại
+            $this->addBackSoLuongConLai((int)$detail['vattu_stt'], floatval($detail['soluong'] ?? 0));
             
             return true;
         } catch (PDOException $e) {
@@ -152,7 +142,7 @@ class VatTuThanhLy extends BaseModel
     /**
      * Lấy chi tiết theo ID
      */
-    private function getChiTietById(int $id): ?array
+    public function getChiTietById(int $id): ?array
     {
         $sql = "SELECT * FROM vattu_thanh_ly_sudung_iso WHERE id = :id";
         $stmt = $this->query($sql, [':id' => $id]);
@@ -161,19 +151,43 @@ class VatTuThanhLy extends BaseModel
     }
     
     /**
-     * Cập nhật số lượng còn lại dựa trên chi tiết sử dụng
+     * Trừ số lượng thanh lý từ số lượng còn lại
      */
-    private function updateSoLuongConLai(int $vattuStt): void
+    private function deductSoLuongConLai(int $vattuStt, float $soluongThanhLy): void
     {
-        // Tính tổng số lượng đang sử dụng
-        $sql = "SELECT SUM(soluong) as total_sudung 
-                FROM vattu_thanh_ly_sudung_iso 
-                WHERE vattu_stt = :vattu_stt AND trangthai = 'dangdung'";
-        $stmt = $this->query($sql, [':vattu_stt' => $vattuStt]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $sql = "UPDATE vattu_thanh_ly_iso 
+                SET soluong_conlai = soluong_conlai - :soluong_thanhly
+                WHERE stt = :vattu_stt";
         
-        // Note: Không tự động cập nhật soluong_conlai vì có thể phức tạp
-        // Có thể cần logic riêng tùy theo yêu cầu nghiệp vụ
+        try {
+            $this->query($sql, [
+                ':soluong_thanhly' => $soluongThanhLy,
+                ':vattu_stt' => $vattuStt
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error deducting soluong_conlai: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Cộng lại số lượng khi xóa chi tiết thanh lý
+     */
+    private function addBackSoLuongConLai(int $vattuStt, float $soluongThanhLy): void
+    {
+        $sql = "UPDATE vattu_thanh_ly_iso 
+                SET soluong_conlai = soluong_conlai + :soluong_thanhly
+                WHERE stt = :vattu_stt";
+        
+        try {
+            $this->query($sql, [
+                ':soluong_thanhly' => $soluongThanhLy,
+                ':vattu_stt' => $vattuStt
+            ]);
+        } catch (PDOException $e) {
+            error_log("Error adding back soluong_conlai: " . $e->getMessage());
+            throw $e;
+        }
     }
     
     /**

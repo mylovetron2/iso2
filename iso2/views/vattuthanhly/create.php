@@ -19,20 +19,6 @@ require_once __DIR__ . '/../layouts/header.php';
                        placeholder="Ví dụ: 011.004.00521">
             </div>
 
-            <div>
-                <label class="block font-medium mb-2">ĐVT Tiếng Nga</label>
-                <input type="text" name="dvt_tiengnga" 
-                       class="w-full border rounded px-3 py-2" 
-                       placeholder="шт. / комплект / кг">
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">ĐVT Tiếng Việt</label>
-                <input type="text" name="dvt_tiengviet" 
-                       class="w-full border rounded px-3 py-2" 
-                       placeholder="cái / bộ / kg">
-            </div>
-
             <!-- Tên vật tư - 3 ngôn ngữ -->
             <div class="md:col-span-2">
                 <label class="block font-medium mb-2 text-blue-600">
@@ -45,9 +31,9 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div class="md:col-span-2">
                 <label class="block font-medium mb-2 text-red-600">
-                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Nga <span class="text-red-500">*</span>
+                    <i class="fas fa-language"></i> Tên vật tư - Tiếng Nga
                 </label>
-                <textarea name="ten_tiengnga" required rows="2"
+                <textarea name="ten_tiengnga" rows="2"
                           class="w-full border-2 border-red-200 rounded px-3 py-2" 
                           placeholder="Название на русском (например, Конденсатор 10uF 25V X8L)"></textarea>
             </div>
@@ -59,6 +45,20 @@ require_once __DIR__ . '/../layouts/header.php';
                 <textarea name="ten_tiengviet" rows="2"
                           class="w-full border-2 border-green-200 rounded px-3 py-2" 
                           placeholder="Tên tiếng Việt (ví dụ: Tụ điện 10uF 25V X8L, RADIAL)"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-2">ĐVT Tiếng Nga</label>
+                <input type="text" name="dvt_tiengnga" 
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="шт. / комплект / кг">
+            </div>
+
+            <div>
+                <label class="block font-medium mb-2">ĐVT Tiếng Việt</label>
+                <input type="text" name="dvt_tiengviet" 
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="cái / bộ / kg">
             </div>
 
             <!-- Đặc tính kỹ thuật - 2 ngôn ngữ -->
