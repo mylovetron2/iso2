@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/VatTuThanhLy.php';
 
 class VatTuThanhLyController
@@ -24,12 +25,28 @@ class VatTuThanhLyController
             $params = [];
 
             if ($search) {
-                $conditions[] = "(v.mavattu LIKE :search1 OR v.ten_tienganh LIKE :search2 OR v.ten_tiengnga LIKE :search3 OR v.ten_tiengviet LIKE :search4 OR v.nguoiquanly LIKE :search5)";
-                $params[':search1'] = "%$search%";
-                $params[':search2'] = "%$search%";
-                $params[':search3'] = "%$search%";
-                $params[':search4'] = "%$search%";
-                $params[':search5'] = "%$search%";
+                // Tạo 2 biến thể: lowercase và capitalized (chữ đầu viết hoa)
+                $searchLower = mb_strtolower($search, 'UTF-8');
+                $searchCap = mb_strtoupper(mb_substr($search, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($searchLower, 1);
+                
+                $conditions[] = "(
+                    v.mavattu LIKE :search1a OR v.mavattu LIKE :search1b OR
+                    v.ten_tienganh LIKE :search2a OR v.ten_tienganh LIKE :search2b OR
+                    v.ten_tiengnga LIKE :search3a OR v.ten_tiengnga LIKE :search3b OR
+                    v.ten_tiengviet LIKE :search4a OR v.ten_tiengviet LIKE :search4b OR
+                    v.nguoiquanly LIKE :search5a OR v.nguoiquanly LIKE :search5b
+                )";
+                
+                $params[':search1a'] = "%$searchLower%";
+                $params[':search1b'] = "%$searchCap%";
+                $params[':search2a'] = "%$searchLower%";
+                $params[':search2b'] = "%$searchCap%";
+                $params[':search3a'] = "%$searchLower%";
+                $params[':search3b'] = "%$searchCap%";
+                $params[':search4a'] = "%$searchLower%";
+                $params[':search4b'] = "%$searchCap%";
+                $params[':search5a'] = "%$searchLower%";
+                $params[':search5b'] = "%$searchCap%";
             }
 
             $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
@@ -37,6 +54,11 @@ class VatTuThanhLyController
             $items = $this->model->getAllWithStats($where, $params, $limit, $offset);
             $total = $this->model->count($where, $params);
             $totalPages = ceil($total / $limit);
+            
+            // Load danh sách đơn vị
+            $db = getDBConnection();
+            $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
+            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
 
             require_once __DIR__ . '/../views/vattuthanhly/index.php';
         } catch (Exception $e) {
@@ -44,7 +66,9 @@ class VatTuThanhLyController
             
             $items = [];
             $total = 0;
+            $page = 1;
             $totalPages = 0;
+            $donViList = [];
             $error = 'Có lỗi xảy ra: ' . $e->getMessage();
             
             require_once __DIR__ . '/../views/vattuthanhly/index.php';
