@@ -18,10 +18,13 @@ class VatTuThanhLy extends BaseModel
     {
         $sql = "SELECT 
                     v.*,
+                    pl.ten_phanloai,
+                    pl.mau_sac as phanloai_mau_sac,
                     COUNT(DISTINCT s.id) as so_lan_sudung,
                     SUM(CASE WHEN s.trangthai = 'dangdung' THEN s.soluong ELSE 0 END) as soluong_dangdung,
                     v.soluong_conlai * COALESCE(v.dongia, 0) as tong_tien
                 FROM {$this->table} v
+                LEFT JOIN phanloai_vattu_thanh_ly_iso pl ON v.phanloai_id = pl.id
                 LEFT JOIN vattu_thanh_ly_sudung_iso s ON v.stt = s.vattu_stt
                 " . ($where ? $where : "") . "
                 GROUP BY v.stt
@@ -36,6 +39,23 @@ class VatTuThanhLy extends BaseModel
         
         $stmt = $this->query($sql, $params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Override count để hỗ trợ alias v trong WHERE clause
+     */
+    public function count(string $where = '', array $params = []): int
+    {
+        $sql = "SELECT COUNT(DISTINCT v.stt) 
+                FROM {$this->table} v
+                LEFT JOIN phanloai_vattu_thanh_ly_iso pl ON v.phanloai_id = pl.id";
+        
+        if ($where) {
+            $sql .= " $where";
+        }
+        
+        $stmt = $this->query($sql, $params);
+        return (int)$stmt->fetchColumn();
     }
     
     /**

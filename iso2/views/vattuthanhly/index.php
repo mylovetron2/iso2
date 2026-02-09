@@ -78,6 +78,12 @@ require_once __DIR__ . '/../layouts/header.php';
     transform: translateY(-2px);
 }
 
+.master-row code:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
 .master-row.active {
     box-shadow: 0 6px 20px rgba(33, 150, 243, 0.25);
     background: #e3f2fd;
@@ -208,7 +214,7 @@ require_once __DIR__ . '/../layouts/header.php';
     font-size: 0.82rem;
 }
 
-.detail-content thead th {
+.detail-content table thead th {
     background: #f3f4f6 !important;
     color: #374151 !important;
     font-weight: 700;
@@ -217,6 +223,12 @@ require_once __DIR__ . '/../layouts/header.php';
     letter-spacing: 0.5px;
     padding: 8px 8px;
     border-bottom: 2px solid #d1d5db;
+}
+
+.detail-content table thead th:first-child {
+    background: #fed7aa !important;
+    color: #7c2d12 !important;
+    font-weight: 700 !important;
 }
 
 .detail-content tbody tr {
@@ -230,6 +242,12 @@ require_once __DIR__ . '/../layouts/header.php';
 .detail-content tbody td {
     padding: 6px 8px;
     border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-content table tbody td:first-child {
+    background: #f3f4f6 !important;
+    font-weight: 600 !important;
+    color: #4b5563 !important;
 }
 
 /* Badges */
@@ -350,10 +368,20 @@ button.text-red-600:hover {
 
     <!-- Filter & Search -->
     <form method="get" class="mb-4">
-        <div class="flex gap-2">
+        <div class="flex gap-2 mb-2">
             <input type="text" name="search" value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" 
                    placeholder="Tìm kiếm mã VT, tên, người quản lý..." 
                    class="flex-1 border rounded px-3 py-2">
+            
+            <select name="phanloai_id" class="border rounded px-3 py-2" style="min-width: 180px;">
+                <option value="">-- Tất cả phân loại --</option>
+                <?php foreach ($phanLoaiList ?? [] as $pl): ?>
+                    <option value="<?php echo $pl['id']; ?>" 
+                            <?php echo (isset($_GET['phanloai_id']) && $_GET['phanloai_id'] == $pl['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($pl['ten_phanloai']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-search mr-1"></i> Tìm
@@ -365,6 +393,9 @@ button.text-red-600:hover {
             <?php if (hasPermission('vattu.create')): ?>
             <a href="vattuthanhly.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-plus mr-1"></i> Thêm vật tư
+            </a>
+            <a href="import_vattu_excel.php" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-excel mr-1"></i> Import Excel
             </a>
             <?php endif; ?>
         </div>
@@ -379,11 +410,15 @@ button.text-red-600:hover {
                 <thead class="bg-gray-100">
                     <tr>
                         <th class="px-4 py-2 border text-left">Mã VT</th>
+                        <th class="px-4 py-2 border text-left">Số serial</th>
+                        <th class="px-4 py-2 border text-left" style="display: none;">Phân loại</th>
                         <th class="px-4 py-2 border text-left">Tên (TA/Nga/Việt)</th>
                         <th class="px-4 py-2 border text-center">ĐVT</th>
                         <th class="px-4 py-2 border text-right">SL còn lại</th>
                         <th class="px-4 py-2 border text-right">Đơn giá</th>
                         <th class="px-4 py-2 border text-center">Ngày nhận</th>
+                        <th class="px-4 py-2 border text-center">Số HĐ</th>
+                        <th class="px-4 py-2 border text-left">Người quản lý</th>
                         <th class="px-4 py-2 border text-center">Số lần thanh lý</th>
                         <th class="px-4 py-2 border text-center">Thao tác</th>
                     </tr>
@@ -391,7 +426,7 @@ button.text-red-600:hover {
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="11" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>Không có vật tư nào</p>
                         </td>
@@ -402,9 +437,36 @@ button.text-red-600:hover {
                         data-mavattu="<?php echo htmlspecialchars($item['mavattu']); ?>"
                         data-tenkyhieu="<?php echo htmlspecialchars($item['ten_tiengviet'] ?? $item['ten_tienganh'] ?? ''); ?>">
                         <td class="px-4 py-2 border">
-                            <code class="bg-blue-100 px-2 py-1 rounded text-sm font-semibold">
-                                <?php echo htmlspecialchars($item['mavattu']); ?>
-                            </code>
+                            <a href="vattuthanhly.php?action=view&id=<?php echo $item['stt']; ?>" class="text-decoration-none">
+                                <code class="rounded font-semibold <?php echo htmlspecialchars($item['phanloai_mau_sac'] ?? 'bg-blue-100 text-blue-800'); ?>" style="font-size: 14px; padding: 6px 12px; display: inline-block; min-width: 140px; text-align: center; line-height: 1.4; cursor: pointer;">
+                                    <?php echo htmlspecialchars($item['mavattu']); ?>
+                                </code>
+                            </a>
+                            <?php if (!empty($item['ten_tiengviet'])): ?>
+                                <div class="text-sm text-red-600 font-semibold mt-1">
+                                    <?php echo htmlspecialchars(mb_substr($item['ten_tiengviet'], 0, 50)) . (mb_strlen($item['ten_tiengviet']) > 50 ? '...' : ''); ?>
+                                </div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-2 border text-center">
+                            <?php if (!empty($item['so_serial'])): ?>
+                                <span class="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+                                    <?php echo htmlspecialchars($item['so_serial']); ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="text-gray-400">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-2 border text-center" style="display: none;">
+                            <?php if (!empty($item['ten_phanloai'])): ?>
+                                <span class="px-2 py-1 rounded text-xs font-semibold <?php echo htmlspecialchars($item['phanloai_mau_sac'] ?? 'bg-gray-100 text-gray-800'); ?>">
+                                    <?php echo htmlspecialchars($item['ten_phanloai']); ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800">
+                                    Chưa phân loại
+                                </span>
+                            <?php endif; ?>
                         </td>
                         <td class="px-4 py-2 border">
                             <?php if (!empty($item['ten_tienganh'])): ?>
@@ -421,7 +483,7 @@ button.text-red-600:hover {
                             <?php echo htmlspecialchars($item['dvt_tiengviet'] ?? $item['dvt_tiengnga'] ?? '-'); ?>
                         </td>
                         <td class="px-4 py-2 border text-right font-semibold">
-                            <?php echo number_format($item['soluong_conlai'] ?? 0, 2); ?>
+                            <?php echo number_format($item['soluong_conlai'] ?? 0, 0); ?>
                         </td>
                         <td class="px-4 py-2 border text-right">
                             <?php echo $item['dongia'] ? number_format($item['dongia'], 0) : '-'; ?>
@@ -430,11 +492,21 @@ button.text-red-600:hover {
                             <?php echo $item['ngaynhan'] ? date('d/m/Y', strtotime($item['ngaynhan'])) : '-'; ?>
                         </td>
                         <td class="px-4 py-2 border text-center">
+                            <?php echo !empty($item['sohd']) ? htmlspecialchars($item['sohd']) : '-'; ?>
+                        </td>
+                        <td class="px-4 py-2 border">
+                            <?php echo !empty($item['nguoiquanly']) ? htmlspecialchars($item['nguoiquanly']) : '-'; ?>
+                        </td>
+                        <td class="px-4 py-2 border text-center">
                             <span class="badge badge-<?php echo ($item['so_lan_sudung'] ?? 0) > 0 ? 'success' : 'warning'; ?>">
                                 <?php echo $item['so_lan_sudung'] ?? 0; ?> lần
                             </span>
                         </td>
                         <td class="px-4 py-2 border text-center">
+                            <a href="vattuthanhly.php?action=view&id=<?php echo $item['stt']; ?>" 
+                               class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết" onclick="event.stopPropagation();">
+                                <i class="fas fa-eye"></i>
+                            </a>
                             <?php if (hasPermission('vattu.edit')): ?>
                             <a href="vattuthanhly.php?action=edit&id=<?php echo $item['stt']; ?>" 
                                class="text-green-600 hover:text-green-800 mx-1" title="Sửa" onclick="event.stopPropagation();">
@@ -501,6 +573,9 @@ button.text-red-600:hover {
 </div>
 
 <script>
+// Danh sách đơn vị
+const donViList = <?php echo json_encode($donViList ?? [], JSON_UNESCAPED_UNICODE); ?>;
+
 // Handle delete vat tu with loading indicator
 function handleDeleteVatTu(event) {
     event.stopPropagation();
@@ -557,8 +632,8 @@ document.querySelectorAll('.master-row').forEach(row => {
 });
 
 function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
-    // Get available quantity from master row
-    const qtyCell = masterRow.querySelector('td:nth-child(4)');
+    // Get available quantity from master row (column 6: SL còn lại)
+    const qtyCell = masterRow.querySelector('td:nth-child(6)');
     const availableQty = qtyCell ? qtyCell.textContent.trim().replace(/,/g, '') : '0';
     
     // Create detail row
@@ -566,15 +641,10 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
     detailRow.id = `detail-row-${vattuStt}`;
     detailRow.className = 'detail-row active';
     detailRow.innerHTML = `
-        <td colspan="8">
+        <td colspan="11">
             <div class="detail-content">
 
                 <div class="bg-white rounded-lg p-4 shadow">
-                    <?php if (hasPermission('vattu.edit')): ?>
-                    <button onclick="showAddForm_${vattuStt}()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-3">
-                        <i class="fas fa-plus mr-1"></i> Thêm chi tiết sử dụng
-                    </button>
-                    <?php endif; ?>
                     
                     <!-- Form thêm chi tiết -->
                     <div id="addForm_${vattuStt}" style="display: none;" class="mb-4 p-4 bg-gray-50 rounded border">
@@ -588,35 +658,38 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">Người sử dụng</label>
-                                <input type="text" name="nguoisudung" class="w-full border rounded px-3 py-2" required>
+                                <input type="text" name="nguoisudung" class="w-full border rounded px-3 py-2" required style="color: #000; font-weight: normal;">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">Ngày SD/Nhận</label>
-                                <input type="date" name="ngaysd_nhan" class="w-full border rounded px-3 py-2" required>
+                                <input type="date" name="ngaysd_nhan" value="${new Date().toISOString().split('T')[0]}" class="w-full border rounded px-3 py-2" required style="color: #000; font-weight: normal;">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">Số lượng thanh lý <span class="text-red-600">*</span></label>
                                 <input type="number" step="0.01" name="soluong" max="${availableQty}" 
                                        class="w-full border rounded px-3 py-2" required
-                                       onchange="validateQuantity_${vattuStt}(this)">
+                                       onchange="validateQuantity_${vattuStt}(this)" style="color: #000; font-weight: normal;">
                                 <small class="text-gray-500">Tối đa: ${availableQty}</small>
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium mb-1">Bộ phận</label>
-                                <input type="text" name="bophan" class="w-full border rounded px-3 py-2">
+                                <select name="bophan" class="w-full border rounded px-3 py-2" style="color: #000; font-weight: normal;">
+                                    <option value="">-- Chọn bộ phận --</option>
+                                    ${donViList.map(dv => `<option value="${dv.madv}">${dv.tendv}</option>`).join('')}
+                                </select>
                             </div>
                             
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium mb-1">Mục đích sử dụng</label>
-                                <textarea name="mucdich_sudung" class="w-full border rounded px-3 py-2" rows="2"></textarea>
+                                <textarea name="mucdich_sudung" class="w-full border rounded px-3 py-2" rows="2" style="color: #000; font-weight: normal;"></textarea>
                             </div>
                             
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium mb-1">Ghi chú</label>
-                                <input type="text" name="ghichu" class="w-full border rounded px-3 py-2">
+                                <input type="text" name="ghichu" class="w-full border rounded px-3 py-2" style="color: #000; font-weight: normal;">
                             </div>
                             
                             <div class="col-span-2 flex gap-2">
@@ -633,9 +706,9 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                     <!-- Bảng chi tiết -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th class="px-3 py-2 border text-left">Người sử dụng</th>
+                                    <th class="px-3 py-2 border text-left" style="background: #fed7aa !important; color: #7c2d12 !important; font-weight: 700;">Người sử dụng</th>
                                     <th class="px-3 py-2 border text-center">Ngày SD/Nhận</th>
                                     <th class="px-3 py-2 border text-right">Số lượng</th>
                                     <th class="px-3 py-2 border text-left">Bộ phận</th>
@@ -652,6 +725,14 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                             </tbody>
                         </table>
                     </div>
+                    
+                    <?php if (hasPermission('vattu.edit')): ?>
+                    <div class="mt-3 text-right">
+                        <button onclick="showAddForm_${vattuStt}()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                            <i class="fas fa-plus mr-1"></i> Thêm chi tiết sử dụng
+                        </button>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </td>
@@ -710,26 +791,32 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                 // Cập nhật số lượng còn lại trên master row
                 if (data.soluong_conlai_moi !== undefined) {
                     const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
-                    const qtyCell = masterRow.querySelector('td:nth-child(4)');
+                    const qtyCell = masterRow.querySelector('td:nth-child(6)');
                     if (qtyCell) {
-                        const formatted = parseFloat(data.soluong_conlai_moi).toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
+                        const formatted = Math.round(parseFloat(data.soluong_conlai_moi)).toLocaleString('en-US');
                         qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
+                    }
+                    
+                    // Cập nhật số lần thanh lý (cột 11)
+                    if (data.so_lan_sudung !== undefined) {
+                        const countCell = masterRow.querySelector('td:nth-child(11)');
+                        if (countCell) {
+                            const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
+                            countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;
+                        }
                     }
                     
                     // Cập nhật số lượng còn lại trong form
                     const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
                     if (qtyDisplay) {
-                        qtyDisplay.textContent = data.soluong_conlai_moi.toFixed(2);
+                        qtyDisplay.textContent = Math.round(data.soluong_conlai_moi);
                     }
                     const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
                     if (qtyInput) {
                         qtyInput.max = data.soluong_conlai_moi;
                         const smallEl = qtyInput.parentElement.querySelector('small');
                         if (smallEl) {
-                            smallEl.textContent = `Tối đa: ${data.soluong_conlai_moi.toFixed(2)}`;
+                            smallEl.textContent = `Tối đa: ${Math.round(data.soluong_conlai_moi)}`;
                         }
                     }
                 }
@@ -780,11 +867,11 @@ function renderDetailTable(vattuStt, items) {
     
     tbody.innerHTML = items.map(item => `
         <tr id="detailRow_${item.id}">
-            <td class="px-3 py-2 border">${item.nguoisudung || '-'}</td>
-            <td class="px-3 py-2 border text-center">${item.ngaysd_nhan ? new Date(item.ngaysd_nhan).toLocaleDateString('vi-VN') : '-'}</td>
-            <td class="px-3 py-2 border text-right font-semibold">${parseFloat(item.soluong || 0).toFixed(2)}</td>
-            <td class="px-3 py-2 border">${item.bophan || '-'}</td>
-            <td class="px-3 py-2 border">${item.mucdich_sudung || '-'}</td>
+            <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.nguoisudung || '-'}</td>
+            <td class="px-3 py-2 border text-center" style="color: #000; font-weight: normal;">${item.ngaysd_nhan ? new Date(item.ngaysd_nhan).toLocaleDateString('vi-VN') : '-'}</td>
+            <td class="px-3 py-2 border text-right font-semibold" style="color: #000;">${Math.round(parseFloat(item.soluong || 0))}</td>
+            <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.bophan || '-'}</td>
+            <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.mucdich_sudung || '-'}</td>
             <td class="px-3 py-2 border text-center">
                 <?php if (hasPermission('vattu.edit')): ?>
                 <button onclick="editChiTiet(${item.id}, ${vattuStt}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" class="text-blue-600 hover:text-blue-800 mr-2" title="Sửa">
@@ -822,7 +909,10 @@ function renderDetailTable(vattuStt, items) {
                     
                     <div>
                         <label class="block text-sm font-medium mb-1">Bộ phận</label>
-                        <input type="text" name="bophan" value="${item.bophan || ''}" class="w-full border rounded px-2 py-1 text-sm">
+                        <select name="bophan" class="w-full border rounded px-2 py-1 text-sm">
+                            <option value="">-- Chọn bộ phận --</option>
+                            ${donViList.map(dv => `<option value="${dv.madv}" ${(item.bophan === dv.madv) ? 'selected' : ''}>${dv.tendv}</option>`).join('')}
+                        </select>
                     </div>
                     
                     <div class="col-span-2">
@@ -931,26 +1021,32 @@ function deleteChiTiet(id, vattuStt) {
             // Cập nhật lại số lượng còn lại sau khi xóa (cộng lại)
             if (data.soluong_conlai_moi !== undefined) {
                 const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
-                const qtyCell = masterRow.querySelector('td:nth-child(4)');
+                const qtyCell = masterRow.querySelector('td:nth-child(6)');
                 if (qtyCell) {
-                    const formatted = parseFloat(data.soluong_conlai_moi).toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
+                    const formatted = Math.round(parseFloat(data.soluong_conlai_moi)).toLocaleString('en-US');
                     qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
+                }
+                
+                // Cập nhật số lần thanh lý (cột 11)
+                if (data.so_lan_sudung !== undefined) {
+                    const countCell = masterRow.querySelector('td:nth-child(11)');
+                    if (countCell) {
+                        const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
+                        countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;
+                    }
                 }
                 
                 // Cập nhật trong form nếu đang hiển thị
                 const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
                 if (qtyDisplay) {
-                    qtyDisplay.textContent = data.soluong_conlai_moi.toFixed(2);
+                    qtyDisplay.textContent = Math.round(data.soluong_conlai_moi);
                 }
                 const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
                 if (qtyInput) {
                     qtyInput.max = data.soluong_conlai_moi;
                     const smallEl = qtyInput.parentElement.querySelector('small');
                     if (smallEl) {
-                        smallEl.textContent = `Tối đa: ${data.soluong_conlai_moi.toFixed(2)}`;
+                        smallEl.textContent = `Tối đa: ${Math.round(data.soluong_conlai_moi)}`;
                     }
                 }
             }

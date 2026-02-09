@@ -9,17 +9,26 @@ requireAuth();
 
 // Check permissions
 if (!hasPermission('vattu.view')) {
-    header('Location: /iso2/index.php?error=no_permission');
+    header('Location: index.php?error=no_permission');
     exit;
 }
 
 $controller = new VatTuThanhLyController();
 $action = $_GET['action'] ?? 'index';
 
+// Debug
+error_log("vattuthanhly.php: action='$action', id=" . ($_GET['id'] ?? 'null'));
+
 switch ($action) {
+    case 'view':
+        error_log("vattuthanhly.php: Calling controller->view()");
+        $controller->view();
+        error_log("vattuthanhly.php: controller->view() completed");
+        break;
+        
     case 'create':
         if (!hasPermission('vattu.create')) {
-            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            header('Location: vattuthanhly.php?error=permission_denied');
             exit;
         }
         $controller->create();
@@ -27,7 +36,7 @@ switch ($action) {
 
     case 'edit':
         if (!hasPermission('vattu.edit')) {
-            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            header('Location: vattuthanhly.php?error=permission_denied');
             exit;
         }
         $controller->edit();
@@ -35,7 +44,7 @@ switch ($action) {
 
     case 'delete':
         if (!hasPermission('vattu.delete')) {
-            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            header('Location: vattuthanhly.php?error=permission_denied');
             exit;
         }
         $controller->delete();

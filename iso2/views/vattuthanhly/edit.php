@@ -32,6 +32,35 @@ require_once __DIR__ . '/../layouts/header.php';
                        class="w-full border rounded px-3 py-2">
             </div>
 
+            <div>
+                <label class="block font-medium mb-2">Số serial/Số hiệu</label>
+                <input type="text" name="so_serial" 
+                       value="<?php echo htmlspecialchars($item['so_serial'] ?? ''); ?>"
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="Ví dụ: SN123456">
+            </div>
+
+            <div>
+                <label class="block font-medium mb-2">Phân loại <span class="text-red-500">*</span></label>
+                <select name="phanloai_id" required class="w-full border rounded px-3 py-2">
+                    <?php foreach ($phanLoaiList as $pl): ?>
+                        <option value="<?php echo $pl['id']; ?>" 
+                                <?php echo ($item['phanloai_id'] ?? 1) == $pl['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($pl['ten_phanloai']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-medium mb-2">Vị trí sắp xếp</label>
+                <input type="number" name="vi_tri_sap_xep" 
+                       value="<?php echo htmlspecialchars($item['vi_tri_sap_xep'] ?? 999); ?>"
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="Số nhỏ hiển thị trước (mặc định: 999)">
+                <p class="text-xs text-gray-500 mt-1">Số nhỏ sẽ hiển thị trước trong danh sách</p>
+            </div>
+
             <!-- Tên vật tư - 3 ngôn ngữ -->
             <div class="md:col-span-2">
                 <label class="block font-medium mb-2 text-blue-600">

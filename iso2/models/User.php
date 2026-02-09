@@ -27,17 +27,31 @@ class User extends BaseModel {
     }
     
     public function hasPermission(int $userStt, string $permission): bool {
-        // Use CONCAT with commas to handle both start, middle, and end positions
-        $sql = "SELECT COUNT(*) as count 
+        // Kiểm tra quyền từ role (qua bảng roles)
+        $sql1 = "SELECT COUNT(*) as count 
                 FROM role_user ru 
                 INNER JOIN roles r ON ru.role_id = r.id 
                 WHERE ru.user_id = ? 
                 AND (
                     CONCAT(',', r.permissions, ',') LIKE CONCAT('%,', ?, ',%')
                 )";
-        $stmt = $this->query($sql, [$userStt, $permission]);
-        $result = $stmt->fetch();
-        return $result['count'] > 0;
+        $stmt1 = $this->query($sql1, [$userStt, $permission]);
+        $result1 = $stmt1->fetch();
+        
+        if ($result1['count'] > 0) {
+            return true;
+        }
+        
+        // Kiểm tra quyền trực tiếp từ user_permissions
+        $sql2 = "SELECT COUNT(*) as count 
+                FROM user_permissions up 
+                INNER JOIN permissions p ON up.permission_id = p.id 
+                WHERE up.user_id = ? 
+                AND p.name = ?";
+        $stmt2 = $this->query($sql2, [$userStt, $permission]);
+        $result2 = $stmt2->fetch();
+        
+        return $result2['count'] > 0;
     }
     
     public function saveRememberToken(int $userStt, string $token): bool {

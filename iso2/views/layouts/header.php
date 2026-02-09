@@ -125,6 +125,13 @@ require_once __DIR__ . '/../../config/constants.php';
                             </a>
                         </li>
                         <?php endif; ?>
+                        <?php if (hasPermission('phanloai_vattu.view')): ?>
+                        <li>
+                            <a href="/iso2/phanloaivattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-tags mr-2"></i> Phân loại vật tư
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </li>
                 <?php endif; ?>

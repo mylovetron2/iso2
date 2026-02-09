@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+// Ensure required files are loaded
+if (!class_exists('User')) {
+    require_once __DIR__ . '/../models/User.php';
+}
+
 // Ensure auth functions are available
 if (!function_exists('isLoggedIn')) {
     require_once __DIR__ . '/auth.php';

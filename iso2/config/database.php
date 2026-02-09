@@ -34,9 +34,7 @@ if (!function_exists('getDBConnection')) {
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES latin1"
                 ]
             );
-            if ($debug) {
-                echo '<div style="color:green;padding:8px;">Kết nối CSDL thành công!</div>';
-            }
+            // Debug message removed - should not display in production
         } catch (PDOException $e) {
             if ($debug) {
                 echo '<div style="color:red;padding:8px;">Kết nối CSDL thất bại: ' . htmlspecialchars($e->getMessage()) . '</div>';
