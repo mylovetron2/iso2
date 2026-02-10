@@ -424,37 +424,37 @@ h6 {
 <!-- Add Chi Tiet Modal (reuse from index.php if needed) -->
 <div class="hidden modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-40" id="modalBackdrop"></div>
 <div class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" id="addChiTietModal">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h5 class="text-lg font-bold">Thêm chi tiết sử dụng</h5>
+    <div class="bg-white rounded-lg shadow-xl max-w-sm w-full">
+        <div class="flex justify-between items-center px-4 py-3 border-b">
+            <h5 class="text-base font-bold">Thêm chi tiết sử dụng</h5>
             <button class="text-gray-400 hover:text-gray-600" onclick="closeAddChiTietModal()">
-                <i class="fas fa-times text-xl"></i>
+                <i class="fas fa-times text-lg"></i>
             </button>
         </div>
-        <div class="px-6 py-4">
+        <div class="px-4 py-3">
             <form id="addChiTietForm">
                 <input type="hidden" name="vattu_stt" value="<?php echo $vattu['stt']; ?>">
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Người sử dụng</label>
-                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="nguoisudung" required>
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Người sử dụng</label>
+                    <input type="text" class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="nguoisudung" required>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ngày nhận</label>
-                    <input type="date" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="ngaysd_nhan" required>
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Ngày nhận</label>
+                    <input type="date" class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="ngaysd_nhan" required>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">
                         Số lượng <small class="text-gray-500">(Còn lại: <?php echo number_format($vattu['soluong_conlai'] ?? 0, 0); ?>)</small>
                     </label>
-                    <input type="number" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="soluong" step="0.01" required max="<?php echo $vattu['soluong_conlai'] ?? 0; ?>">
+                    <input type="number" class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="soluong" step="0.01" required max="<?php echo $vattu['soluong_conlai'] ?? 0; ?>">
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Bộ phận</label>
-                    <select class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="bophan">
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Bộ phận</label>
+                    <select class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="bophan">
                         <option value="">-- Chọn bộ phận --</option>
                         <?php foreach ($donViList as $dv): ?>
                         <option value="<?php echo htmlspecialchars($dv['madv']); ?>">
@@ -464,20 +464,23 @@ h6 {
                     </select>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mục đích sử dụng</label>
-                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="mucdich_sudung">
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Mục đích sử dụng</label>
+                    <input type="text" class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="mucdich_sudung">
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ghi chú</label>
-                    <textarea class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="ghichu" rows="3"></textarea>
+                <div class="mb-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Ghi chú</label>
+                    <textarea class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="ghichu" rows="2"></textarea>
                 </div>
             </form>
         </div>
-        <div class="flex justify-end space-x-2 px-6 py-4 border-t bg-gray-50">
-            <button class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded" onclick="closeAddChiTietModal()">Đóng</button>
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" onclick="submitAddChiTiet()">Lưu</button>
+        <div class="flex justify-end space-x-2 px-4 py-3 border-t bg-gray-50">
+            <button id="btnCloseModal" class="bg-gray-500 hover:bg-gray-600 text-white text-sm px-3 py-1.5 rounded" onclick="closeAddChiTietModal()">Đóng</button>
+            <button id="btnSubmitChiTiet" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1.5 rounded" onclick="submitAddChiTiet()">
+                <span id="btnText">Lưu</span>
+                <i id="btnSpinner" class="fas fa-spinner fa-spin hidden ml-2"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -512,6 +515,18 @@ function submitAddChiTiet() {
         return;
     }
     
+    // Hiển thị loading state
+    const btnSubmit = document.getElementById('btnSubmitChiTiet');
+    const btnClose = document.getElementById('btnCloseModal');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    
+    btnSubmit.disabled = true;
+    btnClose.disabled = true;
+    btnText.textContent = 'Đang xử lý...';
+    btnSpinner.classList.remove('hidden');
+    btnSubmit.classList.add('opacity-75', 'cursor-not-allowed');
+    
     fetch('/iso2/vattuthanhly.php?action=addChiTiet', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -523,6 +538,13 @@ function submitAddChiTiet() {
             alert('Thêm chi tiết thành công!');
             location.reload();
         } else {
+            // Reset loading state khi có lỗi
+            btnSubmit.disabled = false;
+            btnClose.disabled = false;
+            btnText.textContent = 'Lưu';
+            btnSpinner.classList.add('hidden');
+            btnSubmit.classList.remove('opacity-75', 'cursor-not-allowed');
+            
             let errorMsg = 'Lỗi: ' + (result.error || 'Unknown error');
             if (result.debug_info) {
                 errorMsg += '\n\nThông tin debug:';
@@ -534,6 +556,13 @@ function submitAddChiTiet() {
         }
     })
     .catch(err => {
+        // Reset loading state khi có lỗi
+        btnSubmit.disabled = false;
+        btnClose.disabled = false;
+        btnText.textContent = 'Lưu';
+        btnSpinner.classList.add('hidden');
+        btnSubmit.classList.remove('opacity-75', 'cursor-not-allowed');
+        
         console.error(err);
         alert('Có lỗi xảy ra khi gửi dữ liệu!');
     });
