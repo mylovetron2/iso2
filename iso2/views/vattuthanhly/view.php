@@ -225,8 +225,6 @@ h6 {
                                         <th class="border border-gray-300 px-3 py-2 text-right"><i class="fas fa-sort-numeric-up mr-1"></i>SL</th>
                                         <th class="border border-gray-300 px-3 py-2"><i class="fas fa-building mr-1"></i>Bộ phận</th>
                                         <th class="border border-gray-300 px-3 py-2"><i class="fas fa-bullseye mr-1"></i>Mục đích</th>
-                                        <th class="border border-gray-300 px-3 py-2 text-center"><i class="fas fa-info-circle mr-1"></i>TT</th>
-                                        <th class="border border-gray-300 px-3 py-2 text-center"><i class="fas fa-check mr-1"></i>Hoàn thành</th>
                                         <th class="border border-gray-300 px-3 py-2"><i class="fas fa-comment mr-1"></i>Ghi chú</th>
                                     </tr>
                                 </thead>
@@ -246,22 +244,6 @@ h6 {
                                         </td>
                                         <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($ct['bophan'] ?? '-'); ?></td>
                                         <td class="border border-gray-300 px-3 py-2"><small><?php echo htmlspecialchars($ct['mucdich_sudung'] ?? '-'); ?></small></td>
-                                        <td class="border border-gray-300 px-3 py-2 text-center">
-                                            <?php if ($ct['trangthai'] === 'dangdung'): ?>
-                                                <span class="bg-green-500 text-white px-2 py-1 rounded text-xs"><i class="fas fa-check-circle mr-1"></i>Đang dùng</span>
-                                            <?php elseif ($ct['trangthai'] === 'datra'): ?>
-                                                <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs"><i class="fas fa-undo mr-1"></i>Đã trả</span>
-                                            <?php elseif ($ct['trangthai'] === 'thanh_ly'): ?>
-                                                <span class="bg-yellow-500 text-gray-900 px-2 py-1 rounded text-xs"><i class="fas fa-recycle mr-1"></i>Thanh lý</span>
-                                            <?php elseif ($ct['trangthai'] === 'dahoan'): ?>
-                                                <span class="bg-purple-500 text-white px-2 py-1 rounded text-xs"><i class="fas fa-check-double mr-1"></i>Đã hoàn</span>
-                                            <?php else: ?>
-                                                <span class="bg-gray-500 text-white px-2 py-1 rounded text-xs"><?php echo htmlspecialchars($ct['trangthai']); ?></span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="border border-gray-300 px-3 py-2 text-center">
-                                            <?php echo !empty($ct['ngayhoanthanh']) ? '<span class="bg-green-500 text-white px-2 py-1 rounded text-xs">' . date('d/m/Y', strtotime($ct['ngayhoanthanh'])) . '</span>' : '<span class="text-gray-400">-</span>'; ?>
-                                        </td>
                                         <td class="border border-gray-300 px-3 py-2">
                                             <small class="text-gray-600"><?php echo htmlspecialchars($ct['ghichu'] ?? '-'); ?></small>
                                         </td>
@@ -288,11 +270,6 @@ h6 {
                             <i class="fas fa-boxes text-green-600 text-3xl mb-2"></i>
                             <h3 class="text-2xl font-bold text-green-600"><?php echo number_format($vattu['soluong_conlai'] ?? 0, 0); ?></h3>
                             <small class="text-gray-600 font-semibold block">Còn lại</small>
-                        </div>
-                        <div class="stat-box bg-gray-100 border border-gray-300 rounded p-3 text-center">
-                            <i class="fas fa-tools text-blue-600 text-3xl mb-2"></i>
-                            <h3 class="text-2xl font-bold text-blue-600"><?php echo number_format($vattu['soluong_dangdung'] ?? 0, 0); ?></h3>
-                            <small class="text-gray-600 font-semibold block">Đang dùng</small>
                         </div>
                         <div class="stat-box bg-gray-100 border border-gray-300 rounded p-3 text-center">
                             <i class="fas fa-history text-yellow-600 text-3xl mb-2"></i>
@@ -344,16 +321,6 @@ h6 {
                                     <strong class="text-blue-600 text-lg">
                                         <?php echo number_format($vattu['tong_tien'] ?? 0, 0); ?> ₫
                                     </strong>
-                                </td>
-                            </tr>
-                            <tr class="border-b hover:bg-gray-50">
-                                <th class="py-2 text-left text-gray-700">
-                                    <i class="fas fa-tools text-cyan-600 mr-1"></i> SL đang dùng
-                                </th>
-                                <td class="py-2 text-right">
-                                    <span class="bg-cyan-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                        <?php echo number_format($vattu['soluong_dangdung'] ?? 0, 0); ?>
-                                    </span>
                                 </td>
                             </tr>
                             <tr class="hover:bg-gray-50">
