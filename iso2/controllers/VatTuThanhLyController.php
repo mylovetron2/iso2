@@ -248,12 +248,26 @@ class VatTuThanhLyController
             exit;
         }
         
-        $vattu_stt = $_POST['vattu_stt'] ?? null;
-        $soluong_thanhly = floatval($_POST['soluong'] ?? 0);
+        // Đọc dữ liệu JSON từ request body
+        $input = file_get_contents('php://input');
+        $jsonData = json_decode($input, true);
+        
+        // Fallback sang $_POST nếu không phải JSON
+        $data_source = $jsonData ?? $_POST;
+        
+        $vattu_stt = $data_source['vattu_stt'] ?? null;
+        $soluong_thanhly = floatval($data_source['soluong'] ?? 0);
         
         // Kiểm tra số lượng thanh lý có hợp lệ không
         if ($soluong_thanhly <= 0) {
-            echo json_encode(['error' => 'Số lượng thanh lý phải lớn hơn 0']);
+            echo json_encode([
+                'error' => 'Số lượng thanh lý phải lớn hơn 0',
+                'debug_info' => [
+                    'soluong_received' => $data_source['soluong'] ?? 'null',
+                    'soluong_parsed' => $soluong_thanhly,
+                    'data_source_type' => $jsonData ? 'JSON' : 'POST'
+                ]
+            ]);
             exit;
         }
         
@@ -277,13 +291,13 @@ class VatTuThanhLyController
         
         $data = [
             'vattu_stt' => $vattu_stt,
-            'nguoisudung' => $_POST['nguoisudung'] ?? null,
-            'ngaysd_nhan' => $_POST['ngaysd_nhan'] ?? null,
+            'nguoisudung' => $data_source['nguoisudung'] ?? null,
+            'ngaysd_nhan' => $data_source['ngaysd_nhan'] ?? null,
             'soluong' => $soluong_thanhly,
-            'bophan' => $_POST['bophan'] ?? null,
-            'mucdich_sudung' => $_POST['mucdich_sudung'] ?? null,
-            'trangthai' => $_POST['trangthai'] ?? 'dangdung',
-            'ghichu' => $_POST['ghichu'] ?? null,
+            'bophan' => $data_source['bophan'] ?? null,
+            'mucdich_sudung' => $data_source['mucdich_sudung'] ?? null,
+            'trangthai' => $data_source['trangthai'] ?? 'dangdung',
+            'ghichu' => $data_source['ghichu'] ?? null,
         ];
         
         if ($this->model->addChiTietSuDung($data)) {

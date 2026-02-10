@@ -498,6 +498,20 @@ function submitAddChiTiet() {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
+    // Validate số lượng phía client
+    const soluong = parseFloat(data.soluong);
+    const maxSoluong = <?php echo $vattu['soluong_conlai'] ?? 0; ?>;
+    
+    if (isNaN(soluong) || soluong <= 0) {
+        alert('Vui lòng nhập số lượng hợp lệ (lớn hơn 0)');
+        return;
+    }
+    
+    if (soluong > maxSoluong) {
+        alert('Số lượng thanh lý (' + soluong + ') không được lớn hơn số lượng còn lại (' + maxSoluong + ')');
+        return;
+    }
+    
     fetch('/iso2/vattuthanhly.php?action=addChiTiet', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -509,12 +523,19 @@ function submitAddChiTiet() {
             alert('Thêm chi tiết thành công!');
             location.reload();
         } else {
-            alert('Lỗi: ' + (result.error || 'Unknown error'));
+            let errorMsg = 'Lỗi: ' + (result.error || 'Unknown error');
+            if (result.debug_info) {
+                errorMsg += '\n\nThông tin debug:';
+                errorMsg += '\n- Số lượng nhập: ' + result.debug_info.soluong_received;
+                errorMsg += '\n- Số lượng xử lý: ' + result.debug_info.soluong_parsed;
+                errorMsg += '\n- Kiểu dữ liệu: ' + result.debug_info.data_source_type;
+            }
+            alert(errorMsg);
         }
     })
     .catch(err => {
         console.error(err);
-        alert('Có lỗi xảy ra!');
+        alert('Có lỗi xảy ra khi gửi dữ liệu!');
     });
 }
 </script>
