@@ -113,10 +113,10 @@ class VatTuThanhLyController
             ];
             
             if ($this->model->create($data)) {
-                header('Location: vattuthanhly.php?success=created');
+                header('Location: /iso2/vattuthanhly.php?success=created');
                 exit;
             } else {
-                header('Location: vattuthanhly.php?error=create_failed');
+                header('Location: /iso2/vattuthanhly.php?error=create_failed');
                 exit;
             }
         }
@@ -135,7 +135,7 @@ class VatTuThanhLyController
             $id = $_GET['id'] ?? null;
             
             if (!$id) {
-                header('Location: vattuthanhly.php?error=missing_id');
+                header('Location: /iso2/vattuthanhly.php?error=missing_id');
                 exit;
             }
             
@@ -164,17 +164,17 @@ class VatTuThanhLyController
                 ];
                 
                 if ($this->model->update((int)$id, $data)) {
-                    header('Location: vattuthanhly.php?success=updated');
+                    header('Location: /iso2/vattuthanhly.php?success=updated');
                     exit;
                 } else {
-                    header('Location: vattuthanhly.php?error=update_failed');
+                    header('Location: /iso2/vattuthanhly.php?error=update_failed');
                     exit;
                 }
             }
             
             $item = $this->model->findById((int)$id);
             if (!$item) {
-                header('Location: vattuthanhly.php?error=not_found');
+                header('Location: /iso2/vattuthanhly.php?error=not_found');
                 exit;
             }
             
@@ -198,21 +198,21 @@ class VatTuThanhLyController
     public function delete(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: vattuthanhly.php');
+            header('Location: /iso2/vattuthanhly.php');
             exit;
         }
         
         $id = $_POST['id'] ?? null;
         
         if (!$id) {
-            header('Location: vattuthanhly.php?error=missing_id');
+            header('Location: /iso2/vattuthanhly.php?error=missing_id');
             exit;
         }
         
         if ($this->model->delete((int)$id)) {
-            header('Location: vattuthanhly.php?success=deleted');
+            header('Location: /iso2/vattuthanhly.php?success=deleted');
         } else {
-            header('Location: vattuthanhly.php?error=delete_failed');
+            header('Location: /iso2/vattuthanhly.php?error=delete_failed');
         }
         exit;
     }
@@ -391,279 +391,42 @@ class VatTuThanhLyController
      */
     public function view(): void
     {
-        $id = $_GET['id'] ?? null;
-        
-        if (!$id) {
-            header('Location: vattuthanhly.php?error=missing_id');
+        try {
+            $id = $_GET['id'] ?? null;
+            
+            if (!$id) {
+                header('Location: /iso2/vattuthanhly.php?error=missing_id');
+                exit;
+            }
+            
+            // Lấy thông tin vật tư với stats
+            $where = "WHERE v.stt = :stt";
+            $params = [':stt' => (int)$id];
+            $items = $this->model->getAllWithStats($where, $params);
+            
+            if (empty($items)) {
+                header('Location: /iso2/vattuthanhly.php?error=not_found');
+                exit;
+            }
+            
+            $vattu = $items[0];
+            
+            // Lấy chi tiết sử dụng
+            $chiTietList = $this->model->getChiTietSuDung((int)$id);
+            
+            // Lấy lịch sử thay đổi số lượng
+            $lichSuList = $this->model->getLichSuThayDoi((int)$id);
+            
+            // Load danh sách đơn vị cho dropdown (nếu cần thêm chi tiết)
+            $db = getDBConnection();
+            $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
+            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+            
+            require_once __DIR__ . '/../views/vattuthanhly/view.php';
+        } catch (Exception $e) {
+            error_log("Error in VatTuThanhLyController::view: " . $e->getMessage());
+            header('Location: /iso2/vattuthanhly.php?error=view_failed');
             exit;
         }
-        
-        // Lấy thông tin vật tư với stats
-        $where = "WHERE v.stt = :stt";
-        $params = [':stt' => (int)$id];
-        $items = $this->model->getAllWithStats($where, $params);
-        
-        if (empty($items)) {
-            header('Location: vattuthanhly.php?error=not_found');
-            exit;
-        }
-        
-        $vattu = $items[0];
-        
-        // Lấy chi tiết sử dụng
-        $chiTietList = $this->model->getChiTietSuDung((int)$id);
-        
-        // Load danh sách đơn vị
-        $db = getDBConnection();
-        $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
-        $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Render inline HTML (bypass view file)
-        $this->renderViewHTML($vattu, $chiTietList, $donViList);
-    }
-    
-    private function renderViewHTML($vattu, $chiTietList, $donViList): void
-    {
-        ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết vật tư #<?php echo $vattu['stt']; ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-6 max-w-7xl">
-        <!-- Header -->
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-            <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold text-gray-800">
-                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                    Chi tiết vật tư #<?php echo $vattu['stt']; ?>
-                </h1>
-                <div class="space-x-2">
-                    <a href="vattuthanhly.php" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                        <i class="fas fa-arrow-left mr-2"></i>Quay lại
-                    </a>
-                    <?php if (hasPermission('vattu.edit')): ?>
-                    <a href="vattuthanhly.php?action=edit&id=<?php echo $vattu['stt']; ?>" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                        <i class="fas fa-edit mr-2"></i>Sửa
-                    </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Main Content -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Basic Info -->
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <div class="bg-blue-600 text-white px-4 py-3">
-                        <h2 class="text-xl font-semibold"><i class="fas fa-clipboard-list mr-2"></i>Thông tin cơ bản</h2>
-                    </div>
-                    <div class="p-4">
-                        <table class="w-full text-sm border border-gray-200">
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50 w-1/3">STT</th>
-                                <td class="py-2 px-3"><strong class="text-blue-600">#<?php echo $vattu['stt']; ?></strong></td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50">Mã vật tư</th>
-                                <td class="py-2 px-3">
-                                    <code class="<?php echo htmlspecialchars($vattu['phanloai_mau_sac'] ?? 'bg-blue-100 text-blue-800'); ?> px-4 py-2 rounded font-semibold">
-                                        <?php echo htmlspecialchars($vattu['mavattu']); ?>
-                                    </code>
-                                </td>
-                            </tr>
-                            <?php if (!empty($vattu['so_serial'])): ?>
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50">Số Serial</th>
-                                <td class="py-2 px-3">
-                                    <span class="bg-gray-200 px-3 py-1 rounded"><?php echo htmlspecialchars($vattu['so_serial']); ?></span>
-                                </td>
-                            </tr>
-                            <?php endif; ?>
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50">Phân loại</th>
-                                <td class="py-2 px-3">
-                                    <?php if (!empty($vattu['ten_phanloai'])): ?>
-                                        <span class="<?php echo htmlspecialchars($vattu['phanloai_mau_sac'] ?? 'bg-gray-100 text-gray-800'); ?> px-3 py-1 rounded">
-                                            <?php echo htmlspecialchars($vattu['ten_phanloai']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-gray-500">Chưa phân loại</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50">Tên (Tiếng Việt)</th>
-                                <td class="py-2 px-3 text-green-700 font-semibold"><?php echo htmlspecialchars($vattu['ten_tiengviet'] ?? '-'); ?></td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 px-3 text-left bg-gray-50">Tên (Tiếng Anh)</th>
-                                <td class="py-2 px-3"><?php echo htmlspecialchars($vattu['ten_tienganh'] ?? '-'); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="py-2 px-3 text-left bg-gray-50">Tên (Tiếng Nga)</th>
-                                <td class="py-2 px-3 text-blue-600"><?php echo htmlspecialchars($vattu['ten_tiengnga'] ?? '-'); ?></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- History -->
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <div class="bg-green-600 text-white px-4 py-3 flex justify-between items-center">
-                        <h2 class="text-xl font-semibold"><i class="fas fa-history mr-2"></i>Lịch sử sử dụng (<?php echo count($chiTietList); ?>)</h2>
-                    </div>
-                    <div class="p-4">
-                        <?php if (empty($chiTietList)): ?>
-                            <p class="text-gray-500 text-center py-8">
-                                <i class="fas fa-inbox text-4xl mb-2 block text-gray-300"></i>
-                                Chưa có lịch sử sử dụng
-                            </p>
-                        <?php else: ?>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead class="bg-gray-100 border-b-2">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left">Người SD</th>
-                                            <th class="px-3 py-2 text-left">Ngày nhận</th>
-                                            <th class="px-3 py-2 text-right">SL</th>
-                                            <th class="px-3 py-2 text-left">Bộ phận</th>
-                                            <th class="px-3 py-2 text-left">Mục đích</th>
-                                            <th class="px-3 py-2 text-center">Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y">
-                                        <?php foreach ($chiTietList as $ct): ?>
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-3 py-2"><?php echo htmlspecialchars($ct['nguoisudung'] ?? '-'); ?></td>
-                                            <td class="px-3 py-2"><?php echo $ct['ngaysd_nhan'] ? date('d/m/Y', strtotime($ct['ngaysd_nhan'])) : '-'; ?></td>
-                                            <td class="px-3 py-2 text-right font-semibold"><?php echo number_format($ct['soluong'] ?? 0, 0); ?></td>
-                                            <td class="px-3 py-2"><?php echo htmlspecialchars($ct['bophan'] ?? '-'); ?></td>
-                                            <td class="px-3 py-2"><?php echo htmlspecialchars($ct['mucdich_sudung'] ?? '-'); ?></td>
-                                            <td class="px-3 py-2 text-center">
-                                                <?php if ($ct['trangthai'] === 'dangdung'): ?>
-                                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Đang dùng</span>
-                                                <?php elseif ($ct['trangthai'] === 'datra'): ?>
-                                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Đã trả</span>
-                                                <?php else: ?>
-                                                    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs"><?php echo htmlspecialchars($ct['trangthai']); ?></span>
-                                                <?php endif; ?>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sidebar -->
-            <div class="lg:col-span-1 space-y-6">
-                <!-- Quantity & Price -->
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <div class="bg-cyan-600 text-white px-4 py-3">
-                        <h2 class="text-lg font-semibold"><i class="fas fa-calculator mr-2"></i>Số lượng & Giá trị</h2>
-                    </div>
-                    <div class="p-4">
-                        <table class="w-full text-sm">
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">ĐVT</th>
-                                <td class="py-2 text-right font-semibold">
-                                    <?php echo htmlspecialchars($vattu['dvt_tiengviet'] ?? $vattu['dvt_tiengnga'] ?? '-'); ?>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">SL còn lại</th>
-                                <td class="py-2 text-right">
-                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded font-bold text-lg">
-                                        <?php echo number_format($vattu['soluong_conlai'] ?? 0, 0); ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Đơn giá</th>
-                                <td class="py-2 text-right">
-                                    <?php echo $vattu['dongia'] ? number_format($vattu['dongia'], 0) . ' đ' : '-'; ?>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Tổng giá trị</th>
-                                <td class="py-2 text-right">
-                                    <strong class="text-blue-600 text-lg">
-                                        <?php echo number_format($vattu['tong_tien'] ?? 0, 0); ?> đ
-                                    </strong>
-                                </td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">SL đang dùng</th>
-                                <td class="py-2 text-right"><?php echo number_format($vattu['soluong_dangdung'] ?? 0, 0); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="py-2 text-left text-gray-700">Số lần TL</th>
-                                <td class="py-2 text-right">
-                                    <span class="px-2 py-1 <?php echo ($vattu['so_lan_sudung'] ?? 0) > 0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?> rounded">
-                                        <?php echo $vattu['so_lan_sudung'] ?? 0; ?> lần
-                                    </span>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Contract Info -->
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <div class="bg-yellow-500 text-white px-4 py-3">
-                        <h2 class="text-lg font-semibold"><i class="fas fa-file-contract mr-2"></i>Hợp đồng & Quản lý</h2>
-                    </div>
-                    <div class="p-4">
-                        <table class="w-full text-sm">
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Ngày nhận</th>
-                                <td class="py-2 text-right"><?php echo $vattu['ngaynhan'] ? date('d/m/Y', strtotime($vattu['ngaynhan'])) : '-'; ?></td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Số HĐ</th>
-                                <td class="py-2 text-right"><?php echo htmlspecialchars($vattu['sohd'] ?? '-'); ?></td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Ngày ký HĐ</th>
-                                <td class="py-2 text-right"><?php echo !empty($vattu['ngaykyhd']) ? date('d/m/Y', strtotime($vattu['ngaykyhd'])) : '-'; ?></td>
-                            </tr>
-                            <tr class="border-b">
-                                <th class="py-2 text-left text-gray-700">Người QL</th>
-                                <td class="py-2 text-right"><?php echo htmlspecialchars($vattu['nguoiquanly'] ?? '-'); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="py-2 text-left text-gray-700">Vị trí kho</th>
-                                <td class="py-2 text-right"><?php echo htmlspecialchars($vattu['vitri_luukho'] ?? '-'); ?></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <?php if (!empty($vattu['ghichu'])): ?>
-                <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                    <div class="bg-gray-600 text-white px-4 py-3">
-                        <h2 class="text-lg font-semibold"><i class="fas fa-sticky-note mr-2"></i>Ghi chú</h2>
-                    </div>
-                    <div class="p-4">
-                        <p class="text-gray-700 whitespace-pre-wrap"><?php echo htmlspecialchars($vattu['ghichu']); ?></p>
-                    </div>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-        <?php
     }
 }
