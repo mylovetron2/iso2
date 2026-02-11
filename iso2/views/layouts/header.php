@@ -73,6 +73,15 @@ require_once __DIR__ . '/../../config/constants.php';
                 </li>
                 <?php endif; ?>
 
+                <!-- 1.5. Quản lý số phiếu YC -->
+                <?php if (isLoggedIn() && hasPermission('phieuyeucau.view')): ?>
+                <li>
+                    <a href="/iso2/phieuyeucau.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-file-alt mr-2"></i> Quản lý số phiếu YC
+                    </a>
+                </li>
+                <?php endif; ?>
+
                 <!-- 2. Bàn giao -->
                 <?php if (isLoggedIn() && hasPermission('phieubangiao.view')): ?>
                 <li>

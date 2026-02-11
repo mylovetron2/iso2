@@ -10,8 +10,8 @@ require_once __DIR__ . '/../layouts/header.php';
     </h1>
     
     <!-- Thống kê -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 mb-4 md:mb-6">
-        <div class="bg-blue-100 rounded p-3 md:p-4 text-center">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div class="bg-blue-100 rounded p-3 md:p-4 text-center" style="display: none;">
             <div class="text-xl md:text-2xl font-bold text-blue-700"><?php echo $stats['total']; ?></div>
             <div class="text-xs md:text-sm text-gray-600">Tổng số</div>
         </div>
@@ -27,7 +27,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="text-xl md:text-2xl font-bold text-purple-700"><?php echo $stats['chuabg']; ?></div>
             <div class="text-xs md:text-sm text-gray-600">Chưa bàn giao</div>
         </div>
-        <div class="bg-green-100 rounded p-3 md:p-4 text-center">
+        <div class="bg-green-100 rounded p-3 md:p-4 text-center" style="display: none;">
             <div class="text-xl md:text-2xl font-bold text-green-700"><?php echo $stats['dabg']; ?></div>
             <div class="text-xs md:text-sm text-gray-600">Đã bàn giao</div>
         </div>
@@ -137,7 +137,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php foreach ($items as $item): ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
-                        <strong><?php echo htmlspecialchars($item['phieu']); ?></strong>
+                        <a href="/iso2/phieuyeucau.php?action=view&phieu=<?php echo urlencode($item['phieu']); ?>" 
+                           class="text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                           title="Xem phiếu yêu cầu">
+                            <?php echo htmlspecialchars($item['phieu']); ?>
+                        </a>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <?php if (!empty($item['thietbi_stt'])): ?>
