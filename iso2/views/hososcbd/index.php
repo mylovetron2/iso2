@@ -139,7 +139,17 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <strong><?php echo htmlspecialchars($item['phieu']); ?></strong>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['mavt']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
+                        <?php if (!empty($item['thietbi_stt'])): ?>
+                            <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_stt']; ?>" 
+                               class="text-blue-600 hover:text-blue-800 hover:underline" 
+                               title="Xem chi tiết thiết bị">
+                                <?php echo htmlspecialchars($item['mavt']); ?>
+                            </a>
+                        <?php else: ?>
+                            <?php echo htmlspecialchars($item['mavt']); ?>
+                        <?php endif; ?>
+                    </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($item['somay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php 

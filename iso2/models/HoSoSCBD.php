@@ -72,9 +72,10 @@ class HoSoSCBD extends BaseModel
         
         $whereClause = implode(' AND ', $where);
         
-        $sql = "SELECT h.*, d.tendv 
+        $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt
                 FROM {$this->table} h
                 LEFT JOIN donvi_iso d ON h.madv = d.madv
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
                 WHERE $whereClause
                 ORDER BY h.ngayyc DESC, h.phieu DESC
                 LIMIT $limit OFFSET $offset";

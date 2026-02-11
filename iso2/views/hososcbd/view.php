@@ -338,7 +338,7 @@ if (!empty($item['hoso'])) {
                             <tr class="hover:bg-indigo-50">
                                 <td class="px-3 py-2 border text-center"><?php echo $index + 1; ?></td>
                                 <td class="px-3 py-2 border">
-                                    <span class="font-semibold text-indigo-700">
+                                    <span class="font-semibold text-indigo-700 text-sm">
                                         <?php echo htmlspecialchars($nguoi['hoten']); ?>
                                     </span>
                                 </td>

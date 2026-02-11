@@ -17,6 +17,10 @@ $controller = new ThietBiController();
 $action = $_GET['action'] ?? 'index';
 
 switch ($action) {
+    case 'view':
+        $controller->view();
+        break;
+
     case 'create':
         if (!hasPermission('thietbi.create')) {
             header('Location: /iso2/thietbi.php?error=permission_denied');

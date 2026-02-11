@@ -54,18 +54,21 @@ class ThietBi extends BaseModel
     }
     
     /**
-     * Lấy lịch sử sửa chữa theo thiết bị ID (mamay)
+     * Lấy lịch sử sửa chữa theo thiết bị (giới hạn 5 bản ghi)
      */
-    public function getLichSuSuaChua(string $mamay): array
+    public function getLichSuSuaChua(string $mavt, string $somay, string $model = ''): array
     {
-        if (empty($mamay)) {
+        if (empty($mavt) || empty($somay)) {
             return [];
         }
         
-        $mamayEscaped = $this->db->quote($mamay);
-        $sql = "SELECT ngaykt, honghoc, khacphuc, noidung 
-                FROM view_lich_su_bao_duong_iso 
-                WHERE mamay = $mamayEscaped 
+        $mavtEscaped = $this->db->quote($mavt);
+        $somayEscaped = $this->db->quote($somay);
+        $modelEscaped = $this->db->quote($model);
+        
+        $sql = "SELECT stt, ngaykt, honghoc, khacphuc, noidung 
+                FROM hososcbd_iso 
+                WHERE mavt = $mavtEscaped AND somay = $somayEscaped AND model = $modelEscaped 
                 ORDER BY ngaykt DESC 
                 LIMIT 5";
         
@@ -74,6 +77,88 @@ class ThietBi extends BaseModel
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error fetching repair history: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Lấy toàn bộ lịch sử sửa chữa/bảo dưỡng (không giới hạn)
+     */
+    public function getAllLichSuSuaChua(string $mavt, string $somay, string $model = ''): array
+    {
+        if (empty($mavt) || empty($somay)) {
+            return [];
+        }
+        
+        $mavtEscaped = $this->db->quote($mavt);
+        $somayEscaped = $this->db->quote($somay);
+        $modelEscaped = $this->db->quote($model);
+        
+        $sql = "SELECT stt, hoso, phieu, ngaykt, honghoc, khacphuc, noidung 
+                FROM hososcbd_iso 
+                WHERE mavt = $mavtEscaped AND somay = $somayEscaped AND model = $modelEscaped 
+                ORDER BY ngaykt DESC";
+        
+        try {
+            $stmt = $this->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error fetching all repair history: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Lấy lịch sử kiểm định theo mavt, somay và model
+     */
+    public function getLichSuKiemDinh(string $mavt, string $somay, string $model = ''): array
+    {
+        if (empty($mavt) || empty($somay)) {
+            return [];
+        }
+        
+        $mavtEscaped = $this->db->quote($mavt);
+        $somayEscaped = $this->db->quote($somay);
+        $modelEscaped = $this->db->quote($model);
+        
+        $sql = "SELECT stt, ngaykt, honghoc, khacphuc, noidung, phieu, hoso 
+                FROM hososcbd_iso 
+                WHERE mavt = $mavtEscaped AND somay = $somayEscaped AND model = $modelEscaped 
+                ORDER BY ngaykt DESC";
+        
+        try {
+            $stmt = $this->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error fetching inspection history: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Lấy lịch sử bàn giao thiết bị
+     */
+    public function getLichSuBanGiao(string $mavt, string $somay): array
+    {
+        if (empty($mavt) || empty($somay)) {
+            return [];
+        }
+        
+        $mavtEscaped = $this->db->quote($mavt);
+        $somayEscaped = $this->db->quote($somay);
+        
+        $sql = "SELECT pb.sophieu, pb.ngaybangiao, pb.nguoigiao, pb.nguoinhan, 
+                       pb.noidung, pb.ghichu, dv.tendv as donvi_nhan
+                FROM phieubangiao pb
+                LEFT JOIN donvi_iso dv ON pb.madv_nhan = dv.madv
+                WHERE pb.mavt = $mavtEscaped AND pb.somay = $somayEscaped 
+                ORDER BY pb.ngaybangiao DESC";
+        
+        try {
+            $stmt = $this->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error fetching handover history: " . $e->getMessage());
             return [];
         }
     }

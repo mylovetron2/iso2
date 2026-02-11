@@ -52,7 +52,11 @@ class ThietBiController
             
             // Get repair history for each item
             foreach ($items as &$item) {
-                $item['lichsu_suachua'] = $this->model->getLichSuSuaChua($item['mamay'] ?? '');
+                $item['lichsu_suachua'] = $this->model->getLichSuSuaChua(
+                    $item['mavt'] ?? '',
+                    $item['somay'] ?? '',
+                    $item['model'] ?? ''
+                );
             }
             unset($item);
             
@@ -198,5 +202,56 @@ class ThietBiController
             header('Location: /iso2/thietbi.php?error=delete_failed');
         }
         exit;
+    }
+    
+    public function view(): void
+    {
+        $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if (!$stt) {
+            header('Location: /iso2/thietbi.php?error=invalid');
+            exit;
+        }
+
+        $item = $this->model->findById($stt);
+        if (!$item) {
+            header('Location: /iso2/thietbi.php?error=notfound');
+            exit;
+        }
+
+        // Lấy các lịch sử
+        $lichSuSuaChua = [];
+        $lichSuKiemDinh = [];
+        $lichSuBanGiao = [];
+        
+        try {
+            if (!empty($item['mavt']) && !empty($item['somay'])) {
+                $lichSuSuaChua = $this->model->getAllLichSuSuaChua(
+                    $item['mavt'], 
+                    $item['somay'], 
+                    $item['model'] ?? ''
+                );
+                $lichSuKiemDinh = $this->model->getLichSuKiemDinh(
+                    $item['mavt'], 
+                    $item['somay'],
+                    $item['model'] ?? ''
+                );
+                $lichSuBanGiao = $this->model->getLichSuBanGiao($item['mavt'], $item['somay']);
+            }
+        } catch (Exception $e) {
+            error_log("Error fetching history: " . $e->getMessage());
+        }
+
+        // Lấy thông tin đơn vị
+        try {
+            $donVi = null;
+            if (!empty($item['madv'])) {
+                $donVi = $this->donViModel->findByMaDV($item['madv']);
+            }
+        } catch (Exception $e) {
+            error_log("Error fetching donvi: " . $e->getMessage());
+            $donVi = null;
+        }
+
+        require_once __DIR__ . '/../views/thietbi/view.php';
     }
 }

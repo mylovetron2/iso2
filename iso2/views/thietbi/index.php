@@ -114,12 +114,12 @@ require_once __DIR__ . '/../layouts/header.php';
                                         </div>
                                         <?php if (!empty($ls['honghoc'])): ?>
                                             <div class="text-xs text-red-600 mt-1">
-                                                <strong>Hỏng:</strong> <?php $text = strip_tags($ls['honghoc']); $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8'); echo mb_substr($text, 0, 80, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
+                                                <strong>Hỏng:</strong> <?php $text = strip_tags($ls['honghoc']); $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'); echo htmlspecialchars(mb_substr($text, 0, 80, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (!empty($ls['khacphuc'])): ?>
                                             <div class="text-xs text-green-600 mt-1">
-                                                <strong>Khắc phục:</strong> <?php $text = strip_tags($ls['khacphuc']); $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8'); echo mb_substr($text, 0, 80, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
+                                                <strong>Khắc phục:</strong> <?php $text = strip_tags($ls['khacphuc']); $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'); echo htmlspecialchars(mb_substr($text, 0, 80, 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?><?php echo mb_strlen($text, 'UTF-8') > 80 ? '...' : ''; ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
@@ -130,6 +130,10 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endif; ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
+                        <a href="thietbi.php?action=view&id=<?php echo $item['stt']; ?>" 
+                           class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </a>
                         <?php if (hasPermission('thietbi.edit')): ?>
                         <a href="thietbi.php?action=edit&id=<?php echo $item['stt']; ?>" 
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">
