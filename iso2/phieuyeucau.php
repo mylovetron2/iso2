@@ -60,6 +60,11 @@ switch ($action) {
         $controller->exportWord();
         break;
 
+    case 'exportpdf':
+        // Export PDF
+        $controller->exportPdf();
+        break;
+
     default:
         // Mặc định: danh sách phiếu
         $controller->index();

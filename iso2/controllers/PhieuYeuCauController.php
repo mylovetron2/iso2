@@ -350,6 +350,35 @@ class PhieuYeuCauController
     }
 
     /**
+     * Export phiếu yêu cầu ra PDF
+     */
+    public function exportPdf(): void
+    {
+        $phieu = $_GET['phieu'] ?? '';
+        
+        if (empty($phieu)) {
+            $_SESSION['error'] = 'Số phiếu không hợp lệ';
+            header('Location: /iso2/phieuyeucau.php');
+            exit;
+        }
+
+        $detail = $this->model->getPhieuDetail($phieu);
+        
+        if (!$detail) {
+            $_SESSION['error'] = 'Không tìm thấy phiếu này';
+            header('Location: /iso2/phieuyeucau.php');
+            exit;
+        }
+
+        // Chuẩn bị dữ liệu
+        $summary = $detail['summary'];
+        $devices = $detail['devices'];
+        
+        // Xuất PDF
+        require_once __DIR__ . '/../views/phieuyeucau/export_pdf.php';
+    }
+
+    /**
      * Lấy dữ liệu thiết bị từ POST
      */
     private function getDevicesPostData(): array

@@ -16,8 +16,14 @@ $devices = $detail['devices'];
             Chi tiết Phiếu: <?php echo htmlspecialchars($summary['phieu']); ?>
         </h1>
         <div class="flex gap-2">
-            <a href="phieuyeucau.php?action=exportword&phieu=<?php echo urlencode($summary['phieu']); ?>" 
+            <a href="phieuyeucau.php?action=exportpdf&phieu=<?php echo urlencode($summary['phieu']); ?>" 
                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+               target="_blank"
+               title="In PDF">
+                <i class="fas fa-file-pdf mr-1"></i> In PDF
+            </a>
+            <a href="phieuyeucau.php?action=exportword&phieu=<?php echo urlencode($summary['phieu']); ?>" 
+               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
                target="_blank"
                title="In Word">
                 <i class="fas fa-file-word mr-1"></i> In Word
