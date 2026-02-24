@@ -9,10 +9,46 @@
 --   - Thêm thietbi_stt (nullable) để tăng tốc query
 -- ========================================
 
-USE diavatly_db;
+-- NOTE: Đảm bảo bạn đang kết nối đúng database (mapselli676e_iso2 hoặc diavatly_db)
+-- Không dùng USE database; để tránh conflict
+
+-- ========================================
+-- TROUBLESHOOTING: Nếu gặp lỗi Foreign Key errno 150
+-- ========================================
+-- Chạy các query sau để kiểm tra:
+-- 
+-- 1. Kiểm tra bảng tồn tại:
+--    SHOW TABLES LIKE 'hososcbd_iso';
+--    SHOW TABLES LIKE 'thietbi_iso';
+--    SHOW TABLES LIKE 'capdo_baocuong_iso';
+--    SHOW TABLES LIKE 'resume';
+-- 
+-- 2. Kiểm tra cấu trúc cột stt:
+--    DESCRIBE hososcbd_iso;
+--    DESCRIBE thietbi_iso;
+--    DESCRIBE capdo_baocuong_iso;
+--    DESCRIBE resume;
+-- 
+-- 3. Nếu resume dùng STT (chữ hoa), sửa FK constraint:
+--    REFERENCES `resume`(`STT`) thay vì `resume`(`stt`)
+-- 
+-- 4. Nếu bảng nào không tồn tại, comment FK đó lại
+-- ========================================
 
 -- =====================================================
--- BƯỚC 1: Tạo bảng mới với cấu trúc cập nhật
+-- KIỂM TRA ĐIỀU KIỆN (Chạy phần này trước để debug)
+-- =====================================================
+-- Uncomment 4 dòng sau để kiểm tra các bảng tồn tại:
+
+-- SELECT 'hososcbd_iso' as tbl, COUNT(*) as exists_check FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'hososcbd_iso'
+-- UNION SELECT 'thietbi_iso', COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'thietbi_iso'
+-- UNION SELECT 'capdo_baocuong_iso', COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'capdo_baocuong_iso'
+-- UNION SELECT 'resume', COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'resume';
+
+-- Kết quả phải là 1 cho mỗi bảng. Nếu là 0 → Bảng không tồn tại → FK sẽ lỗi
+
+-- =====================================================
+-- BƯỚC 1: Tạo bảng mới với cấu trúc cập nhật (KHÔNG CÓ FK)
 -- =====================================================
 
 DROP TABLE IF EXISTS `congviec_suachua_iso_new`;
@@ -58,35 +94,68 @@ CREATE TABLE `congviec_suachua_iso_new` (
     INDEX `idx_hososcbd` (`hososcbd_stt`),
     INDEX `idx_thietbi` (`thietbi_stt`),
     INDEX `idx_capdo` (`capdo_stt`),
-    INDEX `idx_nhanvien_ngay` (`nhanvien_stt`, `ngay_lam_viec`),
+    INDEX `idx_nhanvien_ngay` (`nhanvien_stt`, `ngay_lam_viec`)
     
-    -- Foreign Keys
-    CONSTRAINT `fk_congviec_hososcbd` 
-        FOREIGN KEY (`hososcbd_stt`) 
-        REFERENCES `hososcbd_iso`(`stt`)
-        ON DELETE RESTRICT 
-        ON UPDATE CASCADE,
-        
-    CONSTRAINT `fk_congviec_thietbi` 
-        FOREIGN KEY (`thietbi_stt`) 
-        REFERENCES `thietbi_iso`(`stt`)
-        ON DELETE SET NULL 
-        ON UPDATE CASCADE,
-        
-    CONSTRAINT `fk_congviec_capdo` 
-        FOREIGN KEY (`capdo_stt`) 
-        REFERENCES `capdo_baocuong_iso`(`stt`)
-        ON DELETE RESTRICT 
-        ON UPDATE CASCADE,
-        
-    CONSTRAINT `fk_congviec_nhanvien` 
-        FOREIGN KEY (`nhanvien_stt`) 
-        REFERENCES `resume`(`stt`)
-        ON DELETE RESTRICT 
-        ON UPDATE CASCADE
+    -- Foreign Keys will be added AFTER table creation
         
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
 COMMENT='Công việc sửa chữa - Dựa trên hồ sơ SCBD';
+
+-- =====================================================
+-- BƯỚC 1B: Thêm Foreign Key Constraints từng cái một
+-- =====================================================
+-- 
+-- QUAN TRỌNG: Nếu gặp lỗi errno 150, có nghĩa là:
+--   1. Bảng tham chiếu không tồn tại
+--   2. Cột tham chiếu không tồn tại hoặc sai kiểu dữ liệu
+--   3. Cột tham chiếu không phải PRIMARY KEY hoặc UNIQUE
+-- 
+-- CÁCH XỬ LÝ:
+--   - Chạy từng câu ALTER TABLE một
+--   - Nếu FK nào lỗi, comment nó lại và chạy tiếp
+--   - Bảng vẫn dùng được, chỉ thiếu constraint check
+--   - HOẶC: Comment toàn bộ BƯỚC 1B nếu muốn bỏ qua FK
+-- =====================================================
+
+-- NOTE: Nếu bảng hososcbd_iso, thietbi_iso, hoặc capdo_baocuong_iso
+--       CHƯA được tạo, hãy tạo chúng trước bằng migration:
+--       migrations/20260224_create_kpi_suachua_system.sql
+
+-- FK 1: hososcbd_stt (REQUIRED - bắt buộc phải có hồ sơ SCBD)
+-- Yêu cầu: Bảng hososcbd_iso phải tồn tại với cột stt là PRIMARY KEY
+ALTER TABLE `congviec_suachua_iso_new`
+ADD CONSTRAINT `fk_congviec_hososcbd` 
+    FOREIGN KEY (`hososcbd_stt`) 
+    REFERENCES `hososcbd_iso`(`stt`)
+    ON DELETE RESTRICT 
+    ON UPDATE CASCADE;
+
+-- FK 2: thietbi_stt (OPTIONAL - cache để tăng tốc)
+-- Yêu cầu: Bảng thietbi_iso phải tồn tại với cột stt là PRIMARY KEY
+ALTER TABLE `congviec_suachua_iso_new`
+ADD CONSTRAINT `fk_congviec_thietbi` 
+    FOREIGN KEY (`thietbi_stt`) 
+    REFERENCES `thietbi_iso`(`stt`)
+    ON DELETE SET NULL 
+    ON UPDATE CASCADE;
+
+-- FK 3: capdo_stt (REQUIRED - cấp độ bảo dưỡng)
+-- Yêu cầu: Bảng capdo_baocuong_iso phải tồn tại với cột stt là PRIMARY KEY
+ALTER TABLE `congviec_suachua_iso_new`
+ADD CONSTRAINT `fk_congviec_capdo` 
+    FOREIGN KEY (`capdo_stt`) 
+    REFERENCES `capdo_baocuong_iso`(`stt`)
+    ON DELETE RESTRICT 
+    ON UPDATE CASCADE;
+
+-- FK 4: nhanvien_stt (REQUIRED - nhân viên thực hiện)
+-- Yêu cầu: Bảng resume phải tồn tại với cột stt/STT là PRIMARY KEY
+ALTER TABLE `congviec_suachua_iso_new`
+ADD CONSTRAINT `fk_congviec_nhanvien` 
+    FOREIGN KEY (`nhanvien_stt`) 
+    REFERENCES `resume`(`stt`)
+    ON DELETE RESTRICT 
+    ON UPDATE CASCADE;
 
 -- =====================================================
 -- BƯỚC 2: Migrate dữ liệu cũ (nếu có)
