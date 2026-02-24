@@ -1,7 +1,50 @@
 # Lưu đồ - Hệ thống Quản lý Công việc KPI
 
 > Tài liệu mô tả chi tiết chức năng quản lý công việc sửa chữa theo KPI  
-> Ngày tạo: 24/02/2026
+> Ngày tạo: 24/02/2026  
+> **Cập nhật:** 24/02/2026 - Refactor hệ thống sử dụng hososcbd_iso làm nguồn chính
+
+---
+
+## 🔄 Cập nhật Quan trọng (24/02/2026)
+
+### Thay đổi Kiến trúc
+Hệ thống đã được refactor để cải thiện data integrity và UX:
+
+**Trước đây:**
+- ❌ Nhập thủ công `mavt` và `somay` → Dễ sai, dữ liệu trùng lặp
+- ❌ `hososcbd_stt` là nullable → Công việc có thể không liên kết với hồ sơ
+- ❌ Lưu trùng thông tin thiết bị trong `congviec_suachua_iso`
+
+**Hiện tại:**
+- ✅ Chọn từ dropdown **hồ sơ SCBD** có sẵn
+- ✅ `hososcbd_stt` bắt buộc (NOT NULL) → Mọi công việc phải gắn với hồ sơ
+- ✅ Thông tin thiết bị tự động từ `hososcbd_iso` JOIN `thietbi_iso`
+- ✅ 2 AJAX endpoints mới: `getHoSoList()`, `getHoSoInfo()`
+
+### Schema Changes
+```sql
+-- Xóa các field trùng lặp
+- mavt_thietbi (removed)
+- somay_thietbi (removed)  
+- ten_thietbi (removed)
+
+-- Cập nhật constraints
++ hososcbd_stt INT NOT NULL (was nullable)
++ thietbi_stt INT NULL (cache FK for performance)
+
+-- Đổi tên fields
+- ngay_lam → ngay_lam_viec
+- noi_dung → noi_dung_congviec
+```
+
+### Workflow Mới
+1. User chọn nhân viên + ngày → Tính giờ còn lại
+2. Click "Thêm công việc" → AJAX load danh sách hồ sơ SCBD
+3. User chọn hồ sơ từ dropdown → AJAX fetch thông tin thiết bị
+4. Hiển thị panel xanh với mavt/somay/tên TB
+5. User điền cấp độ, giờ làm, nội dung → Submit
+6. Controller lấy thông tin từ hososcbd_iso → Lưu DB
 
 ---
 
@@ -26,9 +69,14 @@ flowchart TD
     ShowWarning --> DisableAdd[Vô hiệu hóa nút Thêm]
     
     CheckLimit -->|Có| ShowRemaining[Hiển thị: X/8h, còn Y giờ]
-    ShowRemaining --> FillForm[Nhập thông tin công việc]
+    ShowRemaining --> LoadHoSoList[AJAX: getHoSoList()]
+    LoadHoSoList --> PopulateDropdown[Populate dropdown hồ sơ SCBD]
+    PopulateDropdown --> FillForm[Nhập thông tin công việc]
     
-    FillForm --> InputDetails[- Ngày làm việc<br/>- Mã vật tư thiết bị<br/>- Số máy<br/>- Cấp độ bảo dưỡng<br/>- Số giờ làm<br/>- Ghi chú]
+    FillForm --> SelectHoSo[Chọn hồ sơ SCBD từ dropdown]
+    SelectHoSo --> LoadHoSoInfo[AJAX: getHoSoInfo(stt)]
+    LoadHoSoInfo --> ShowEquipmentInfo[Hiển thị thông tin thiết bị<br/>mavt, somay, tên thiết bị]
+    ShowEquipmentInfo --> InputDetails[- Ngày làm việc<br/>- Hồ sơ SCBD (đã chọn)<br/>- Cấp độ bảo dưỡng<br/>- Số giờ làm<br/>- Nội dung công việc<br/>- Ghi chú]
     
     InputDetails --> ValidateForm{Kiểm tra dữ liệu}
     ValidateForm -->|Thiếu trường| ShowError1[Hiển thị lỗi validation]
@@ -119,9 +167,39 @@ sequenceDiagram
     UI->>UI: Tô màu xanh (< 7h)
     deactivate UI
     
+    User->>UI: Click "Thêm công việc mới"
+    activate UI
+    UI->>Controller: AJAX: getHoSoList()
+    activate Controller
+    Controller->>Model: HoSoSCBD->getActiveHoSo()
+    activate Model
+    Model->>DB: SELECT * FROM hososcbd_iso WHERE...
+    DB-->>Model: Danh sách hồ sơ (100 records)
+    deactivate Model
+    Model-->>Controller: Array hồ sơ với mavt, somay
+    deactivate Controller
+    Controller-->>UI: JSON {success: true, data: [...]}
+    UI->>UI: Populate <select> dropdown
+    deactivate UI
+    
+    User->>UI: Chọn hồ sơ SCBD từ dropdown
+    activate UI
+    UI->>Controller: AJAX: getHoSoInfo(stt)
+    activate Controller
+    Controller->>Model: HoSoSCBD->getHoSoWithThietBi(stt)
+    activate Model
+    Model->>DB: SELECT hs.*, tb.TENVT FROM hososcbd_iso hs JOIN thietbi_iso tb...
+    DB-->>Model: {mavt, somay, ten_thietbi, ma_hoso}
+    deactivate Model
+    Model-->>Controller: Dữ liệu thiết bị
+    deactivate Controller
+    Controller-->>UI: JSON {mavt: "TB001", somay: "SN123", ...}
+    UI->>UI: Hiển thị thông tin trong panel màu xanh
+    deactivate UI
+    
     User->>UI: Nhập thông tin công việc
-    UI->>UI: Nhập: mavt, somay, capdo, 2.5 giờ
-    User->>UI: Click "Thêm công việc"
+    UI->>UI: Nhập: hososcbd_stt (đã chọn), capdo, 2.5 giờ, nội dung
+    User->>UI: Click "Lưu"
     activate UI
     
     UI->>UI: Validate: Kiểm tra trường bắt buộc
@@ -235,13 +313,14 @@ erDiagram
         int stt PK "AUTO_INCREMENT"
         int nhanvien_stt FK "→resume.stt"
         date ngay_lam_viec "Ngày thực hiện"
-        varchar mavt_thietbi
-        varchar somay_thietbi
+        int hososcbd_stt FK "NOT NULL →hososcbd_iso"
         int capdo_stt FK "→capdo_baocuong_iso"
         decimal so_gio_lam "Số giờ thực tế"
-        int hososcbd_stt FK "nullable"
-        int thietbi_stt FK "nullable"
-        text ghi_chu
+        int thietbi_stt FK "Cache, nullable"
+        time gio_bat_dau "Nullable"
+        time gio_ket_thuc "Nullable"
+        text noi_dung_congviec "Required"
+        text ghi_chu "Nullable"
         datetime created_at
         datetime updated_at
         varchar created_by
@@ -295,9 +374,27 @@ erDiagram
         int so_capdo_khac_nhau "DISTINCT"
     }
     
+    view_congviec_full {
+        int stt PK "congviec_suachua_iso.stt"
+        int nhanvien_stt
+        varchar ten_nhanvien "resume.HOTEN"
+        varchar ten_donvi "donvi_iso.TEN"
+        date ngay_lam_viec
+        varchar mavt "hososcbd_iso.mavt"
+        varchar somay "hososcbd_iso.somay"
+        varchar ma_hoso "hososcbd_iso.hoso"
+        varchar ten_thietbi "thietbi_iso.TENVT"
+        varchar ma_capdo
+        varchar ten_capdo
+        decimal kpi_gio_chuan
+        decimal so_gio_lam
+        text noi_dung_congviec
+    }
+    
     congviec_suachua_iso }o--|| view_congviec_nhanvien_thongke : aggregates
     congviec_suachua_iso }o--|| view_thongke_theo_capdo : aggregates
     congviec_suachua_iso }o--|| view_kpi_thietbi_thongke : aggregates
+    congviec_suachua_iso }o--|| view_congviec_full : "detailed view"
 ```
 
 ---
@@ -489,8 +586,11 @@ classDiagram
         +createWithValidation(array $data) array
         +canAddGio(int $nhanvienStt, string $ngay, float $gioMoi) array
         +getTongGioTrongNgay(int $nhanvienStt, string $ngay) float
+        +getByNhanVienNgay(int $nhanvienStt, string $ngayLam) array
         +getByNhanVien(int $nhanvienStt, string $ngayBd, string $ngayKt) array
         +getByDateRange(string $ngayBd, string $ngayKt) array
+        +getByHoSoScBd(int $hososcbdStt) array
+        +getLichSuThietBi(string $mavt, string $somay) array
         +updateSoGio(int $stt, float $soGio) bool
         +delete(int $id) int
         -validateRequiredFields(array $data) array
@@ -535,6 +635,15 @@ classDiagram
         +getEquipmentInfo(string $mavt, string $somay) array|null
     }
     
+    class HoSoSCBD {
+        #string $table "hososcbd_iso"
+        #string $primaryKey "stt"
+        +getActiveHoSo(int $limit) array
+        +getHoSoWithThietBi(int $stt) array|null
+        +searchByMaOrPhieu(string $keyword, int $limit) array
+        +getRecent(int $months, int $limit) array
+    }
+    
     class CongViecSuaChuaController {
         -PDO $db
         -CongViecSuaChua $congviecModel
@@ -542,12 +651,15 @@ classDiagram
         -ThietBiCapDoKPI $kpiModel
         -Resume $resumeModel
         -ThietBi $thietbiModel
+        -HoSoSCBD $hosoModel
         __construct(PDO $db)
         +index() void
         +create() void
         +update() void
         +delete() void
         +checkGioConLai() void
+        +getHoSoList() void
+        +getHoSoInfo() void
         +getBaoCaoTongQuan(string $ngayBd, string $ngayKt) array
         +exportExcel(string $ngayBd, string $ngayKt) void
         -validateInput(array $data) array
@@ -591,22 +703,25 @@ classDiagram
     BaseModel <|-- ThietBiCapDoKPI : extends
     BaseModel <|-- Resume : extends
     BaseModel <|-- ThietBi : extends
+    BaseModel <|-- HoSoSCBD : extends
     
     CongViecSuaChuaController --> CongViecSuaChua : uses
     CongViecSuaChuaController --> CapDoBaoCuong : uses
     CongViecSuaChuaController --> ThietBiCapDoKPI : uses
     CongViecSuaChuaController --> Resume : uses
     CongViecSuaChuaController --> ThietBi : uses
+    CongViecSuaChuaController --> HoSoSCBD : uses
     
     CongViecSuaChua --> CapDoBaoCuong : FK capdo_stt
     CongViecSuaChua --> Resume : FK nhanvien_stt
+    CongViecSuaChua --> HoSoSCBD : FK hososcbd_stt NOT NULL
     ThietBiCapDoKPI --> CapDoBaoCuong : FK capdo_stt
     
     CongViecSuaChua ..> ViewCongViecNhanVienThongKe : aggregates
     CongViecSuaChua ..> ViewThongKeoCapDo : aggregates
     CongViecSuaChua ..> ViewKPIThietBiThongKe : aggregates
     
-    note for CongViecSuaChua "Validation rules:\n- nhanvien_stt required\n- ngay_lam_viec required\n- capdo_stt required\n- so_gio_lam > 0\n- Total daily hours ≤ 8"
+    note for CongViecSuaChua "Validation rules:\n- nhanvien_stt required\n- ngay_lam_viec required\n- hososcbd_stt required (NOT NULL)\n- capdo_stt required\n- so_gio_lam > 0\n- noi_dung_congviec required\n- Total daily hours ≤ 8"
     
     note for CapDoBaoCuong "KPI Standards:\nCAP1: 2h\nCAP2: 4h\nCAP3: 8h"
     
@@ -646,6 +761,8 @@ graph TB
             ActUpdate[update: Sửa CV]
             ActDelete[delete: Xóa CV]
             ActCheck[checkGioConLai: Validation]
+            ActGetHoSo[getHoSoList: AJAX dropdown]
+            ActGetInfo[getHoSoInfo: AJAX thiết bị]
             ActReport[getBaoCaoTongQuan]
             ActExport[exportExcel]
         end
@@ -655,6 +772,8 @@ graph TB
         Controller --> ActUpdate
         Controller --> ActDelete
         Controller --> ActCheck
+        Controller --> ActGetHoSo
+        Controller --> ActGetInfo
         Controller --> ActReport
         Controller --> ActExport
     end
@@ -665,6 +784,7 @@ graph TB
         ModelKPI[ThietBiCapDoKPI.php]
         ModelNV[Resume.php]
         ModelTB[ThietBi.php]
+        ModelHS[HoSoSCBD.php]
         ModelBase[BaseModel.php<br/>Abstract Base]
         
         ModelCV -.extends.-> ModelBase
@@ -672,6 +792,7 @@ graph TB
         ModelKPI -.extends.-> ModelBase
         ModelNV -.extends.-> ModelBase
         ModelTB -.extends.-> ModelBase
+        ModelHS -.extends.-> ModelBase
     end
     
     subgraph "Data Layer - MySQL Database"
@@ -731,6 +852,7 @@ graph TB
     Controller --> ModelKPI
     Controller --> ModelNV
     Controller --> ModelTB
+    Controller --> ModelHS
     
     ModelBase --> DB
     
@@ -767,6 +889,8 @@ graph TB
 
 ### Quy tắc Nghiệp vụ
 - ✅ Mỗi nhân viên tối đa **8 giờ/ngày**
+- ✅ Mọi công việc phải gắn với **hồ sơ SCBD** (hososcbd_stt NOT NULL)
+- ✅ Thông tin thiết bị lấy từ hồ sơ SCBD, không nhập thủ công
 - ✅ 3 cấp độ bảo dưỡng với KPI chuẩn:
   - **CAP1**: 2 giờ
   - **CAP2**: 4 giờ  
@@ -775,8 +899,13 @@ graph TB
 
 ### Validation 3 Lớp
 1. **JavaScript** (Client-side): Validation form trước khi submit
-2. **PHP Controller**: Kiểm tra logic nghiệp vụ
-3. **Database Trigger**: Đảm bảo tính toàn vẹn dữ liệu
+2. **PHP Controller**: Kiểm tra logic nghiệp vụ, fetch thông tin từ hososcbd_iso
+3. **Database Trigger**: Đảm bảo tính toàn vẹn dữ liệu (8h limit)
+
+### AJAX Endpoints
+- **getHoSoList()**: Load danh sách hồ sơ SCBD cho dropdown (6 tháng gần nhất)
+- **getHoSoInfo(stt)**: Lấy thông tin thiết bị khi chọn hồ sơ
+- **checkGioConLai()**: Validate giờ còn lại trong ngày
 
 ### Màu Cảnh báo
 - 🟢 **Xanh**: < 7 giờ (an toàn)
@@ -796,24 +925,32 @@ graph TB
 ```
 iso2/
 ├── migrations/
-│   └── 20260224_create_kpi_suachua_system.sql
+│   ├── 20260224_create_kpi_suachua_system.sql
+│   └── 20260224_ALTER_congviec_based_on_hososcbd.sql  ⭐ NEW
 ├── models/
 │   ├── BaseModel.php
-│   ├── CongViecSuaChua.php
+│   ├── CongViecSuaChua.php  ⭐ UPDATED
 │   ├── CapDoBaoCuong.php
 │   ├── ThietBiCapDoKPI.php
 │   ├── Resume.php
-│   └── ThietBi.php
+│   ├── ThietBi.php
+│   └── HoSoSCBD.php  ⭐ USED
 ├── controllers/
-│   └── CongViecSuaChuaController.php
+│   └── CongViecSuaChuaController.php  ⭐ UPDATED
 ├── views/
 │   └── congviec/
-│       └── index.php
+│       └── index.php  ⭐ UPDATED
 ├── congviec_suachua.php (Router)
 ├── baocao_kpi.php (Dashboard)
 ├── CONGVIEC_KPI_README.md
-└── LUUDO_CONGVIEC_KPI.md (file này)
+├── HUONGDAN_CAPNHAT_CONGVIEC_KPI.md  ⭐ NEW
+├── DEPLOY_CONGVIEC_REFACTOR.md  ⭐ NEW
+└── LUUDO_CONGVIEC_KPI.md (file này)  ⭐ UPDATED
 ```
+
+### Tài liệu Triển khai
+- **[DEPLOY_CONGVIEC_REFACTOR.md](DEPLOY_CONGVIEC_REFACTOR.md)**: Hướng dẫn deployment chi tiết từng bước
+- **[HUONGDAN_CAPNHAT_CONGVIEC_KPI.md](HUONGDAN_CAPNHAT_CONGVIEC_KPI.md)**: Giải thích kỹ thuật, before/after code
 
 ---
 
