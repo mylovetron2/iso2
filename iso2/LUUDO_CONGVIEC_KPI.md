@@ -205,9 +205,10 @@ erDiagram
     capdo_baocuong_iso ||--o{ congviec_suachua_iso : has
     capdo_baocuong_iso ||--o{ thietbi_capdo_kpi_iso : defines
     thietbi_iso ||--o{ thietbi_capdo_kpi_iso : "custom KPI for"
+    thietbi_iso ||--o{ hososcbd_iso : "service history"
     resume ||--o{ congviec_suachua_iso : performs
-    hososcbd_iso ||--o| congviec_suachua_iso : "links to"
-    thietbi_iso ||--o| congviec_suachua_iso : "links to"
+    hososcbd_iso ||--o{ congviec_suachua_iso : "work for"
+    donvi_iso ||--o{ hososcbd_iso : "customer"
     
     capdo_baocuong_iso {
         int stt PK "AUTO_INCREMENT"
@@ -235,18 +236,57 @@ erDiagram
     congviec_suachua_iso {
         int stt PK "AUTO_INCREMENT"
         int nhanvien_stt FK "→resume.stt"
-        date ngay_lam_viec "Ngày thực hiện"
-        varchar mavt_thietbi
-        varchar somay_thietbi
-        int capdo_stt FK "→capdo_baocuong_iso"
+        varchar nhanvien_ten "Tên NV (copy)"
+        date ngay_lam "Ngày thực hiện"
+        int hososcbd_stt FK "→hososcbd_iso.stt NOT NULL"
+        int capdo_stt FK "→capdo_baocuong_iso.stt"
+        varchar capdo_ten "Tên cấp độ (copy)"
+        decimal kpi_gio_chuan "KPI chuẩn (copy)"
+        text noi_dung "Nội dung công việc"
         decimal so_gio_lam "Số giờ thực tế"
-        int hososcbd_stt FK "nullable"
-        int thietbi_stt FK "nullable"
+        time gio_bat_dau "Nullable"
+        time gio_ket_thuc "Nullable"
+        varchar trang_thai "Đang/Hoàn thành/Tạm dừng"
         text ghi_chu
+        varchar created_by
         datetime created_at
         datetime updated_at
-        varchar created_by
-        varchar updated_by
+    }
+    
+    hososcbd_iso {
+        int stt PK "AUTO_INCREMENT"
+        varchar maql "Mã quản lý"
+        varchar hoso "Mã hồ sơ"
+        varchar phieu "Số phiếu"
+        varchar mavt "Mã thiết bị"
+        varchar somay "Serial number"
+        varchar model "Model thiết bị"
+        varchar vitrimaybd "Vị trí"
+        varchar madv FK "→donvi_iso.madv"
+        date ngayyc "Ngày yêu cầu"
+        date ngayth "Ngày thực hiện"
+        text cv "Công việc yêu cầu"
+        text honghoc "Hỏng hóc"
+        text khacphuc "Cách khắc phục"
+        int bg "0=Chưa, 1=Đã bàn giao"
+        text ghichu
+    }
+    
+    thietbi_iso {
+        int stt PK "AUTO_INCREMENT"
+        varchar mavt "Mã vật tư"
+        varchar somay "Serial number"
+        varchar tenvt "Tên thiết bị"
+        varchar model "Model"
+        varchar hang "Hãng SX"
+    }
+    
+    donvi_iso {
+        varchar madv PK "Mã đơn vị"
+        varchar tendv "Tên đơn vị"
+        varchar diachi
+        varchar dienthoai
+        varchar email
     }
     
     resume {
@@ -256,25 +296,14 @@ erDiagram
         int TRANGTHAI "1=active"
     }
     
-    hososcbd_iso {
-        int stt PK
-        varchar MA_HS
-    }
-    
-    thietbi_iso {
-        int stt PK
-        varchar MAVT
-        varchar SOMAY
-    }
-    
     view_congviec_nhanvien_thongke {
         int nhanvien_stt PK
-        varchar ten_nhanvien
+        varchar nhanvien_ten
+        date ngay_lam PK
         int so_cong_viec "COUNT"
-        decimal tong_gio "SUM"
-        decimal gio_trung_binh "AVG"
-        int so_ngay_lam "DISTINCT dates"
-        int so_thietbi_sua "DISTINCT equip"
+        decimal tong_so_gio "SUM"
+        decimal gio_con_lai "8 - SUM"
+        varchar trang_thai_gio "Vượt/Đủ/Còn"
     }
     
     view_thongke_theo_capdo {
@@ -289,15 +318,37 @@ erDiagram
     }
     
     view_kpi_thietbi_thongke {
-        varchar mavt_thietbi PK
-        varchar somay_thietbi PK
+        varchar mavt PK "FROM hososcbd"
+        varchar somay PK "FROM hososcbd"
+        varchar ten_thietbi "model"
+        int capdo_stt
+        varchar capdo_ten
         int so_lan_sua "COUNT"
         decimal tong_gio "SUM"
-        int so_capdo_khac_nhau "DISTINCT"
+        decimal gio_trung_binh "AVG"
+        decimal hieu_suat_percent
+    }
+    
+    view_congviec_full_info {
+        int stt PK
+        int nhanvien_stt
+        date ngay_lam
+        varchar so_phieu "FROM hososcbd"
+        varchar mavt "FROM hososcbd"
+        varchar somay "FROM hososcbd"
+        varchar ten_thietbi "FROM hososcbd"
+        varchar tendv "FROM donvi"
+        varchar capdo_ten
+        decimal so_gio_lam
+        decimal hieu_suat_percent
+        varchar danh_gia "Đạt/Gần đạt/Chưa"
     }
     
     congviec_suachua_iso }o--|| view_congviec_nhanvien_thongke : aggregates
     congviec_suachua_iso }o--|| view_thongke_theo_capdo : aggregates
+    hososcbd_iso }o--|| view_kpi_thietbi_thongke : "via congviec"
+    congviec_suachua_iso }o--|| view_congviec_full_info : "detail view"
+```
     congviec_suachua_iso }o--|| view_kpi_thietbi_thongke : aggregates
 ```
 
@@ -855,7 +906,91 @@ CREATE TABLE thietbi_capdo_kpi_iso (
 4. **Query Performance**: JOIN nhanh hơn với INT index vs VARCHAR
 5. **Third Normal Form (3NF)**: Loại bỏ transitive dependency
 
-### Migration Script
+---
+
+### Tối ưu hóa `congviec_suachua_iso` với `hososcbd_iso` FK (2026-02-25)
+
+**Nguyên tắc nghiệp vụ:**
+- Một `hososcbd_iso` (hồ sơ sửa chữa) chỉ có **1 thiết bị** (mavt, somay)
+- Công việc sửa chữa **LUÔN liên quan** đến hồ sơ SCBD
+- Người dùng **chọn hososcbd_iso** khi nhập công việc → không cần nhập mavt/somay
+
+**✅ Thiết kế mới (Normalized - 3NF):**
+```sql
+CREATE TABLE congviec_suachua_iso (
+    stt INT(11) PRIMARY KEY AUTO_INCREMENT,
+    nhanvien_stt INT(11) NOT NULL,
+    nhanvien_ten VARCHAR(100),              -- Copy để query nhanh
+    ngay_lam DATE NOT NULL,
+    
+    hososcbd_stt INT(11) NOT NULL,          -- FK → hososcbd_iso.stt (BẮT BUỘC)
+    -- Không cần mavt, somay → lấy từ hososcbd_iso
+    
+    capdo_stt INT(11) NOT NULL,
+    capdo_ten VARCHAR(100),                 -- Copy để query nhanh
+    kpi_gio_chuan DECIMAL(5,2),
+    
+    noi_dung TEXT NOT NULL,
+    so_gio_lam DECIMAL(5,2) NOT NULL,
+    trang_thai VARCHAR(50) DEFAULT 'Đang thực hiện',
+    ghi_chu TEXT,
+    
+    created_by VARCHAR(80),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_congviec_hososcbd FOREIGN KEY (hososcbd_stt) 
+        REFERENCES hososcbd_iso(stt) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+```
+
+**❌ Thiết kế cũ (Denormalized):**
+```sql
+-- varchar mavt VARCHAR(80)          -- 80 bytes
+-- varchar somay VARCHAR(80)         -- 80 bytes  
+-- varchar ten_thietbi VARCHAR(255)  -- 255 bytes
+-- int thietbi_stt INT(11)           -- 4 bytes (nullable, không có FK)
+-- Tổng: 419 bytes duplication/record
+```
+
+**Lợi ích thiết kế mới:**
+
+1. **Tiết kiệm 415 bytes/record** (419 bytes → 4 bytes INT FK)
+2. **Referential Integrity**: Không thể nhập công việc cho hồ sơ không tồn tại
+3. **Data Consistency**: mavt/somay luôn chính xác (lấy từ hososcbd_iso)
+4. **Simplified Input**: Người dùng chỉ chọn hồ sơ → tự động có thiết bị
+5. **Third Normal Form (3NF)**: Loại bỏ duplication mavt/somay
+
+**VIEW hỗ trợ - Lấy thông tin đầy đủ:**
+```sql
+CREATE VIEW view_congviec_full_info AS
+SELECT 
+    cv.*,
+    hs.phieu AS so_phieu,
+    hs.maql,
+    hs.mavt,              -- Từ hososcbd_iso
+    hs.somay,             -- Từ hososcbd_iso
+    hs.model AS ten_thietbi,
+    hs.vitrimaybd,
+    dv.tendv AS ten_donvi
+FROM congviec_suachua_iso cv
+JOIN hososcbd_iso hs ON cv.hososcbd_stt = hs.stt
+LEFT JOIN donvi_iso dv ON hs.madv = dv.madv;
+```
+
+**Migration Script:**
+- File: `migrations/ALTER_congviec_hososcbd_FK.sql`
+- Chức năng: 
+  - DROP cột mavt, somay, ten_thietbi, thietbi_stt
+  - Thay đổi hososcbd_stt → NOT NULL
+  - Thêm FK constraint
+  - Cập nhật VIEWs với JOIN hososcbd_iso
+
+---
+
+### Migration Scripts
+
+#### 1. ThietBi CapDo KPI - FK Design
 File: `migrations/CREATE_thietbi_capdo_kpi_SIMPLE.sql`
 
 **Cách chạy:**
@@ -863,17 +998,37 @@ File: `migrations/CREATE_thietbi_capdo_kpi_SIMPLE.sql`
 mysql -u root -p diavatly_db < migrations/CREATE_thietbi_capdo_kpi_SIMPLE.sql
 ```
 
-Hoặc trong phpMyAdmin/MySQL Workbench: Import SQL file
-
 **Script thực hiện:**
 1. DROP tất cả bảng liên quan (clean slate)
 2. CREATE `capdo_baocuong_iso` + INSERT 3 levels (CAP1, CAP2, CAP3)
 3. CREATE `thietbi_capdo_kpi_iso` với FK design
 4. VERIFY với SELECT COUNT
 
+#### 2. CongViec SuaChua - hososcbd_iso FK
+File: `migrations/ALTER_congviec_hososcbd_FK.sql`
+
+**Cách chạy:**
+```bash
+mysql -u root -p diavatly_db < migrations/ALTER_congviec_hososcbd_FK.sql
+```
+
+**Script thực hiện:**
+1. BACKUP bảng hiện tại → `congviec_suachua_iso_backup_20260225`
+2. DELETE records không có `hososcbd_stt`
+3. DROP các cột: `mavt`, `somay`, `ten_thietbi`, `thietbi_stt`
+4. MODIFY `hososcbd_stt` → NOT NULL
+5. ADD FK constraint: `hososcbd_stt → hososcbd_iso.stt`
+6. CREATE/UPDATE VIEWs:
+   - `view_kpi_thietbi_thongke` (JOIN hososcbd_iso)
+   - `view_congviec_full_info` (new - thông tin đầy đủ)
+7. VERIFY kết quả
+
+---
+
 ### Sử dụng trong PHP
 
-**Tạo KPI riêng cho thiết bị:**
+#### A. Tạo KPI riêng cho thiết bị
+
 ```php
 // 1. Tìm thietbi_stt từ mavt/somay
 $thietbi = $thietbiModel->findByMaVtAndSoMay('TB001', 'M001');
@@ -888,7 +1043,54 @@ $kpiModel->createOrUpdate([
 ]);
 ```
 
-**Lấy KPI khi nhập công việc:**
+#### B. Nhập công việc sửa chữa (với hososcbd_iso)
+
+```php
+// 1. Người dùng chọn hồ sơ SCBD (dropdown/autocomplete)
+$hososcbdStt = $_POST['hososcbd_stt'];  // VD: 123
+
+// 2. Lấy thông tin hồ sơ để hiển thị (optional - cho confirmation)
+$hososcbd = $hososcbdModel->find($hososcbdStt);
+// → có mavt, somay, model, phieu, maql...
+
+// 3. Nhập công việc - CHỈ cần hososcbd_stt
+$congviecModel->create([
+    'nhanvien_stt' => $nhanvienStt,
+    'nhanvien_ten' => $nhanvienTen,
+    'ngay_lam' => '2026-02-25',
+    
+    'hososcbd_stt' => $hososcbdStt,  // ← CHỈ CẦN TRƯỜNG NÀY cho thiết bị
+    
+    'capdo_stt' => 1,
+    'capdo_ten' => 'Bảo dưỡng Cấp 1',
+    'kpi_gio_chuan' => 2.00,
+    
+    'noi_dung' => 'Vệ sinh, bôi trơn, kiểm tra',
+    'so_gio_lam' => 2.5,
+    'created_by' => $username
+]);
+```
+
+#### C. Xem công việc với thông tin đầy đủ
+
+```php
+// JOIN tự động qua VIEW
+$result = $db->query("
+    SELECT * FROM view_congviec_full_info
+    WHERE nhanvien_stt = 123
+      AND ngay_lam = '2026-02-25'
+    ORDER BY created_at DESC
+");
+
+// Kết quả có đầy đủ:
+// - so_phieu, maql, ma_hoso (từ hososcbd)
+// - mavt, somay, ten_thietbi (từ hososcbd)
+// - tendv (từ donvi)
+// - capdo_ten, kpi_gio_chuan
+// - so_gio_lam, hieu_suat_percent, danh_gia
+```
+
+#### D. Lấy KPI khi nhập công việc
 ```php
 // Ưu tiên KPI riêng, fallback KPI chuẩn
 $kpiRieng = $kpiModel->getKPIDuKien($thietbiStt, $capdoStt);
