@@ -345,4 +345,9 @@ require_once __DIR__ . '/../layouts/header.php';
     </form>
 </div>
 
+<!-- CÔNG VIỆC SỬA CHỮA LIÊN QUAN -->
+<div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6 mt-6">
+    <?php include __DIR__ . '/components/congviec_widget.php'; ?>
+</div>
+
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
