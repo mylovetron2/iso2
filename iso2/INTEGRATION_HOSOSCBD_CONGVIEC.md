@@ -20,7 +20,11 @@ Chức năng tích hợp giữa **Hồ sơ sửa chữa/bảo dưỡng** (hososc
 URL: /iso2/hososcbd.php
 ```
 
-**Bước 2:** Click vào hồ sơ bất kỳ → Click "⚙️ Chi tiết sửa chữa"
+**Bước 2:** Tìm hồ sơ muốn xem → Trong cột **"Chi tiết"** (cuối cùng), click vào icon:
+- 🔧 **Cờ lê** (màu cam) = Thông tin sửa chữa & Thiết bị đo
+- 🤝 **Bắt tay** (màu tím) = Thông tin bàn giao
+
+> **Lưu ý:** Icon cờ lê 🔧 nằm ở cột cuối cùng của bảng, bên cạnh các nút Xem/Sửa/Xóa
 
 **Bước 3:** Cuộn xuống dưới, sau phần "Thiết bị hỗ trợ" sẽ thấy section:
 ```

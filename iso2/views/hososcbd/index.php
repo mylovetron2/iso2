@@ -247,12 +247,16 @@ require_once __DIR__ . '/../layouts/header.php';
                         $filterQuery = !empty($currentFilters) ? '&' . http_build_query($currentFilters) : '';
                         ?>
                         <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="text-orange-600 hover:text-orange-800 mx-1" title="Thông tin sửa chữa">
-                            <i class="fas fa-wrench"></i>
+                           class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs mx-1" 
+                           title="Thông tin sửa chữa & Thiết bị đo">
+                            <i class="fas fa-wrench mr-1"></i>
+                            <span class="hidden sm:inline">SC</span>
                         </a>
                         <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="text-purple-600 hover:text-purple-800 mx-1" title="Thông tin bàn giao">
-                            <i class="fas fa-handshake"></i>
+                           class="inline-flex items-center bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs mx-1" 
+                           title="Thông tin bàn giao">
+                            <i class="fas fa-handshake mr-1"></i>
+                            <span class="hidden sm:inline">BG</span>
                         </a>
                         <?php endif; ?>
                     </td>
