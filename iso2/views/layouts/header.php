@@ -82,6 +82,15 @@ require_once __DIR__ . '/../../config/constants.php';
                 </li>
                 <?php endif; ?>
 
+                <!-- 1.6. Công việc sửa chữa -->
+                <?php if (isLoggedIn() && hasPermission('congviec_suachua.view')): ?>
+                <li>
+                    <a href="/iso2/congviec_suachua.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-tasks mr-2"></i> Công việc sửa chữa
+                    </a>
+                </li>
+                <?php endif; ?>
+
                 <!-- 2. Bàn giao -->
                 <?php if (isLoggedIn() && hasPermission('phieubangiao.view')): ?>
                 <li>
