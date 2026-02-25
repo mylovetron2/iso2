@@ -8,7 +8,21 @@
 -- Công việc sửa chữa LUÔN liên quan đến hồ sơ SCBD
 -- → Không cần lưu mavt/somay riêng, lấy qua JOIN hososcbd_iso
 
-USE diavatly_db;
+-- =====================================================
+-- LƯU Ý QUAN TRỌNG:
+-- =====================================================
+-- 1. ĐỔI TÊN DATABASE phù hợp với môi trường của bạn:
+--    USE your_database_name;
+--    Hoặc chạy: mysql -u root -p your_database_name < ALTER_congviec_hososcbd_FK.sql
+--
+-- 2. PHẢI CHẠY MIGRATION TẠO BẢNG TRƯỚC:
+--    mysql -u root -p your_database_name < 20260224_create_kpi_suachua_system.sql
+--
+-- 3. Kiểm tra bảng đã tồn tại:
+--    SELECT COUNT(*) FROM congviec_suachua_iso;
+-- =====================================================
+
+-- USE diavatly_db;  -- ← Bỏ comment và thay tên database của bạn
 
 -- =====================================================
 -- BƯỚC 1: Backup bảng hiện tại
