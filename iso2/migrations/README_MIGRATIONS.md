@@ -145,6 +145,36 @@ Table 'database.congviec_suachua_iso' doesn't exist
 **Giải pháp:**
 Xem **Kịch bản 1** ở trên, chạy đúng thứ tự.
 
+### Lỗi 4: Access denied to information_schema
+
+```
+Access denied for user 'user'@'localhost' to database 'information_schema'
+```
+
+**Nguyên nhân:**
+- User MySQL không có quyền SELECT trên `information_schema`
+- Script `ALTER_congviec_hososcbd_FK.sql` có phần kiểm tra tự động dùng information_schema
+
+**Giải pháp:**
+Script đã được sửa, phần kiểm tra đã được comment. Chỉ cần đảm bảo:
+
+1. **Kiểm tra thủ công** trước khi chạy:
+   ```sql
+   -- Kiểm tra bảng tồn tại
+   SHOW TABLES LIKE 'hososcbd_iso';
+   SHOW TABLES LIKE 'congviec_suachua_iso';
+   ```
+
+2. **Hoặc chạy thẳng script**:
+   - Nếu thiếu bảng, MySQL sẽ tự báo lỗi rõ ràng
+   - Đọc lỗi và chạy migration còn thiếu
+
+3. **Grant quyền** (nếu cần kiểm tra tự động):
+   ```sql
+   GRANT SELECT ON information_schema.* TO 'your_user'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
 ---
 
 ## 📊 Kiểm tra kết quả

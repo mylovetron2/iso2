@@ -27,9 +27,13 @@
 -- USE diavatly_db;  -- ← Bỏ comment và thay tên database của bạn
 
 -- =====================================================
--- BƯỚC 0: Kiểm tra điều kiện tiên quyết
+-- BƯỚC 0: (OPTIONAL) Kiểm tra điều kiện tiên quyết
 -- =====================================================
+-- LƯU Ý: Các lệnh kiểm tra dưới đây YÊU CẦU quyền SELECT trên information_schema
+-- Nếu gặp lỗi "Access denied to information_schema", comment toàn bộ section này.
+-- MySQL sẽ tự động báo lỗi rõ ràng nếu thiếu bảng khi chạy các bước tiếp theo.
 
+/*
 -- Kiểm tra bảng hososcbd_iso có tồn tại không
 SELECT 
     CASE 
@@ -77,15 +81,21 @@ FROM information_schema.COLUMNS
 WHERE TABLE_SCHEMA = DATABASE()
   AND TABLE_NAME = 'hososcbd_iso'
   AND COLUMN_NAME = 'stt';
+*/
 
 SELECT '
-⚠️  QUAN TRỌNG: 
-   Nếu thấy lỗi ở trên, DỪNG và chạy migrations theo thứ tự:
-   1. migrations/20251121_create_hososcbd_tables.sql  (tạo hososcbd_iso)
-   2. migrations/20260224_create_kpi_suachua_system_FIXED.sql  (tạo congviec_suachua_iso)
-   3. Sau đó mới chạy script này
+⚠️  ĐÃ BỎ QUA KIỂM TRA TỰ ĐỘNG (do quyền truy cập information_schema)
+
+📋 VUI LÒNG Tự kiểm tra:
+   1. Bảng hososcbd_iso đã được tạo chưa?
+      → mysql -u root -p your_db < migrations/20251121_create_hososcbd_tables.sql
    
-   Nếu tất cả ✓, tiếp tục các bước dưới...
+   2. Bảng congviec_suachua_iso đã được tạo chưa?
+      → mysql -u root -p your_db < migrations/20260224_create_kpi_suachua_system_FIXED.sql
+   
+   3. Nếu chưa, DỪNG và chạy 2 script trên TRƯỚC!
+   
+✅ Nếu cả 2 bảng đã có, tiếp tục các bước dưới...
 ' AS important_note;
 
 -- =====================================================
