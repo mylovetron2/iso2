@@ -27,76 +27,38 @@
 -- USE diavatly_db;  -- ← Bỏ comment và thay tên database của bạn
 
 -- =====================================================
--- BƯỚC 0: (OPTIONAL) Kiểm tra điều kiện tiên quyết
+-- BƯỚC 0: Kiểm tra bảng tiên quyết (không dùng information_schema)
 -- =====================================================
--- LƯU Ý: Các lệnh kiểm tra dưới đây YÊU CẦU quyền SELECT trên information_schema
--- Nếu gặp lỗi "Access denied to information_schema", comment toàn bộ section này.
--- MySQL sẽ tự động báo lỗi rõ ràng nếu thiếu bảng khi chạy các bước tiếp theo.
 
-/*
--- Kiểm tra bảng hososcbd_iso có tồn tại không
+-- Thử SELECT từ hososcbd_iso - nếu không tồn tại sẽ báo lỗi rõ ràng
 SELECT 
-    CASE 
-        WHEN COUNT(*) > 0 THEN '✓ Bảng hososcbd_iso đã tồn tại'
-        ELSE '❌ LỖI: Bảng hososcbd_iso CHƯA được tạo! Chạy migrations/20251121_create_hososcbd_tables.sql TRƯỚC!'
-    END AS check_hososcbd,
-    COUNT(*) AS table_exists
-FROM information_schema.TABLES
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'hososcbd_iso';
+    '✓ Bảng hososcbd_iso đã tồn tại' AS check_status,
+    COUNT(*) AS total_records
+FROM hososcbd_iso
+LIMIT 1;
 
--- Kiểm tra bảng congviec_suachua_iso có tồn tại không
+-- Thử SELECT từ congviec_suachua_iso
 SELECT 
-    CASE 
-        WHEN COUNT(*) > 0 THEN '✓ Bảng congviec_suachua_iso đã tồn tại'
-        ELSE '❌ LỖI: Bảng congviec_suachua_iso CHƯA được tạo! Chạy migrations/20260224_create_kpi_suachua_system_FIXED.sql TRƯỚC!'
-    END AS check_congviec,
-    COUNT(*) AS table_exists
-FROM information_schema.TABLES
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'congviec_suachua_iso';
+    '✓ Bảng congviec_suachua_iso đã tồn tại' AS check_status,
+    COUNT(*) AS total_records
+FROM congviec_suachua_iso
+LIMIT 1;
 
--- Kiểm tra cột hososcbd_stt có tồn tại trong congviec_suachua_iso không
-SELECT 
-    CASE 
-        WHEN COUNT(*) > 0 THEN '✓ Cột hososcbd_stt đã tồn tại trong congviec_suachua_iso'
-        ELSE '⚠️ CẢNH BÁO: Cột hososcbd_stt chưa có trong congviec_suachua_iso'
-    END AS check_column,
-    COUNT(*) AS column_exists
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'congviec_suachua_iso'
-  AND COLUMN_NAME = 'hososcbd_stt';
-
--- Kiểm tra PRIMARY KEY của hososcbd_iso
-SELECT 
-    COLUMN_NAME,
-    COLUMN_TYPE,
-    COLUMN_KEY,
-    CASE 
-        WHEN COLUMN_KEY = 'PRI' THEN '✓ stt là PRIMARY KEY'
-        ELSE '❌ stt KHÔNG phải PRIMARY KEY'
-    END AS pk_status
-FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'hososcbd_iso'
-  AND COLUMN_NAME = 'stt';
-*/
+-- Kiểm tra cột hososcbd_stt có trong congviec_suachua_iso không
+SELECT hososcbd_stt 
+FROM congviec_suachua_iso 
+WHERE 1=0;  -- Không trả về data, chỉ kiểm tra cột
 
 SELECT '
-⚠️  ĐÃ BỎ QUA KIỂM TRA TỰ ĐỘNG (do quyền truy cập information_schema)
+✅ TẤT CẢ BẢNG TIÊN QUYẾT ĐÃ SẴN SÀNG!
 
-📋 VUI LÒNG Tự kiểm tra:
-   1. Bảng hososcbd_iso đã được tạo chưa?
-      → mysql -u root -p your_db < migrations/20251121_create_hososcbd_tables.sql
+📋 Đã kiểm tra:
+   ✓ hososcbd_iso - Tồn tại
+   ✓ congviec_suachua_iso - Tồn tại
+   ✓ Cột hososcbd_stt - Tồn tại
    
-   2. Bảng congviec_suachua_iso đã được tạo chưa?
-      → mysql -u root -p your_db < migrations/20260224_create_kpi_suachua_system_FIXED.sql
-   
-   3. Nếu chưa, DỪNG và chạy 2 script trên TRƯỚC!
-   
-✅ Nếu cả 2 bảng đã có, tiếp tục các bước dưới...
-' AS important_note;
+🚀 Tiếp tục các bước migration...
+' AS prerequisite_check;
 
 -- =====================================================
 -- BƯỚC 1: Backup bảng hiện tại
