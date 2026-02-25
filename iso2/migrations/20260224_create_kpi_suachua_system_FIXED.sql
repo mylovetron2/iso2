@@ -6,9 +6,46 @@
 -- =====================================================
 
 -- =====================================================
+-- ⚠️  QUAN TRỌNG: XÓA BẢNG CŨ TRƯỚC KHI CHẠY SCRIPT NÀY
+-- =====================================================
+-- Nếu đã chạy ALTER_congviec_hososcbd_FK.sql (chuẩn hóa FK),
+-- cần xóa các bảng đó trước khi chạy script tạo ban đầu này:
+/*
+DROP VIEW IF EXISTS view_congviec_full_info;
+DROP VIEW IF EXISTS view_kpi_thietbi_thongke;
+DROP VIEW IF EXISTS view_thongke_theo_capdo;
+DROP VIEW IF EXISTS view_congviec_nhanvien_thongke;
+DROP TRIGGER IF EXISTS before_insert_congviec_check_8h;
+DROP TRIGGER IF EXISTS before_update_congviec_check_8h;
+DROP TABLE IF EXISTS congviec_suachua_iso;
+DROP TABLE IF EXISTS thietbi_capdo_kpi_iso;
+DROP TABLE IF EXISTS capdo_baocuong_iso;
+*/
+
+-- =====================================================
+-- BƯỚC 0: DROP các đối tượng cũ (nếu tồn tại)
+-- =====================================================
+DROP VIEW IF EXISTS view_congviec_full_info;
+DROP VIEW IF EXISTS view_kpi_thietbi_thongke;
+DROP VIEW IF EXISTS view_thongke_theo_capdo;
+DROP VIEW IF EXISTS view_congviec_nhanvien_thongke;
+
+DROP TRIGGER IF EXISTS before_insert_congviec_check_8h;
+DROP TRIGGER IF EXISTS before_update_congviec_check_8h;
+
+-- Xóa FK constraints trước (nếu có)
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS congviec_suachua_iso;
+DROP TABLE IF EXISTS thietbi_capdo_kpi_iso;
+DROP TABLE IF EXISTS capdo_baocuong_iso;
+SET FOREIGN_KEY_CHECKS = 1;
+
+SELECT '✓ Bước 0: Đã xóa các đối tượng cũ (nếu có)' AS status;
+
+-- =====================================================
 -- BƯỚC 1: Tạo bảng cấp độ bảo dưỡng (KHÔNG có FK)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS `capdo_baocuong_iso` (
+CREATE TABLE `capdo_baocuong_iso` (
     `stt` INT(11) AUTO_INCREMENT PRIMARY KEY,
     `ma_capdo` VARCHAR(20) NOT NULL UNIQUE COMMENT 'Mã cấp độ: CAP1, CAP2, CAP3',
     `ten_capdo` VARCHAR(100) NOT NULL COMMENT 'Tên cấp độ: Bảo dưỡng cấp 1/2/3',
@@ -53,7 +90,7 @@ SELECT CONCAT('✓ Bước 2: Đã insert ', ROW_COUNT(), ' cấp độ bảo d�
 -- =====================================================
 -- BƯỚC 3: Tạo bảng liên kết thiết bị với cấp độ KPI (KHÔNG có FK)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS `thietbi_capdo_kpi_iso` (
+CREATE TABLE `thietbi_capdo_kpi_iso` (
     `stt` INT(11) AUTO_INCREMENT PRIMARY KEY,
     `mavt` VARCHAR(80) NOT NULL COMMENT 'Mã vật tư thiết bị',
     `somay` VARCHAR(80) NOT NULL COMMENT 'Serial number',
@@ -74,7 +111,7 @@ SELECT '✓ Bước 3: Đã tạo bảng thietbi_capdo_kpi_iso' AS status;
 -- =====================================================
 -- BƯỚC 4: Tạo bảng công việc sửa chữa hàng ngày (KHÔNG có FK)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS `congviec_suachua_iso` (
+CREATE TABLE `congviec_suachua_iso` (
     `stt` INT(11) AUTO_INCREMENT PRIMARY KEY,
     `nhanvien_stt` INT(11) NOT NULL COMMENT 'Link đến resume.stt (nhân viên)',
     `nhanvien_ten` VARCHAR(100) NOT NULL COMMENT 'Tên nhân viên (copy từ resume)',
