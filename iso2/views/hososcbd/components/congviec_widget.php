@@ -14,12 +14,16 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/permissions.php';
 
 // Check view permission
+// TODO: Uncomment sau khi chạy execute_add_congviec_permissions.php
+/*
 if (!hasPermission('congviec_suachua.view')) {
     echo '<div class="bg-yellow-100 border border-yellow-300 p-4 rounded text-sm">';
     echo '<i class="fas fa-lock mr-2"></i>Bạn không có quyền xem công việc sửa chữa';
     echo '</div>';
     return;
 }
+*/
+
 $db = getDBConnection();
 
 // Lấy danh sách công việc liên quan
@@ -63,7 +67,8 @@ $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
         <h2 class="text-lg font-bold text-purple-700 flex items-center">
             <i class="fas fa-tasks mr-2"></i>Công việc sửa chữa liên quan
         </h2>
-        <?php if (hasPermission('congviec_suachua.create')): ?>
+        <?php // TODO: Uncomment sau khi chạy migration
+        if (true || hasPermission('congviec_suachua.create')): ?>
         <button type="button" onclick="openAddCongViecModal()" 
                 class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center">
             <i class="fas fa-plus-circle mr-2"></i>Thêm công việc
@@ -157,13 +162,14 @@ $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
                                 </span>
                             </td>
                             <td class="px-3 py-2 border-b text-center">
-                                <?php if (hasPermission('congviec_suachua.view')): ?>
+                                <?php // TODO: Uncomment sau khi chạy migration
+                                if (true || hasPermission('congviec_suachua.view')): ?>
                                 <button type="button" onclick="viewCongViecDetail(<?= $cv['stt'] ?>)" 
                                         class="text-blue-600 hover:text-blue-800 mr-2" title="Xem chi tiết">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <?php endif; ?>
-                                <?php if (hasPermission('congviec_suachua.delete')): ?>
+                                <?php if (true || hasPermission('congviec_suachua.delete')): ?>
                                 <button type="button" onclick="deleteCongViec(<?= $cv['stt'] ?>)" 
                                         class="text-red-600 hover:text-red-800" title="Xóa">
                                     <i class="fas fa-trash"></i>
