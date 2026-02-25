@@ -15,14 +15,78 @@
 --    USE your_database_name;
 --    Hoặc chạy: mysql -u root -p your_database_name < ALTER_congviec_hososcbd_FK.sql
 --
--- 2. PHẢI CHẠY MIGRATION TẠO BẢNG TRƯỚC:
---    mysql -u root -p your_database_name < 20260224_create_kpi_suachua_system.sql
+-- 2. PHẢI CHẠY MIGRATION TẠO BẢNG TRƯỚC (theo thứ tự):
+--    a. mysql -u root -p your_db < migrations/20251121_create_hososcbd_tables.sql
+--    b. mysql -u root -p your_db < migrations/20260224_create_kpi_suachua_system_FIXED.sql
 --
 -- 3. Kiểm tra bảng đã tồn tại:
---    SELECT COUNT(*) FROM congviec_suachua_iso;
+--    SELECT COUNT(*) FROM hososcbd_iso;     -- Phải có
+--    SELECT COUNT(*) FROM congviec_suachua_iso;  -- Phải có
 -- =====================================================
 
 -- USE diavatly_db;  -- ← Bỏ comment và thay tên database của bạn
+
+-- =====================================================
+-- BƯỚC 0: Kiểm tra điều kiện tiên quyết
+-- =====================================================
+
+-- Kiểm tra bảng hososcbd_iso có tồn tại không
+SELECT 
+    CASE 
+        WHEN COUNT(*) > 0 THEN '✓ Bảng hososcbd_iso đã tồn tại'
+        ELSE '❌ LỖI: Bảng hososcbd_iso CHƯA được tạo! Chạy migrations/20251121_create_hososcbd_tables.sql TRƯỚC!'
+    END AS check_hososcbd,
+    COUNT(*) AS table_exists
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'hososcbd_iso';
+
+-- Kiểm tra bảng congviec_suachua_iso có tồn tại không
+SELECT 
+    CASE 
+        WHEN COUNT(*) > 0 THEN '✓ Bảng congviec_suachua_iso đã tồn tại'
+        ELSE '❌ LỖI: Bảng congviec_suachua_iso CHƯA được tạo! Chạy migrations/20260224_create_kpi_suachua_system_FIXED.sql TRƯỚC!'
+    END AS check_congviec,
+    COUNT(*) AS table_exists
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'congviec_suachua_iso';
+
+-- Kiểm tra cột hososcbd_stt có tồn tại trong congviec_suachua_iso không
+SELECT 
+    CASE 
+        WHEN COUNT(*) > 0 THEN '✓ Cột hososcbd_stt đã tồn tại trong congviec_suachua_iso'
+        ELSE '⚠️ CẢNH BÁO: Cột hososcbd_stt chưa có trong congviec_suachua_iso'
+    END AS check_column,
+    COUNT(*) AS column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'congviec_suachua_iso'
+  AND COLUMN_NAME = 'hososcbd_stt';
+
+-- Kiểm tra PRIMARY KEY của hososcbd_iso
+SELECT 
+    COLUMN_NAME,
+    COLUMN_TYPE,
+    COLUMN_KEY,
+    CASE 
+        WHEN COLUMN_KEY = 'PRI' THEN '✓ stt là PRIMARY KEY'
+        ELSE '❌ stt KHÔNG phải PRIMARY KEY'
+    END AS pk_status
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'hososcbd_iso'
+  AND COLUMN_NAME = 'stt';
+
+SELECT '
+⚠️  QUAN TRỌNG: 
+   Nếu thấy lỗi ở trên, DỪNG và chạy migrations theo thứ tự:
+   1. migrations/20251121_create_hososcbd_tables.sql  (tạo hososcbd_iso)
+   2. migrations/20260224_create_kpi_suachua_system_FIXED.sql  (tạo congviec_suachua_iso)
+   3. Sau đó mới chạy script này
+   
+   Nếu tất cả ✓, tiếp tục các bước dưới...
+' AS important_note;
 
 -- =====================================================
 -- BƯỚC 1: Backup bảng hiện tại
