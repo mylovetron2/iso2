@@ -54,6 +54,11 @@ $allPermissions = [
     'hososcbd.edit' => 'Sửa hồ sơ SCBĐ',
     'hososcbd.delete' => 'Xóa hồ sơ SCBĐ',
     
+    'congviec_suachua.view' => 'Xem công việc sửa chữa',
+    'congviec_suachua.create' => 'Tạo công việc sửa chữa',
+    'congviec_suachua.edit' => 'Sửa công việc sửa chữa',
+    'congviec_suachua.delete' => 'Xóa công việc sửa chữa',
+    
     'phieuyeucau.view' => 'Xem quản lý số phiếu YC',
     'phieuyeucau.create' => 'Tạo phiếu YC mới',
     'phieuyeucau.edit' => 'Sửa thông tin phiếu YC',
@@ -111,6 +116,7 @@ $permissionGroups = [
     'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete'],
+    'Công việc sửa chữa' => ['congviec_suachua.view', 'congviec_suachua.create', 'congviec_suachua.edit', 'congviec_suachua.delete'],
     'Quản lý số phiếu YC' => ['phieuyeucau.view', 'phieuyeucau.create', 'phieuyeucau.edit', 'phieuyeucau.delete'],
     'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],
     'Quản lý Lô' => ['lo.view', 'lo.create', 'lo.edit', 'lo.delete'],
