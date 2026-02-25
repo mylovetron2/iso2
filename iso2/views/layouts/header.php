@@ -83,7 +83,8 @@ require_once __DIR__ . '/../../config/constants.php';
                 <?php endif; ?>
 
                 <!-- 1.6. Công việc sửa chữa -->
-                <?php if (isLoggedIn() && hasPermission('congviec_suachua.view')): ?>
+                <!-- IMPORTANT: Chạy execute_add_congviec_permissions.php trước khi uncomment -->
+                <?php if (false): // Tạm thời tắt - Chạy migration trước: execute_add_congviec_permissions.php ?>
                 <li>
                     <a href="/iso2/congviec_suachua.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tasks mr-2"></i> Công việc sửa chữa
