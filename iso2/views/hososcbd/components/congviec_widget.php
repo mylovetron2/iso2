@@ -127,11 +127,13 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
     </div>
 
     <!-- Thống kê tổng quan -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <?php /* Ẩn Số công việc
         <div class="bg-blue-50 border border-blue-200 rounded p-3">
             <div class="text-sm text-blue-600">Số công việc</div>
             <div class="text-2xl font-bold text-blue-700"><?= $thongke['so_congviec'] ?></div>
         </div>
+        */ ?>
         <div class="bg-green-50 border border-green-200 rounded p-3">
             <div class="text-sm text-green-600">Tổng số giờ</div>
             <div class="text-2xl font-bold text-green-700"><?= number_format($thongke['tong_gio'], 2) ?>h</div>
