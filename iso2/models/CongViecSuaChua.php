@@ -18,19 +18,14 @@ class CongViecSuaChua extends BaseModel
     }
 
     /**
-     * Lấy công việc theo nhân viên và ngày (với thông tin từ hososcbd_iso)
+     * Lấy công việc theo nhân viên và ngày
      */
     public function getByNhanVienNgay(int $nhanvienStt, string $ngayLam): array
     {
-        $sql = "SELECT cv.*, 
-                       cd.ma_capdo, cd.ten_capdo,
-                       hs.mavt, hs.somay, hs.hoso, hs.phieu,
-                       tb.TENVT as ten_thietbi
+        $sql = "SELECT cv.*, c.mau_sac as capdo_mau
                 FROM {$this->table} cv
-                LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
-                LEFT JOIN hososcbd_iso hs ON cv.hososcbd_stt = hs.stt
-                LEFT JOIN thietbi_iso tb ON hs.mavt = tb.MAVT AND hs.somay = tb.SOMAY
-                WHERE cv.nhanvien_stt = :nhanvien_stt AND cv.ngay_lam_viec = :ngay_lam
+                LEFT JOIN capdo_baocuong_iso c ON cv.capdo_stt = c.stt
+                WHERE cv.nhanvien_stt = :nhanvien_stt AND cv.ngay_lam = :ngay_lam
                 ORDER BY cv.created_at DESC";
         
         $stmt = $this->db->prepare($sql);
@@ -48,7 +43,7 @@ class CongViecSuaChua extends BaseModel
     {
         $sql = "SELECT COALESCE(SUM(so_gio_lam), 0) as tong_gio
                 FROM {$this->table}
-                WHERE nhanvien_stt = :nhanvien_stt AND ngay_lam_viec = :ngay_lam";
+                WHERE nhanvien_stt = :nhanvien_stt AND ngay_lam = :ngay_lam";
         
         $params = [
             ':nhanvien_stt' => $nhanvienStt,
@@ -85,7 +80,7 @@ class CongViecSuaChua extends BaseModel
     }
 
     /**
-     * Tạo công việc mới với validation (dựa trên hososcbd_stt)
+     * Tạo công việc mới với validation
      */
     public function createWithValidation(array $data): array
     {
@@ -96,11 +91,11 @@ class CongViecSuaChua extends BaseModel
         ];
 
         // Validate required fields
-        $requiredFields = ['nhanvien_stt', 'ngay_lam_viec', 'hososcbd_stt', 
-                          'capdo_stt', 'so_gio_lam'];
+        $requiredFields = ['nhanvien_stt', 'nhanvien_ten', 'ngay_lam', 'mavt', 'somay', 
+                          'capdo_stt', 'capdo_ten', 'kpi_gio_chuan', 'noi_dung', 'so_gio_lam'];
         
         foreach ($requiredFields as $field) {
-            if (empty($data[$field]) && $data[$field] !== 0) {
+            if (empty($data[$field])) {
                 $result['message'] = "Thiếu trường bắt buộc: $field";
                 return $result;
             }
@@ -115,7 +110,7 @@ class CongViecSuaChua extends BaseModel
         // Kiểm tra tổng giờ trong ngày
         $checkGio = $this->canAddGio(
             $data['nhanvien_stt'], 
-            $data['ngay_lam_viec'], 
+            $data['ngay_lam'], 
             $data['so_gio_lam']
         );
 
@@ -132,13 +127,13 @@ class CongViecSuaChua extends BaseModel
         // Thêm thông tin người tạo
         $data['created_by'] = $_SESSION['username'] ?? 'system';
 
-        // Insert
-        $newId = $this->insert($data);
+        // Insert using BaseModel::create()
+        $newId = $this->create($data);
         
         if ($newId) {
             $result['success'] = true;
             $result['message'] = 'Tạo công việc thành công';
-            $result['data'] = $this->find($newId);
+            $result['data'] = $this->find((int)$newId);
         } else {
             $result['message'] = 'Lỗi khi tạo công việc';
         }
@@ -200,21 +195,13 @@ class CongViecSuaChua extends BaseModel
     /**
      * Lấy lịch sử sửa chữa của thiết bị
      */
-    /**
-     * Lấy lịch sử công việc của thiết bị (theo mavt, somay từ hososcbd_iso)
-     */
     public function getLichSuThietBi(string $mavt, string $somay, int $limit = 10): array
     {
-        $sql = "SELECT cv.*, 
-                       cd.ma_capdo, cd.ten_capdo,
-                       hs.hoso, hs.phieu,
-                       nv.HOTEN as ten_nhanvien
+        $sql = "SELECT cv.*, c.mau_sac as capdo_mau
                 FROM {$this->table} cv
-                LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
-                LEFT JOIN hososcbd_iso hs ON cv.hososcbd_stt = hs.stt
-                LEFT JOIN resume nv ON cv.nhanvien_stt = nv.stt
-                WHERE hs.mavt = :mavt AND hs.somay = :somay
-                ORDER BY cv.ngay_lam_viec DESC, cv.created_at DESC
+                LEFT JOIN capdo_baocuong_iso c ON cv.capdo_stt = c.stt
+                WHERE cv.mavt = :mavt AND cv.somay = :somay
+                ORDER BY cv.ngay_lam DESC, cv.created_at DESC
                 LIMIT :limit";
         
         $stmt = $this->db->prepare($sql);
@@ -222,26 +209,6 @@ class CongViecSuaChua extends BaseModel
         $stmt->bindValue(':somay', $somay, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
-        
-        return $stmt->fetchAll();
-    }
-
-    /**
-     * Lấy lịch sử công việc của 1 hồ sơ SCBD
-     */
-    public function getByHoSoScBd(int $hososcbdStt): array
-    {
-        $sql = "SELECT cv.*, 
-                       cd.ma_capdo, cd.ten_capdo,
-                       nv.HOTEN as ten_nhanvien
-                FROM {$this->table} cv
-                LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
-                LEFT JOIN resume nv ON cv.nhanvien_stt = nv.stt
-                WHERE cv.hososcbd_stt = :hososcbd_stt
-                ORDER BY cv.ngay_lam_viec DESC, cv.created_at DESC";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':hososcbd_stt' => $hososcbdStt]);
         
         return $stmt->fetchAll();
     }

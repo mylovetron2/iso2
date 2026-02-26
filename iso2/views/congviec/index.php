@@ -115,42 +115,27 @@
             
             <form id="formAddCongViec" onsubmit="return submitAddForm(event)">
                 <input type="hidden" name="nhanvien_stt" value="<?= $nhanvienStt ?>">
-                <input type="hidden" name="ngay_lam_viec" value="<?= $ngayLam ?>">
+                <input type="hidden" name="ngay_lam" value="<?= $ngayLam ?>">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Hồ sơ SCBD -->
-                    <div class="md:col-span-2">
+                    <!-- Mã thiết bị -->
+                    <div>
                         <label class="block text-sm font-medium mb-2">
-                            Hồ sơ sửa chữa / bảo dưỡng <span class="text-red-500">*</span>
+                            Mã thiết bị <span class="text-red-500">*</span>
                         </label>
-                        <select name="hososcbd_stt" id="hososcbd_stt" required 
-                                class="w-full border rounded px-3 py-2" 
-                                onchange="loadHoSoInfo(this.value)">
-                            <option value="">-- Chọn hồ sơ SCBD --</option>
-                            <!-- Will be populated by JavaScript -->
-                        </select>
-                        <small class="text-gray-500">Chọn hồ sơ sửa chữa/bảo dưỡng đã tạo trước đó</small>
+                        <input type="text" name="mavt" required 
+                               class="w-full border rounded px-3 py-2" 
+                               placeholder="Nhập mã vật tư">
                     </div>
 
-                    <!-- Thông tin thiết bị (hiển thị sau khi chọn hồ sơ) -->
-                    <div id="thietbiInfo" class="md:col-span-2 bg-blue-50 border border-blue-200 rounded p-4" style="display: none;">
-                        <h4 class="font-semibold mb-2 text-blue-800">
-                            <i class="fas fa-info-circle"></i> Thông Tin Thiết Bị
-                        </h4>
-                        <div class="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                                <strong>Mã thiết bị:</strong>
-                                <span id="info_mavt" class="text-blue-600">-</span>
-                            </div>
-                            <div>
-                                <strong>Serial/Số máy:</strong>
-                                <span id="info_somay" class="text-blue-600">-</span>
-                            </div>
-                            <div>
-                                <strong>Tên thiết bị:</strong>
-                                <span id="info_tenthietbi" class="text-blue-600">-</span>
-                            </div>
-                        </div>
+                    <!-- Serial -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">
+                            Serial / Số máy <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="somay" required 
+                               class="w-full border rounded px-3 py-2" 
+                               placeholder="Nhập số máy">
                     </div>
 
                     <!-- Cấp độ BD -->
@@ -201,7 +186,7 @@
                     <label class="block text-sm font-medium mb-2">
                         Nội dung công việc <span class="text-red-500">*</span>
                     </label>
-                    <textarea name="noi_dung_congviec" required rows="3" 
+                    <textarea name="noi_dung" required rows="3" 
                               class="w-full border rounded px-3 py-2" 
                               placeholder="Mô tả chi tiết công việc đã thực hiện..."></textarea>
                 </div>
@@ -364,57 +349,6 @@
                     alert('❌ ' + data.message);
                 }
             });
-        }
-
-        // Load danh sách hồ sơ SCBD khi trang load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadHoSoList();
-        });
-
-        function loadHoSoList() {
-            fetch('congviec_suachua.php?action=getHoSoList')
-                .then(res => res.json())
-                .then(data => {
-                    const select = document.getElementById('hososcbd_stt');
-                    if (data.success && data.data) {
-                        data.data.forEach(hs => {
-                            const option = document.createElement('option');
-                            option.value = hs.stt;
-                            option.textContent = hs.display_text || `${hs.ma_hoso} - ${hs.mavt}/${hs.somay}`;
-                            option.dataset.mavt = hs.mavt || '';
-                            option.dataset.somay = hs.somay || '';
-                            option.dataset.tenthietbi = hs.ten_thietbi || '';
-                            select.appendChild(option);
-                        });
-                    }
-                })
-                .catch(err => console.error('Lỗi load hồ sơ:', err));
-        }
-
-        function loadHoSoInfo(hososcbdStt) {
-            const infoDiv = document.getElementById('thietbiInfo');
-            
-            if (!hososcbdStt) {
-                infoDiv.style.display = 'none';
-                return;
-            }
-            
-            fetch(`congviec_suachua.php?action=getHoSoInfo&stt=${hososcbdStt}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.data) {
-                        document.getElementById('info_mavt').textContent = data.data.mavt || '-';
-                        document.getElementById('info_somay').textContent = data.data.somay || '-';
-                        document.getElementById('info_tenthietbi').textContent = data.data.ten_thietbi || '-';
-                        infoDiv.style.display = 'block';
-                    } else {
-                        infoDiv.style.display = 'none';
-                    }
-                })
-                .catch(err => {
-                    console.error('Lỗi load thông tin hồ sơ:', err);
-                    infoDiv.style.display = 'none';
-                });
         }
     </script>
 </body>

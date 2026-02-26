@@ -5,13 +5,28 @@
  * Requires: $stt (hososcbd_iso.stt)
  */
 
+// DEBUG: Echo để xem widget có được load không
+echo "<!-- DEBUG: Widget loaded at " . date('Y-m-d H:i:s') . " -->\n";
+
 if (!isset($stt)) {
-    echo '<div class="bg-red-100 p-4 rounded">Lỗi: Thiếu tham số $stt</div>';
+    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
+    echo '<strong>❌ Lỗi: Thiếu tham số $stt</strong><br>';
+    echo 'Current variables: ' . implode(', ', array_keys(get_defined_vars()));
+    echo '</div>';
     return;
 }
 
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../includes/permissions.php';
+echo "<!-- DEBUG: STT = $stt -->\n";
+
+// Load dependencies if not already loaded
+if (!function_exists('getDBConnection')) {
+    require_once __DIR__ . '/../../config/database.php';
+}
+if (!function_exists('hasPermission')) {
+    require_once __DIR__ . '/../../includes/permissions.php';
+}
+
+echo "<!-- DEBUG: Requires loaded -->\n";
 
 // Check view permission
 // TODO: Uncomment sau khi chạy execute_add_congviec_permissions.php
@@ -25,41 +40,76 @@ if (!hasPermission('congviec_suachua.view')) {
 */
 
 $db = getDBConnection();
+echo "<!-- DEBUG: DB connected -->\n";
 
 // Lấy danh sách công việc liên quan
-$stmtCongViec = $db->prepare("
-    SELECT 
-        cv.*,
-        cd.ma_capdo,
-        cd.ten_capdo,
-        cd.mau_sac
-    FROM congviec_suachua_iso cv
-    LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
-    WHERE cv.hososcbd_stt = :hososcbd_stt
-    ORDER BY cv.ngay_lam DESC, cv.created_at DESC
-");
-$stmtCongViec->execute([':hososcbd_stt' => $stt]);
-$congviecs = $stmtCongViec->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmtCongViec = $db->prepare("
+        SELECT 
+            cv.*,
+            cd.ma_capdo,
+            cd.ten_capdo,
+            cd.mau_sac
+        FROM congviec_suachua_iso cv
+        LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
+        WHERE cv.hososcbd_stt = :hososcbd_stt
+        ORDER BY cv.ngay_lam DESC, cv.created_at DESC
+    ");
+    $stmtCongViec->execute([':hososcbd_stt' => $stt]);
+    $congviecs = $stmtCongViec->fetchAll(PDO::FETCH_ASSOC);
+    echo "<!-- DEBUG: Found " . count($congviecs) . " congviec records -->\n";
+} catch (Exception $e) {
+    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
+    echo '<strong>❌ Lỗi SQL:</strong> ' . htmlspecialchars($e->getMessage());
+    echo '</div>';
+    $congviecs = [];
+}
 
 // Tính tổng số giờ
-$stmtTongGio = $db->prepare("
-    SELECT 
-        COUNT(*) AS so_congviec,
-        COALESCE(SUM(so_gio_lam), 0) AS tong_gio,
-        COALESCE(AVG(so_gio_lam), 0) AS trung_binh_gio
-    FROM congviec_suachua_iso
-    WHERE hososcbd_stt = :hososcbd_stt
-");
-$stmtTongGio->execute([':hososcbd_stt' => $stt]);
-$thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
+try {
+    $stmtTongGio = $db->prepare("
+        SELECT 
+            COUNT(*) AS so_congviec,
+            COALESCE(SUM(so_gio_lam), 0) AS tong_gio,
+            COALESCE(AVG(so_gio_lam), 0) AS trung_binh_gio
+        FROM congviec_suachua_iso
+        WHERE hososcbd_stt = :hososcbd_stt
+    ");
+    $stmtTongGio->execute([':hososcbd_stt' => $stt]);
+    $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
+    echo "<!-- DEBUG: Thongke loaded -->\n";
+} catch (Exception $e) {
+    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
+    echo '<strong>❌ Lỗi Thống kê:</strong> ' . htmlspecialchars($e->getMessage());
+    echo '</div>';
+    $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'trung_binh_gio' => 0];
+}
 
 // Lấy danh sách nhân viên để tạo công việc mới
-$stmtNV = $db->query("SELECT stt, tenresume FROM resume ORDER BY tenresume ASC LIMIT 100");
-$nhanviens = $stmtNV->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmtNV = $db->query("SELECT stt, hoten FROM resume ORDER BY hoten ASC LIMIT 100");
+    $nhanviens = $stmtNV->fetchAll(PDO::FETCH_ASSOC);
+    echo "<!-- DEBUG: Loaded " . count($nhanviens) . " nhanvien -->\n";
+} catch (Exception $e) {
+    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
+    echo '<strong>❌ Lỗi load nhân viên:</strong> ' . htmlspecialchars($e->getMessage());
+    echo '</div>';
+    $nhanviens = [];
+}
 
 // Lấy danh sách cấp độ
-$stmtCD = $db->query("SELECT * FROM capdo_baocuong_iso WHERE trang_thai = 1 ORDER BY thu_tu ASC");
-$capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmtCD = $db->query("SELECT * FROM capdo_baocuong_iso WHERE trang_thai = 1 ORDER BY thu_tu ASC");
+    $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
+    echo "<!-- DEBUG: Loaded " . count($capdos) . " capdo -->\n";
+} catch (Exception $e) {
+    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
+    echo '<strong>❌ Lỗi load cấp độ:</strong> ' . htmlspecialchars($e->getMessage());
+    echo '</div>';
+    $capdos = [];
+}
+
+echo "<!-- DEBUG: Starting HTML output -->\n";
 ?>
 
 <div class="border-l-4 border-purple-500 pl-4 mb-6">
@@ -169,6 +219,12 @@ $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <?php endif; ?>
+                                <?php if (true || hasPermission('congviec_suachua.edit')): ?>
+                                <button type="button" onclick="openEditCongViecModal(<?= $cv['stt'] ?>)" 
+                                        class="text-green-600 hover:text-green-800 mr-2" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <?php endif; ?>
                                 <?php if (true || hasPermission('congviec_suachua.delete')): ?>
                                 <button type="button" onclick="deleteCongViec(<?= $cv['stt'] ?>)" 
                                         class="text-red-600 hover:text-red-800" title="Xóa">
@@ -218,7 +274,7 @@ $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
                     <select name="nhanvien_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
                         <option value="">-- Chọn nhân viên --</option>
                         <?php foreach ($nhanviens as $nv): ?>
-                            <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['tenresume']) ?></option>
+                            <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['hoten']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -316,6 +372,128 @@ $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- Modal sửa công việc -->
+<div id="editCongViecModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-green-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-xl font-bold">
+                <i class="fas fa-edit mr-2"></i>Sửa công việc #<span id="editCvStt"></span>
+            </h3>
+            <button type="button" onclick="closeEditCongViecModal()" class="text-white hover:text-gray-200">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <form id="formEditCongViec" class="p-6 space-y-4">
+            <input type="hidden" name="stt" id="edit_stt">
+            <input type="hidden" name="hososcbd_stt" id="edit_hososcbd_stt" value="<?= $stt ?>">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Nhân viên <span class="text-red-500">*</span>
+                    </label>
+                    <select name="nhanvien_stt" id="edit_nhanvien_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
+                        <option value="">-- Chọn nhân viên --</option>
+                        <?php foreach ($nhanviens as $nv): ?>
+                            <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['hoten']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Ngày làm <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="ngay_lam" id="edit_ngay_lam" required
+                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Cấp độ bảo dưỡng <span class="text-red-500">*</span>
+                    </label>
+                    <select name="capdo_stt" id="edit_capdo_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500" 
+                            onchange="updateEditKpiDisplay(this)">
+                        <option value="">-- Chọn cấp độ --</option>
+                        <?php foreach ($capdos as $cd): ?>
+                            <option value="<?= $cd['stt'] ?>" 
+                                    data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
+                                    data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
+                                <?= htmlspecialchars($cd['ten_capdo']) ?> (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div id="editKpiDisplay" class="text-sm text-gray-600 mt-1"></div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Số giờ làm <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="so_gio_lam" id="edit_so_gio_lam" step="0.5" min="0.5" max="8" required
+                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500"
+                           placeholder="Tối đa 8h">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Giờ bắt đầu</label>
+                    <input type="time" name="gio_bat_dau" id="edit_gio_bat_dau"
+                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Giờ kết thúc</label>
+                    <input type="time" name="gio_ket_thuc" id="edit_gio_ket_thuc"
+                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    Nội dung công việc <span class="text-red-500">*</span>
+                </label>
+                <textarea name="noi_dung" id="edit_noi_dung" rows="4" required
+                          class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500"
+                          placeholder="Mô tả chi tiết công việc sửa chữa/bảo dưỡng..."></textarea>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Trạng thái</label>
+                    <select name="trang_thai" id="edit_trang_thai" class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                        <option value="Tạm dừng">Tạm dừng</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
+                    <input type="text" name="ghi_chu" id="edit_ghi_chu"
+                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500"
+                           placeholder="Ghi chú thêm...">
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="closeEditCongViecModal()" 
+                        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+                    Hủy
+                </button>
+                <button type="submit" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
+                    <i class="fas fa-save mr-2"></i>Cập nhật
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <style>
 .bg-gray-100 { background-color: #f3f4f6; }
 .bg-blue-100 { background-color: #dbeafe; }
@@ -359,19 +537,38 @@ document.getElementById('formAddCongViec').addEventListener('submit', async func
     try {
         const response = await fetch('/iso2/congviec_suachua.php', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: formData
         });
         
-        const result = await response.json();
+        // Check response status
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get response text first
+        const responseText = await response.text();
+        
+        // Try to parse as JSON
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Response text:', responseText);
+            throw new Error('Server trả về dữ liệu không phải JSON. Xem console để biết chi tiết.');
+        }
         
         if (result.success) {
             alert('✓ ' + result.message);
             closeAddCongViecModal();
             location.reload();
         } else {
-            alert('✗ ' + result.message);
+            alert('✗ ' + result.message + (result.debug ? '\n\nDebug:\n' + JSON.stringify(result.debug, null, 2) : ''));
         }
     } catch (error) {
+        console.error('Full error:', error);
         alert('Lỗi kết nối: ' + error.message);
     }
 });
@@ -386,6 +583,9 @@ async function deleteCongViec(stt) {
     try {
         const response = await fetch('/iso2/congviec_suachua.php', {
             method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: formData
         });
         
@@ -406,4 +606,117 @@ function viewCongViecDetail(stt) {
     // Mở trong tab mới để xem chi tiết
     window.open('/iso2/congviec_suachua.php?stt=' + stt, '_blank');
 }
+
+function updateEditKpiDisplay(select) {
+    const option = select.options[select.selectedIndex];
+    const kpi = option.dataset.kpi;
+    const ten = option.dataset.ten;
+    const display = document.getElementById('editKpiDisplay');
+    
+    if (kpi && ten) {
+        display.innerHTML = `<i class="fas fa-info-circle"></i> ${ten}: KPI chuẩn là <strong>${kpi} giờ</strong>`;
+    } else {
+        display.innerHTML = '';
+    }
+}
+
+async function openEditCongViecModal(stt) {
+    try {
+        // Fetch data công việc
+        const response = await fetch(`/iso2/congviec_suachua.php?action=get&stt=${stt}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Response text:', responseText);
+            throw new Error('Server trả về dữ liệu không phải JSON');
+        }
+        
+        if (!result.success) {
+            throw new Error(result.message || 'Không lấy được dữ liệu');
+        }
+        
+        const cv = result.data;
+        
+        // Populate form
+        document.getElementById('editCvStt').textContent = cv.stt;
+        document.getElementById('edit_stt').value = cv.stt;
+        document.getElementById('edit_hososcbd_stt').value = cv.hososcbd_stt || '<?= $stt ?>';
+        document.getElementById('edit_nhanvien_stt').value = cv.nhanvien_stt;
+        document.getElementById('edit_ngay_lam').value = cv.ngay_lam;
+        document.getElementById('edit_capdo_stt').value = cv.capdo_stt;
+        document.getElementById('edit_so_gio_lam').value = cv.so_gio_lam;
+        document.getElementById('edit_gio_bat_dau').value = cv.gio_bat_dau || '';
+        document.getElementById('edit_gio_ket_thuc').value = cv.gio_ket_thuc || '';
+        document.getElementById('edit_noi_dung').value = cv.noi_dung;
+        document.getElementById('edit_trang_thai').value = cv.trang_thai;
+        document.getElementById('edit_ghi_chu').value = cv.ghi_chu || '';
+        
+        // Update KPI display
+        const capdoSelect = document.getElementById('edit_capdo_stt');
+        updateEditKpiDisplay(capdoSelect);
+        
+        // Show modal
+        document.getElementById('editCongViecModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Lỗi khi tải dữ liệu: ' + error.message);
+    }
+}
+
+function closeEditCongViecModal() {
+    document.getElementById('editCongViecModal').classList.add('hidden');
+    document.getElementById('formEditCongViec').reset();
+}
+
+document.getElementById('formEditCongViec').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('action', 'update');
+    
+    try {
+        const response = await fetch('/iso2/congviec_suachua.php', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('Response text:', responseText);
+            throw new Error('Server trả về dữ liệu không phải JSON. Xem console để biết chi tiết.');
+        }
+        
+        if (result.success) {
+            alert('✓ ' + result.message);
+            closeEditCongViecModal();
+            location.reload();
+        } else {
+            alert('✗ ' + result.message + (result.debug ? '\n\nDebug:\n' + JSON.stringify(result.debug, null, 2) : ''));
+        }
+    } catch (error) {
+        console.error('Full error:', error);
+        alert('Lỗi kết nối: ' + error.message);
+    }
+});
 </script>

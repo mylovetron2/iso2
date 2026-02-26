@@ -252,12 +252,20 @@ require_once __DIR__ . '/../layouts/header.php';
                             <i class="fas fa-wrench mr-1"></i>
                             <span class="hidden sm:inline">SC</span>
                         </a>
+                        <a href="hososcbd_congviec.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
+                           class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mx-1" 
+                           title="Công việc sửa chữa">
+                            <i class="fas fa-tasks mr-1"></i>
+                            <span class="hidden sm:inline">CV</span>
+                        </a>
+                        <?php /* Ẩn nút bàn giao
                         <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
                            class="inline-flex items-center bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs mx-1" 
                            title="Thông tin bàn giao">
                             <i class="fas fa-handshake mr-1"></i>
                             <span class="hidden sm:inline">BG</span>
                         </a>
+                        */ ?>
                         <?php endif; ?>
                     </td>
                 </tr>

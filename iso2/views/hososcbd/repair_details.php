@@ -99,16 +99,33 @@ require_once __DIR__ . '/../layouts/header.php';
         <h1 class="text-xl md:text-2xl font-bold flex items-center">
             <i class="fas fa-wrench mr-2 text-orange-600"></i> Thông tin sửa chữa & Thiết bị đo
         </h1>
-        <?php
-        // Build back URL with filter params
-        $backUrl = 'hososcbd.php';
-        if (!empty($filterParams)) {
-            $backUrl .= '?' . http_build_query($filterParams);
-        }
-        ?>
-        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
-            <i class="fas fa-arrow-left mr-2"></i>Quay lại
-        </a>
+        <div class="flex items-center space-x-2">
+            <?php
+            // Build back URL with filter params
+            $backUrl = 'hososcbd.php';
+            if (!empty($filterParams)) {
+                $backUrl .= '?' . http_build_query($filterParams);
+            }
+            $filterQuery = !empty($filterParams) ? '&' . http_build_query($filterParams) : '';
+            ?>
+            <a href="hososcbd_congviec.php?id=<?= $stt ?><?= $filterQuery ?>" 
+               class="inline-flex items-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">
+                <i class="fas fa-tasks mr-1"></i>
+                <span class="hidden sm:inline">Công việc</span>
+                <span class="sm:hidden">CV</span>
+            </a>
+            <?php /* Ẩn nút bàn giao
+            <a href="hososcbd_handover_details.php?id=<?= $stt ?><?= $filterQuery ?>" 
+               class="inline-flex items-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm">
+                <i class="fas fa-handshake mr-1"></i>
+                <span class="hidden sm:inline">Bàn giao</span>
+                <span class="sm:hidden">BG</span>
+            </a>
+            */ ?>
+            <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-arrow-left mr-2"></i>Quay lại
+            </a>
+        </div>
     </div>
     
     <!-- Record Info - Sticky Header -->
@@ -343,11 +360,6 @@ require_once __DIR__ . '/../layouts/header.php';
             </a>
         </div>
     </form>
-</div>
-
-<!-- CÔNG VIỆC SỬA CHỮA LIÊN QUAN -->
-<div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6 mt-6">
-    <?php include __DIR__ . '/components/congviec_widget.php'; ?>
 </div>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

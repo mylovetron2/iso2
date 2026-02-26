@@ -5,7 +5,6 @@ require_once __DIR__ . '/../models/CongViecSuaChua.php';
 require_once __DIR__ . '/../models/CapDoBaoCuong.php';
 require_once __DIR__ . '/../models/ThietBiCapDoKPI.php';
 require_once __DIR__ . '/../models/Resume.php';
-require_once __DIR__ . '/../models/HoSoSCBD.php';
 
 /**
  * Controller: CongViecSuaChuaController
@@ -17,7 +16,6 @@ class CongViecSuaChuaController
     private CapDoBaoCuong $capdoModel;
     private ThietBiCapDoKPI $kpiModel;
     private Resume $resumeModel;
-    private HoSoSCBD $hosoModel;
     private $thietbiModel;
 
     public function __construct()
@@ -26,7 +24,6 @@ class CongViecSuaChuaController
         $this->capdoModel = new CapDoBaoCuong();
         $this->kpiModel = new ThietBiCapDoKPI();
         $this->resumeModel = new Resume();
-        $this->hosoModel = new HoSoSCBD();
         
         // ThietBi model (nếu có)
         if (file_exists(__DIR__ . '/../models/ThietBi.php')) {
@@ -80,73 +77,121 @@ class CongViecSuaChuaController
      */
     public function create(): array
     {
+        error_log("CongViecSuaChuaController::create() called");
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            error_log("Invalid request method: " . $_SERVER['REQUEST_METHOD']);
             return ['success' => false, 'message' => 'Invalid request method'];
         }
 
         // Lấy dữ liệu từ POST
         $nhanvienStt = (int)($_POST['nhanvien_stt'] ?? 0);
-        $ngayLamViec = $_POST['ngay_lam_viec'] ?? date('Y-m-d');
-        $hososcbdStt = (int)($_POST['hososcbd_stt'] ?? 0);
+        $ngayLam = $_POST['ngay_lam'] ?? date('Y-m-d');
+        $mavt = $_POST['mavt'] ?? '';
+        $somay = $_POST['somay'] ?? '';
         $capdoStt = (int)($_POST['capdo_stt'] ?? 0);
+        $noiDung = trim($_POST['noi_dung'] ?? '');
         $soGioLam = (float)($_POST['so_gio_lam'] ?? 0);
         $gioBatDau = $_POST['gio_bat_dau'] ?? null;
         $gioKetThuc = $_POST['gio_ket_thuc'] ?? null;
-        $noiDungCongViec = trim($_POST['noi_dung_congviec'] ?? '');
         $ghiChu = trim($_POST['ghi_chu'] ?? '');
-
+        $hososcbdStt = isset($_POST['hososcbd_stt']) ? (int)$_POST['hososcbd_stt'] : null;
+        
+        error_log("POST data extracted - nhanvien: $nhanvienStt, capdo: $capdoStt");
+        
         // Validate required fields
-        if (!$nhanvienStt) {
+        if ($nhanvienStt <= 0) {
+            error_log("Validation failed: nhanvien_stt missing or invalid");
             return ['success' => false, 'message' => 'Vui lòng chọn nhân viên'];
         }
         
-        if (!$hososcbdStt) {
-            return ['success' => false, 'message' => 'Vui lòng chọn hồ sơ SCBD'];
-        }
-        
-        if (!$capdoStt) {
+        if ($capdoStt <= 0) {
+            error_log("Validation failed: capdo_stt missing or invalid");
             return ['success' => false, 'message' => 'Vui lòng chọn cấp độ bảo dưỡng'];
         }
-
-        // Lấy thông tin hồ sơ SCBD
-        $hoso = $this->hosoModel->getHoSoWithThietBi($hososcbdStt);
-        if (!$hoso) {
-            return ['success' => false, 'message' => 'Không tìm thấy hồ sơ SCBD'];
+        
+        if (empty($noiDung)) {
+            error_log("Validation failed: noi_dung empty");
+            return ['success' => false, 'message' => 'Vui lòng nhập nội dung công việc'];
+        }
+        
+        if ($soGioLam <= 0) {
+            error_log("Validation failed: so_gio_lam invalid");
+            return ['success' => false, 'message' => 'Số giờ làm phải lớn hơn 0'];
         }
 
-        // Lấy thông tin cấp độ để lấy KPI chuẩn
+        // Lấy thông tin nhân viên
+        $nhanvien = $this->resumeModel->find($nhanvienStt);
+        if (!$nhanvien || $nhanvien === false) {
+            error_log("Không tìm thấy nhân viên với stt: $nhanvienStt");
+            return ['success' => false, 'message' => 'Không tìm thấy nhân viên'];
+        }
+
+        // Lấy thông tin cấp độ
         $capdo = $this->capdoModel->find($capdoStt);
-        if (!$capdo) {
+        if (!$capdo || $capdo === false) {
+            error_log("Không tìm thấy cấp độ với stt: $capdoStt");
             return ['success' => false, 'message' => 'Không tìm thấy cấp độ bảo dưỡng'];
         }
 
-        // Lấy thietbi_stt (nếu có) để cache
-        $thietbiStt = null;
-        if ($this->thietbiModel && !empty($hoso['mavt']) && !empty($hoso['somay'])) {
-            $thietbi = $this->thietbiModel->findByMaVtAndSoMay($hoso['mavt'], $hoso['somay']);
+        // Lấy tên thiết bị (nếu có model ThietBi)
+        $tenThietBi = '';
+        if ($this->thietbiModel) {
+            $thietbi = $this->thietbiModel->findByMaVtAndSoMay($mavt, $somay);
             if ($thietbi) {
-                $thietbiStt = $thietbi['stt'];
+                $tenThietBi = $thietbi['tenvt'] ?? '';
             }
         }
 
         // Chuẩn bị dữ liệu
         $data = [
             'nhanvien_stt' => $nhanvienStt,
-            'ngay_lam_viec' => $ngayLamViec,
-            'hososcbd_stt' => $hososcbdStt,
-            'thietbi_stt' => $thietbiStt,
+            'nhanvien_ten' => $nhanvien['hoten'],
+            'ngay_lam' => $ngayLam,
+            'mavt' => $mavt,
+            'somay' => $somay,
+            'ten_thietbi' => $tenThietBi,
             'capdo_stt' => $capdoStt,
+            'capdo_ten' => $capdo['ten_capdo'],
             'kpi_gio_chuan' => $capdo['kpi_gio_chuan'],
+            'noi_dung' => $noiDung,
             'so_gio_lam' => $soGioLam,
             'gio_bat_dau' => $gioBatDau,
             'gio_ket_thuc' => $gioKetThuc,
-            'noi_dung_congviec' => $noiDungCongViec,
             'ghi_chu' => $ghiChu,
-            'trang_thai' => 'Hoàn thành'
+            'hososcbd_stt' => $hososcbdStt, // Link to hososcbd record
+            'trang_thai' => 'Đang thực hiện'
         ];
 
         // Tạo công việc với validation
         return $this->congviecModel->createWithValidation($data);
+    }
+
+    /**
+     * Lấy thông tin 1 công việc để edit
+     */
+    public function get(int $stt): array
+    {
+        try {
+            $congviec = $this->congviecModel->find($stt);
+            
+            if (!$congviec) {
+                return [
+                    'success' => false,
+                    'message' => 'Không tìm thấy công việc #' . $stt
+                ];
+            }
+            
+            return [
+                'success' => true,
+                'data' => $congviec
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Lỗi: ' . $e->getMessage()
+            ];
+        }
     }
 
     /**
@@ -165,6 +210,18 @@ class CongViecSuaChuaController
 
         // Lấy các trường cần update
         $data = [];
+        
+        if (isset($_POST['nhanvien_stt'])) {
+            $data['nhanvien_stt'] = (int)$_POST['nhanvien_stt'];
+        }
+        
+        if (isset($_POST['ngay_lam'])) {
+            $data['ngay_lam'] = $_POST['ngay_lam'];
+        }
+        
+        if (isset($_POST['capdo_stt'])) {
+            $data['capdo_stt'] = (int)$_POST['capdo_stt'];
+        }
         
         if (isset($_POST['noi_dung'])) {
             $data['noi_dung'] = trim($_POST['noi_dung']);
@@ -366,62 +423,5 @@ class CongViecSuaChuaController
         echo "</table>";
         echo "</body></html>";
         exit;
-    }
-
-    /**
-     * Lấy danh sách hồ sơ SCBD (cho dropdown)
-     */
-    public function getHoSoList(): array
-    {
-        $keyword = $_GET['keyword'] ?? '';
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
-        
-        if ($keyword) {
-            // Tìm kiếm theo từ khóa
-            return $this->hosoModel->searchByMaOrPhieu($keyword, $limit);
-        } else {
-            // Lấy hồ sơ gần đây (6 tháng)
-            return $this->hosoModel->getActiveHoSo($limit);
-        }
-    }
-
-    /**
-     * Lấy thông tin hồ sơ + thiết bị (AJAX)
-     */
-    public function getHoSoInfo(): array
-    {
-        $hososcbdStt = isset($_GET['hososcbd_stt']) ? (int)$_GET['hososcbd_stt'] : 0;
-        
-        if (!$hososcbdStt) {
-            return ['success' => false, 'message' => 'Thiếu hososcbd_stt'];
-        }
-        
-        $hoso = $this->hosoModel->getHoSoWithThietBi($hososcbdStt);
-        
-        if (!$hoso) {
-            return ['success' => false, 'message' => 'Không tìm thấy hồ sơ'];
-        }
-        
-        return [
-            'success' => true,
-            'data' => [
-                'stt' => $hoso['stt'],
-                'ma_hoso' => $hoso['hoso'],
-                'so_phieu' => $hoso['phieu'],
-                'mavt' => $hoso['mavt'],
-                'somay' => $hoso['somay'],
-                'ten_thietbi' => $hoso['ten_thietbi'] ?? 'N/A',
-                'model' => $hoso['model_thietbi'] ?? '',
-                'ten_donvi' => $hoso['ten_donvi'] ?? '',
-                'ngay_yeu_cau' => $hoso['ngayyc'],
-                'display_text' => sprintf(
-                    '%s - %s | %s | HS: %s',
-                    $hoso['mavt'],
-                    $hoso['somay'],
-                    $hoso['ten_thietbi'] ?? 'N/A',
-                    $hoso['hoso']
-                )
-            ]
-        ];
     }
 }
