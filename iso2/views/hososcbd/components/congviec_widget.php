@@ -165,7 +165,9 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <?php /* Ẩn cột Đánh giá
                         <th class="px-3 py-2 border-b text-center">Đánh giá</th>
                         */ ?>
+                        <?php /* Ẩn cột Trạng thái
                         <th class="px-3 py-2 border-b text-center">Trạng thái</th>
+                        */ ?>
                         <th class="px-3 py-2 border-b text-center">Thao tác</th>
                     </tr>
                 </thead>
@@ -208,6 +210,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                                 <?php endif; ?>
                             </td>
                             */ ?>
+                            <?php /* Ẩn cột Trạng thái
                             <td class="px-3 py-2 border-b text-center">
                                 <?php
                                 $badgeClass = 'gray';
@@ -219,6 +222,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                                     <?= htmlspecialchars($cv['trang_thai']) ?>
                                 </span>
                             </td>
+                            */ ?>
                             <td class="px-3 py-2 border-b text-center">
                                 <?php // TODO: Uncomment sau khi chạy migration
                                 if (true || hasPermission('congviec_suachua.view')): ?>
@@ -249,7 +253,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <td class="px-3 py-2 border-t text-center text-blue-700">
                             <?= number_format($thongke['tong_gio'], 2) ?>h
                         </td>
-                        <td colspan="2" class="px-3 py-2 border-t"></td>
+                        <td colspan="1" class="px-3 py-2 border-t"></td>
                     </tr>
                 </tfoot>
             </table>
