@@ -226,13 +226,15 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                             </td>
                             */ ?>
                             <td class="px-3 py-2 border-b text-center">
-                                <?php // TODO: Uncomment sau khi chạy migration
+                                <?php /* Ẩn nút Xem chi tiết
+                                // TODO: Uncomment sau khi chạy migration
                                 if (true || hasPermission('congviec_suachua.view')): ?>
                                 <button type="button" onclick="viewCongViecDetail(<?= $cv['stt'] ?>)" 
                                         class="text-blue-600 hover:text-blue-800 mr-2" title="Xem chi tiết">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <?php endif; ?>
+                                <?php endif;
+                                */ ?>
                                 <?php if (true || hasPermission('congviec_suachua.edit')): ?>
                                 <button type="button" onclick="openEditCongViecModal(<?= $cv['stt'] ?>)" 
                                         class="text-green-600 hover:text-green-800 mr-2" title="Sửa">
