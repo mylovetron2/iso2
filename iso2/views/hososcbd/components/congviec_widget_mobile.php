@@ -44,20 +44,34 @@ try {
     $congviecs = [];
 }
 
-// Tính tổng số giờ
+// Tính tổng số giờ và lấy KPI thiết bị
 try {
     $stmtTongGio = $db->prepare("
         SELECT 
             COUNT(*) AS so_congviec,
-            COALESCE(SUM(so_gio_lam), 0) AS tong_gio,
-            COALESCE(AVG(so_gio_lam), 0) AS trung_binh_gio
+            COALESCE(SUM(so_gio_lam), 0) AS tong_gio
         FROM congviec_suachua_iso
         WHERE hososcbd_stt = :hososcbd_stt
     ");
     $stmtTongGio->execute([':hososcbd_stt' => $stt]);
     $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
+    
+    // Lấy KPI thiết bị
+    $stmtKPI = $db->prepare("
+        SELECT 
+            SUM(tk.kpi_gio_du_kien) as tong_kpi,
+            COUNT(*) as so_capdo
+        FROM thietbi_capdo_kpi_iso tk
+        WHERE tk.mavt = :mavt AND tk.somay = :somay
+    ");
+    $stmtKPI->execute([
+        ':mavt' => $item['mavt'] ?? '',
+        ':somay' => $item['somay'] ?? ''
+    ]);
+    $kpiData = $stmtKPI->fetch(PDO::FETCH_ASSOC);
+    $thongke['kpi_thietbi'] = $kpiData['tong_kpi'] ?? 0;
 } catch (Exception $e) {
-    $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'trung_binh_gio' => 0];
+    $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'kpi_thietbi' => 0];
 }
 
 // Lấy danh sách nhân viên
@@ -301,9 +315,9 @@ try {
             <div class="mobile-stat-label">Tổng số giờ</div>
             <div class="mobile-stat-value"><?= number_format($thongke['tong_gio'], 1) ?>h</div>
         </div>
-        <div class="mobile-stat-card">
-            <div class="mobile-stat-label">Trung bình</div>
-            <div class="mobile-stat-value"><?= number_format($thongke['trung_binh_gio'], 1) ?>h</div>
+        <div class="mobile-stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <div class="mobile-stat-label">KPI thiết bị</div>
+            <div class="mobile-stat-value"><?= number_format($thongke['kpi_thietbi'], 1) ?>h</div>
         </div>
     </div>
 
@@ -432,7 +446,7 @@ try {
                        class="mobile-form-input" placeholder="Tối đa 8h">
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="grid grid-cols-2 gap-3 mb-4 hidden">
                 <div>
                     <label class="mobile-form-label">Giờ bắt đầu</label>
                     <input type="time" name="gio_bat_dau" class="mobile-form-input">
@@ -451,7 +465,7 @@ try {
                           placeholder="Mô tả chi tiết công việc..."></textarea>
             </div>
             
-            <div class="mobile-form-group">
+            <div class="mobile-form-group hidden">
                 <label class="mobile-form-label">Trạng thái</label>
                 <select name="trang_thai" class="mobile-form-select">
                     <option value="Đang thực hiện">Đang thực hiện</option>
@@ -529,7 +543,7 @@ try {
                        required class="mobile-form-input">
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="grid grid-cols-2 gap-3 mb-4 hidden">
                 <div>
                     <label class="mobile-form-label">Giờ bắt đầu</label>
                     <input type="time" id="edit_gio_bat_dau_mobile" name="gio_bat_dau" class="mobile-form-input">
@@ -546,7 +560,7 @@ try {
                           class="mobile-form-textarea"></textarea>
             </div>
             
-            <div class="mobile-form-group">
+            <div class="mobile-form-group hidden">
                 <label class="mobile-form-label">Trạng thái</label>
                 <select id="edit_trang_thai_mobile" name="trang_thai" class="mobile-form-select">
                     <option value="Đang thực hiện">Đang thực hiện</option>
