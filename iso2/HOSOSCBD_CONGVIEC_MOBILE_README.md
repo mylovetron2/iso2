@@ -8,12 +8,19 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 
 ### 1. **Chọn Hồ sơ SC/BĐ bằng Combobox Tìm kiếm**
 - **Searchable Select** với Choices.js
-- **Tìm kiếm nhanh** theo phiếu, mã thiết bị, công việc
+- **Tìm kiếm đa trường** theo:
+  - Số phiếu (weight: 0.3)
+  - Mã thiết bị (weight: 0.2)
+  - **Số máy** (weight: 0.1) ✨
+  - Công việc (weight: 0.1)
+  - Text hiển thị (weight: 0.3)
+- **Data attributes**: Mỗi option có data-phieu, data-mavt, data-somay, data-cv
+- **Fuzzy search**: Threshold 0.4 (balanced), distance 500
 - Danh sách 100 hồ sơ gần nhất
 - Hiển thị: Phiếu, Mã thiết bị, Số máy, Công việc
 - Tự động tải công việc khi chọn hồ sơ
 - Sticky header luôn hiển thị khi scroll
-- Placeholder: "Tìm kiếm theo phiếu, thiết bị..."
+- Placeholder: "Tìm kiếm theo phiếu, thiết bị, số máy..."
 
 ### 2. **Thẻ thông tin Hồ sơ**
 - Gradient card đẹp mắt
@@ -90,8 +97,14 @@ iso2/
 
 #### 1. `hososcbd_congviec_mobile.php`
 - Entry point cho trang mobile
-- Load dependencies (auth, permissions, database)
-- Include congviec_mobile_view.php
+- Load dependencies (auth, permissions, database), số máy..."
+  - **Multi-field search** với data attributes:
+    - `data-phieu`: Số phiếu
+    - `data-mavt`: Mã thiết bị
+    - `data-somay`: Số máy ✨
+    - `data-cv`: Công việc
+  - Fuzzy search với threshold 0.4 (balanced)
+  - Weighted search: phiếu (0.3), thiết bị (0.2), số máy (0.1), CV (0.1)
 - Giống structure hososcbd_congviec.php
 
 #### 2. `views/hososcbd/congviec_mobile_view.php`
@@ -317,18 +330,50 @@ Giống desktop version, sử dụng cùng permissions:
 ```javascript
 const choices = new Choices('#hososcbdSelect', {
     searchEnabled: true,
-    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị...',
+    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị, số máy...',
     itemSelectText: 'Nhấn để chọn',
     noResultsText: 'Không tìm thấy kết quả',
     position: 'bottom',
     searchResultLimit: 50,
     shouldSort: false,
+    // Search in multiple fields
+    searchFields: [
+        'label',                      // Text hiển thị
+        'customProperties.phieu',     // Số phiếu
+        'customProperties.mavt',      // Mã thiết bị
+        'customProperties.somay',     // Số máy
+        'customProperties.cv'         // Công việc
+    ],
     fuseOptions: {
-        threshold: 0.3,  // Fuzzy search sensitivity
-        distance: 300
+        threshold: 0.4,  // Fuzzy search sensitivity (0.4 = balanced)
+        distance: 500,   // Max character distance for matching
+        keys: [
+            { name: 'label', weight: 0.3 },
+            { name: 'customProperties.phieu', weight: 0.3 },
+            { name: 'customProperties.mavt', weight: 0.2 },
+            { name: 'customProperties.somay', weight: 0.1 },
+            { name: 'customProperties.cv', weight: 0.1 }
+        ]
     }
 });
 ```
+
+**Data Attributes trong Options:**
+```html
+<option value="123" 
+        data-phieu="Phiếu123"
+        data-mavt="TB-001"
+        data-somay="456"
+        data-cv="Sửa chữa hệ thống">
+    Phiếu123 - TB-001 (#456) - Sửa chữa hệ thống...
+</option>
+```
+
+**Search Examples:**
+- Gõ "123" → Tìm được phiếu "Phiếu123"
+- Gõ "456" → Tìm được số máy "456"
+- Gõ "TB" → Tìm được thiết bị "TB-001"
+- Gõ "sửa" → Tìm được công việc "Sửa chữa"
 - [ ] **QR Code scanner** để chọn thiết bị nhanh
 
 ## 📚 Related Files

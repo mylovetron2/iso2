@@ -220,7 +220,12 @@ require_once __DIR__ . '/../layouts/header.php';
         <select id="hososcbdSelect" class="mobile-select" onchange="loadCongViec(this.value)">
             <option value="">-- Chọn hồ sơ SC/BĐ --</option>
             <?php foreach ($hososcbdList as $hs): ?>
-                <option value="<?= $hs['stt'] ?>" <?= ($stt == $hs['stt']) ? 'selected' : '' ?>>
+                <option value="<?= $hs['stt'] ?>" 
+                        data-phieu="<?= htmlspecialchars($hs['phieu']) ?>"
+                        data-mavt="<?= htmlspecialchars($hs['mavt']) ?>"
+                        data-somay="<?= htmlspecialchars($hs['somay'] ?? '') ?>"
+                        data-cv="<?= htmlspecialchars($hs['cv']) ?>"
+                        <?= ($stt == $hs['stt']) ? 'selected' : '' ?>>
                     <?= htmlspecialchars($hs['phieu']) ?> - 
                     <?= htmlspecialchars($hs['mavt']) ?>
                     <?php if (!empty($hs['somay'])): ?>
@@ -329,7 +334,7 @@ require_once __DIR__ . '/../layouts/header.php';
 const selectElement = document.getElementById('hososcbdSelect');
 const choices = new Choices(selectElement, {
     searchEnabled: true,
-    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị...',
+    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị, số máy...',
     itemSelectText: 'Nhấn để chọn',
     noResultsText: 'Không tìm thấy kết quả',
     noChoicesText: 'Không có lựa chọn nào',
@@ -339,10 +344,17 @@ const choices = new Choices(selectElement, {
     removeItemButton: false,
     placeholder: true,
     placeholderValue: '-- Chọn hồ sơ SC/BĐ --',
-    searchFields: ['label', 'value'],
+    searchFields: ['label', 'customProperties.phieu', 'customProperties.mavt', 'customProperties.somay', 'customProperties.cv'],
     fuseOptions: {
-        threshold: 0.3,
-        distance: 300
+        threshold: 0.4,
+        distance: 500,
+        keys: [
+            { name: 'label', weight: 0.3 },
+            { name: 'customProperties.phieu', weight: 0.3 },
+            { name: 'customProperties.mavt', weight: 0.2 },
+            { name: 'customProperties.somay', weight: 0.1 },
+            { name: 'customProperties.cv', weight: 0.1 }
+        ]
     }
 });
 
