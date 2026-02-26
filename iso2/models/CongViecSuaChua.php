@@ -178,8 +178,8 @@ class CongViecSuaChua extends BaseModel
             }
         }
 
-        // Update
-        $updated = $this->updateWhere($data, [$this->primaryKey => $stt]);
+        // Update using BaseModel's update method
+        $updated = $this->update($stt, $data);
         
         if ($updated) {
             $result['success'] = true;
