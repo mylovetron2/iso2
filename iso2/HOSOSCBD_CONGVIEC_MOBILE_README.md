@@ -6,11 +6,14 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 
 ## 🎯 Tính năng chính
 
-### 1. **Chọn Hồ sơ SC/BĐ bằng Combobox**
+### 1. **Chọn Hồ sơ SC/BĐ bằng Combobox Tìm kiếm**
+- **Searchable Select** với Choices.js
+- **Tìm kiếm nhanh** theo phiếu, mã thiết bị, công việc
 - Danh sách 100 hồ sơ gần nhất
 - Hiển thị: Phiếu, Mã thiết bị, Số máy, Công việc
 - Tự động tải công việc khi chọn hồ sơ
 - Sticky header luôn hiển thị khi scroll
+- Placeholder: "Tìm kiếm theo phiếu, thiết bị..."
 
 ### 2. **Thẻ thông tin Hồ sơ**
 - Gradient card đẹp mắt
@@ -61,6 +64,7 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 - Reload trang sau khi xóa
 
 ### 6. **Tối ưu hóa Mobile**
+- **Searchable Select**: Tìm kiếm nhanh hồ sơ với Choices.js
 - **Touch-friendly**: Buttons lớn, dễ nhấn
 - **Bottom sheet modal**: Dễ thao tác một tay
 - **Sticky header**: Combobox luôn hiển thị
@@ -68,6 +72,7 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 - **Responsive**: Hoạt động tốt trên mọi kích thước màn hình
 - **Fast loading**: Giới hạn 100 records gần nhất
 - **Smooth animations**: Slide up/down cho modals
+- **Fuzzy search**: Tìm kiếm thông minh với threshold 0.3
 
 ## 📂 Cấu trúc Files
 
@@ -90,11 +95,20 @@ iso2/
 - Giống structure hososcbd_congviec.php
 
 #### 2. `views/hososcbd/congviec_mobile_view.php`
-- **Combobox**: Select hososcbd từ 100 records gần nhất
+- **Searchable Combobox**: Select hososcbd từ 100 records gần nhất
+  - Powered by Choices.js (vanilla JS, no jQuery)
+  - Search placeholder: "Tìm kiếm theo phiếu, thiết bị..."
+  - Fuzzy search với threshold 0.3
+  - Limit kết quả: 50 items
+  - Custom styling: Purple border, large touch targets
 - **Info Card**: Hiển thị thông tin hồ sơ đã chọn
 - **Widget Container**: Include congviec_widget_mobile.php
 - **Empty State**: Hiển thị khi chưa chọn hồ sơ
+- **Dependencies**:
+  - Choices.js CSS: CDN v10.2.0
+  - Choices.js JS: CDN v10.2.0
 - **JavaScript**: 
+  - Choices.js initialization với tiếng Việt
   - `loadCongViec(stt)`: Redirect khi chọn hồ sơ
   - Pull-to-refresh functionality
   - Loading indicator
@@ -288,6 +302,33 @@ Giống desktop version, sử dụng cùng permissions:
 - [ ] **Geolocation** để auto-fill vị trí
 - [ ] **Dark mode** toggle
 - [ ] **Export PDF** từ mobile
+
+## 📦 External Dependencies
+
+### Choices.js v10.2.0
+- **Purpose**: Searchable select dropdown
+- **CDN CSS**: `https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css`
+- **CDN JS**: `https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js`
+- **License**: MIT
+- **Why chosen**: Vanilla JS (no jQuery), mobile-friendly, customizable, active development
+- **Documentation**: https://github.com/Choices-js/Choices
+
+### Configuration
+```javascript
+const choices = new Choices('#hososcbdSelect', {
+    searchEnabled: true,
+    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị...',
+    itemSelectText: 'Nhấn để chọn',
+    noResultsText: 'Không tìm thấy kết quả',
+    position: 'bottom',
+    searchResultLimit: 50,
+    shouldSort: false,
+    fuseOptions: {
+        threshold: 0.3,  // Fuzzy search sensitivity
+        distance: 300
+    }
+});
+```
 - [ ] **QR Code scanner** để chọn thiết bị nhanh
 
 ## 📚 Related Files

@@ -29,6 +29,9 @@ if ($stt) {
 require_once __DIR__ . '/../layouts/header.php'; 
 ?>
 
+<!-- Choices.js CSS for searchable select -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
+
 <!-- Mobile Optimized Styles -->
 <style>
     /* Mobile-first responsive design */
@@ -54,12 +57,48 @@ require_once __DIR__ . '/../layouts/header.php';
         border: 2px solid #9333ea;
         border-radius: 0.5rem;
         background-color: white;
-        appearance: none;
-        background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3e%3cpolyline points="6 9 12 15 18 9"%3e%3c/polyline%3e%3c/svg%3e');
-        background-repeat: no-repeat;
-        background-position: right 0.75rem center;
-        background-size: 1.5em;
-        padding-right: 3rem;
+    }
+    
+    /* Choices.js customization for mobile */
+    .choices {
+        margin-bottom: 0;
+    }
+    
+    .choices__inner {
+        background: white;
+        border: 2px solid #9333ea !important;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        font-size: 1rem;
+        min-height: 3rem;
+    }
+    
+    .choices__list--dropdown {
+        z-index: 200;
+        border: 2px solid #9333ea;
+        border-radius: 0.5rem;
+        margin-top: 0.25rem;
+    }
+    
+    .choices__list--dropdown .choices__item--selectable {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .choices__input {
+        background: white;
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .choices[data-type*=select-one] .choices__input {
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 0.5rem;
+    }
+    
+    .choices__list--dropdown .choices__item--selectable.is-highlighted {
+        background-color: #9333ea;
     }
     
     .mobile-card {
@@ -281,8 +320,32 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 </div>
 
+<!-- Choices.js for searchable select -->
+<script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+
 <!-- AJAX Loading Script -->
 <script>
+// Initialize Choices.js for searchable select
+const selectElement = document.getElementById('hososcbdSelect');
+const choices = new Choices(selectElement, {
+    searchEnabled: true,
+    searchPlaceholderValue: 'Tìm kiếm theo phiếu, thiết bị...',
+    itemSelectText: 'Nhấn để chọn',
+    noResultsText: 'Không tìm thấy kết quả',
+    noChoicesText: 'Không có lựa chọn nào',
+    position: 'bottom',
+    searchResultLimit: 50,
+    shouldSort: false,
+    removeItemButton: false,
+    placeholder: true,
+    placeholderValue: '-- Chọn hồ sơ SC/BĐ --',
+    searchFields: ['label', 'value'],
+    fuseOptions: {
+        threshold: 0.3,
+        distance: 300
+    }
+});
+
 function loadCongViec(stt) {
     if (!stt) {
         window.location.href = 'hososcbd_congviec_mobile.php';
