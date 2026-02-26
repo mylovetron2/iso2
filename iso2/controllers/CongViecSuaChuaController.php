@@ -173,7 +173,11 @@ class CongViecSuaChuaController
     public function get(int $stt): array
     {
         try {
+            error_log("Controller get() - stt: $stt");
+            
+            // Get basic record
             $congviec = $this->congviecModel->find($stt);
+            error_log("Controller get() - find result: " . print_r($congviec, true));
             
             if (!$congviec) {
                 return [
@@ -182,14 +186,22 @@ class CongViecSuaChuaController
                 ];
             }
             
+            // Return data - widget chỉ cần raw data để populate form
             return [
                 'success' => true,
                 'data' => $congviec
             ];
         } catch (\Exception $e) {
+            error_log("Controller get() - Exception: " . $e->getMessage());
+            error_log("Controller get() - Trace: " . $e->getTraceAsString());
+            
             return [
                 'success' => false,
-                'message' => 'Lỗi: ' . $e->getMessage()
+                'message' => 'Lỗi: ' . $e->getMessage(),
+                'debug' => [
+                    'exception' => $e->getMessage(),
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ]
             ];
         }
     }

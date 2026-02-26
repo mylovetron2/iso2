@@ -44,7 +44,29 @@ if (!hasPermission('congviec_suachua.view')) {
 
 require_once __DIR__ . '/controllers/CongViecSuaChuaController.php';
 
-$controller = new CongViecSuaChuaController();
+try {
+    $controller = new CongViecSuaChuaController();
+} catch (Exception $e) {
+    error_log("Failed to create CongViecSuaChuaController: " . $e->getMessage());
+    error_log("Trace: " . $e->getTraceAsString());
+    
+    if (isAjaxRequest()) {
+        ob_clean();
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Lỗi khởi tạo controller: ' . $e->getMessage(),
+            'debug' => [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'exception' => $e->getMessage()
+            ]
+        ]);
+        exit;
+    }
+    die("Lỗi khởi tạo controller: " . htmlspecialchars($e->getMessage()));
+}
+
 $action = $_GET['action'] ?? $_POST['action'] ?? 'index';
 
 // Xử lý các action
@@ -76,6 +98,8 @@ try {
         case 'get':
             // Get single work item for editing
             $stt = (int)($_GET['stt'] ?? 0);
+            error_log("CongViec GET action: stt=$stt");
+            
             if (!$stt) {
                 ob_clean();
                 header('Content-Type: application/json');
@@ -83,11 +107,31 @@ try {
                 exit;
             }
             
-            $result = $controller->get($stt);
-            ob_clean();
-            header('Content-Type: application/json');
-            echo json_encode($result);
-            exit;
+            try {
+                $result = $controller->get($stt);
+                error_log("CongViec GET result: " . print_r($result, true));
+                
+                ob_clean();
+                header('Content-Type: application/json');
+                echo json_encode($result);
+                exit;
+            } catch (Exception $e) {
+                error_log("CongViec GET exception: " . $e->getMessage());
+                error_log("CongViec GET trace: " . $e->getTraceAsString());
+                
+                ob_clean();
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Lỗi server: ' . $e->getMessage(),
+                    'debug' => [
+                        'exception' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]
+                ]);
+                exit;
+            }
 
     case 'update':
         // TODO: Uncomment sau khi migration
