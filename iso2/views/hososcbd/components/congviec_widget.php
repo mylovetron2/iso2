@@ -159,8 +159,12 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <th class="px-3 py-2 border-b text-left">Cấp độ</th>
                         <th class="px-3 py-2 border-b text-left">Nội dung</th>
                         <th class="px-3 py-2 border-b text-center">Số giờ</th>
+                        <?php /* Ẩn cột KPI chuẩn
                         <th class="px-3 py-2 border-b text-center">KPI chuẩn</th>
+                        */ ?>
+                        <?php /* Ẩn cột Đánh giá
                         <th class="px-3 py-2 border-b text-center">Đánh giá</th>
+                        */ ?>
                         <th class="px-3 py-2 border-b text-center">Trạng thái</th>
                         <th class="px-3 py-2 border-b text-center">Thao tác</th>
                     </tr>
@@ -188,9 +192,12 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                             <td class="px-3 py-2 border-b text-center">
                                 <strong class="text-blue-600"><?= number_format($cv['so_gio_lam'], 2) ?>h</strong>
                             </td>
+                            <?php /* Ẩn cột KPI chuẩn
                             <td class="px-3 py-2 border-b text-center text-gray-600">
                                 <?= number_format($cv['kpi_gio_chuan'], 2) ?>h
                             </td>
+                            */ ?>
+                            <?php /* Ẩn cột Đánh giá
                             <td class="px-3 py-2 border-b text-center">
                                 <?php if ($cv['so_gio_lam'] <= $cv['kpi_gio_chuan']): ?>
                                     <i class="fas fa-check-circle text-green-500 text-lg" title="Đạt KPI"></i>
@@ -200,6 +207,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                                     <i class="fas fa-times-circle text-red-500 text-lg" title="Chưa đạt KPI"></i>
                                 <?php endif; ?>
                             </td>
+                            */ ?>
                             <td class="px-3 py-2 border-b text-center">
                                 <?php
                                 $badgeClass = 'gray';
@@ -241,7 +249,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <td class="px-3 py-2 border-t text-center text-blue-700">
                             <?= number_format($thongke['tong_gio'], 2) ?>h
                         </td>
-                        <td colspan="4" class="px-3 py-2 border-t"></td>
+                        <td colspan="2" class="px-3 py-2 border-t"></td>
                     </tr>
                 </tfoot>
             </table>
