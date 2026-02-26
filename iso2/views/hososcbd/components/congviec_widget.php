@@ -187,8 +187,8 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                                 </span>
                             </td>
                             <td class="px-3 py-2 border-b">
-                                <div class="max-w-xs truncate" title="<?= htmlspecialchars($cv['noi_dung']) ?>">
-                                    <?= htmlspecialchars(mb_substr($cv['noi_dung'], 0, 60)) ?><?= mb_strlen($cv['noi_dung']) > 60 ? '...' : '' ?>
+                                <div class="whitespace-normal">
+                                    <?= htmlspecialchars($cv['noi_dung']) ?>
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b text-center">
