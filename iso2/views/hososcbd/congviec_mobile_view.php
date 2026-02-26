@@ -9,12 +9,13 @@ $model = new HoSoSCBD();
 // Get selected record ID from URL or session
 $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-// Load hososcbd list for combobox (limit to recent 100 for performance)
+// Load hososcbd list for combobox (only unfinished records - chưa kết thúc)
 $db = getDBConnection();
 $stmtList = $db->query("
     SELECT h.stt, h.phieu, h.mavt, h.somay, h.cv, h.ngayyc, h.nhomsc, d.tendv
     FROM hososcbd_iso h
     LEFT JOIN donvi_iso d ON h.madv = d.madv
+    WHERE h.ngaykt IS NULL OR h.ngaykt = '0000-00-00'
     ORDER BY h.ngayyc DESC, h.phieu DESC
     LIMIT 100
 ");

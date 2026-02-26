@@ -16,6 +16,7 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
   - Text hiển thị (weight: 0.3)
 - **Data attributes**: Mỗi option có data-phieu, data-mavt, data-somay, data-cv
 - **Fuzzy search**: Threshold 0.4 (balanced), distance 500
+- **Chỉ hiển thị hồ sơ chưa kết thúc** (ngaykt IS NULL OR ngaykt = '0000-00-00') ⚡
 - Danh sách 100 hồ sơ gần nhất
 - Hiển thị: Phiếu, Mã thiết bị, Số máy, Công việc
 - Tự động tải công việc khi chọn hồ sơ
@@ -109,9 +110,16 @@ iso2/
 
 #### 2. `views/hososcbd/congviec_mobile_view.php`
 - **Searchable Combobox**: Select hososcbd từ 100 records gần nhất
+  - **Chỉ hiển thị hồ sơ chưa kết thúc** (WHERE ngaykt IS NULL OR ngaykt = '0000-00-00') ⚡
   - Powered by Choices.js (vanilla JS, no jQuery)
-  - Search placeholder: "Tìm kiếm theo phiếu, thiết bị..."
-  - Fuzzy search với threshold 0.3
+  - Search placeholder: "Tìm kiếm theo phiếu, thiết bị, số máy..."
+  - **Multi-field search** với data attributes:
+    - `data-phieu`: Số phiếu
+    - `data-mavt`: Mã thiết bị
+    - `data-somay`: Số máy ✨
+    - `data-cv`: Công việc
+  - Fuzzy search với threshold 0.4 (balanced)
+  - Weighted search: phiếu (0.3), thiết bị (0.2), số máy (0.1), CV (0.1)
   - Limit kết quả: 50 items
   - Custom styling: Purple border, large touch targets
 - **Info Card**: Hiển thị thông tin hồ sơ đã chọn
