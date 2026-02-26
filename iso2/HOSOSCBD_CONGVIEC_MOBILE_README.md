@@ -49,7 +49,7 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 - **Floating Action Button (FAB)** ở góc dưới bên phải
 - Bottom sheet modal (slide up từ dưới)
 - Form đơn giản, dễ điền trên mobile:
-  - Nhân viên (select)
+  - **Nhân viên (searchable select)** - Tìm kiếm nhanh trong 100+ nhân viên ✨
   - Ngày làm (date picker)
   - Cấp độ (select với KPI)
   - Số giờ làm (number, max 8h)
@@ -63,6 +63,7 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 #### ✏️ Sửa công việc
 - Nút "Sửa" trên mỗi card công việc
 - Modal màu xanh lá (khác với modal Thêm)
+- **Nhân viên searchable select** - Tìm kiếm nhanh khi thay đổi ✨
 - Auto-fill dữ liệu hiện tại
 - Cập nhật realtime
 
@@ -72,7 +73,10 @@ Trang mobile **hososcbd_congviec_mobile.php** là phiên bản tối ưu hóa ch
 - Reload trang sau khi xóa
 
 ### 6. **Tối ưu hóa Mobile**
-- **Searchable Select**: Tìm kiếm nhanh hồ sơ với Choices.js
+- **Searchable Selects**: 
+  - Tìm kiếm nhanh hồ sơ (100 records với multi-field search)
+  - Tìm kiếm nhanh nhân viên (100+ records) ✨
+  - Powered by Choices.js với fuzzy search
 - **Touch-friendly**: Buttons lớn, dễ nhấn
 - **Bottom sheet modal**: Dễ thao tác một tay
 - **Sticky header**: Combobox luôn hiển thị

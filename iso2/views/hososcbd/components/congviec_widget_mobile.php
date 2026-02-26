@@ -574,15 +574,46 @@ try {
 
 <!-- JavaScript -->
 <script>
+// Choices.js instances for employee selects
+let addNhanVienChoices = null;
+let editNhanVienChoices = null;
+
 // Add Modal Functions
 function openAddCongViecMobileModal() {
     document.getElementById('addCongViecMobileModal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    
+    // Initialize Choices.js for employee select if not already initialized
+    if (!addNhanVienChoices) {
+        const nhanVienSelect = document.getElementById('nhanvien_stt_mobile');
+        if (nhanVienSelect) {
+            addNhanVienChoices = new Choices(nhanVienSelect, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Tìm kiếm nhân viên...',
+                itemSelectText: 'Nhấn để chọn',
+                noResultsText: 'Không tìm thấy nhân viên',
+                noChoicesText: 'Không có nhân viên nào',
+                position: 'bottom',
+                shouldSort: true,
+                searchResultLimit: 50,
+                fuseOptions: {
+                    threshold: 0.3,
+                    distance: 100
+                }
+            });
+        }
+    }
 }
 
 function closeAddCongViecMobileModal() {
     document.getElementById('addCongViecMobileModal').classList.add('hidden');
     document.getElementById('formAddCongViecMobile').reset();
+    
+    // Reset Choices.js selection
+    if (addNhanVienChoices) {
+        addNhanVienChoices.setChoiceByValue('');
+    }
+    
     document.body.style.overflow = '';
 }
 
@@ -683,6 +714,32 @@ async function openEditCongViecMobileModal(stt) {
         document.getElementById('edit_ghi_chu_mobile').value = cv.ghi_chu || '';
         
         updateEditKpiDisplayMobile(document.getElementById('edit_capdo_stt_mobile'));
+        
+        // Initialize Choices.js for edit employee select
+        if (!editNhanVienChoices) {
+            const editNhanVienSelect = document.getElementById('edit_nhanvien_stt_mobile');
+            if (editNhanVienSelect) {
+                editNhanVienChoices = new Choices(editNhanVienSelect, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Tìm kiếm nhân viên...',
+                    itemSelectText: 'Nhấn để chọn',
+                    noResultsText: 'Không tìm thấy nhân viên',
+                    noChoicesText: 'Không có nhân viên nào',
+                    position: 'bottom',
+                    shouldSort: true,
+                    searchResultLimit: 50,
+                    fuseOptions: {
+                        threshold: 0.3,
+                        distance: 100
+                    }
+                });
+            }
+        }
+        
+        // Set the value after Choices.js is initialized
+        if (editNhanVienChoices && cv.nhanvien_stt) {
+            editNhanVienChoices.setChoiceByValue(cv.nhanvien_stt);
+        }
         
         document.getElementById('editCongViecMobileModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
