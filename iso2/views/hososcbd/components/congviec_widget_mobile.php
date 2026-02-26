@@ -392,7 +392,7 @@ try {
                 <label class="mobile-form-label">
                     Nhân viên <span class="text-red-500">*</span>
                 </label>
-                <select name="nhanvien_stt" required class="mobile-form-select">
+                <select id="nhanvien_stt_mobile" name="nhanvien_stt" required class="mobile-form-select">
                     <option value="">-- Chọn nhân viên --</option>
                     <?php foreach ($nhanviens as $nv): ?>
                         <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['hoten']) ?></option>
@@ -594,11 +594,11 @@ function openAddCongViecMobileModal() {
                 noResultsText: 'Không tìm thấy nhân viên',
                 noChoicesText: 'Không có nhân viên nào',
                 position: 'bottom',
-                shouldSort: true,
+                shouldSort: false,
                 searchResultLimit: 50,
                 fuseOptions: {
-                    threshold: 0.3,
-                    distance: 100
+                    threshold: 0.4,
+                    distance: 500
                 }
             });
         }
@@ -726,11 +726,11 @@ async function openEditCongViecMobileModal(stt) {
                     noResultsText: 'Không tìm thấy nhân viên',
                     noChoicesText: 'Không có nhân viên nào',
                     position: 'bottom',
-                    shouldSort: true,
+                    shouldSort: false,
                     searchResultLimit: 50,
                     fuseOptions: {
-                        threshold: 0.3,
-                        distance: 100
+                        threshold: 0.4,
+                        distance: 500
                     }
                 });
             }
