@@ -3,6 +3,33 @@ header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 $title = 'Thêm Hồ sơ SCBĐ';
 require_once __DIR__ . '/../layouts/header.php'; 
+
+$prefillPhieuValue = isset($prefillPhieu) ? $prefillPhieu : '';
+
+// Helper function to get prefill value - use GLOBALS to ensure proper scope
+$GLOBALS['_prefillData'] = $prefillData ?? null;
+
+function getPrefillValue($field, $default = '') {
+    // Priority: POST > prefillData > default
+    if (isset($_POST[$field])) {
+        return $_POST[$field];
+    }
+    
+    $prefillData = $GLOBALS['_prefillData'] ?? null;
+    
+    if (isset($prefillData[$field]) && $prefillData[$field] !== null && $prefillData[$field] !== '') {
+        // Format date if needed
+        if ($field === 'ngayyc' && $prefillData[$field]) {
+            // Ensure Y-m-d format for date input
+            $date = $prefillData[$field];
+            if (strtotime($date)) {
+                return date('Y-m-d', strtotime($date));
+            }
+        }
+        return $prefillData[$field];
+    }
+    return $default;
+}
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-6">
     <h1 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
@@ -15,19 +42,40 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <?php endif; ?>
 
+    <?php if (!empty($prefillData)): ?>
+    <div class="bg-green-50 border-l-4 border-green-500 px-4 py-3 rounded mb-4">
+        <div class="flex items-start">
+            <i class="fas fa-info-circle text-green-600 mt-1 mr-3"></i>
+            <div>
+                <p class="font-semibold text-green-800">Đang thêm thiết bị vào phiếu: <strong><?php echo htmlspecialchars($prefillPhieuValue); ?></strong></p>
+                <p class="text-sm text-green-700 mt-1">
+                    Thông tin đơn vị và yêu cầu đã được tự động điền từ phiếu này. 
+                    Bạn chỉ cần thêm thông tin thiết bị mới.
+                </p>
+                <?php if (isset($_GET['debug'])): ?>
+                <details class="mt-2">
+                    <summary class="cursor-pointer text-xs text-gray-600 hover:text-gray-800">🔍 Debug: Xem dữ liệu prefill</summary>
+                    <pre class="mt-2 text-xs bg-white p-2 rounded border overflow-auto"><?php print_r($prefillData); ?></pre>
+                </details>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Action Buttons at Top -->
     <div class="flex gap-3 mb-6 p-4 bg-gray-50 rounded border-2 border-blue-500">
-        <button type="button" id="saveButton" onclick="document.querySelector('form').submit();" 
+        <button type="button" id="saveButton" onclick="submitFormWithLoading();" 
                 style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; display: inline-block;">
-            <i class="fas fa-save" style="margin-right: 8px;"></i>Lưu hồ sơ
+            <i class="fas fa-save" style="margin-right: 8px;"></i><span id="saveButtonText">Lưu hồ sơ</span>
         </button>
-        <a href="hososcbd.php" 
+        <a href="hososcbd.php" id="cancelButton"
            style="background-color: #6b7280; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block;">
             <i class="fas fa-times" style="margin-right: 8px;"></i>Hủy
         </a>
     </div>
 
-    <form method="POST" class="space-y-6">
+    <form method="POST" id="hosoForm" class="space-y-6" onsubmit="return handleFormSubmit(event);">
         <!-- Thông tin cơ bản -->
         <div class="border-l-4 border-blue-500 pl-4">
             <h2 class="text-lg font-bold mb-3 text-blue-700">
@@ -35,16 +83,31 @@ require_once __DIR__ . '/../layouts/header.php';
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Số phiếu</label>
-                    <input type="text" name="phieu" value="<?php echo isset($_POST['phieu']) ? htmlspecialchars($_POST['phieu']) : $nextPhieu; ?>"
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Số phiếu
+                        <?php if (!empty($prefillPhieuValue)): ?>
+                            <span class="text-green-600 text-xs"><i class="fas fa-lock"></i> Đang thêm vào phiếu này</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="text" name="phieu" value="<?php echo isset($_POST['phieu']) ? htmlspecialchars($_POST['phieu']) : htmlspecialchars(!empty($prefillPhieuValue) ? $prefillPhieuValue : $nextPhieu); ?>"
                            placeholder="Tự động: <?php echo $nextPhieu; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                    <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Để trống sẽ tự động sinh số tiếp theo</p>
+                           <?php echo !empty($prefillPhieuValue) ? 'readonly' : ''; ?>
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo !empty($prefillPhieuValue) ? 'bg-green-50 border-green-400 font-semibold text-green-800' : ''; ?>">
+                    <?php if (!empty($prefillPhieuValue)): ?>
+                        <p class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Thiết bị sẽ được thêm vào phiếu <strong><?php echo htmlspecialchars($prefillPhieuValue); ?></strong></p>
+                    <?php else: ?>
+                        <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Để trống sẽ tự động sinh số tiếp theo</p>
+                    <?php endif; ?>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ngày yêu cầu <span class="text-red-500">*</span></label>
-                    <input type="date" name="ngayyc" required value="<?php echo isset($_POST['ngayyc']) ? $_POST['ngayyc'] : date('Y-m-d'); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Ngày yêu cầu <span class="text-red-500">*</span>
+                        <?php if (!empty($prefillData) && !empty($prefillData['ngayyc'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="date" name="ngayyc" required value="<?php echo getPrefillValue('ngayyc', date('Y-m-d')); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['ngayyc'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                 </div>
             </div>
             <div class="bg-blue-50 border border-blue-200 rounded p-3 mt-3">
@@ -62,13 +125,21 @@ require_once __DIR__ . '/../layouts/header.php';
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Đơn vị <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Đơn vị <span class="text-red-500">*</span>
+                        <?php if (!empty($prefillData) && !empty($prefillData['madv'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
                     <div class="flex gap-2">
-                        <select name="madv" id="madvSelect" required class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <select name="madv" id="madvSelect" required class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['madv'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                             <option value="">-- Chọn đơn vị --</option>
-                            <?php foreach ($donViList as $dv): ?>
+                            <?php 
+                            $selectedMadv = getPrefillValue('madv');
+                            foreach ($donViList as $dv): 
+                            ?>
                                 <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
-                                        <?php echo (isset($_POST['madv']) && $_POST['madv'] === $dv['madv']) ? 'selected' : ''; ?>>
+                                        <?php echo ($selectedMadv === $dv['madv']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($dv['tendv']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -76,24 +147,44 @@ require_once __DIR__ . '/../layouts/header.php';
                     </div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Điện thoại</label>
-                    <input type="text" name="dienthoai" value="<?php echo isset($_POST['dienthoai']) ? htmlspecialchars($_POST['dienthoai']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Điện thoại
+                        <?php if (!empty($prefillData) && !empty($prefillData['dienthoai'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="text" name="dienthoai" value="<?php echo htmlspecialchars(getPrefillValue('dienthoai')); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['dienthoai'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Người yêu cầu</label>
-                    <input type="text" name="ngyeucau" value="<?php echo isset($_POST['ngyeucau']) ? htmlspecialchars($_POST['ngyeucau']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Người yêu cầu
+                        <?php if (!empty($prefillData) && !empty($prefillData['ngyeucau'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="text" name="ngyeucau" value="<?php echo htmlspecialchars(getPrefillValue('ngyeucau')); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['ngyeucau'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Người nhận yêu cầu</label>
-                    <input type="text" name="ngnhyeucau" value="<?php echo isset($_POST['ngnhyeucau']) ? htmlspecialchars($_POST['ngnhyeucau']) : ''; ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Người nhận yêu cầu
+                        <?php if (!empty($prefillData) && !empty($prefillData['ngnhyeucau'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <input type="text" name="ngnhyeucau" value="<?php echo htmlspecialchars(getPrefillValue('ngnhyeucau')); ?>"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['ngnhyeucau'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">Công việc <span class="text-red-500">*</span></label>
-                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                        <?php $currentCv = isset($_POST['cv']) ? $_POST['cv'] : 'SC'; ?>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Công việc <span class="text-red-500">*</span>
+                        <?php if (!empty($prefillData) && !empty($prefillData['cv'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['cv'])) ? 'bg-green-50 border-green-300' : ''; ?>">
+                        <?php $currentCv = getPrefillValue('cv', 'SC'); ?>
                         <option value="KT" <?php echo ($currentCv === 'KT') ? 'selected' : ''; ?>>KT - Kiểm Tra</option>
                         <option value="BD" <?php echo ($currentCv === 'BD') ? 'selected' : ''; ?>>BD - Bảo Dưỡng</option>
                         <option value="SC" <?php echo ($currentCv === 'SC') ? 'selected' : ''; ?>>SC - Sửa Chữa</option>
@@ -101,8 +192,13 @@ require_once __DIR__ . '/../layouts/header.php';
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">Yêu cầu thêm của KH</label>
-                    <textarea name="ycthemkh" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($_POST['ycthemkh']) ? htmlspecialchars($_POST['ycthemkh']) : ''; ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        Yêu cầu thêm của KH
+                        <?php if (!empty($prefillData) && !empty($prefillData['ycthemkh'])): ?>
+                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
+                        <?php endif; ?>
+                    </label>
+                    <textarea name="ycthemkh" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['ycthemkh'])) ? 'bg-green-50 border-green-300' : ''; ?>"><?php echo htmlspecialchars(getPrefillValue('ycthemkh')); ?></textarea>
                 </div>
             </div>
             
@@ -235,6 +331,69 @@ require_once __DIR__ . '/../layouts/header.php';
 
 <script>
 let deviceIndex = 0;
+let isSubmitting = false; // Prevent double submit
+
+// Function to handle form submission with loading state
+function submitFormWithLoading() {
+    // Prevent double submit
+    if (isSubmitting) {
+        return false;
+    }
+    
+    const form = document.getElementById('hosoForm');
+    const saveButton = document.getElementById('saveButton');
+    const saveButtonText = document.getElementById('saveButtonText');
+    const cancelButton = document.getElementById('cancelButton');
+    
+    // Check form validity
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+    }
+    
+    // Set submitting state
+    isSubmitting = true;
+    
+    // Disable button and show loading
+    saveButton.disabled = true;
+    saveButton.style.cursor = 'not-allowed';
+    saveButton.style.opacity = '0.7';
+    saveButtonText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang lưu...';
+    
+    // Disable cancel button
+    cancelButton.style.pointerEvents = 'none';
+    cancelButton.style.opacity = '0.5';
+    
+    // Submit the form
+    form.submit();
+    
+    return false;
+}
+
+// Handle form submit event (for Enter key or other triggers)
+function handleFormSubmit(event) {
+    if (isSubmitting) {
+        event.preventDefault();
+        return false;
+    }
+    
+    const saveButton = document.getElementById('saveButton');
+    const saveButtonText = document.getElementById('saveButtonText');
+    const cancelButton = document.getElementById('cancelButton');
+    
+    isSubmitting = true;
+    
+    // Show loading state
+    saveButton.disabled = true;
+    saveButton.style.cursor = 'not-allowed';
+    saveButton.style.opacity = '0.7';
+    saveButtonText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang lưu...';
+    
+    cancelButton.style.pointerEvents = 'none';
+    cancelButton.style.opacity = '0.5';
+    
+    return true;
+}
 
 function addDevice() {
     deviceIndex++;
@@ -297,7 +456,7 @@ function addDevice() {
                 </div>
                 <div>
                     <label class="block text-sm text-gray-700 font-semibold mb-1">Tình trạng kỹ thuật</label>
-                    <textarea name="devices[${deviceIndex}][tinhtrang]" rows="2"
+                    <textarea name="devices[${deviceIndex}][honghoc]" rows="2"
                               class="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:border-blue-500 transition-all"
                               placeholder="Nhập tình trạng kỹ thuật của thiết bị"></textarea>
                 </div>
@@ -618,46 +777,64 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Show loading indicator
-        const originalText = this.options[this.selectedIndex].text;
-        this.disabled = true;
-        
-        // Load devices for this unit
-        fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP error ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                this.disabled = false;
-                
-                if (data.success && data.data) {
-                    window.availableDevices = data.data;
-                    
-                    // Update all mavt inputs with datalist
-                    updateMavtDataLists();
-                    
-                    const count = data.data.length;
-                    if (count > 0) {
-                        showNotification(`Đã tải ${count} loại thiết bị cho đơn vị này`, 'success');
-                    } else {
-                        showNotification('Không có thiết bị nào cho đơn vị này', 'warning');
-                    }
-                } else {
-                    window.availableDevices = [];
-                    showNotification(data.message || 'Không thể tải danh sách thiết bị', 'error');
-                }
-            })
-            .catch(error => {
-                this.disabled = false;
-                console.error('Error loading devices:', error);
-                window.availableDevices = [];
-                showNotification('Lỗi kết nối khi tải thiết bị. Vui lòng thử lại.', 'error');
-            });
+        loadDevicesForUnit(madv, this);
     });
+    
+    // Auto-load devices if unit is already selected (prefill case)
+    if (madvSelect.value) {
+        console.log('Prefill detected - auto-loading devices for:', madvSelect.value);
+        loadDevicesForUnit(madvSelect.value, madvSelect);
+    }
 });
+
+// Function to load devices for a specific unit
+function loadDevicesForUnit(madv, selectElement) {
+    if (!madv) return;
+    
+    // Show loading indicator
+    if (selectElement) {
+        selectElement.disabled = true;
+    }
+    
+    // Load devices for this unit
+    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP error ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (selectElement) {
+                selectElement.disabled = false;
+            }
+            
+            if (data.success && data.data) {
+                window.availableDevices = data.data;
+                
+                // Update all mavt inputs with datalist
+                updateMavtDataLists();
+                
+                const count = data.data.length;
+                if (count > 0) {
+                    showNotification(`Đã tải ${count} loại thiết bị cho đơn vị này`, 'success');
+                } else {
+                    showNotification('Không có thiết bị nào cho đơn vị này', 'warning');
+                }
+            } else {
+                window.availableDevices = [];
+                showNotification(data.message || 'Không thể tải danh sách thiết bị', 'error');
+            }
+        })
+        .catch(error => {
+            if (selectElement) {
+                selectElement.disabled = false;
+            }
+            console.error('Error loading devices:', error);
+            window.availableDevices = [];
+            showNotification('Lỗi kết nối khi tải thiết bị. Vui lòng thử lại.', 'error');
+        });
+}
 
 // Update all mavt inputs with datalist from available devices
 function updateMavtDataLists() {

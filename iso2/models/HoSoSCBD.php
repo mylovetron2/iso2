@@ -161,6 +161,41 @@ class HoSoSCBD extends BaseModel
     }
     
     /**
+     * Lấy index lớn nhất của hồ sơ trong một phiếu
+     * Dùng để tính số thứ tự tiếp theo khi thêm thiết bị vào phiếu có sẵn
+     * 
+     * @param string $phieu Số phiếu
+     * @return int Index lớn nhất (0 nếu chưa có thiết bị nào, bắt đầu từ 1)
+     */
+    public function getMaxHosoIndexForPhieu(string $phieu): int
+    {
+        $phieuEscaped = $this->db->quote($phieu);
+        
+        // Optimized query: Query hồ sơ có format: PHIEU-INDEX (ví dụ: 1997-1, 1997-2, 1997-3)
+        // Extract index từ hoso bằng cách split '-' và lấy phần sau
+        // Sử dụng index trên cột phieu để tăng tốc
+        $sql = "SELECT hoso 
+                FROM {$this->table} USE INDEX (phieu)
+                WHERE phieu = $phieuEscaped 
+                AND hoso LIKE CONCAT($phieuEscaped, '-%')
+                ORDER BY CAST(SUBSTRING_INDEX(hoso, '-', -1) AS UNSIGNED) DESC 
+                LIMIT 1";
+        
+        $stmt = $this->query($sql);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result && !empty($result['hoso'])) {
+            // Extract index from "1997-2" -> 2
+            $parts = explode('-', $result['hoso']);
+            if (count($parts) >= 2) {
+                return (int)end($parts);
+            }
+        }
+        
+        return 0; // 0 nghĩa là chưa có thiết bị nào, index đầu tiên sẽ là 1
+    }
+    
+    /**
      * Lấy thống kê
      */
     public function getStats(string $nhomsc = ''): array

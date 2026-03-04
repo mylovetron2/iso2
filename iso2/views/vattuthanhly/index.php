@@ -398,6 +398,10 @@ button.text-red-600:hover {
                 <i class="fas fa-file-excel mr-1"></i> Import Excel
             </a>
             <?php endif; ?>
+            
+            <a href="thongke_vattu_thanh_ly.php" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-chart-bar mr-1"></i> Thống kê thanh lý
+            </a>
         </div>
     </form>
 

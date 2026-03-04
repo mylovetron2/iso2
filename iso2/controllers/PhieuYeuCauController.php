@@ -153,14 +153,21 @@ class PhieuYeuCauController
         }
         
         // Tạo hồ sơ cho từng thiết bị
+        // Lấy index lớn nhất hiện có trong phiếu để tính số hồ sơ tiếp tục
+        $maxExistingIndex = $this->hosoModel->getMaxHosoIndexForPhieu($commonData['phieu']);
+        $hosoCounter = $maxExistingIndex; // Bắt đầu từ số hiện có, sẽ tăng lên trước khi dùng
+        
         $successCount = 0;
         try {
-            foreach ($devicesData as $index => $device) {
+            foreach ($devicesData as $device) {
                 $data = array_merge($commonData, $device);
                 
                 // Auto-generate maql và hoso
                 $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
-                $data['hoso'] = $this->generateHoSo($data['phieu'], $index);
+                
+                // Generate hoso number: tăng counter và tạo số thứ tự
+                $hosoCounter++;
+                $data['hoso'] = $this->generateHoSo($data['phieu'], $hosoCounter);
                 
                 $id = $this->hosoModel->create($data);
                 if ($id) {
@@ -333,7 +340,7 @@ class PhieuYeuCauController
                 $thietbi[$i] = $device['tenvt'] ?? $device['mavt'];
                 $model[$i] = $device['model'] ?? '';
                 $somay[$i] = $device['somay'] ?? '';
-                $tinhtrang[$i] = $device['tinhtrang'] ?? '';
+                $tinhtrang[$i] = $device['honghoc'] ?? '';
                 $yeucau[$i] = $device['cv'] ?? '';
                 $vitri[$i] = $device['vitrimaybd'] ?? '';
             }
@@ -391,6 +398,7 @@ class PhieuYeuCauController
         $modelArr = $_POST['model'] ?? [];
         $solgArr = $_POST['solg'] ?? [];
         $vitrimaybd = $_POST['vitrimaybd'] ?? [];
+        $honghocArr = $_POST['honghoc'] ?? [];
         
         $count = count($mavtArr);
         
@@ -404,7 +412,8 @@ class PhieuYeuCauController
                     'somay' => $somay,
                     'model' => trim($modelArr[$i] ?? ''),
                     'solg' => (int)($solgArr[$i] ?? 1),
-                    'vitrimaybd' => trim($vitrimaybd[$i] ?? '')
+                    'vitrimaybd' => trim($vitrimaybd[$i] ?? ''),
+                    'honghoc' => trim($honghocArr[$i] ?? '')
                 ];
             }
         }

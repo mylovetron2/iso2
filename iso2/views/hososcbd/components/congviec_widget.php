@@ -65,24 +65,39 @@ try {
     $congviecs = [];
 }
 
-// Tính tổng số giờ
+// Tính tổng số giờ và lấy KPI thiết bị
 try {
     $stmtTongGio = $db->prepare("
         SELECT 
             COUNT(*) AS so_congviec,
-            COALESCE(SUM(so_gio_lam), 0) AS tong_gio,
-            COALESCE(AVG(so_gio_lam), 0) AS trung_binh_gio
+            COALESCE(SUM(so_gio_lam), 0) AS tong_gio
         FROM congviec_suachua_iso
         WHERE hososcbd_stt = :hososcbd_stt
     ");
     $stmtTongGio->execute([':hososcbd_stt' => $stt]);
     $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
+    
+    // Lấy KPI thiết bị
+    $stmtKPI = $db->prepare("
+        SELECT 
+            SUM(tk.kpi_gio_du_kien) as tong_kpi,
+            COUNT(*) as so_capdo
+        FROM thietbi_capdo_kpi_iso tk
+        WHERE tk.mavt = :mavt AND tk.somay = :somay
+    ");
+    $stmtKPI->execute([
+        ':mavt' => $item['mavt'] ?? '',
+        ':somay' => $item['somay'] ?? ''
+    ]);
+    $kpiData = $stmtKPI->fetch(PDO::FETCH_ASSOC);
+    $thongke['kpi_thietbi'] = $kpiData['tong_kpi'] ?? 0;
+    
     echo "<!-- DEBUG: Thongke loaded -->\n";
 } catch (Exception $e) {
     echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
     echo '<strong>❌ Lỗi Thống kê:</strong> ' . htmlspecialchars($e->getMessage());
     echo '</div>';
-    $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'trung_binh_gio' => 0];
+    $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'kpi_thietbi' => 0];
 }
 
 // Lấy danh sách nhân viên để tạo công việc mới
@@ -138,9 +153,9 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
             <div class="text-sm text-green-600">Tổng số giờ</div>
             <div class="text-2xl font-bold text-green-700"><?= number_format($thongke['tong_gio'], 2) ?>h</div>
         </div>
-        <div class="bg-orange-50 border border-orange-200 rounded p-3">
-            <div class="text-sm text-orange-600">Trung bình / công việc</div>
-            <div class="text-2xl font-bold text-orange-700"><?= number_format($thongke['trung_binh_gio'], 2) ?>h</div>
+        <div class="bg-amber-50 border border-amber-200 rounded p-3">
+            <div class="text-sm text-amber-600">KPI thiết bị</div>
+            <div class="text-2xl font-bold text-amber-700"><?= number_format($thongke['kpi_thietbi'], 2) ?>h</div>
         </div>
     </div>
 
@@ -287,7 +302,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                     <label class="block text-gray-700 font-semibold mb-2">
                         Nhân viên <span class="text-red-500">*</span>
                     </label>
-                    <select name="nhanvien_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
+                    <select id="nhanvien_stt" name="nhanvien_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
                         <option value="">-- Chọn nhân viên --</option>
                         <?php foreach ($nhanviens as $nv): ?>
                             <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['hoten']) ?></option>
@@ -333,7 +348,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Giờ bắt đầu</label>
                     <input type="time" name="gio_bat_dau" 
@@ -356,7 +371,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                           placeholder="Mô tả chi tiết công việc sửa chữa/bảo dưỡng..."></textarea>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Trạng thái</label>
                     <select name="trang_thai" class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
@@ -365,13 +380,13 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <option value="Tạm dừng">Tạm dừng</option>
                     </select>
                 </div>
-                
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
-                    <input type="text" name="ghi_chu" 
-                           class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500"
-                           placeholder="Ghi chú thêm...">
-                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
+                <input type="text" name="ghi_chu" 
+                       class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500"
+                       placeholder="Ghi chú thêm...">
             </div>
             
             <div class="flex justify-end space-x-3 pt-4 border-t">
@@ -455,7 +470,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Giờ bắt đầu</label>
                     <input type="time" name="gio_bat_dau" id="edit_gio_bat_dau"
@@ -478,7 +493,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                           placeholder="Mô tả chi tiết công việc sửa chữa/bảo dưỡng..."></textarea>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Trạng thái</label>
                     <select name="trang_thai" id="edit_trang_thai" class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500">
@@ -487,13 +502,13 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         <option value="Tạm dừng">Tạm dừng</option>
                     </select>
                 </div>
-                
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
-                    <input type="text" name="ghi_chu" id="edit_ghi_chu"
-                           class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500"
-                           placeholder="Ghi chú thêm...">
-                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Ghi chú</label>
+                <input type="text" name="ghi_chu" id="edit_ghi_chu"
+                       class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500"
+                       placeholder="Ghi chú thêm...">
             </div>
             
             <div class="flex justify-end space-x-3 pt-4 border-t">
@@ -522,13 +537,43 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
 </style>
 
 <script>
+// Choices.js instances
+let addNhanVienChoices = null;
+let editNhanVienChoices = null;
+
 function openAddCongViecModal() {
     document.getElementById('addCongViecModal').classList.remove('hidden');
+    
+    // Initialize Choices.js for employee select if not already initialized
+    if (!addNhanVienChoices) {
+        const nhanVienSelect = document.getElementById('nhanvien_stt');
+        if (nhanVienSelect) {
+            addNhanVienChoices = new Choices(nhanVienSelect, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Tìm kiếm nhân viên...',
+                itemSelectText: 'Nhấn để chọn',
+                noResultsText: 'Không tìm thấy nhân viên',
+                noChoicesText: 'Không có nhân viên nào',
+                position: 'bottom',
+                shouldSort: false,
+                searchResultLimit: 50,
+                fuseOptions: {
+                    threshold: 0.4,
+                    distance: 500
+                }
+            });
+        }
+    }
 }
 
 function closeAddCongViecModal() {
     document.getElementById('addCongViecModal').classList.add('hidden');
     document.getElementById('formAddCongViec').reset();
+    
+    // Reset Choices.js selection
+    if (addNhanVienChoices) {
+        addNhanVienChoices.setChoiceByValue('');
+    }
 }
 
 function updateKpiDisplay(select) {
@@ -681,6 +726,32 @@ async function openEditCongViecModal(stt) {
         // Update KPI display
         const capdoSelect = document.getElementById('edit_capdo_stt');
         updateEditKpiDisplay(capdoSelect);
+        
+        // Initialize Choices.js for edit employee select if not already initialized
+        if (!editNhanVienChoices) {
+            const editNhanVienSelect = document.getElementById('edit_nhanvien_stt');
+            if (editNhanVienSelect) {
+                editNhanVienChoices = new Choices(editNhanVienSelect, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Tìm kiếm nhân viên...',
+                    itemSelectText: 'Nhấn để chọn',
+                    noResultsText: 'Không tìm thấy nhân viên',
+                    noChoicesText: 'Không có nhân viên nào',
+                    position: 'bottom',
+                    shouldSort: false,
+                    searchResultLimit: 50,
+                    fuseOptions: {
+                        threshold: 0.4,
+                        distance: 500
+                    }
+                });
+            }
+        }
+        
+        // Set the value after Choices.js is initialized
+        if (editNhanVienChoices && cv.nhanvien_stt) {
+            editNhanVienChoices.setChoiceByValue(cv.nhanvien_stt);
+        }
         
         // Show modal
         document.getElementById('editCongViecModal').classList.remove('hidden');

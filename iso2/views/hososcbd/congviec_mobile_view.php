@@ -211,7 +211,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="flex items-center justify-between mb-3">
             <h1 class="text-xl font-bold text-purple-700 flex items-center">
                 <i class="fas fa-mobile-alt mr-2"></i>
-                Công việc Mobile
+                Công việc sửa chữa
             </h1>
             <a href="hososcbd.php" class="text-purple-600 hover:text-purple-800">
                 <i class="fas fa-desktop text-xl"></i>

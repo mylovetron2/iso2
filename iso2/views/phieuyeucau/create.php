@@ -164,6 +164,10 @@ function addDeviceRow() {
                 <label class="block text-sm mb-1">Vị trí thiết bị</label>
                 <input type="text" name="vitrimaybd[]" class="w-full border rounded px-2 py-1 text-sm">
             </div>
+            <div class="md:col-span-3">
+                <label class="block text-sm mb-1">Mô tả chi tiết tình trạng kỹ thuật</label>
+                <textarea name="honghoc[]" rows="2" class="w-full border rounded px-2 py-1 text-sm" placeholder="Mô tả tình trạng thiết bị trước khi đưa về Xưởng"></textarea>
+            </div>
         </div>
     `;
     container.appendChild(row);

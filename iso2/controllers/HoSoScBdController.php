@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/HoSoSCBD.php';
 require_once __DIR__ . '/../models/DonVi.php';
 require_once __DIR__ . '/../models/ThietBi.php';
 require_once __DIR__ . '/../models/LichSuDN.php';
+require_once __DIR__ . '/../models/PhieuYeuCau.php';
 
 class HoSoScBdController
 {
@@ -12,6 +13,7 @@ class HoSoScBdController
     private DonVi $donViModel;
     private ThietBi $thietBiModel;
     private LichSuDN $logModel;
+    private PhieuYeuCau $phieuModel;
 
     public function __construct()
     {
@@ -19,6 +21,7 @@ class HoSoScBdController
         $this->donViModel = new DonVi();
         $this->thietBiModel = new ThietBi();
         $this->logModel = new LichSuDN();
+        $this->phieuModel = new PhieuYeuCau();
     }
 
     public function index(): void
@@ -45,6 +48,8 @@ class HoSoScBdController
 
     public function create(): void
     {
+        $prefillPhieu = trim($_GET['phieu'] ?? '');
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $commonData = $this->getCommonPostData();
             $devicesData = $this->getDevicesPostData();
@@ -70,34 +75,56 @@ class HoSoScBdController
                     $commonData['phieu'] = $this->model->getNextPhieuNumber();
                 }
                 
+                // Lấy index lớn nhất hiện có trong phiếu để tính số hồ sơ tiếp tục
+                // Ví dụ: phiếu 1997 đã có 1997-1, 1997-2 -> maxIndex = 2
+                // Thiết bị mới sẽ bắt đầu từ 1997-3, 1997-4...
+                $maxExistingIndex = $this->model->getMaxHosoIndexForPhieu($commonData['phieu']);
+                $hosoCounter = $maxExistingIndex; // Bắt đầu từ số hiện có, sẽ tăng lên trước khi dùng
+                
                 // Insert each device
                 $successCount = 0;
+                $createdDevices = []; // Store created devices info for batch logging
+                
                 try {
-                    foreach ($devicesData as $index => $device) {
+                    foreach ($devicesData as $device) {
                         $data = array_merge($commonData, $device);
                         
                         // Auto-generate maql (same for all devices in same phieu)
                         $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
-                        $data['hoso'] = $this->generateHoSo($data['phieu'], $index);
+                        
+                        // Generate hoso number: tăng counter và tạo số thứ tự
+                        $hosoCounter++;
+                        $data['hoso'] = $this->generateHoSo($data['phieu'], $hosoCounter);
                         
                         $id = $this->model->create($data);
                         if ($id) {
                             $successCount++;
                             
-                            // Log the creation
-                            $this->logHistory('CREATE', [
-                                'record_id' => $id,
+                            // Store device info for batch logging later
+                            $createdDevices[] = [
+                                'id' => $id,
                                 'maql' => $data['maql'],
-                                'phieu' => $data['phieu'],
                                 'mavt' => $data['mavt'],
                                 'somay' => $data['somay'],
-                                'madv' => $data['madv'],
-                                'description' => "Tạo hồ sơ mới: {$data['maql']} - Thiết bị {$index}/{count($devicesData)}"
-                            ]);
+                                'hoso' => $data['hoso']
+                            ];
                         }
                     }
                     
+                    // Batch log after all devices created (much faster than logging each device)
                     if ($successCount > 0) {
+                        $deviceList = array_map(function($d) {
+                            return "{$d['hoso']} ({$d['mavt']}/{$d['somay']})";
+                        }, $createdDevices);
+                        
+                        $this->logHistory('CREATE', [
+                            'record_id' => $createdDevices[0]['id'],
+                            'maql' => $createdDevices[0]['maql'],
+                            'phieu' => $commonData['phieu'],
+                            'madv' => $commonData['madv'],
+                            'description' => "Tạo {$successCount} hồ sơ mới: " . implode(', ', $deviceList)
+                        ]);
+                        
                         header("Location: /iso2/hososcbd.php?success=created&count={$successCount}");
                         exit;
                     }
@@ -114,6 +141,16 @@ class HoSoScBdController
 
         $donViList = $this->donViModel->getAllSimple();
         $nextPhieu = $this->model->getNextPhieuNumber();
+        $prefillData = null;
+        
+        // Nếu thêm thiết bị vào phiếu có sẵn, lấy thông tin phiếu để prefill
+        if (!empty($prefillPhieu)) {
+            $nextPhieu = $prefillPhieu;
+            $phieuDetail = $this->phieuModel->getPhieuDetail($prefillPhieu);
+            if ($phieuDetail && isset($phieuDetail['summary'])) {
+                $prefillData = $phieuDetail['summary'];
+            }
+        }
         
         require_once __DIR__ . '/../views/hososcbd/create.php';
     }
@@ -138,10 +175,16 @@ class HoSoScBdController
             $errors = $this->validate($data, $stt);
 
             if (empty($errors)) {
-                // Auto-generate maql and hoso for edit
+                // Auto-generate maql for edit
                 $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
-                // Use stt as index for uniqueness in edit mode
-                $data['hoso'] = $this->generateHoSo($data['phieu'], $stt);
+                
+                // Giữ nguyên mã hồ sơ cũ khi edit, không tự động sinh lại
+                // để tránh conflict với các hồ sơ khác trong cùng phiếu
+                if (empty($data['hoso'])) {
+                    // Nếu không có hoso (trường hợp hiếm), tạo từ phiếu hiện tại
+                    $maxIndex = $this->model->getMaxHosoIndexForPhieu($data['phieu']);
+                    $data['hoso'] = $this->generateHoSo($data['phieu'], $maxIndex + 1);
+                }
                 
                 try {
                     $success = $this->model->update($stt, $data);
@@ -279,6 +322,7 @@ class HoSoScBdController
                         'somay' => trim($device['somay'] ?? ''),
                         'model' => trim($device['model'] ?? ''),
                         'vitrimaybd' => trim($device['vitrimaybd'] ?? ''),
+                        'honghoc' => trim($device['honghoc'] ?? ''),
                         'lo' => trim($device['lo'] ?? ''),
                         'gieng' => trim($device['gieng'] ?? ''),
                         'mo' => trim($device['mo'] ?? '')
