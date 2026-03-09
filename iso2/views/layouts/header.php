@@ -137,17 +137,34 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-certificate mr-2"></i> Thiết bị HC/KĐ
                             </a>
                         </li>
-                        <?php if (hasPermission('vattu.view')): ?>
+                    </ul>
+                </li>
+                <?php endif; ?>
+
+                <!-- 3.5. Vật tư thanh lý -->
+                <?php if (isLoggedIn() && hasPermission('vattu.view')): ?>
+                <li>
+                    <div id="vattuMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-boxes mr-2"></i> Vật tư thanh lý
+                        <i id="vattuCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="vattuMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
                             <a href="/iso2/vattuthanhly.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-boxes mr-2"></i> Vật tư thanh lý
                             </a>
                         </li>
-                        <?php endif; ?>
                         <?php if (hasPermission('phanloai_vattu.view')): ?>
                         <li>
                             <a href="/iso2/phanloaivattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-tags mr-2"></i> Phân loại vật tư
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('phieukiemsoatvattu.view')): ?>
+                        <li>
+                            <a href="/iso2/phieukiemsoatvattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-clipboard-check mr-2"></i> Phiếu kiểm soát vật tư
                             </a>
                         </li>
                         <?php endif; ?>
@@ -200,6 +217,15 @@ require_once __DIR__ . '/../../config/constants.php';
                         </li>
                         <?php endif; ?>
                     </ul>
+                </li>
+                <?php endif; ?>
+
+                <!-- 4.5. Bảo dưỡng thiết bị -->
+                <?php if (isLoggedIn() && hasPermission('kehoachbaoduong.view')): ?>
+                <li>
+                    <a href="/iso2/kehoachbaoduongdinhky.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-tools mr-2"></i> Bảo dưỡng định kỳ
+                    </a>
                 </li>
                 <?php endif; ?>
 
@@ -435,6 +461,17 @@ if (thietbiBtn && thietbiMenu && thietbiCaret) {
     thietbiBtn.addEventListener('click', function() {
         thietbiMenu.classList.toggle('hidden');
         thietbiCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu Vật tư thanh lý
+const vattuBtn = document.getElementById('vattuMenuBtn');
+const vattuMenu = document.getElementById('vattuMenu');
+const vattuCaret = document.getElementById('vattuCaret');
+if (vattuBtn && vattuMenu && vattuCaret) {
+    vattuBtn.addEventListener('click', function() {
+        vattuMenu.classList.toggle('hidden');
+        vattuCaret.classList.toggle('rotate-180');
     });
 }
 

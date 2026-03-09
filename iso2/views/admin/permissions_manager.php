@@ -39,6 +39,16 @@ $allPermissions = [
     'phanloai_vattu.edit' => 'Sửa phân loại vật tư thanh lý',
     'phanloai_vattu.delete' => 'Xóa phân loại vật tư thanh lý',
     
+    'phieukiemsoatvattu.view' => 'Xem phiếu kiểm soát vật tư',
+    'phieukiemsoatvattu.create' => 'Tạo phiếu kiểm soát vật tư',
+    'phieukiemsoatvattu.edit' => 'Sửa phiếu kiểm soát vật tư',
+    'phieukiemsoatvattu.delete' => 'Xóa phiếu kiểm soát vật tư',
+    
+    'kehoachbaoduong.view' => 'Xem kế hoạch bảo dưỡng',
+    'kehoachbaoduong.create' => 'Tạo/Import kế hoạch bảo dưỡng',
+    'kehoachbaoduong.edit' => 'Sửa kế hoạch bảo dưỡng',
+    'kehoachbaoduong.delete' => 'Xóa kế hoạch bảo dưỡng',
+    
     'thietbihotro.view' => 'Xem thiết bị hỗ trợ',
     'thietbihotro.create' => 'Tạo thiết bị hỗ trợ',
     'thietbihotro.edit' => 'Sửa thiết bị hỗ trợ',

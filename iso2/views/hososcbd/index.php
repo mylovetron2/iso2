@@ -76,6 +76,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="hoanthanh" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'hoanthanh') ? 'selected' : ''; ?>>Hoàn thành</option>
                 <option value="chuabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuabg') ? 'selected' : ''; ?>>Chưa bàn giao</option>
                 <option value="dabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'dabg') ? 'selected' : ''; ?>>Đã bàn giao</option>
+                <option value="TTKTDB" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'TTKTDB') ? 'selected' : ''; ?>>TTKTDB</option>
             </select>
             
             <input type="date" name="from_date" value="<?php echo $_GET['from_date'] ?? ''; ?>" 
@@ -201,14 +202,23 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php 
-                        if ($item['bg'] == 1) {
+                        $isDaBG = ($item['bg'] == 1);
+                        $isHoanThanh = ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00' && !$isDaBG);
+                        
+                        if ($isDaBG) {
                             echo '<span class="inline-block bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded">Đã BG</span>';
-                        } elseif ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00') {
+                        } elseif ($isHoanThanh) {
                             echo '<span class="inline-block bg-purple-100 text-purple-800 text-xs font-bold px-2 py-1 rounded">Hoàn thành</span>';
                         } elseif ($item['ngayth'] && $item['ngayth'] != '0000-00-00') {
                             echo '<span class="inline-block bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">Đang làm</span>';
                         } else {
                             echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded">Chưa TH</span>';
+                        }
+                        
+                        // Hiển thị ttktafter cho trạng thái Đã BG hoặc Hoàn thành
+                        if (($isDaBG || $isHoanThanh) && !empty($item['ttktafter'])) {
+                            $badgeColor = ($item['ttktafter'] === 'TTKTDB') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+                            echo '<div class="mt-1"><span class="inline-block ' . $badgeColor . ' text-xs font-bold px-2 py-1 rounded">' . htmlspecialchars($item['ttktafter']) . '</span></div>';
                         }
                         ?>
                     </td>

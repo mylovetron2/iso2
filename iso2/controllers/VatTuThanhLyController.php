@@ -3,14 +3,18 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/VatTuThanhLy.php';
+require_once __DIR__ . '/../includes/ActivityLogger.php';
 
 class VatTuThanhLyController
 {
     private VatTuThanhLy $model;
+    private ActivityLogger $logger;
 
     public function __construct()
     {
         $this->model = new VatTuThanhLy();
+        $db = getDBConnection();
+        $this->logger = new ActivityLogger($db);
     }
 
     public function index(): void
@@ -113,6 +117,23 @@ class VatTuThanhLyController
             ];
             
             if ($this->model->create($data)) {
+                $db = getDBConnection();
+                $insertId = (int)$db->lastInsertId();
+                
+                // Log vật tư creation
+                $this->logger->log(
+                    'vattu_thanh_ly_iso',
+                    'INSERT',
+                    $insertId,
+                    null,
+                    [
+                        'mavattu' => $data['mavattu'],
+                        'ten_tiengviet' => $data['ten_tiengviet'],
+                        'soluong_conlai' => $data['soluong_conlai'],
+                        'phanloai_id' => $data['phanloai_id']
+                    ]
+                );
+                
                 header('Location: /iso2/vattuthanhly.php?success=created');
                 exit;
             } else {
@@ -140,6 +161,9 @@ class VatTuThanhLyController
             }
             
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Lấy dữ liệu cũ trước khi update
+                $oldData = $this->model->findById((int)$id);
+                
                 // Xử lý dữ liệu, convert empty string thành NULL cho các trường số
                 $data = [
                     'mavattu' => $_POST['mavattu'] ?? null,
@@ -164,6 +188,23 @@ class VatTuThanhLyController
                 ];
                 
                 if ($this->model->update((int)$id, $data)) {
+                    // Log vật tư update
+                    $this->logger->log(
+                        'vattu_thanh_ly_iso',
+                        'UPDATE',
+                        (int)$id,
+                        [
+                            'mavattu' => $oldData['mavattu'] ?? null,
+                            'ten_tiengviet' => $oldData['ten_tiengviet'] ?? null,
+                            'soluong_conlai' => $oldData['soluong_conlai'] ?? null
+                        ],
+                        [
+                            'mavattu' => $data['mavattu'],
+                            'ten_tiengviet' => $data['ten_tiengviet'],
+                            'soluong_conlai' => $data['soluong_conlai']
+                        ]
+                    );
+                    
                     header('Location: /iso2/vattuthanhly.php?success=updated');
                     exit;
                 } else {
@@ -209,7 +250,25 @@ class VatTuThanhLyController
             exit;
         }
         
+        // Lấy dữ liệu cũ trước khi xóa
+        $oldData = $this->model->findById((int)$id);
+        
         if ($this->model->delete((int)$id)) {
+            // Log vật tư deletion
+            if ($oldData) {
+                $this->logger->log(
+                    'vattu_thanh_ly_iso',
+                    'DELETE',
+                    (int)$id,
+                    [
+                        'mavattu' => $oldData['mavattu'] ?? null,
+                        'ten_tiengviet' => $oldData['ten_tiengviet'] ?? null,
+                        'soluong_conlai' => $oldData['soluong_conlai'] ?? null
+                    ],
+                    null
+                );
+            }
+            
             header('Location: /iso2/vattuthanhly.php?success=deleted');
         } else {
             header('Location: /iso2/vattuthanhly.php?error=delete_failed');
@@ -301,6 +360,25 @@ class VatTuThanhLyController
         ];
         
         if ($this->model->addChiTietSuDung($data)) {
+            // Lấy ID của bản ghi vừa insert
+            $db = getDBConnection();
+            $insertId = (int)$db->lastInsertId();
+            
+            // Log chi tiết sử dụng creation
+            $this->logger->log(
+                'vattu_thanh_ly_sudung_iso',
+                'INSERT',
+                $insertId,
+                null,
+                [
+                    'vattu_stt' => $vattu_stt,
+                    'soluong' => $soluong_thanhly,
+                    'nguoisudung' => $data['nguoisudung'],
+                    'bophan' => $data['bophan'],
+                    'mucdich_sudung' => $data['mucdich_sudung']
+                ]
+            );
+            
             // Lấy số lượng còn lại mới sau khi cập nhật
             $vattu_updated = $this->model->findById((int)$vattu_stt);
             
@@ -342,6 +420,22 @@ class VatTuThanhLyController
         $detail = $this->model->getChiTietById((int)$id);
         
         if ($this->model->deleteChiTietSuDung((int)$id)) {
+            // Log chi tiết sử dụng deletion
+            if ($detail) {
+                $this->logger->log(
+                    'vattu_thanh_ly_sudung_iso',
+                    'DELETE',
+                    (int)$id,
+                    [
+                        'vattu_stt' => $detail['vattu_stt'] ?? null,
+                        'soluong' => $detail['soluong'] ?? null,
+                        'nguoisudung' => $detail['nguoisudung'] ?? null,
+                        'bophan' => $detail['bophan'] ?? null
+                    ],
+                    null
+                );
+            }
+            
             // Lấy số lượng còn lại mới sau khi xóa (đã được cộng lại)
             if ($detail) {
                 $vattu_updated = $this->model->findById((int)$detail['vattu_stt']);
@@ -383,6 +477,9 @@ class VatTuThanhLyController
             exit;
         }
         
+        // Lấy dữ liệu cũ trước khi update
+        $oldDetail = $this->model->getChiTietById((int)$id);
+        
         // Không cho phép sửa số lượng để tránh inconsistency
         $data = [
             'nguoisudung' => $_POST['nguoisudung'] ?? null,
@@ -393,6 +490,25 @@ class VatTuThanhLyController
         ];
         
         if ($this->model->updateChiTietSuDung((int)$id, $data)) {
+            // Log chi tiết sử dụng update
+            if ($oldDetail) {
+                $this->logger->log(
+                    'vattu_thanh_ly_sudung_iso',
+                    'UPDATE',
+                    (int)$id,
+                    [
+                        'nguoisudung' => $oldDetail['nguoisudung'] ?? null,
+                        'bophan' => $oldDetail['bophan'] ?? null,
+                        'mucdich_sudung' => $oldDetail['mucdich_sudung'] ?? null
+                    ],
+                    [
+                        'nguoisudung' => $data['nguoisudung'],
+                        'bophan' => $data['bophan'],
+                        'mucdich_sudung' => $data['mucdich_sudung']
+                    ]
+                );
+            }
+            
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['error' => 'Failed to update chi tiet']);

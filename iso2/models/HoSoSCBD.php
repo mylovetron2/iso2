@@ -68,6 +68,8 @@ class HoSoSCBD extends BaseModel
             $where[] = "h.bg = 0 AND h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'dabg') { // Đã bàn giao
             $where[] = "h.bg = 1";
+        } elseif ($trangthai === 'TTKTDB') { // TTKTDB
+            $where[] = "h.ttktafter = 'TTKTDB'";
         }
         
         $whereClause = implode(' AND ', $where);
@@ -134,6 +136,8 @@ class HoSoSCBD extends BaseModel
             $where[] = "h.bg = 0 AND h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00'";
         } elseif ($trangthai === 'dabg') {
             $where[] = "h.bg = 1";
+        } elseif ($trangthai === 'TTKTDB') {
+            $where[] = "h.ttktafter = 'TTKTDB'";
         }
         
         $whereClause = implode(' AND ', $where);

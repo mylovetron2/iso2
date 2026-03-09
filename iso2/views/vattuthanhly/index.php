@@ -402,6 +402,10 @@ button.text-red-600:hover {
             <a href="thongke_vattu_thanh_ly.php" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-chart-bar mr-1"></i> Thống kê thanh lý
             </a>
+            
+            <a href="phieukiemsoatvattu.php" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-alt mr-1"></i> Phiếu kiểm soát VT
+            </a>
         </div>
     </form>
 
