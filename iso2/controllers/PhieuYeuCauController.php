@@ -326,6 +326,7 @@ class PhieuYeuCauController
         
         // Chuẩn bị mảng thiết bị
         $thietbi = [];
+        $mavt = [];
         $model = [];
         $somay = [];
         $tinhtrang = [];
@@ -338,9 +339,10 @@ class PhieuYeuCauController
             if (isset($devices[$i-1])) {
                 $device = $devices[$i-1];
                 $thietbi[$i] = $device['tenvt'] ?? $device['mavt'];
+                $mavt[$i] = $device['mavt'] ?? '';
                 $model[$i] = $device['model'] ?? '';
                 $somay[$i] = $device['somay'] ?? '';
-                $tinhtrang[$i] = $device['honghoc'] ?? '';
+                $tinhtrang[$i] = $device['ttktbefore'] ?? '';
                 $yeucau[$i] = $device['cv'] ?? '';
                 $vitri[$i] = $device['vitrimaybd'] ?? '';
             }

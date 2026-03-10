@@ -175,11 +175,10 @@ class HoSoSCBD extends BaseModel
     {
         $phieuEscaped = $this->db->quote($phieu);
         
-        // Optimized query: Query hồ sơ có format: PHIEU-INDEX (ví dụ: 1997-1, 1997-2, 1997-3)
+        // Query hồ sơ có format: PHIEU-INDEX (ví dụ: 1997-1, 1997-2, 1997-3)
         // Extract index từ hoso bằng cách split '-' và lấy phần sau
-        // Sử dụng index trên cột phieu để tăng tốc
         $sql = "SELECT hoso 
-                FROM {$this->table} USE INDEX (phieu)
+                FROM {$this->table}
                 WHERE phieu = $phieuEscaped 
                 AND hoso LIKE CONCAT($phieuEscaped, '-%')
                 ORDER BY CAST(SUBSTRING_INDEX(hoso, '-', -1) AS UNSIGNED) DESC 

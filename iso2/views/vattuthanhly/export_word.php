@@ -32,7 +32,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
-            font-size: 12pt;
+            font-size: 11pt;
         }
         th, td {
             border: 1px solid black;
@@ -98,72 +98,82 @@
         .col-nguyennhan {
             width: 19%;
         }
-        .appendix {
-            text-align: right;
-            font-size: 11pt;
-            margin-bottom: 10px;
+        .header-container {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
         }
-        .company-info {
+        .header-left {
+            display: table-cell;
+            width: 60%;
+            vertical-align: top;
             font-size: 11pt;
             line-height: 1.4;
-            margin-bottom: 15px;
         }
-        .approval-section {
+        .header-right {
+            display: table-cell;
+            width: 40%;
+            vertical-align: top;
             text-align: right;
-            margin: 15px 0 20px 0;
             font-size: 11pt;
         }
         .approval-signature {
             margin-top: 50px;
         }
         .act-title {
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             text-align: center;
             text-transform: uppercase;
-            margin: 20px 0 15px 0;
+            margin: 20px 0 10px 0;
         }
         .description {
-            font-size: 12pt;
+            font-size: 11pt;
             text-align: justify;
-            margin: 15px 0 20px 0;
+            margin: 10px 0 10px 0;
             line-height: 1.5;
         }
     </style>
 </head>
 <body>
-    <div class="appendix">
-        <strong>Phụ lục 1/Приложение 1</strong>
-    </div>
-    
-    <div class="company-info">
-        <div>LD Việt-Nga Vietsovpetro/СП «Вьетсовпетро»</div>
-        <div>XN Địa vật lý GK/ КПГ</div>
-        <div>Xưởng Sửa chữa thiết bị địa vật lý / ЦРГО</div>
-    </div>
-    
-    <div class="approval-section">
-        <div><strong>"Phê duyệt/Утверждаю"</strong></div>
-        <div>Chủ tịch Hội đồng thanh lý/</div>
-        <div>Председатель комиссии</div>
-        <div class="approval-signature">
-            <div>Phạm Hồng Khanh</div>
-            <div>«____» ____ 2026 г.</div>
+    <div class="header-container">
+        <div class="header-left">
+            <div>LD Việt-Nga Vietsovpetro/СП «Вьетсовпетро»</div>
+            <div>XN Dia vật lý GK/ КПП</div>
+            <div>Xưởng Sửa chữa thiết bị dia vật lý / ЦРГО</div>
+        </div>
+        <div class="header-right">
+            <div><strong>Phụ lục 2/Приложение 2</strong></div>
+            <div style="margin-top: 15px;"><strong>"Phê duyệt/Утверждаю"</strong></div>
+            <div>Chủ tịch Hội đồng thanh lý/</div>
+            <div>Председатель комиссии</div>
+            <div class="approval-signature">
+                <div>Phạm Hồng Khanh</div>
+                <div>«____» ____ 2025 г.</div>
+            </div>
         </div>
     </div>
     
+    <?php 
+    // Extract month and year from the date range
+    $month = isset($denngay) ? date('m', strtotime($denngay)) : date('m');
+    $year = isset($denngay) ? date('Y', strtotime($denngay)) : date('Y');
+    $monthName = isset($denngay) ? date('n', strtotime($denngay)) : date('n'); // Without leading zero
+    ?>
+    
     <div class="act-title">
-        BIÊN BẢN - AKT № __________<br/>
-        THANH LÝ CÔNG CỤ, DỤNG CỤ LAO ĐỘNG<br/>
-        СПИСАНИЯ ИНСТРУМЕНТОВ И ИНВЕНТАРЯ
+        BIÊN BẢN/АКТ №____<br/>
+        V/v SỬ DỤNG VẬT TƯ TIÊU HAO, PHỤ TÙNG THÁNG <?php echo $monthName; ?> NĂM <?php echo $year; ?><br/>
+        ОБ ИСПОЛЬЗОВАНИИ РАСХОДНЫХ МАТЕРИАЛОВ, ЗАПЧАСТЕЙ<br/>
+        ЗА <?php echo $month . '/' . $year; ?>Г.
     </div>
     
     <div class="description">
-        Hội đồng thanh lý công cụ, dụng cụ, vật tư tiêu hao được bổ nhiệm bằng quyết định số 131/QĐ-ĐVL ngày 08 tháng 08 năm 2019 đã xem xét những công cụ và dụng cụ lao động dưới đây đã sử dụng tại Xưởng Sửa chữa thiết bị địa vật lý và công nhận chúng không còn sử dụng được, thuộc diện phế liệu.
+        Hội đồng thanh lý công cụ, dụng cụ, vật tư tiêu hao được bổ nhiệm bằng quyết định số 131/QĐ-ĐVL ngày 08 tháng 08 năm 2019, xác nhận rằng trong tháng đã sử dụng tại Xưởng SCTBĐVL những vật tư tiêu hao, phụ tùng dưới đây:
     </div>
     
     <div class="description" style="font-style: italic;">
-        Комиссия по списанию инструментов, расходных материалов, назначенная приказом № 131/QĐ-ĐVL от 08/08/2019г., произвела осмотр использованных на ЦРГО инструментов и признала их пришедшими в негодность и подлежащими сдаче на утилизацию.
+        Комиссия по списанию инструментов, расходных материалов, назначенная приказом № 131/QĐ-ĐVL от 08/08/2019г, подтверждает, что за текущий месяц в/на ЦРГО  израсходованы нижеперечисленные материалы и запчасти:
     </div>
 
     <table>
@@ -262,34 +272,86 @@
         <p style="font-style: italic;"><strong>Неоприходованные отходы, подлежащие утилизации.</strong></p>
     </div>
 
-    <div style="margin-top: 40px; font-size: 12pt;">
-        <table style="border: none; width: 100%;">
-            <tr style="border: none;">
-                <td style="border: none; width: 50%; vertical-align: top;">
-                    <p><strong>Phó chủ tịch hội đồng/Зам. председателя:</strong></p>
-                    <p><strong>Chánh kế toán/ Глав. бухгалтер</strong></p>
-                    <p style="margin-top: 60px;">_________________ Đinh Thúy Việt</p>
-                </td>
-                <td style="border: none; width: 50%; vertical-align: top;">
-                    <p><strong>Thành viên/Члены:</strong></p>
-                    <p><strong>Trưởng Ban VT-HC/Начальник CМТОиЛ</strong></p>
-                    <p style="margin-top: 60px;">_________________ Phan Văn Hòa</p>
-                </td>
-            </tr>
-            <tr style="border: none;">
-                <td style="border: none; width: 50%; vertical-align: top; padding-top: 40px;">
-                    <p><strong>Trưởng phòng kỹ thuật sản xuất/</strong></p>
-                    <p><strong>Начальник профильного технического отдела</strong></p>
-                    <p style="margin-top: 60px;">_________________ Nguyễn Đình Hướng</p>
-                </td>
-                <td style="border: none; width: 50%; vertical-align: top; padding-top: 40px;">
-                    <p><strong>Xưởng trưởng Xưởng SCTBĐVL/Начальник ЦРГО</strong></p>
-                    <p><strong>Người chịu trách nhiêm vật chất/</strong></p>
-                    <p><strong>Материально-ответственное лицо</strong></p>
-                    <p style="margin-top: 40px;">_________________ Đặng Văn Tuệ</p>
-                </td>
-            </tr>
-        </table>
+    <div style="margin-top: 40px; font-size: 11pt;">
+        <div style="margin-bottom: 20px;">
+            <p><strong>Phó chủ tịch hội đồng / Зам. председателя:</strong></p>
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        <strong>Chánh kế toán/ Глав. бухгалтер</strong>
+                    </td>
+                    <td style="border: none; width: 40%; vertical-align: bottom; text-align: right;">
+                        _________________Đinh Thủy Việt
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p><strong>Thành viên/Члены:</strong></p>
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        Trưởng Ban VTHC /<br/>
+                        Начальник СМТОиЛ
+                    </td>
+                    <td style="border: none; width: 40%; vertical-align: bottom; text-align: right;">
+                        _________________Phan Văn Hòa
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        Trưởng phòng kỹ thuật sản xuất/<br/>
+                        Начальник профильного технического отдела
+                    </td>
+                    <td style="border: none; width: 40%; vertical-align: bottom; text-align: right;">
+                        _________________Nguyễn Đình Hưởng
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        Xưởng trưởng Xưởng SCTBĐVL<br/>
+                        Начальник ЦРГО<br/>
+                        Người chịu trách nhiệm vật chất/<br/>
+                        Материально-ответственное лицо
+                    </td>
+                    <td style="border: none; width: 40%; vertical-align: bottom; text-align: right;">
+                        _________________Đặng Văn Tuệ
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <p><strong>Viza:</strong></p>
+            <p>Trưởng phòng KTKH-TMDV/</p>
+        </div>
+
+        <div style="margin-top: 20px; font-size: 10pt;">
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 33%; text-align: left;">
+                        VSP- 000 -ТСКТ-244
+                    </td>
+                    <td style="border: none; width: 34%; text-align: center;">
+                        Phiên bản/Версия: 00
+                    </td>
+                    <td style="border: none; width: 33%; text-align: right;">
+                        Trang/Стр. 2/3
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
 </body>
 </html>

@@ -18,6 +18,12 @@ function escapeWordText($text) {
         return '';
     }
     
+    // First strip any HTML tags
+    $text = strip_tags($text);
+    
+    // Decode HTML entities (e.g., &ocirc; -> ô)
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    
     if (!mb_check_encoding($text, 'UTF-8')) {
         $text = mb_convert_encoding($text, 'UTF-8', 'ISO-8859-1');
     }

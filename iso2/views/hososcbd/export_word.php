@@ -13,7 +13,16 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 function dText($text) {
-    return !empty($text) ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : '';
+    if (empty($text)) return '';
+    
+    // First strip any HTML tags
+    $text = strip_tags($text);
+    
+    // Decode HTML entities (e.g., &ocirc; -> ô)
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    
+    // Then escape for XML
+    return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 }
 
 function dDate($date) {
@@ -287,7 +296,7 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
   padding:0cm 5.4pt 0cm 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;text-align:center'>
-  <?php echo dText($item['mavt']); ?><?php if(!empty($item['model'])) echo ' - '.dText($item['model']); ?></p>
+  <?php echo dText($item['mavt']); ?><?php if(!empty($item['model'])) echo '-'.dText($item['model']); ?></p>
   </td>
   <td width=142 style='width:70.85pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
   border-right:solid windowtext 1.0pt;mso-border-top-alt:solid windowtext .5pt;

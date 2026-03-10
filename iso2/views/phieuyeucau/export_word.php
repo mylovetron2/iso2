@@ -1,10 +1,9 @@
 <?php
 // Export Word document
 // Set headers first
-header("Content-Type: application/msword; charset=UTF-8");
+header("Content-Type: application/vnd.ms-word");
 header("Content-Disposition: attachment; filename=\"{$sohoso}-YCDV.doc\""); 
-header("Pragma: no-cache");
-header("Expires: 0");
+header("Cache-Control: max-age=0");
 
 // Output UTF-8 BOM for proper encoding detection by Word
 echo "\xEF\xBB\xBF";
@@ -17,6 +16,12 @@ function escapeWordText($text) {
     if ($text === null || $text === '') {
         return '';
     }
+    
+    // First strip any HTML tags
+    $text = strip_tags($text);
+    
+    // Decode HTML entities (e.g., &ocirc; -> ô)
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     
     // If data is stored as UTF-8 in latin1 column, it needs to be re-encoded
     // First check if it's valid UTF-8
@@ -35,7 +40,6 @@ function escapeWordText($text) {
     return $text;
 }
 ?>
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <html xmlns:v="urn:schemas-microsoft-com:vml"
 xmlns:o="urn:schemas-microsoft-com:office:office"
 xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -43,7 +47,7 @@ xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
 xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
-<meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<meta http-equiv=Content-Type content="text/html; charset=unicode">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 12">
 <meta name=Originator content="Microsoft Word 12">
@@ -508,12 +512,12 @@ table#hrdftrtbl{
  <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;mso-yfti-lastrow:yes'>
   <td style='padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>XN
-  Địa vật lý GK <br>
+  Địa vật lý GK <br/>
   Xưởng SCTBĐVL <o:p></o:p></span></p>
   </td>
   <td style='padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal><b><span style='mso-fareast-font-family:"Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
-  PHIẾU YÊU CẦU DỊCH VỤ</span></b><span style='mso-fareast-font-family:"Times New Roman"'><br><br>
+  PHIẾU YÊU CẦU DỊCH VỤ</span></b><span style='mso-fareast-font-family:"Times New Roman"'><br/><br/>
   <strong>Số hồ sơ:</strong> <strong><?php echo escapeWordText($sohoso); ?></strong>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Ngày, Датa: <?php echo escapeWordText($ngay); ?></strong>
   <o:p></o:p></span></p>
@@ -574,7 +578,7 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   <p class=MsoNormal align=center style='margin-top:0in;margin-right:-5.4pt;
   margin-bottom:0in;margin-left:5.4pt;margin-bottom:.0001pt;text-align:center;
   text-indent:-5.4pt'><b style='mso-bidi-font-weight:normal'><span
-  style='color:black;mso-themecolor:text1'>STT<u1:p></u1:p></span></b></p>
+  style='color:black;mso-themecolor:text1'>STT</span></b></p>
   <p class=MsoNormal align=center style='margin-top:0in;margin-right:-5.4pt;
   margin-bottom:0in;margin-left:5.4pt;margin-bottom:.0001pt;text-align:center;
   text-indent:-5.4pt;mso-line-height-alt:5.45pt'><span style='color:black;
@@ -590,12 +594,12 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   text1;mso-ansi-language:RU'> </span><span style='color:black;mso-themecolor:
   text1'> bị</span></b><b style='mso-bidi-font-weight:normal'><span lang=RU
   style='color:black;mso-themecolor:text1;mso-ansi-language:RU'> - </span><span
-  style='color:black;mso-themecolor:text1'>Model<u1:p></u1:p></span></b><span
+  style='color:black;mso-themecolor:text1'>Model</span></b><span
   lang=RU style='mso-ansi-language:RU'><o:p></o:p></span></p>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.45pt'><span lang=RU
   style='color:black;mso-themecolor:text1;mso-ansi-language:RU'>Наим-е  оборудования</span><span
-  lang=RU style='mso-ansi-language:RU'><u1:p></u1:p><o:p></o:p></span></p>
+  lang=RU style='mso-ansi-language:RU'><o:p></o:p></span></p>
   </td>
   <td width=94 style='width:70.85pt;border:solid windowtext 1.0pt;border-left:
   none;mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
@@ -605,7 +609,7 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   style='color:black;mso-themecolor:text1'>Số của thiết bị - Serial</span></b></p>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.45pt'><span style='color:black;
-  mso-themecolor:text1'>Номер<u1:p></u1:p></span></p>
+  mso-themecolor:text1'>Номер</span></p>
   </td>
 
   <td width=158 style='width:1.65in;border:solid windowtext 1.0pt;border-left:
@@ -616,13 +620,13 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   style='color:black;mso-themecolor:text1'>Mô tả chi tiết tình trạng</span></b><b
   style='mso-bidi-font-weight:normal'><span style='font-family:"Batang","serif";
   mso-bidi-font-family:Batang;color:black;mso-themecolor:text1'></span><span
-  style='color:black;mso-themecolor:text1'> kỹ thuật của thiết bị trước khi đưa về Xưởng<u1:p></u1:p></span></b></p>
+  style='color:black;mso-themecolor:text1'> kỹ thuật của thiết bị trước khi đưa về Xưởng</span></b></p>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.45pt'><span lang=RU
   style='color:black;mso-themecolor:text1;mso-ansi-language:RU'>Тех</span><span
   style='color:black;mso-themecolor:text1'>. </span><span lang=RU
   style='color:black;mso-themecolor:text1;mso-ansi-language:RU'></span><span
-  style='color:black;mso-themecolor:text1'>состояние<u1:p></u1:p></span></p>
+  style='color:black;mso-themecolor:text1'>состояние</span></p>
   </td>
   <td width=97 style='width:72.65pt;border:solid windowtext 1.0pt;border-left:
   none;mso-border-left-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt;
@@ -633,10 +637,10 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   style='mso-bidi-font-weight:normal'><span style='font-family:"Batang","serif";
   mso-bidi-font-family:Batang;color:black;mso-themecolor:text1;mso-ansi-language:
   RU'></span><span style='color:black;mso-themecolor:text1'> yêu cầu</span></b><span
-  style='color:black;mso-themecolor:text1'><u1:p></u1:p><o:p></o:p></span></p>
+  style='color:black;mso-themecolor:text1'><o:p></o:p></span></p>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.45pt'><span lang=RU
-  style='color:black;mso-themecolor:text1;mso-ansi-language:RU'>Требование<u1:p></u1:p><o:p></o:p></span></p>
+  style='color:black;mso-themecolor:text1;mso-ansi-language:RU'>Требование<o:p></o:p></span></p>
   </td>
   <td width=66 valign=top style='width:49.5pt;border:solid windowtext 1.0pt;
   border-left:none;mso-border-left-alt:solid windowtext .5pt;mso-border-alt:
@@ -655,16 +659,21 @@ mso-ansi-language:VI'><o:p>&nbsp;</o:p></span></p>
   Meiryo;color:black;mso-themecolor:text1;mso-ansi-language:RU'></span></b><b
   style='mso-bidi-font-weight:normal'><span lang=RU style='color:black;
   mso-themecolor:text1;mso-ansi-language:RU'> đâu đưa về Xưởng</span></b><span
-  lang=RU style='color:black;mso-themecolor:text1;mso-ansi-language:RU'><u1:p></u1:p><o:p></o:p></span></p>
+  lang=RU style='color:black;mso-themecolor:text1;mso-ansi-language:RU'><o:p></o:p></span></p>
   </td>
  </tr>
 <?php
 $i = 1;
 while ($i <= 5 + $solan) {
     if (isset($thietbi[$i]) && $thietbi[$i] != "") {
-        $mamay = $thietbi[$i];
+        // Display format: mavt-model
+        $mamay = $mavt[$i] ?? '';
         if (!empty($model[$i])) {
-            $mamay = $thietbi[$i] . "-" . $model[$i];
+            $mamay .= (!empty($mamay) ? '-' : '') . $model[$i];
+        }
+        // If no mavt-model, fallback to thietbi name
+        if (empty($mamay)) {
+            $mamay = $thietbi[$i];
         }
 ?>
  <tr style='mso-yfti-irow:1;mso-yfti-lastrow:yes;height:20.2pt'>
@@ -673,7 +682,7 @@ while ($i <= 5 + $solan) {
   padding:0in 5.4pt 0in 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.95pt'><span style='color:black;
-  mso-themecolor:text1'><?php echo $i; ?><u1:p></u1:p><o:p></o:p></span></p>
+  mso-themecolor:text1'><?php echo $i; ?><o:p></o:p></span></p>
   </td>
   <td width=162 style='width:121.35pt;border-top:none;border-left:none;
   border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
@@ -681,7 +690,7 @@ while ($i <= 5 + $solan) {
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.95pt'><span style='color:black;
-  mso-themecolor:text1'><?php echo escapeWordText($mamay); ?><u1:p></u1:p></span></p>
+  mso-themecolor:text1'><?php echo escapeWordText($mamay); ?></span></p>
   </td>
   <td width=94 style='width:70.85pt;border-top:none;border-left:none;
   border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
@@ -689,7 +698,7 @@ while ($i <= 5 + $solan) {
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.95pt'><span style='color:black;
-  mso-themecolor:text1'><?php echo escapeWordText($somay[$i]); ?><u1:p></u1:p></span></p>
+  mso-themecolor:text1'><?php echo escapeWordText($somay[$i]); ?></span></p>
   </td>
   <td width=158 style='width:1.65in;border-top:none;border-left:none;
   border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
@@ -697,7 +706,7 @@ while ($i <= 5 + $solan) {
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.95pt'><span style='color:black;
-  mso-themecolor:text1'><?php echo escapeWordText($tinhtrang[$i]); ?><u1:p></u1:p></span></p>
+  mso-themecolor:text1'><?php echo escapeWordText($tinhtrang[$i]); ?></span></p>
   </td>
   <td width=97 style='width:72.65pt;border-top:none;border-left:none;
   border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
@@ -705,7 +714,7 @@ while ($i <= 5 + $solan) {
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt;height:20.2pt'>
   <p class=MsoNormal align=center style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
   auto;text-align:center;mso-line-height-alt:5.95pt'><span style='color:black;
-  mso-themecolor:text1'><?php echo escapeWordText($yeucau[$i]); ?><u1:p></u1:p></span></p>
+  mso-themecolor:text1'><?php echo escapeWordText($yeucau[$i]); ?></span></p>
   </td>
   <td width=66 style='width:49.5pt;border-top:none;border-left:none;border-bottom:
   solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;mso-border-top-alt:
@@ -722,7 +731,7 @@ while ($i <= 5 + $solan) {
         $vitriText = preg_replace('/Tam Đảo\s+\d+/i', 'TĐ ' . $formattedNumber, $vitriText);
     }
     echo escapeWordText($vitriText);
-  ?><u1:p></u1:p></span></p>
+  ?></span></p>
   </td>
  </tr>
 <?php
@@ -732,12 +741,12 @@ while ($i <= 5 + $solan) {
 ?>
 </table>
 <p class=MsoNormal style='margin-bottom:12.0pt'><span lang=VI style='mso-fareast-font-family:
-"Times New Roman";mso-ansi-language:VI'><br>
+"Times New Roman";mso-ansi-language:VI'><br/>
 
-<p><i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>Ghi chú: Cột "Nội dung yêu cầu" được ghi như sau: </span></i></span></br>
-<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>BD: Yêu cầu bảo dưỡng thiết bị / SC: Yêu cầu sửa chữa thiết bị bị hỏng / KT: Yêu cầu kiểm tra sự hoạt</span></i></span></br>
-<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>động của thiết bị mà không cần bảo dưỡng (VD như: KT để nghiệm thu TB mới, KT tình trạng của thiết bị</span></i></span></br>
-<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>đã được BD trước đây nhưng chưa thả đo trong giếng khoan, v.v.).</span></i></span></p>
+<p><i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>Ghi chú: Cột "Nội dung yêu cầu" được ghi như sau: </span></i><br/>
+<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>BD: Yêu cầu bảo dưỡng thiết bị / SC: Yêu cầu sửa chữa thiết bị bị hỏng / KT: Yêu cầu kiểm tra sự hoạt</span></i><br/>
+<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>động của thiết bị mà không cần bảo dưỡng (VD như: KT để nghiệm thu TB mới, KT tình trạng của thiết bị</span></i><br/>
+<i><span lang=VI style='mso-ansi-language:VI;font-weight:italic'>đã được BD trước đây nhưng chưa thả đo trong giếng khoan, v.v.).</span></i></p>
 
 <p><span lang=VI style='mso-ansi-language:VI'>4. Các yêu cầu khác (nếu có):...</span><span lang=VI style='mso-ansi-language:VI;font-weight:bold'><?php echo escapeWordText($ycthemkh); ?><o:p></o:p></span></p>
 <p><span lang=VI style='mso-ansi-language:VI'>5. Phục vụ sản xuất cho Lô/ Dịch vụ ngoài:...... </span><span lang=VI style='mso-ansi-language:VI;font-weight:bold'><?php echo escapeWordText($lo); ?>......<o:p></o:p></span></p>
@@ -746,7 +755,7 @@ while ($i <= 5 + $solan) {
 <p><span lang=VI style='mso-ansi-language:VI'>6. Xem xét của lãnh đạo Xưởng (nếu có):.....</span><span lang=VI style='mso-ansi-language:VI;font-weight:bold'><?php echo escapeWordText($xemxetxuong); ?> <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin-bottom:12.0pt'><span lang=VI style='mso-fareast-font-family:
-"Times New Roman";mso-ansi-language:VI'><br>
+"Times New Roman";mso-ansi-language:VI'><br/>
 
 <p><span lang=VI style='mso-ansi-language:VI'>Lãnh đạo Xưởng / Trưởng nhóm <i>(ký ghi rõ họ tên) </i><o:p></o:p></span></p>
 <table id='hrdftrtbl' border='1' cellspacing='0' cellpadding='0'>
@@ -757,7 +766,7 @@ while ($i <= 5 + $solan) {
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
                             <td  class="footer">
-                            <span lang=VI style='mso-ansi-language:VI'>BM.25.02<br>
+                            <span lang=VI style='mso-ansi-language:VI'>BM.25.02<br/>
 	01/01/2024 <o:p></o:p></span>
                             </td>
                         </tr>

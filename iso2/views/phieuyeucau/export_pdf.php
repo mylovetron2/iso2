@@ -125,7 +125,7 @@ foreach ($devices as $device) {
             <td style="width: 5%; text-align: center; border: 1px solid #000;">' . $counter . '</td>
             <td style="width: 23%; text-align: center; border: 1px solid #000;">' . $tenmay . '</td>
             <td style="width: 13%; text-align: center; border: 1px solid #000;">' . displayTextPdf($device['somay']) . '</td>
-            <td style="width: 22%; text-align: center; border: 1px solid #000;">' . nl2br(displayTextPdf($device['honghoc'] ?? '')) . '</td>
+            <td style="width: 22%; text-align: center; border: 1px solid #000;">' . nl2br(displayTextPdf($device['ttktbefore'] ?? '')) . '</td>
             <td style="width: 14%; text-align: center; border: 1px solid #000;">' . displayTextPdf($device['cv'] ?? '') . '</td>
             <td style="width: 13%; text-align: center; border: 1px solid #000;">' . displayTextPdf($device['vitrimaybd'] ?? '') . '</td>
         </tr>';
