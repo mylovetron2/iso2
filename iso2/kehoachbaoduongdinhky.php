@@ -90,6 +90,15 @@ switch ($action) {
         $controller->updateMultipleHoanTat();
         break;
         
+    case 'updateThietbiId':
+        // Kiểm tra quyền chỉnh sửa
+        if (!hasPermission('kehoachbaoduong.edit')) {
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền cập nhật']);
+            exit;
+        }
+        $controller->updateThietbiId();
+        break;
+        
     default:
         $_SESSION['error'] = 'Action không hợp lệ';
         header('Location: /iso2/index.php');

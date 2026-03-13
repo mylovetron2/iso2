@@ -26,10 +26,11 @@ class KeHoachBaoDuongDinhKyController
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = $_GET['search'] ?? '';
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
+            $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', ''
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
             $sapxep = $_GET['sapxep'] ?? ''; // '', 'qui_1', 'qui_2', 'qui_3', 'qui_4'
             
-            $items = $this->getAll($nam, $search, $qui, $trangthai, $sapxep);
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep);
             $total = count($items);
             
             // Lấy danh sách các năm có dữ liệu
@@ -91,9 +92,9 @@ class KeHoachBaoDuongDinhKyController
 
             // Insert dữ liệu mới
             $sql = "INSERT INTO ke_hoach_bao_duong_dinh_ky_iso 
-                    (nam, ten_thietbi, so_serial, qui_1, qui_2, qui_3, qui_4, ghi_chu, created_by)
+                    (thietbi_id, nam, ten_thietbi, so_serial, nhomsc, qui_1, qui_2, qui_3, qui_4, ghi_chu, created_by)
                     VALUES 
-                    (:nam, :ten_thietbi, :so_serial, :qui_1, :qui_2, :qui_3, :qui_4, :ghi_chu, :created_by)";
+                    (:thietbi_id, :nam, :ten_thietbi, :so_serial, :nhomsc, :qui_1, :qui_2, :qui_3, :qui_4, :ghi_chu, :created_by)";
             
             $stmt = $this->db->prepare($sql);
             $count = 0;
@@ -103,14 +104,16 @@ class KeHoachBaoDuongDinhKyController
                 if (empty($row[1]) && empty($row[2])) continue;
 
                 $stmt->execute([
+                    ':thietbi_id' => !empty($row[0]) ? (int)$row[0] : null,
                     ':nam' => $nam,
                     ':ten_thietbi' => trim($row[1] ?? ''),
                     ':so_serial' => trim($row[2] ?? ''),
-                    ':qui_1' => trim($row[3] ?? ''),
-                    ':qui_2' => trim($row[4] ?? ''),
-                    ':qui_3' => trim($row[5] ?? ''),
-                    ':qui_4' => trim($row[6] ?? ''),
-                    ':ghi_chu' => trim($row[7] ?? ''),
+                    ':nhomsc' => trim($row[3] ?? ''),
+                    ':qui_1' => trim($row[4] ?? ''),
+                    ':qui_2' => trim($row[5] ?? ''),
+                    ':qui_3' => trim($row[6] ?? ''),
+                    ':qui_4' => trim($row[7] ?? ''),
+                    ':ghi_chu' => trim($row[8] ?? ''),
                     ':created_by' => $_SESSION['user']['username'] ?? 'system'
                 ]);
                 $count++;
@@ -242,6 +245,56 @@ class KeHoachBaoDuongDinhKyController
     }
 
     /**
+     * Cập nhật ID thiết bị
+     */
+    public function updateThietbiId(): void
+    {
+        try {
+            header('Content-Type: application/json; charset=UTF-8');
+            
+            $input = json_decode(file_get_contents('php://input'), true);
+            $kehoachId = isset($input['kehoach_id']) ? (int)$input['kehoach_id'] : 0;
+            $thietbiId = isset($input['thietbi_id']) ? (int)$input['thietbi_id'] : 0;
+            
+            if ($kehoachId <= 0 || $thietbiId <= 0) {
+                echo json_encode(['success' => false, 'message' => 'Tham số không hợp lệ']);
+                exit;
+            }
+            
+            // Kiểm tra thiết bị có tồn tại không
+            $checkSql = "SELECT stt FROM thietbi_iso WHERE stt = :thietbi_id LIMIT 1";
+            $checkStmt = $this->db->prepare($checkSql);
+            $checkStmt->execute([':thietbi_id' => $thietbiId]);
+            
+            if (!$checkStmt->fetch()) {
+                echo json_encode(['success' => false, 'message' => 'ID thiết bị không tồn tại trong hệ thống']);
+                exit;
+            }
+            
+            // Cập nhật thietbi_id
+            $sql = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
+                    SET thietbi_id = :thietbi_id 
+                    WHERE id = :kehoach_id";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':thietbi_id' => $thietbiId,
+                ':kehoach_id' => $kehoachId
+            ]);
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Đã cập nhật ID thiết bị'
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error in updateThietbiId: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
      * Xuất Excel
      */
     public function exportExcel(): void
@@ -250,9 +303,10 @@ class KeHoachBaoDuongDinhKyController
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = $_GET['search'] ?? '';
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
+            $nhomsc = $_GET['nhomsc'] ?? '';
             $trangthai = $_GET['trangthai'] ?? '';
             $sapxep = $_GET['sapxep'] ?? '';
-            $items = $this->getAll($nam, $search, $qui, $trangthai, $sapxep);
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep);
 
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -296,11 +350,12 @@ class KeHoachBaoDuongDinhKyController
             $sheet->setCellValue('A3', 'STT');
             $sheet->setCellValue('B3', 'Tên thiết bị');
             $sheet->setCellValue('C3', 'Số S/N');
-            $sheet->setCellValue('D3', 'Quí 1');
-            $sheet->setCellValue('E3', 'Quí 2');
-            $sheet->setCellValue('F3', 'Quí 3');
-            $sheet->setCellValue('G3', 'Quí 4');
-            $sheet->setCellValue('H3', 'Ghi chú');
+            $sheet->setCellValue('D3', 'Nhóm SC');
+            $sheet->setCellValue('E3', 'Quí 1');
+            $sheet->setCellValue('F3', 'Quí 2');
+            $sheet->setCellValue('G3', 'Quí 3');
+            $sheet->setCellValue('H3', 'Quí 4');
+            $sheet->setCellValue('I3', 'Ghi chú');
 
             // Style header
             $headerStyle = [
@@ -314,47 +369,48 @@ class KeHoachBaoDuongDinhKyController
                     'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
                 ]
             ];
-            $sheet->getStyle('A3:H3')->applyFromArray($headerStyle);
+            $sheet->getStyle('A3:I3')->applyFromArray($headerStyle);
 
             // Data
             $row = 4;
             foreach ($items as $index => $item) {
-                $sheet->setCellValue('A' . $row, $index + 1);
+                $sheet->setCellValue('A' . $row, !empty($item['thietbi_id']) ? $item['thietbi_id'] : ($index + 1));
                 $sheet->setCellValue('B' . $row, $item['ten_thietbi']);
                 $sheet->setCellValue('C' . $row, $item['so_serial']);
+                $sheet->setCellValue('D' . $row, $item['nhomsc'] ?? '');
                 
                 // Quý 1: nếu hoàn thành thì in ✓, nếu không và không phải TO thì in giá trị, nếu là TO thì để trống
                 if (!empty($item['qui_1_hoantat'])) {
-                    $sheet->setCellValue('D' . $row, '✓');
+                    $sheet->setCellValue('E' . $row, '✓');
                 } elseif (strtoupper(trim($item['qui_1'] ?? '')) !== 'TO') {
-                    $sheet->setCellValue('D' . $row, $item['qui_1']);
+                    $sheet->setCellValue('E' . $row, $item['qui_1']);
                 }
                 
                 // Quý 2
                 if (!empty($item['qui_2_hoantat'])) {
-                    $sheet->setCellValue('E' . $row, '✓');
+                    $sheet->setCellValue('F' . $row, '✓');
                 } elseif (strtoupper(trim($item['qui_2'] ?? '')) !== 'TO') {
-                    $sheet->setCellValue('E' . $row, $item['qui_2']);
+                    $sheet->setCellValue('F' . $row, $item['qui_2']);
                 }
                 
                 // Quý 3
                 if (!empty($item['qui_3_hoantat'])) {
-                    $sheet->setCellValue('F' . $row, '✓');
+                    $sheet->setCellValue('G' . $row, '✓');
                 } elseif (strtoupper(trim($item['qui_3'] ?? '')) !== 'TO') {
-                    $sheet->setCellValue('F' . $row, $item['qui_3']);
+                    $sheet->setCellValue('G' . $row, $item['qui_3']);
                 }
                 
                 // Quý 4
                 if (!empty($item['qui_4_hoantat'])) {
-                    $sheet->setCellValue('G' . $row, '✓');
+                    $sheet->setCellValue('H' . $row, '✓');
                 } elseif (strtoupper(trim($item['qui_4'] ?? '')) !== 'TO') {
-                    $sheet->setCellValue('G' . $row, $item['qui_4']);
+                    $sheet->setCellValue('H' . $row, $item['qui_4']);
                 }
                 
-                $sheet->setCellValue('H' . $row, $item['ghi_chu']);
+                $sheet->setCellValue('I' . $row, $item['ghi_chu']);
                 
                 // Tô màu xanh cho các ô có giá trị "TO" trong database
-                $quiColumns = ['D' => 'qui_1', 'E' => 'qui_2', 'F' => 'qui_3', 'G' => 'qui_4'];
+                $quiColumns = ['E' => 'qui_1', 'F' => 'qui_2', 'G' => 'qui_3', 'H' => 'qui_4'];
                 foreach ($quiColumns as $col => $field) {
                     if (strtoupper(trim($item[$field] ?? '')) === 'TO') {
                         $sheet->getStyle($col . $row)->getFill()
@@ -376,10 +432,10 @@ class KeHoachBaoDuongDinhKyController
                     ]
                 ]
             ];
-            $sheet->getStyle('A3:H' . $lastRow)->applyFromArray($borderStyle);
+            $sheet->getStyle('A3:I' . $lastRow)->applyFromArray($borderStyle);
 
             // Auto width
-            foreach (range('A', 'H') as $col) {
+            foreach (range('A', 'I') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
@@ -403,7 +459,7 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Lấy danh sách kế hoạch
      */
-    private function getAll(int $nam, string $search = '', int $qui = 0, string $trangthai = '', string $sapxep = ''): array
+    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = ''): array
     {
         $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
@@ -418,6 +474,12 @@ class KeHoachBaoDuongDinhKyController
         if ($qui > 0 && $qui <= 4) {
             $quiColumn = 'qui_' . $qui;
             $sql .= " AND $quiColumn IS NOT NULL AND $quiColumn != ''";
+        }
+
+        // Lọc theo nhóm sửa chữa
+        if (!empty($nhomsc) && in_array($nhomsc, ['RDNGA', 'CNC'])) {
+            $sql .= " AND nhomsc = :nhomsc";
+            $params[':nhomsc'] = $nhomsc;
         }
 
         // Lọc theo trạng thái hoàn thành

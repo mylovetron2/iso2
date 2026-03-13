@@ -1004,6 +1004,28 @@ try {
         }
         } // End if (!$result) - close all fuzzy matching steps
         
+        // Query ke_hoach_bao_duong_dinh_ky_iso to get ID (always run, regardless of device found or not)
+        // Match BOTH ten_thietbi AND so_serial from search data (left side)
+        $kehoach_id = '';
+        try {
+            $kehoach_sql = "SELECT id FROM ke_hoach_bao_duong_dinh_ky_iso 
+                           WHERE ten_thietbi = :ten_thietbi 
+                           AND so_serial = :somay 
+                           LIMIT 1";
+            $kehoach_stmt = $db->prepare($kehoach_sql);
+            $kehoach_stmt->execute([
+                ':ten_thietbi' => $ten_thietbi,
+                ':somay' => $sn
+            ]);
+            $kehoach_row = $kehoach_stmt->fetch(PDO::FETCH_ASSOC);
+            if ($kehoach_row) {
+                $kehoach_id = $kehoach_row['id'];
+            }
+        } catch (PDOException $e) {
+            // Silently handle if table doesn't exist or query fails
+            error_log("Kehoach query error: " . $e->getMessage());
+        }
+        
         if ($result) {
             $found_count++;
             $match_type_label = [
@@ -1013,6 +1035,7 @@ try {
                 'fuzzy-name' => '≈ Name Match',
                 'custom-rule' => '🎯 Custom Rule'
             ];
+            
             $results[] = [
                 'mavt' => $ten_thietbi,
                 'mavt_latin' => ($ten_thietbi !== $ten_thietbi_latin) ? $ten_thietbi_latin : '',
@@ -1027,7 +1050,8 @@ try {
                 'sn_variants' => implode(', ', $sn_variants),
                 'match_type' => $match_type_label[$result['match_type']] ?? '✓',
                 'found' => true,
-                'custom_rule_debug' => $custom_rule_debug
+                'custom_rule_debug' => $custom_rule_debug,
+                'kehoach_id' => $kehoach_id
             ];
         } else {
             $not_found_count++;
@@ -1045,7 +1069,8 @@ try {
                 'sn_variants' => implode(', ', $sn_variants),
                 'match_type' => 'X',
                 'found' => false,
-                'custom_rule_debug' => $custom_rule_debug
+                'custom_rule_debug' => $custom_rule_debug,
+                'kehoach_id' => $kehoach_id
             ];
         }
     }
@@ -1678,6 +1703,7 @@ try {
                 <th rowspan="2">Tên TB</th>
                 <th rowspan="2">Đơn vị</th>
                 <th rowspan="2">STT DB</th>
+                <th rowspan="2">ID KH</th>
             </tr>
             <tr>
                 <th>Tên TB</th>
@@ -1744,6 +1770,7 @@ try {
             <td><?php echo htmlspecialchars($result['tenvt']); ?></td>
             <td><?php echo htmlspecialchars($result['madv']); ?></td>
             <td><strong><?php echo htmlspecialchars($result['stt']); ?></strong></td>
+            <td><?php echo !empty($result['kehoach_id']) ? '<strong style="color: #28a745;">' . htmlspecialchars($result['kehoach_id']) . '</strong>' : '<span style="color: #999;">-</span>'; ?></td>
         </tr>
     <?php
         $index++;

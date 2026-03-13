@@ -22,8 +22,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php 
             $exportUrl = "kehoachbaoduongdinhky.php?action=exportExcel&nam=" . $nam;
             if (!empty($search)) $exportUrl .= "&search=" . urlencode($search);
-            if (isset($qui) && $qui > 0) $exportUrl .= "&qui=" . $qui;
-            if (!empty($trangthai)) $exportUrl .= "&trangthai=" . urlencode($trangthai);
+            if (isset($qui) && $qui > 0) $exportUrl .= "&qui=" . $qui;            if (!empty($nhomsc)) $exportUrl .= "&nhomsc=" . urlencode($nhomsc);            if (!empty($trangthai)) $exportUrl .= "&trangthai=" . urlencode($trangthai);
             if (!empty($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
             ?>
             <a href="<?php echo $exportUrl; ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
@@ -41,7 +40,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Filter -->
     <form method="GET" class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Năm:</label>
                 <select name="nam" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -58,6 +57,15 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="2" <?php echo isset($qui) && $qui == 2 ? 'selected' : ''; ?>>Quý 2</option>
                     <option value="3" <?php echo isset($qui) && $qui == 3 ? 'selected' : ''; ?>>Quý 3</option>
                     <option value="4" <?php echo isset($qui) && $qui == 4 ? 'selected' : ''; ?>>Quý 4</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Nhóm SC:</label>
+                <select name="nhomsc" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
+                    <option value="" <?php echo !isset($nhomsc) || $nhomsc == '' ? 'selected' : ''; ?>>Tất cả</option>
+                    <option value="RDNGA" <?php echo isset($nhomsc) && $nhomsc == 'RDNGA' ? 'selected' : ''; ?>>RDNGA</option>
+                    <option value="CNC" <?php echo isset($nhomsc) && $nhomsc == 'CNC' ? 'selected' : ''; ?>>CNC</option>
                 </select>
             </div>
             
@@ -152,8 +160,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID Thiết bị</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên thiết bị</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Số S/N</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nhóm SC</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Quí 1</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 2</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 3</th>
@@ -167,6 +178,30 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php foreach ($items as $index => $item): ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm"><?php echo $index + 1; ?></td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
+                                    <?php echo htmlspecialchars($item['id']); ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <?php if (!empty($item['thietbi_id'])): ?>
+                                    <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_id']; ?>" 
+                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-150"
+                                       title="Xem chi tiết thiết bị">
+                                        <?php echo htmlspecialchars($item['thietbi_id']); ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+                                        <input type="number" 
+                                               class="thietbi-id-input w-20 border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                                               data-kehoach-id="<?php echo $item['id']; ?>"
+                                               placeholder="Nhập ID"
+                                               title="Nhập ID thiết bị">
+                                    <?php else: ?>
+                                        <span class="text-gray-400">-</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="font-medium text-gray-900">
                                     <?php echo htmlspecialchars($item['ten_thietbi']); ?>
@@ -176,6 +211,9 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <span class="font-mono text-blue-700 text-sm">
                                     <?php echo htmlspecialchars($item['so_serial']); ?>
                                 </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">
+                                <?php echo htmlspecialchars($item['nhomsc'] ?? ''); ?>
                             </td>
                             <td class="px-4 py-3 text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_1_hoantat'])): ?>
@@ -290,7 +328,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2"></i>
                                 <p>Chưa có kế hoạch bảo dưỡng cho năm <?php echo $nam; ?></p>
                                 <?php if (hasPermission('kehoachbaoduong.create')): ?>
@@ -377,6 +415,76 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    // Xử lý nhập ID thiết bị
+    const thietbiInputs = document.querySelectorAll('.thietbi-id-input');
+    
+    thietbiInputs.forEach(input => {
+        // Lưu khi người dùng nhấn Enter hoặc blur (rời khỏi input)
+        input.addEventListener('blur', function() {
+            saveThietbiId(this);
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveThietbiId(this);
+            }
+        });
+    });
+    
+    function saveThietbiId(inputElement) {
+        const kehoachId = inputElement.dataset.kehoachId;
+        const thietbiId = inputElement.value.trim();
+        
+        // Nếu rỗng thì không làm gì
+        if (!thietbiId) {
+            return;
+        }
+        
+        // Validate là số
+        if (!/^\d+$/.test(thietbiId)) {
+            alert('ID thiết bị phải là số nguyên');
+            inputElement.value = '';
+            return;
+        }
+        
+        // Disable input và hiển thị loading
+        inputElement.disabled = true;
+        const originalBg = inputElement.style.backgroundColor;
+        inputElement.style.backgroundColor = '#fef3c7';
+        
+        // Gửi AJAX request
+        fetch('kehoachbaoduongdinhky.php?action=updateThietbiId', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                kehoach_id: parseInt(kehoachId),
+                thietbi_id: parseInt(thietbiId)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload trang để hiển thị link thiết bị
+                location.reload();
+            } else {
+                alert('Lỗi: ' + data.message);
+                inputElement.value = '';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi cập nhật ID thiết bị');
+            inputElement.value = '';
+        })
+        .finally(() => {
+            inputElement.disabled = false;
+            inputElement.style.backgroundColor = originalBg;
+        });
+    }
 });
 </script>
 
