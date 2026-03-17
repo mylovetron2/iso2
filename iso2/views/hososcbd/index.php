@@ -79,6 +79,12 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="TTKTDB" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'TTKTDB') ? 'selected' : ''; ?>>TTKTDB</option>
             </select>
             
+            <select name="nhomsc" class="border rounded px-3 py-2 text-sm md:text-base">
+                <option value="">Tất cả nhóm</option>
+                <option value="RDNGA" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'RDNGA') ? 'selected' : ''; ?>>RDNGA</option>
+                <option value="CNC" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'CNC') ? 'selected' : ''; ?>>CNC</option>
+            </select>
+            
             <input type="date" name="from_date" value="<?php echo $_GET['from_date'] ?? ''; ?>" 
                    placeholder="Từ ngày" 
                    class="border rounded px-3 py-2 text-sm md:text-base">
@@ -116,6 +122,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Phiếu</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Số hồ sơ</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Mã VT</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
@@ -129,7 +136,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có hồ sơ nào</p>
                     </td>
@@ -143,6 +150,17 @@ require_once __DIR__ . '/../layouts/header.php';
                            title="Xem phiếu yêu cầu">
                             <?php echo htmlspecialchars($item['phieu']); ?>
                         </a>
+                    </td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
+                        <?php if (!empty($item['hoso'])): ?>
+                            <a href="/iso2/hososcbd.php?action=view&id=<?php echo $item['stt']; ?>" 
+                               class="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                               title="Xem chi tiết hồ sơ">
+                                <?php echo htmlspecialchars($item['hoso']); ?>
+                            </a>
+                        <?php else: ?>
+                            <span class="text-gray-400">-</span>
+                        <?php endif; ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <?php if (!empty($item['thietbi_stt'])): ?>
