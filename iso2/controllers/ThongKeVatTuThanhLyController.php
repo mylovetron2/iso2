@@ -36,13 +36,29 @@ class ThongKeVatTuThanhLyController
                 return;
             }
             
+            // Check if export Phieu KSVT is requested
+            if (isset($_GET['action']) && $_GET['action'] === 'exportPhieuKSVT') {
+                $this->exportPhieuKSVT();
+                return;
+            }
+            
             // Get date range from query params
             $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
             $denngay = $_GET['denngay'] ?? date('Y-m-d'); // Today
             $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
+            
+            // Get list of phanloai for dropdown
+            $stmtPhanLoai = $this->db->query("SELECT id, ma_phanloai, ten_phanloai, mau_sac FROM phanloai_vattu_thanh_ly_iso ORDER BY thu_tu ASC");
+            $phanloaiList = $stmtPhanLoai->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Get list of donvi for dropdown
+            $stmtDonVi = $this->db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
+            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
             
             // Get statistics
-            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search);
+            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
             $total = count($items);
             
             // Calculate totals
@@ -69,6 +85,10 @@ class ThongKeVatTuThanhLyController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
+            $phanloaiList = [];
+            $donViList = [];
             $error = 'Có lỗi xảy ra: ' . $e->getMessage();
             
             require_once __DIR__ . '/../views/vattuthanhly/thongke.php';
@@ -78,7 +98,7 @@ class ThongKeVatTuThanhLyController
     /**
      * Lấy danh sách vật tư thanh lý theo khoảng thời gian
      */
-    private function getThanhLyByDateRange(string $tungay, string $denngay, string $search = ''): array
+    private function getThanhLyByDateRange(string $tungay, string $denngay, string $search = '', ?int $phanloai_id = null, string $bophan = ''): array
     {
         $sql = "SELECT 
                     s.id,
@@ -91,6 +111,9 @@ class ThongKeVatTuThanhLyController
                     v.dvt_tiengviet as donvi,
                     v.dvt_tiengnga,
                     v.dongia,
+                    v.phanloai_id,
+                    pl.ten_phanloai,
+                    pl.ma_phanloai,
                     s.soluong as soluong_thaydoi,
                     s.soluong * v.dongia as thanhtien,
                     COALESCE(s.ngayhoanthanh, s.ngaysd_nhan, DATE(s.updated_at)) as ngay_thuchien,
@@ -101,12 +124,30 @@ class ThongKeVatTuThanhLyController
                     '' as namsd
                 FROM vattu_thanh_ly_sudung_iso s
                 INNER JOIN vattu_thanh_ly_iso v ON s.vattu_stt = v.stt
+                LEFT JOIN phanloai_vattu_thanh_ly_iso pl ON v.phanloai_id = pl.id
                 WHERE DATE(COALESCE(s.ngayhoanthanh, s.ngaysd_nhan, s.updated_at)) BETWEEN :tungay AND :denngay";
         
         $params = [
             ':tungay' => $tungay,
             ':denngay' => $denngay
         ];
+        
+        // Add phanloai filter if provided
+        if ($phanloai_id) {
+            $sql .= " AND v.phanloai_id = :phanloai_id";
+            $params[':phanloai_id'] = $phanloai_id;
+        }
+        
+        // Add bophan filter if provided
+        if (!empty($bophan)) {
+            // Nếu chọn "Đội ĐVL Tổng hợp" (madv = DVLTH) thì lọc cả TH và CNC
+            if ($bophan === 'DVLTH') {
+                $sql .= " AND s.bophan IN ('TH', 'CNC')";
+            } else {
+                $sql .= " AND s.bophan = :bophan";
+                $params[':bophan'] = $bophan;
+            }
+        }
         
         // Add search filter if provided
         if (!empty($search)) {
@@ -140,9 +181,11 @@ class ThongKeVatTuThanhLyController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
             
             // Get data
-            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search);
+            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
             
             // Load PhpSpreadsheet
             require_once(__DIR__ . '/../vendor/autoload.php');
@@ -291,9 +334,11 @@ class ThongKeVatTuThanhLyController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
             
             // Get data
-            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search);
+            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
             $total = count($items);
             
             // Calculate totals
@@ -308,18 +353,61 @@ class ThongKeVatTuThanhLyController
             // Convert total to Vietnamese words
             $totalInWords = $this->numberToVietnameseWords($total);
             
+            // Determine which template to use based on phanloai
+            $templateFile = 'export_word.php'; // Default template
+            
+            if ($phanloai_id) {
+                $stmt = $this->db->prepare("SELECT ten_phanloai FROM phanloai_vattu_thanh_ly_iso WHERE id = :id");
+                $stmt->execute([':id' => $phanloai_id]);
+                $phanloai = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($phanloai && stripos($phanloai['ten_phanloai'], 'Công cụ dụng cụ') !== false) {
+                    $templateFile = 'export_word_congcu.php';
+                }
+            }
+            
             // Set headers for Word download
             header('Content-Type: application/vnd.ms-word; charset=UTF-8');
             header('Content-Disposition: attachment; filename="Thong_Ke_Vat_Tu_Thanh_Ly_' . date('Ymd') . '.doc"');
             header('Cache-Control: max-age=0');
             
-            // Include the Word template
-            require_once __DIR__ . '/../views/vattuthanhly/export_word.php';
+            // Include the appropriate Word template
+            require_once __DIR__ . '/../views/vattuthanhly/' . $templateFile;
             exit;
             
         } catch (Exception $e) {
             error_log("Error in exportWord: " . $e->getMessage());
             die("Error exporting to Word: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Export Phieu Kiem Soat Vat Tu (Equipment Control Voucher) to Word document
+     */
+    public function exportPhieuKSVT(): void {
+        try {
+            // Get date range
+            $tungay = $_GET['tungay'] ?? date('Y-m-01');
+            $denngay = $_GET['denngay'] ?? date('Y-m-d');
+            $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
+            
+            // Get data
+            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
+            
+            // Set headers for Word download
+            header('Content-Type: application/vnd.ms-word; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="Phieu_Kiem_Soat_Vat_Tu_' . date('Ymd') . '.doc"');
+            header('Cache-Control: max-age=0');
+            
+            // Include the template
+            require_once __DIR__ . '/../views/vattuthanhly/export_phieu_ksvt.php';
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("Error in exportPhieuKSVT: " . $e->getMessage());
+            die("Error exporting Phieu KSVT: " . $e->getMessage());
         }
     }
     

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Hình Vật Tư Thanh Lý - ERD</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .diagram-container {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .table-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .table-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .table-body {
+            padding: 15px;
+        }
+        
+        .field {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .field:last-child {
+            border-bottom: none;
+        }
+        
+        .pk {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .fk {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .field-name {
+            display: inline-block;
+            width: 150px;
+            color: #2c3e50;
+        }
+        
+        .field-type {
+            color: #7f8c8d;
+            font-size: 0.85em;
+        }
+        
+        .relationship-list {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .relationship-item {
+            padding: 10px 0;
+            font-size: 1.05em;
+        }
+        
+        .relationship-item strong {
+            color: #667eea;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .badge-primary {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .badge-foreign {
+            background: #3498db;
+            color: white;
+        }
+        
+        .badge-index {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+        
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗂️ MÔ HÌNH VẬT TƯ THANH LÝ</h1>
+            <p class="subtitle">Entity Relationship Diagram - Hệ thống ISO2</p>
+        </header>
+        
+        <div class="content">
+            <!-- ERD Diagram -->
+            <div class="section">
+                <h2 class="section-title">📊 Sơ Đồ Quan Hệ (ERD)</h2>
+                <div class="diagram-container">
+                    <div class="mermaid">
+erDiagram
+    phanloai_vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_iso : "phân loại"
+    vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_sudung_iso : "sử dụng/thanh lý"
+    vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_lichsu_iso : "lịch sử"
+    
+    phanloai_vattu_thanh_ly_iso {
+        int id PK
+        varchar ma_phanloai UK
+        varchar ten_phanloai
+        varchar mau_sac
+        int thu_tu
+        text mo_ta
+        timestamp created_at
+    }
+    
+    vattu_thanh_ly_iso {
+        int stt PK
+        varchar mavattu
+        varchar so_serial
+        int phanloai_id FK
+        int vi_tri_sap_xep
+        text ten_tienganh
+        text ten_tiengnga
+        text ten_tiengviet
+        text dactinhkt_tiengnga
+        text dactinhkt_tiengviet
+        varchar dvt_tiengnga
+        varchar dvt_tiengviet
+        decimal soluong_conlai
+        decimal dongia
+        date ngaynhan
+        varchar sohd
+        date ngaykyhd
+        varchar nguoiquanly
+        varchar vitribaoquan
+        text ghichu
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    vattu_thanh_ly_sudung_iso {
+        int id PK
+        int vattu_stt FK
+        varchar nguoisudung
+        date ngaysd_nhan
+        decimal soluong
+        varchar bophan
+        text mucdich_sudung
+        varchar trangthai
+        date ngayhoanthanh
+        text ghichu
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    vattu_thanh_ly_lichsu_iso {
+        int id PK
+        int vattu_stt FK
+        enum loai_thaydoi
+        decimal soluong_truoc
+        decimal soluong_thaydoi
+        decimal soluong_sau
+        varchar nguoi_thuchien
+        datetime ngay_thuchien
+        text lydothaydo
+        timestamp created_at
+    }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chú thích -->
+            <div class="section">
+                <h2 class="section-title">📌 Chú Thích</h2>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #e74c3c;"></div>
+                        <span><strong>PK</strong> - Primary Key (Khóa chính)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #3498db;"></div>
+                        <span><strong>FK</strong> - Foreign Key (Khóa ngoại)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #2ecc71;"></div>
+                        <span><strong>UK</strong> - Unique Key (Khóa duy nhất)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #f39c12;"></div>
+                        <span><strong>IDX</strong> - Index (Chỉ mục)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Relationships -->
+            <div class="section">
+                <h2 class="section-title">🔗 Quan Hệ Giữa Các Bảng</h2>
+                <div class="relationship-list">
+                    <div class="relationship-item">
+                        <strong>1:N</strong> - <code>phanloai_vattu_thanh_ly_iso</code> ▸ <code>vattu_thanh_ly_iso</code>
+                        <br><small>Một phân loại có thể có nhiều vật tư</small>
+                    </div>
+                    <div class="relationship-item">
+                        <strong>1:N</strong> - <code>vattu_thanh_ly_iso</code> ▸ <code>vattu_thanh_ly_sudung_iso</code>
+                        <br><small>Một vật tư có thể có nhiều lần sử dụng/thanh lý</small>
+                    </div>
+                    <div class="relationship-item">
+                        <strong>1:N</strong> - <code>vattu_thanh_ly_iso</code> ▸ <code>vattu_thanh_ly_lichsu_iso</code>
+                        <br><small>Một vật tư có thể có nhiều lịch sử thay đổi</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chi tiết các bảng -->
+            <div class="section">
+                <h2 class="section-title">📋 Chi Tiết Các Bảng</h2>
+                
+                <div class="table-grid">
+                    <!-- Bảng 1: Phân loại -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            📁 phanloai_vattu_thanh_ly_iso
+                        </div>
+                        <div class="table-body">
+                            <div class="field">
+                                <span class="field-name pk">• id</span>
+                                <span class="badge badge-primary">PK</span>
+                                <br><span class="field-type">int(11) AUTO_INCREMENT</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ma_phanloai</span>
+                                <span class="badge badge-index">UNIQUE</span>
+                                <br><span class="field-type">varchar(50) NOT NULL</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ten_phanloai</span>
+                                <br><span class="field-type">varchar(100) NOT NULL</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">mau_sac</span>
+                                <br><span class="field-type">varchar(50)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">thu_tu</span>
+                                <br><span class="field-type">int(11) DEFAULT 0</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">mo_ta</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">created_at</span>
+                                <br><span class="field-type">timestamp</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bảng 2: Vật tư chính -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            📦 vattu_thanh_ly_iso
+                        </div>
+                        <div class="table-body">
+                            <div class="field">
+                                <span class="field-name pk">• stt</span>
+                                <span class="badge badge-primary">PK</span>
+                                <br><span class="field-type">int(11) AUTO_INCREMENT</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">mavattu</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">varchar(50)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">so_serial</span>
+                                <br><span class="field-type">varchar(100)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name fk">• phanloai_id</span>
+                                <span class="badge badge-foreign">FK</span>
+                                <br><span class="field-type">int(11) DEFAULT 1</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">vi_tri_sap_xep</span>
+                                <br><span class="field-type">int(11) DEFAULT 999</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ten_tienganh</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ten_tiengnga</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ten_tiengviet</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">dactinhkt_*</span>
+                                <br><span class="field-type">text (nga/viet)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">dvt_*</span>
+                                <br><span class="field-type">varchar(50) (nga/viet)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">soluong_conlai</span>
+                                <br><span class="field-type">decimal(10,2) ⚡ Auto</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">dongia</span>
+                                <br><span class="field-type">decimal(15,2)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ngaynhan</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">date</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">sohd</span>
+                                <br><span class="field-type">varchar(50)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">nguoiquanly</span>
+                                <br><span class="field-type">varchar(100)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">vitribaoquan</span>
+                                <br><span class="field-type">varchar(200)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bảng 3: Sử dụng -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            🔄 vattu_thanh_ly_sudung_iso
+                        </div>
+                        <div class="table-body">
+                            <div class="field">
+                                <span class="field-name pk">• id</span>
+                                <span class="badge badge-primary">PK</span>
+                                <br><span class="field-type">int(11) AUTO_INCREMENT</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name fk">• vattu_stt</span>
+                                <span class="badge badge-foreign">FK</span>
+                                <br><span class="field-type">int(11) NOT NULL</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">nguoisudung</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">varchar(100)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ngaysd_nhan</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">date</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">soluong</span>
+                                <br><span class="field-type">decimal(10,2)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">bophan</span>
+                                <br><span class="field-type">varchar(100)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">mucdich_sudung</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">trangthai</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">varchar(20) DEFAULT 'dangdung'</span>
+                                <br><small>dangdung | dahoan | thanh_ly</small>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ngayhoanthanh</span>
+                                <br><span class="field-type">date</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bảng 4: Lịch sử -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            📜 vattu_thanh_ly_lichsu_iso
+                        </div>
+                        <div class="table-body">
+                            <div class="field">
+                                <span class="field-name pk">• id</span>
+                                <span class="badge badge-primary">PK</span>
+                                <br><span class="field-type">int(11) AUTO_INCREMENT</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name fk">• vattu_stt</span>
+                                <span class="badge badge-foreign">FK</span>
+                                <br><span class="field-type">int(11) NOT NULL</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">loai_thaydoi</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">ENUM</span>
+                                <br><small>nhap | xuat | dieu_chinh | thanh_ly</small>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">soluong_truoc</span>
+                                <br><span class="field-type">decimal(10,2)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">soluong_thaydoi</span>
+                                <br><span class="field-type">decimal(10,2) NOT NULL</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">soluong_sau</span>
+                                <br><span class="field-type">decimal(10,2)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">nguoi_thuchien</span>
+                                <br><span class="field-type">varchar(100)</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">ngay_thuchien</span>
+                                <span class="badge badge-index">IDX</span>
+                                <br><span class="field-type">datetime DEFAULT NOW()</span>
+                            </div>
+                            <div class="field">
+                                <span class="field-name">lydothaydo</span>
+                                <br><span class="field-type">text</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Luồng dữ liệu -->
+            <div class="section">
+                <h2 class="section-title">⚙️ Luồng Hoạt Động</h2>
+                <div class="diagram-container">
+                    <div class="mermaid">
+flowchart TD
+    A[Tạo Vật Tư Mới] -->|INSERT| B[vattu_thanh_ly_iso]
+    B -->|soluong_conlai = 100| B
+    
+    C[Xuất Vật Tư] -->|INSERT| D[vattu_thanh_ly_sudung_iso]
+    D -->|soluong = 10| E{Cập nhật số lượng}
+    E -->|soluong_conlai - 10| B
+    E -->|Ghi log| F[vattu_thanh_ly_lichsu_iso]
+    
+    G[Xóa Chi Tiết] -->|DELETE| D
+    D -->|Cộng lại +10| E
+    
+    H[Thay đổi trạng thái] -->|UPDATE trangthai| D
+    
+    style A fill:#a8e6cf
+    style C fill:#ffd3b6
+    style G fill:#ffaaa5
+    style H fill:#dcedc1
+    style B fill:#667eea,color:#fff
+    style D fill:#764ba2,color:#fff
+    style F fill:#f39c12,color:#fff
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tính năng đặc biệt -->
+            <div class="section">
+                <h2 class="section-title">⭐ Tính Năng Đặc Biệt</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196f3;">
+                        <strong>🌍 Đa ngôn ngữ</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Hỗ trợ Việt, Anh, Nga cho tên và đặc tính kỹ thuật</p>
+                    </div>
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 10px; border-left: 4px solid #ff9800;">
+                        <strong>⚡ Auto Update</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Tự động cập nhật soluong_conlai khi xuất/xóa</p>
+                    </div>
+                    <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; border-left: 4px solid #9c27b0;">
+                        <strong>🎨 Phân loại màu</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Mỗi phân loại có màu riêng để dễ phân biệt</p>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 4px solid #4caf50;">
+                        <strong>📝 Audit Trail</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Ghi log đầy đủ lịch sử thay đổi</p>
+                    </div>
+                    <div style="background: #fce4ec; padding: 20px; border-radius: 10px; border-left: 4px solid #e91e63;">
+                        <strong>🔒 Cascade Delete</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Tự động xóa chi tiết khi xóa vật tư</p>
+                    </div>
+                    <div style="background: #e0f2f1; padding: 20px; border-radius: 10px; border-left: 4px solid #009688;">
+                        <strong>📊 View Tổng Hợp</strong>
+                        <p style="margin-top: 10px; font-size: 0.9em;">View sẵn với thống kê tổng hợp</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>📅 Tạo ngày: 18/03/2026 | 🏢 Hệ thống ISO2 | 👨‍💻 Vật Tư Thanh Lý Module</p>
+        </footer>
+    </div>
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                curve: 'basis',
+                padding: 20
+            },
+            er: {
+                layoutDirection: 'LR'
+            }
+        });
+    </script>
+</body>
+</html>

@@ -457,8 +457,20 @@ h6 {
                     <select class="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" name="bophan">
                         <option value="">-- Chọn bộ phận --</option>
                         <?php foreach ($donViList as $dv): ?>
+                            <?php 
+                            // Bỏ qua "Đội ĐVL Tổng hợp"
+                            if ($dv['tendv'] === 'Đội ĐVL Tổng hợp') continue;
+                            
+                            // Đổi tên hiển thị
+                            $tenHienThi = $dv['tendv'];
+                            if ($dv['tendv'] === 'Đội Carota tổng hợp') {
+                                $tenHienThi = 'Nhóm tổng hợp';
+                            } elseif ($dv['tendv'] === 'Đội công nghệ cao') {
+                                $tenHienThi = 'Nhóm CNC';
+                            }
+                            ?>
                         <option value="<?php echo htmlspecialchars($dv['madv']); ?>">
-                            <?php echo htmlspecialchars($dv['tendv']); ?>
+                            <?php echo htmlspecialchars($tenHienThi); ?>
                         </option>
                         <?php endforeach; ?>
                     </select>

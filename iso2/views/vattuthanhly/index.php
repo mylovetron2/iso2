@@ -394,20 +394,55 @@ button.text-red-600:hover {
             <a href="vattuthanhly.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-plus mr-1"></i> Thêm vật tư
             </a>
-            <a href="import_vattu_excel.php" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">
-                <i class="fas fa-file-excel mr-1"></i> Import Excel
-            </a>
             <?php endif; ?>
             
-            <a href="thongke_vattu_thanh_ly.php" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
-                <i class="fas fa-chart-bar mr-1"></i> Thống kê thanh lý
-            </a>
-            
-            <a href="phieukiemsoatvattu.php" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
-                <i class="fas fa-file-alt mr-1"></i> Phiếu kiểm soát VT
-            </a>
+            <!-- Dropdown menu cho các chức năng khác -->
+            <div class="relative inline-block align-top">
+                <button type="button" id="dropdownMenuButton" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded inline-flex items-center gap-2 h-full">
+                    <i class="fas fa-ellipsis-v"></i> Chức năng
+                    <i class="fas fa-caret-down"></i>
+                </button>
+                <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <?php if (hasPermission('vattu.create')): ?>
+                    <a href="import_vattu_excel.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-file-excel mr-3 text-emerald-600 w-5"></i>
+                        <span>Import Excel</span>
+                    </a>
+                    <?php endif; ?>
+                    <a href="thongke_vattu_thanh_ly.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-chart-bar mr-3 text-purple-600 w-5"></i>
+                        <span>Thống kê thanh lý</span>
+                    </a>
+                    <a href="phieukiemsoatvattu.php" class="flex items-center px-4 py-3 hover:bg-gray-50 rounded-b-lg">
+                        <i class="fas fa-file-alt mr-3 text-indigo-600 w-5"></i>
+                        <span>Phiếu kiểm soát VT</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </form>
+
+    <script>
+    // Dropdown menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const button = document.getElementById('dropdownMenuButton');
+        const menu = document.getElementById('dropdownMenu');
+        
+        if (button && menu) {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!button.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        }
+    });
+    </script>
 
     <div>
         <h3 class="text-lg font-semibold mb-3">
@@ -686,7 +721,14 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                                 <label class="block text-sm font-medium mb-1">Bộ phận</label>
                                 <select name="bophan" class="w-full border rounded px-3 py-2" style="color: #000; font-weight: normal;">
                                     <option value="">-- Chọn bộ phận --</option>
-                                    ${donViList.map(dv => `<option value="${dv.madv}">${dv.tendv}</option>`).join('')}
+                                    ${donViList
+                                        .filter(dv => dv.tendv !== 'Đội ĐVL Tổng hợp')
+                                        .map(dv => {
+                                            let tenHienThi = dv.tendv;
+                                            if (dv.tendv === 'Đội Carota tổng hợp') tenHienThi = 'Nhóm tổng hợp';
+                                            else if (dv.tendv === 'Đội công nghệ cao') tenHienThi = 'Nhóm CNC';
+                                            return `<option value="${dv.madv}">${tenHienThi}</option>`;
+                                        }).join('')}
                                 </select>
                             </div>
                             
@@ -919,7 +961,14 @@ function renderDetailTable(vattuStt, items) {
                         <label class="block text-sm font-medium mb-1">Bộ phận</label>
                         <select name="bophan" class="w-full border rounded px-2 py-1 text-sm">
                             <option value="">-- Chọn bộ phận --</option>
-                            ${donViList.map(dv => `<option value="${dv.madv}" ${(item.bophan === dv.madv) ? 'selected' : ''}>${dv.tendv}</option>`).join('')}
+                            ${donViList
+                                .filter(dv => dv.tendv !== 'Đội ĐVL Tổng hợp')
+                                .map(dv => {
+                                    let tenHienThi = dv.tendv;
+                                    if (dv.tendv === 'Đội Carota tổng hợp') tenHienThi = 'Nhóm tổng hợp';
+                                    else if (dv.tendv === 'Đội công nghệ cao') tenHienThi = 'Nhóm CNC';
+                                    return `<option value="${dv.madv}" ${(item.bophan === dv.madv) ? 'selected' : ''}>${tenHienThi}</option>`;
+                                }).join('')}
                         </select>
                     </div>
                     

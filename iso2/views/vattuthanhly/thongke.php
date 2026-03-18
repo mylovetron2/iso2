@@ -12,9 +12,14 @@ require_once __DIR__ . '/../layouts/header.php';
         </h1>
         <div class="flex gap-2">
             <?php if (!empty($items)): ?>
-            <a href="thongke_vattu_thanh_ly.php?action=exportWord&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
+            <a href="thongke_vattu_thanh_ly.php?action=exportWord&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>&phanloai_id=<?php echo urlencode($phanloai_id ?? ''); ?>&bophan=<?php echo urlencode($bophan ?? ''); ?>" 
                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-word mr-1"></i> Xuất Word
+            </a>
+            <a href="thongke_vattu_thanh_ly.php?action=exportPhieuKSVT&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>&phanloai_id=<?php echo urlencode($phanloai_id ?? ''); ?>&bophan=<?php echo urlencode($bophan ?? ''); ?>" 
+               target="_blank"
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-file-alt mr-1"></i> In phiếu KSVT
             </a>
             <?php endif; ?>
             <a href="vattuthanhly.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
@@ -32,7 +37,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Filter Form -->
     <form method="get" class="mb-6 bg-gray-50 p-4 rounded-lg">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-calendar-alt text-blue-600"></i> Từ ngày
@@ -51,6 +56,42 @@ require_once __DIR__ . '/../layouts/header.php';
                        name="denngay" 
                        value="<?php echo htmlspecialchars($denngay); ?>" 
                        class="border rounded px-3 py-2 w-full">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <i class="fas fa-tags text-blue-600"></i> Phân loại
+                </label>
+                <select name="phanloai_id" class="border rounded px-3 py-2 w-full">
+                    <option value="">Tất cả phân loại</option>
+                    <?php foreach ($phanloaiList as $pl): ?>
+                    <option value="<?php echo $pl['id']; ?>" 
+                            <?php echo (isset($phanloai_id) && $phanloai_id == $pl['id']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($pl['ten_phanloai']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <i class="fas fa-building text-blue-600"></i> Bộ phận
+                </label>
+                <select name="bophan" class="border rounded px-3 py-2 w-full">
+                    <option value="">Tất cả bộ phận</option>
+                    <?php foreach ($donViList as $dv): ?>
+                        <?php 
+                        // Bỏ qua TH và CNC (đã gộp vào DVLTH - Đội ĐVL Tổng hợp)
+                        if ($dv['madv'] === 'TH' || $dv['madv'] === 'CNC') continue;
+                        ?>
+                    <option value="<?php echo htmlspecialchars($dv['madv']); ?>"
+                            <?php echo (isset($bophan) && $bophan === $dv['madv']) ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($dv['tendv']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <div>

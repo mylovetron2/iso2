@@ -95,15 +95,22 @@ if (!empty($item['hoso'])) {
                 <i class="fas fa-edit"></i> Sửa
             </a>
             <?php endif; ?>
+            <?php /* Ẩn các nút không cần thiết
             <a href="/iso2/hososcbd.php?action=exportpdf&id=<?php echo $item['stt']; ?>" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm" target="_blank" title="Xuất PDF">
                 <i class="fas fa-file-pdf"></i> PDF
             </a>
-            <a href="/iso2/hososcbd.php?action=exportword&id=<?php echo $item['stt']; ?>" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm" target="_blank" title="Xuất Word">
-                <i class="fas fa-file-word"></i> Word
+            */ ?>
+            <a href="/iso2/hososcbd.php?action=exportphieusc&id=<?php echo $item['stt']; ?>" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm" target="_blank" title="In Phiếu SC">
+                <i class="fas fa-file-word"></i> Phiếu SC
+            </a>
+            <?php /* Ẩn các nút không cần thiết
+            <a href="/iso2/hososcbd.php?action=exportword&id=<?php echo $item['stt']; ?>" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm" target="_blank" title="Phiếu Yêu Cầu">
+                <i class="fas fa-file-alt"></i> Phiếu YC
             </a>
             <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm" title="In trang">
                 <i class="fas fa-print"></i> In
             </button>
+            */ ?>
         </div>
     </div>
 
