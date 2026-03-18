@@ -42,6 +42,12 @@ class ThongKeVatTuThanhLyController
                 return;
             }
             
+            // Check if export Excel Procurement is requested
+            if (isset($_GET['action']) && $_GET['action'] === 'exportExcelProcurement') {
+                $this->exportExcelProcurement();
+                return;
+            }
+            
             // Get date range from query params
             $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
             $denngay = $_GET['denngay'] ?? date('Y-m-d'); // Today
@@ -408,6 +414,272 @@ class ThongKeVatTuThanhLyController
         } catch (Exception $e) {
             error_log("Error in exportPhieuKSVT: " . $e->getMessage());
             die("Error exporting Phieu KSVT: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Export procurement cost calculation to Excel
+     */
+    public function exportExcelProcurement(): void {
+        try {
+            // Get date range
+            $tungay = $_GET['tungay'] ?? date('Y-m-01');
+            $denngay = $_GET['denngay'] ?? date('Y-m-d');
+            $search = $_GET['search'] ?? '';
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $bophan = $_GET['bophan'] ?? '';
+            
+            // Get data
+            $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
+            
+            // Load PhpSpreadsheet
+            require_once(__DIR__ . '/../vendor/autoload.php');
+            
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Exchange rate
+            $exchangeRate = 25380;
+            $year = date('Y', strtotime($denngay));
+            
+            // Title
+            $sheet->setCellValue('A1', 'РАСЧЁТ СТОИМОСТИ');
+            $sheet->mergeCells('A1:K1');
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            // Subtitle
+            $sheet->setCellValue('A2', "Hа закупку измерительных приборов в {$year} г");
+            $sheet->mergeCells('A2:K2');
+            $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            // Exchange rate
+            $sheet->setCellValue('G3', 'Tỷ giá:');
+            $sheet->setCellValue('H3', $exchangeRate);
+            $sheet->getStyle('G3')->getFont()->setBold(true);
+            
+            // Headers row 1
+            $row = 5;
+            $sheet->setCellValue('A' . $row, "П/п\n(Stt)");
+            $sheet->mergeCells('A' . $row . ':A' . ($row + 1));
+            
+            $sheet->setCellValue('B' . $row, "Наименование\n(Tên hàng hóa/Dịch vụ)");
+            $sheet->mergeCells('B' . $row . ':C' . $row);
+            
+            $sheet->setCellValue('D' . $row, "Ед.изм\n(Đơn vị tính)");
+            $sheet->mergeCells('D' . $row . ':D' . ($row + 1));
+            
+            $sheet->setCellValue('E' . $row, "Кол-во закупки\n(SL cần mua)");
+            $sheet->mergeCells('E' . $row . ':E' . ($row + 1));
+            
+            $sheet->setCellValue('F' . $row, "Цена\nĐơn giá\n(VND)");
+            $sheet->mergeCells('F' . $row . ':F' . ($row + 1));
+            
+            $sheet->setCellValue('G' . $row, "Коэ-т повы-ия цен\n(Hệ số trượt giá)");
+            $sheet->mergeCells('G' . $row . ':G' . ($row + 1));
+            
+            $sheet->setCellValue('H' . $row, "Стоимость\nTổng giá trị\n(VND)");
+            $sheet->mergeCells('H' . $row . ':H' . ($row + 1));
+            
+            $sheet->setCellValue('I' . $row, "Примечание\n(Ghi chú)");
+            $sheet->mergeCells('I' . $row . ':I' . ($row + 1));
+            
+            $sheet->setCellValue('J' . $row, 'Mã vật tư');
+            $sheet->mergeCells('J' . $row . ':J' . ($row + 1));
+            
+            $sheet->setCellValue('K' . $row, 'Vật tư/\nCông cụ');
+            $sheet->mergeCells('K' . $row . ':K' . ($row + 1));
+            
+            // Headers row 2
+            $row++;
+            $sheet->setCellValue('B' . $row, "На Русс. языке\n(Tiếng Nga)");
+            $sheet->setCellValue('C' . $row, "На Вьетнам. языке\n(Tiếng Việt)");
+            
+            // Number row
+            $row++;
+            $sheet->setCellValue('A' . $row, '1');
+            $sheet->setCellValue('B' . $row, '2');
+            $sheet->setCellValue('C' . $row, '3');
+            $sheet->setCellValue('D' . $row, '4');
+            $sheet->setCellValue('E' . $row, '5');
+            $sheet->setCellValue('F' . $row, '6');
+            $sheet->setCellValue('G' . $row, '7');
+            $sheet->setCellValue('H' . $row, '8=5x6x7');
+            $sheet->setCellValue('I' . $row, '9');
+            
+            // Style headers
+            for ($i = 5; $i <= $row; $i++) {
+                $sheet->getStyle('A' . $i . ':K' . $i)->getFont()->setBold(true);
+                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('A' . $i . ':K' . $i)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFD9D9D9');
+            }
+            
+            // Column widths
+            $sheet->getColumnDimension('A')->setWidth(6);
+            $sheet->getColumnDimension('B')->setWidth(35);
+            $sheet->getColumnDimension('C')->setWidth(35);
+            $sheet->getColumnDimension('D')->setWidth(8);
+            $sheet->getColumnDimension('E')->setWidth(10);
+            $sheet->getColumnDimension('F')->setWidth(12);
+            $sheet->getColumnDimension('G')->setWidth(10);
+            $sheet->getColumnDimension('H')->setWidth(15);
+            $sheet->getColumnDimension('I')->setWidth(25);
+            $sheet->getColumnDimension('J')->setWidth(15);
+            $sheet->getColumnDimension('K')->setWidth(12);
+            
+            // Data rows
+            $row++;
+            $stt = 1;
+            $totalVND = 0;
+            
+            foreach ($items as $item) {
+                $tenNga = $item['ten_tiengnga'] ?: '';
+                $tenViet = $item['ten_tiengviet'] ?: $item['ten_tienganh'];
+                $donvi = $item['donvi'] ?: $item['dvt_tiengnga'];
+                $soluong = $item['soluong_thaydoi'];
+                $dongia = $item['dongia'];
+                $hesotruot = 1.00;
+                $thanhtien = $soluong * $dongia * $hesotruot;
+                $ghichu = $item['nguyennhan'] ?? '';
+                $mavattu = $item['mavattu'];
+                
+                // Determine type based on phanloai
+                $loai = 'Vật tư';
+                if (stripos($item['ten_phanloai'] ?? '', 'công cụ') !== false) {
+                    $loai = 'Công cụ';
+                }
+                
+                $totalVND += $thanhtien;
+                
+                $sheet->setCellValue('A' . $row, $stt);
+                $sheet->setCellValue('B' . $row, $tenNga);
+                $sheet->setCellValue('C' . $row, $tenViet);
+                $sheet->setCellValue('D' . $row, 'Cái');
+                $sheet->setCellValue('E' . $row, $soluong);
+                $sheet->setCellValue('F' . $row, $dongia);
+                $sheet->setCellValue('G' . $row, $hesotruot);
+                $sheet->setCellValue('H' . $row, $thanhtien);
+                $sheet->setCellValue('I' . $row, $ghichu);
+                $sheet->setCellValue('J' . $row, $mavattu);
+                $sheet->setCellValue('K' . $row, $loai);
+                
+                // Format numbers
+                $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle('F' . $row)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('0.00');
+                $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0');
+                
+                // Alignment
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                
+                $row++;
+                $stt++;
+            }
+            
+            // Totals
+            $totalUSD = $totalVND / $exchangeRate;
+            $vatVND = $totalVND * 0.10;
+            $vatUSD = $vatVND / $exchangeRate;
+            $grandTotalVND = $totalVND + $vatVND;
+            $grandTotalUSD = $grandTotalVND / $exchangeRate;
+            
+            // Total row
+            $sheet->setCellValue('A' . $row, 'Cộng/ Итого');
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $totalVND);
+            $sheet->setCellValue('I' . $row, 'VND');
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row++;
+            
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $totalUSD);
+            $sheet->setCellValue('I' . $row, 'USD');
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row++;
+            
+            // VAT row
+            $sheet->setCellValue('A' . $row, 'Thuế VAT/ НДС');
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $vatVND);
+            $sheet->setCellValue('I' . $row, 'VND');
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row++;
+            
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $vatUSD);
+            $sheet->setCellValue('I' . $row, 'USD');
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row++;
+            
+            // Grand total row
+            $sheet->setCellValue('A' . $row, 'Tổng Giá trị hàng hóa/ Общая стоимость');
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $grandTotalVND);
+            $sheet->setCellValue('I' . $row, 'VND');
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row++;
+            
+            $sheet->mergeCells('A' . $row . ':G' . $row);
+            $sheet->setCellValue('H' . $row, $grandTotalUSD);
+            $sheet->setCellValue('I' . $row, 'USD');
+            $sheet->getStyle('H' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $row += 2;
+            
+            // Signatures
+            $sheet->setCellValue('B' . $row, 'Зам. директора КПГ');
+            $sheet->setCellValue('H' . $row, 'Нгуен Зуи Нгок');
+            $row += 2;
+            
+            $sheet->setCellValue('A' . $row, 'Ký tắt - Визы:');
+            $row++;
+            $sheet->setCellValue('B' . $row, 'Ban VTHC - CМТОиЛ');
+            $sheet->setCellValue('H' . $row, 'Фан Ван Хоа');
+            $row += 2;
+            
+            $sheet->setCellValue('B' . $row, 'Xưởng trưởng XSCTBĐVL /Начальник ЦРГО');
+            $sheet->setCellValue('H' . $row, 'Данг Ван Туэ');
+            
+            // Borders for data area
+            $lastDataRow = $row - 8; // Before totals
+            $sheet->getStyle('A5:K' . $lastDataRow)->getBorders()->getAllBorders()
+                ->setBorderStyle(Border::BORDER_THIN);
+            
+            // Download
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="Procurement_Cost_' . date('Ymd') . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("Error in exportExcelProcurement: " . $e->getMessage());
+            die("Error exporting Excel Procurement: " . $e->getMessage());
         }
     }
     
