@@ -123,7 +123,7 @@ class ThongKeVatTuThanhLyController
                     s.soluong as soluong_thaydoi,
                     s.soluong * v.dongia as thanhtien,
                     COALESCE(s.ngayhoanthanh, s.ngaysd_nhan, DATE(s.updated_at)) as ngay_thuchien,
-                    s.ghichu as nguyennhan,
+                    s.mucdich_sudung as nguyennhan,
                     s.nguoisudung as nguoi_thuchien,
                     s.bophan,
                     s.trangthai,

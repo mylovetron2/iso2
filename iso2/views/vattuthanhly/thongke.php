@@ -239,10 +239,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php echo number_format($thanhtien, 2, ',', '.'); ?>
                     </td>
                     <td class="px-3 py-2 border">
-                        <?php 
-                        $nguyennhan = $item['nguyennhan'] ?: 'Không rõ';
-                        echo htmlspecialchars($nguyennhan); 
-                        ?>
+                        <?php echo htmlspecialchars($item['nguyennhan'] ?? ''); ?>
                     </td>
                 </tr>
                 <?php 
