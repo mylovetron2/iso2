@@ -315,6 +315,11 @@ class ThongKeVatTuThanhLyController
             $sheet->getStyle('A' . $headerRow . ':I' . $lastRow)->getBorders()->getAllBorders()
                 ->setBorderStyle(Border::BORDER_THIN);
             
+            // Clean output buffer before download
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
             // Set header
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="Thong_Ke_Vat_Tu_Thanh_Ly_' . date('Ymd') . '.xlsx"');
@@ -667,6 +672,11 @@ class ThongKeVatTuThanhLyController
             $lastDataRow = $row - 8; // Before totals
             $sheet->getStyle('A5:K' . $lastDataRow)->getBorders()->getAllBorders()
                 ->setBorderStyle(Border::BORDER_THIN);
+            
+            // Clean output buffer before download
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
             
             // Download
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

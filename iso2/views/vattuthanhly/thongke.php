@@ -23,7 +23,7 @@ require_once __DIR__ . '/../layouts/header.php';
             </a>
             <a href="thongke_vattu_thanh_ly.php?action=exportExcelProcurement&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>&phanloai_id=<?php echo urlencode($phanloai_id ?? ''); ?>&bophan=<?php echo urlencode($bophan ?? ''); ?>" 
                class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm">
-                <i class="fas fa-file-excel mr-1"></i> Báo giá Excel
+                <i class="fas fa-file-excel mr-1"></i> In thống kê Excel
             </a>
             <?php endif; ?>
             <a href="vattuthanhly.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
