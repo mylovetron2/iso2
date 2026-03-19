@@ -492,7 +492,7 @@ class ThongKeVatTuThanhLyController
             $sheet->setCellValue('J' . $row, 'Mã vật tư');
             $sheet->mergeCells('J' . $row . ':J' . ($row + 1));
             
-            $sheet->setCellValue('K' . $row, 'Vật tư/\nCông cụ');
+            $sheet->setCellValue('K' . $row, 'Vật tư/Công cụ');
             $sheet->mergeCells('K' . $row . ':K' . ($row + 1));
             
             // Headers row 2
@@ -538,8 +538,8 @@ class ThongKeVatTuThanhLyController
             
             // Data rows
             $row++;
+            $firstDataRow = $row; // Track first data row for formulas
             $stt = 1;
-            $totalVND = 0;
             
             foreach ($items as $item) {
                 $tenNga = $item['ten_tiengnga'] ?: '';
@@ -548,7 +548,6 @@ class ThongKeVatTuThanhLyController
                 $soluong = $item['soluong_thaydoi'];
                 $dongia = $item['dongia'];
                 $hesotruot = 1.00;
-                $thanhtien = $soluong * $dongia * $hesotruot;
                 $ghichu = $item['nguyennhan'] ?? '';
                 $mavattu = $item['mavattu'];
                 
@@ -558,8 +557,6 @@ class ThongKeVatTuThanhLyController
                     $loai = 'Công cụ';
                 }
                 
-                $totalVND += $thanhtien;
-                
                 $sheet->setCellValue('A' . $row, $stt);
                 $sheet->setCellValue('B' . $row, $tenNga);
                 $sheet->setCellValue('C' . $row, $tenViet);
@@ -567,7 +564,7 @@ class ThongKeVatTuThanhLyController
                 $sheet->setCellValue('E' . $row, $soluong);
                 $sheet->setCellValue('F' . $row, $dongia);
                 $sheet->setCellValue('G' . $row, $hesotruot);
-                $sheet->setCellValue('H' . $row, $thanhtien);
+                $sheet->setCellValue('H' . $row, "=E{$row}*F{$row}*G{$row}");
                 $sheet->setCellValue('I' . $row, $ghichu);
                 $sheet->setCellValue('J' . $row, $mavattu);
                 $sheet->setCellValue('K' . $row, $loai);
@@ -590,17 +587,14 @@ class ThongKeVatTuThanhLyController
                 $stt++;
             }
             
-            // Totals
-            $totalUSD = $totalVND / $exchangeRate;
-            $vatVND = $totalVND * 0.10;
-            $vatUSD = $vatVND / $exchangeRate;
-            $grandTotalVND = $totalVND + $vatVND;
-            $grandTotalUSD = $grandTotalVND / $exchangeRate;
+            $lastDataRow = $row - 1; // Track last data row for formulas
             
+            // Totals - using formulas
             // Total row
+            $totalVNDRow = $row;
             $sheet->setCellValue('A' . $row, 'Cộng/ Итого');
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $totalVND);
+            $sheet->setCellValue('H' . $row, "=SUM(H{$firstDataRow}:H{$lastDataRow})");
             $sheet->setCellValue('I' . $row, 'VND');
             $sheet->getStyle('A' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
@@ -609,7 +603,7 @@ class ThongKeVatTuThanhLyController
             $row++;
             
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $totalUSD);
+            $sheet->setCellValue('H' . $row, "=H{$totalVNDRow}/{$exchangeRate}");
             $sheet->setCellValue('I' . $row, 'USD');
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
@@ -617,9 +611,10 @@ class ThongKeVatTuThanhLyController
             $row++;
             
             // VAT row
+            $vatVNDRow = $row;
             $sheet->setCellValue('A' . $row, 'Thuế VAT/ НДС');
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $vatVND);
+            $sheet->setCellValue('H' . $row, "=H{$totalVNDRow}*0.1");
             $sheet->setCellValue('I' . $row, 'VND');
             $sheet->getStyle('A' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
@@ -628,7 +623,7 @@ class ThongKeVatTuThanhLyController
             $row++;
             
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $vatUSD);
+            $sheet->setCellValue('H' . $row, "=H{$vatVNDRow}/{$exchangeRate}");
             $sheet->setCellValue('I' . $row, 'USD');
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
@@ -636,9 +631,10 @@ class ThongKeVatTuThanhLyController
             $row++;
             
             // Grand total row
+            $grandTotalVNDRow = $row;
             $sheet->setCellValue('A' . $row, 'Tổng Giá trị hàng hóa/ Общая стоимость');
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $grandTotalVND);
+            $sheet->setCellValue('H' . $row, "=H{$totalVNDRow}+H{$vatVNDRow}");
             $sheet->setCellValue('I' . $row, 'VND');
             $sheet->getStyle('A' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
@@ -647,7 +643,7 @@ class ThongKeVatTuThanhLyController
             $row++;
             
             $sheet->mergeCells('A' . $row . ':G' . $row);
-            $sheet->setCellValue('H' . $row, $grandTotalUSD);
+            $sheet->setCellValue('H' . $row, "=H{$grandTotalVNDRow}/{$exchangeRate}");
             $sheet->setCellValue('I' . $row, 'USD');
             $sheet->getStyle('H' . $row)->getFont()->setBold(true);
             $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
