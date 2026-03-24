@@ -38,18 +38,8 @@ $colorClass = $statusColors[$phieu['trang_thai']] ?? 'bg-gray-500';
                 <?php if (in_array($phieu['trang_thai'], ['ordered', 'partial_received']) && hasPermission('phieudathang.receive')): ?>
                     <a href="phieudathang.php?action=receive&id=<?php echo $phieu['id']; ?>" 
                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                        <i class="fas fa-box mr-1"></i> Nhận Hàng
+                        <i class="fas fa-box mr-1"></i> Nhận Hàng & Nhập Kho
                     </a>
-                <?php endif; ?>
-
-                <?php if ($phieu['trang_thai'] === 'received' && hasPermission('phieudathang.stock')): ?>
-                    <form method="POST" action="phieudathang.php?action=stock" class="inline">
-                        <input type="hidden" name="phieu_id" value="<?php echo $phieu['id']; ?>">
-                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
-                                onclick="return confirm('Xác nhận nhập kho? Thao tác này sẽ cập nhật tồn kho.')">
-                            <i class="fas fa-warehouse mr-1"></i> Nhập Kho
-                        </button>
-                    </form>
                 <?php endif; ?>
 
                 <?php if (in_array($phieu['trang_thai'], ['draft', 'ordered']) && hasPermission('phieudathang.cancel')): ?>

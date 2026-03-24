@@ -202,12 +202,13 @@ class PhieuDatHangController
             // Tạo mã phiếu
             $ma_phieu = $this->generateMaPhieu();
 
-            // Insert header phiếu
+            // Insert header phiếu (tự động duyệt luôn, bỏ qua draft)
             $stmt = $this->db->prepare("
                 INSERT INTO phieu_dat_hang (
                     ma_phieu, nguoi_lap, trang_thai, ghi_chu, 
-                    nha_cung_cap, so_hd_ncc, ngay_du_kien_nhan
-                ) VALUES (?, ?, 'draft', ?, ?, ?, ?)
+                    nha_cung_cap, so_hd_ncc, ngay_du_kien_nhan,
+                    nguoi_duyet, ngay_duyet
+                ) VALUES (?, ?, 'ordered', ?, ?, ?, ?, ?, NOW())
             ");
             $stmt->execute([
                 $ma_phieu,
@@ -215,7 +216,8 @@ class PhieuDatHangController
                 $_POST['ghi_chu'] ?? null,
                 $_POST['nha_cung_cap'],
                 $_POST['so_hd_ncc'],
-                $_POST['ngay_du_kien_nhan']
+                $_POST['ngay_du_kien_nhan'],
+                $this->userId  // Người tạo cũng là người duyệt
             ]);
 
             $phieu_id = (int)$this->db->lastInsertId();
@@ -257,10 +259,10 @@ class PhieuDatHangController
                 'INSERT',
                 $phieu_id,
                 null,
-                ['ma_phieu' => $ma_phieu, 'item_count' => count($cartItems), 'description' => "Tạo phiếu đặt hàng: {$ma_phieu} với " . count($cartItems) . " vật tư"]
+                ['ma_phieu' => $ma_phieu, 'item_count' => count($cartItems), 'status' => 'ordered', 'description' => "Tạo và duyệt phiếu đặt hàng: {$ma_phieu} với " . count($cartItems) . " vật tư"]
             );
 
-            $_SESSION['success'] = "✅ Đã tạo phiếu đặt hàng {$ma_phieu} và xóa giỏ hàng";
+            $_SESSION['success'] = "✅ Đã tạo và duyệt phiếu đặt hàng {$ma_phieu} thành công";
             header("Location: phieudathang.php?action=view&id=$phieu_id");
             exit;
 
@@ -433,13 +435,15 @@ class PhieuDatHangController
             }
 
         } else {
-            // POST - xác nhận nhận hàng
+            // POST - xác nhận nhận hàng và nhập kho tự động
             try {
                 $this->db->beginTransaction();
 
                 $phieu_id = isset($_POST['phieu_id']) ? (int)$_POST['phieu_id'] : 0;
                 $chi_tiet_ids = $_POST['chi_tiet_id'] ?? [];
                 $so_luong_nhan_list = $_POST['so_luong_nhan'] ?? [];
+                $vi_tri_kho = $_POST['vi_tri_kho'] ?? null;
+                $ghi_chu = $_POST['ghi_chu'] ?? null;
 
                 // Cập nhật số lượng nhận
                 $totalReceived = 0;
@@ -451,29 +455,64 @@ class PhieuDatHangController
 
                     if ($so_luong_nhan > 0) {
                         // Lấy thông tin hiện tại
-                        $stmt = $this->db->prepare("SELECT so_luong_dat, so_luong_nhan FROM phieu_dat_hang_chi_tiet WHERE id = ?");
+                        $stmt = $this->db->prepare("SELECT so_luong_dat, so_luong_nhan, vattu_stt FROM phieu_dat_hang_chi_tiet WHERE id = ?");
                         $stmt->execute([$chi_tiet_id]);
                         $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
                         $new_so_luong_nhan = $current['so_luong_nhan'] + $so_luong_nhan;
 
-                        // Cập nhật
+                        // Cập nhật số lượng nhận trong chi tiết
                         $stmt = $this->db->prepare("UPDATE phieu_dat_hang_chi_tiet SET so_luong_nhan = ? WHERE id = ?");
                         $stmt->execute([$new_so_luong_nhan, $chi_tiet_id]);
+
+                        // --- NHẬP KHO TỰ ĐỘNG ---
+                        // Lấy số lượng tồn kho hiện tại
+                        $stmt = $this->db->prepare("SELECT soluong_conlai FROM vattu_thanh_ly_iso WHERE stt = ?");
+                        $stmt->execute([$current['vattu_stt']]);
+                        $current_stock = (float)$stmt->fetchColumn();
+
+                        $new_stock = $current_stock + $so_luong_nhan;
+
+                        // Cập nhật tồn kho
+                        $stmt = $this->db->prepare("UPDATE vattu_thanh_ly_iso SET soluong_conlai = ? WHERE stt = ?");
+                        $stmt->execute([$new_stock, $current['vattu_stt']]);
+
+                        // Ghi log lịch sử nhập kho
+                        $stmt = $this->db->prepare("
+                            INSERT INTO lich_su_nhap_kho (
+                                phieu_dat_hang_id, phieu_chi_tiet_id, vattu_stt, so_luong,
+                                so_luong_truoc, so_luong_sau, nguoi_nhap, vi_tri_kho, ghi_chu
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ");
+                        $stmt->execute([
+                            $phieu_id,
+                            $chi_tiet_id,
+                            $current['vattu_stt'],
+                            $so_luong_nhan,
+                            $current_stock,
+                            $new_stock,
+                            $this->userId,
+                            $vi_tri_kho,
+                            $ghi_chu
+                        ]);
 
                         $totalReceived += $new_so_luong_nhan;
                         $totalOrdered += $current['so_luong_dat'];
                     }
                 }
 
-                // Cập nhật trạng thái phiếu
-                $new_status = ($totalReceived >= $totalOrdered) ? 'received' : 'partial_received';
+                // Cập nhật trạng thái phiếu - nếu nhận đủ thì chuyển sang 'stocked'
+                $new_status = ($totalReceived >= $totalOrdered) ? 'stocked' : 'partial_received';
                 $stmt = $this->db->prepare("
                     UPDATE phieu_dat_hang 
-                    SET trang_thai = ?, nguoi_nhan_hang = ?, ngay_nhan_hang = NOW()
+                    SET trang_thai = ?, 
+                        nguoi_nhan_hang = ?, 
+                        ngay_nhan_hang = NOW(),
+                        nguoi_nhap_kho = ?,
+                        ngay_nhap_kho = NOW()
                     WHERE id = ?
                 ");
-                $stmt->execute([$new_status, $this->userId, $phieu_id]);
+                $stmt->execute([$new_status, $this->userId, $this->userId, $phieu_id]);
 
                 $this->db->commit();
 
@@ -482,10 +521,10 @@ class PhieuDatHangController
                     'UPDATE',
                     $phieu_id,
                     null,
-                    ['received' => $totalReceived, 'ordered' => $totalOrdered, 'description' => "Nhận hàng: {$totalReceived}/{$totalOrdered}"]
+                    ['received' => $totalReceived, 'ordered' => $totalOrdered, 'description' => "Nhận hàng và nhập kho: {$totalReceived}/{$totalOrdered}"]
                 );
 
-                $_SESSION['success'] = 'Đã xác nhận nhận hàng';
+                $_SESSION['success'] = 'Đã xác nhận nhận hàng và nhập kho thành công';
                 header("Location: phieudathang.php?action=view&id=$phieu_id");
                 exit;
 

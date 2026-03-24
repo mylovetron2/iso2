@@ -49,13 +49,28 @@ require_once __DIR__ . '/../layouts/header.php';
                 </table>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Vị trí kho</label>
+                    <input type="text" name="vi_tri_kho" 
+                           class="w-full border rounded px-3 py-2" 
+                           placeholder="Nhập vị trí kho (tùy chọn)">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ghi chú nhập kho</label>
+                    <input type="text" name="ghi_chu" 
+                           class="w-full border rounded px-3 py-2" 
+                           placeholder="Nhập ghi chú (tùy chọn)">
+                </div>
+            </div>
+
             <div class="flex gap-3 justify-end">
                 <a href="phieudathang.php?action=view&id=<?php echo $phieu['id']; ?>" 
                    class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                     <i class="fas fa-times mr-1"></i> Hủy
                 </a>
                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
-                    <i class="fas fa-check mr-1"></i> Xác Nhận Nhận Hàng
+                    <i class="fas fa-check mr-1"></i> Xác Nhận Nhận Hàng & Nhập Kho
                 </button>
             </div>
         </form>
