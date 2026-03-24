@@ -72,6 +72,23 @@ switch ($action) {
         }
         $controller->deleteChiTiet();
         break;
+        
+    case 'taophieudathang':
+    case 'dathang':
+        if (!hasPermission('vattu.view')) {
+            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            exit;
+        }
+        $controller->taophieudathang();
+        break;
+        
+    case 'xuatphieudathang':
+        if (!hasPermission('vattu.view')) {
+            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            exit;
+        }
+        $controller->xuatphieudathang();
+        break;
 
     default:
         $controller->index();

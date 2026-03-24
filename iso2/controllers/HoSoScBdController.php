@@ -90,7 +90,7 @@ class HoSoScBdController
                         $data = array_merge($commonData, $device);
                         
                         // Auto-generate maql (same for all devices in same phieu)
-                        $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
+                        $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu'], $data['ngayyc']);
                         
                         // Generate hoso number: tăng counter và tạo số thứ tự
                         $hosoCounter++;
@@ -176,7 +176,7 @@ class HoSoScBdController
 
             if (empty($errors)) {
                 // Auto-generate maql for edit
-                $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu']);
+                $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu'], $data['ngayyc']);
                 
                 // Giữ nguyên mã hồ sơ cũ khi edit, không tự động sinh lại
                 // để tránh conflict với các hồ sơ khác trong cùng phiếu
@@ -453,9 +453,10 @@ class HoSoScBdController
      * Format: YYYYMMDD-MADV-PHIEU
      * Example: 20251121-XDT-0126
      */
-    private function generateMaQL(string $madv, string $phieu): string
+    private function generateMaQL(string $madv, string $phieu, string $ngayyc): string
     {
-        $date = date('Ymd');
+        // Convert ngayyc from YYYY-MM-DD to YYYYMMDD
+        $date = str_replace('-', '', $ngayyc);
         return "{$date}-{$madv}-{$phieu}";
     }
 
@@ -523,6 +524,26 @@ class HoSoScBdController
         }
 
         require_once __DIR__ . '/../views/hososcbd/export_word.php';
+    }
+
+    /**
+     * Export Phieu SC (Phiếu Thực Hiện Công Việc SC/BD/KT)
+     */
+    public function exportPhieuSC(): void
+    {
+        $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if (!$stt) {
+            header('Location: /iso2/hososcbd.php?error=invalid');
+            exit;
+        }
+
+        $item = $this->model->findById($stt);
+        if (!$item) {
+            header('Location: /iso2/hososcbd.php?error=notfound');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/hososcbd/export_phieu_sc.php';
     }
 
     /**

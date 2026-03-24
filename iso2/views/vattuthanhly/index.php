@@ -396,6 +396,19 @@ button.text-red-600:hover {
             </a>
             <?php endif; ?>
             
+            <a href="phieudathang.php?action=create&step=1" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-shopping-cart mr-1"></i> Tạo phiếu đặt hàng
+            </a>
+            
+            <a href="giohang.php" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded relative">
+                <i class="fas fa-shopping-bag mr-1"></i> Giỏ hàng
+                <span id="cart-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"></span>
+            </a>
+            
+            <a href="phieudathang.php" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-invoice mr-1"></i> Quản lý phiếu ĐH
+            </a>
+            
             <!-- Dropdown menu cho các chức năng khác -->
             <div class="relative inline-block align-top">
                 <button type="button" id="dropdownMenuButton" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded inline-flex items-center gap-2 h-full">
@@ -550,6 +563,11 @@ button.text-red-600:hover {
                                class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết" onclick="event.stopPropagation();">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            <button onclick="addToCart(<?php echo $item['stt']; ?>, event)" 
+                                    class="text-purple-600 hover:text-purple-800 mx-1" 
+                                    title="Thêm vào giỏ hàng">
+                                <i class="fas fa-cart-plus"></i>
+                            </button>
                             <?php if (hasPermission('vattu.edit')): ?>
                             <a href="vattuthanhly.php?action=edit&id=<?php echo $item['stt']; ?>" 
                                class="text-green-600 hover:text-green-800 mx-1" title="Sửa" onclick="event.stopPropagation();">
@@ -1120,6 +1138,79 @@ function deleteChiTiet(id, vattuStt) {
         deleteBtn.disabled = false;
         deleteBtn.innerHTML = originalHTML;
     });
+}
+
+// ===== GIỎ HÀNG FUNCTIONS =====
+// Load cart count khi trang load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCartCount();
+});
+
+function loadCartCount() {
+    fetch('giohang.php?action=getCount')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.count > 0) {
+                const badge = document.getElementById('cart-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('hidden');
+                }
+            }
+        })
+        .catch(error => console.error('Error loading cart count:', error));
+}
+
+function addToCart(vattuStt, event) {
+    event.stopPropagation();
+    
+    const formData = new FormData();
+    formData.append('vattu_stt', vattuStt);
+    formData.append('so_luong', 1);
+    
+    fetch('giohang.php?action=add', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotification('success', data.message);
+            // Update cart badge
+            if (data.cart_count) {
+                const badge = document.getElementById('cart-badge');
+                if (badge) {
+                    badge.textContent = data.cart_count;
+                    badge.classList.remove('hidden');
+                }
+            }
+        } else {
+            showNotification('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('error', 'Có lỗi xảy ra khi thêm vào giỏ hàng');
+    });
+}
+
+function showNotification(type, message) {
+    const colorClass = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${colorClass} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all`;
+    notification.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 </script>
 

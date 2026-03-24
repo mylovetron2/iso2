@@ -559,4 +559,175 @@ class VatTuThanhLyController
             exit;
         }
     }
+    
+    /**
+     * Tạo phiếu đặt hàng (order form)
+     */
+    public function taophieudathang(): void
+    {
+        try {
+            // Lấy danh sách vật tư đã chọn
+            $selectedIds = $_GET['ids'] ?? '';
+            $ids = $selectedIds ? array_map('intval', explode(',', $selectedIds)) : [];
+            
+            // Nếu không có IDs, hiển thị trang chọn
+            if (empty($ids)) {
+                // Lấy tất cả vật tư để chọn
+                $items = $this->model->getAllWithStats('', [], 1000, 0);
+                
+                // Load danh sách phân loại
+                $db = getDBConnection();
+                $stmtPhanLoai = $db->query("SELECT id, ma_phanloai, ten_phanloai, mau_sac FROM phanloai_vattu_thanh_ly_iso ORDER BY thu_tu ASC");
+                $phanLoaiList = $stmtPhanLoai->fetchAll(PDO::FETCH_ASSOC);
+                
+                require_once __DIR__ . '/../views/vattuthanhly/chon_dathang.php';
+                return;
+            }
+            
+            // Lấy thông tin vật tư đã chọn
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $db = getDBConnection();
+            $stmt = $db->prepare("
+                SELECT 
+                    stt,
+                    mavattu,
+                    ten_tienganh,
+                    ten_tiengnga,
+                    ten_tiengviet,
+                    dactinhkt_tiengnga,
+                    dactinhkt_tiengviet,
+                    dvt_tiengnga,
+                    dvt_tiengviet,
+                    soluong_conlai
+                FROM vattu_thanh_ly_iso
+                WHERE stt IN ($placeholders)
+                ORDER BY FIELD(stt, " . implode(',', $ids) . ")
+            ");
+            $stmt->execute($ids);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            require_once __DIR__ . '/../views/vattuthanhly/phieu_dathang.php';
+        } catch (Exception $e) {
+            error_log("Error in VatTuThanhLyController::taophieudathang: " . $e->getMessage());
+            header('Location: /iso2/vattuthanhly.php?error=order_failed');
+            exit;
+        }
+    }
+    
+    /**
+     * Xuất phiếu đặt hàng ra Excel
+     */
+    public function xuatphieudathang(): void
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                header('Location: /iso2/vattuthanhly.php');
+                exit;
+            }
+            
+            // Lấy dữ liệu từ form
+            $items = $_POST['items'] ?? [];
+            
+            if (empty($items)) {
+                header('Location: /iso2/vattuthanhly.php?error=no_items');
+                exit;
+            }
+            
+            // Tạo file Excel
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header('Content-Disposition: attachment; filename="Phieu_Dat_Hang_' . date('Y-m-d_His') . '.xls"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            echo "\xEF\xBB\xBF"; // UTF-8 BOM
+            
+            ?>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" 
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 5px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .center { text-align: center; }
+        .header-row th { background-color: #4472C4; color: white; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;">PHIẾU ĐẶT HÀNG / ORDER FORM / ЗАКАЗ</h2>
+    <p style="text-align: center;">Ngày / Date / Дата: <?= date('d/m/Y') ?></p>
+    
+    <table>
+        <thead>
+            <tr class="header-row">
+                <th rowspan="2" class="center">П/п<br>(Stt)</th>
+                <th colspan="3" class="center">Наименование (Tên hàng hóa)</th>
+                <th rowspan="2">Тех. Характеристики<br>(Đặc tính kỹ thuật)</th>
+                <th rowspan="2" class="center">Ед.изм<br>Đơn vị tính</th>
+                <th rowspan="2" class="center">Объем<br>(Số lượng)</th>
+                <th rowspan="2">Примечание<br>(Ghi chú)</th>
+            </tr>
+            <tr class="header-row">
+                <th>На Англ. Языке<br>(Tiếng Anh)</th>
+                <th>На Русс. языке<br>(Tiếng Nga)</th>
+                <th>На Вьетнам. Языке<br>(Tiếng Việt)</th>
+            </tr>
+            <tr>
+                <th class="center">1</th>
+                <th class="center">2</th>
+                <th class="center">3</th>
+                <th class="center">4</th>
+                <th class="center">5</th>
+                <th class="center">6</th>
+                <th class="center">7</th>
+                <th class="center">8</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php 
+            $stt = 1;
+            foreach ($items as $item): 
+                $dactinhkt = !empty($item['dactinhkt_tiengnga']) || !empty($item['dactinhkt_tiengviet']) 
+                    ? 'Xem YCKT/ Просмотр TT' 
+                    : '';
+            ?>
+            <tr>
+                <td class="center"><?= $stt++ ?></td>
+                <td><?= htmlspecialchars($item['ten_tienganh'] ?? '') ?></td>
+                <td><?= htmlspecialchars($item['ten_tiengnga'] ?? '') ?></td>
+                <td><?= htmlspecialchars($item['ten_tiengviet'] ?? '') ?></td>
+                <td><?= htmlspecialchars($dactinhkt) ?></td>
+                <td class="center"><?= htmlspecialchars($item['dvt_tiengviet'] ?? $item['dvt_tiengnga'] ?? '') ?></td>
+                <td class="center"><?= htmlspecialchars($item['soluong'] ?? '') ?></td>
+                <td><?= htmlspecialchars($item['ghichu'] ?? '') ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    
+    <br><br>
+    <table style="border: none;">
+        <tr style="border: none;">
+            <td style="border: none; width: 50%;">
+                <strong>Người lập phiếu / Prepared by / Подготовлено:</strong><br><br>
+                _______________________________
+            </td>
+            <td style="border: none; width: 50%;">
+                <strong>Phê duyệt / Approved by / Утверждено:</strong><br><br>
+                _______________________________
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            <?php
+            exit;
+        } catch (Exception $e) {
+            error_log("Error in VatTuThanhLyController::xuatphieudathang: " . $e->getMessage());
+            header('Location: /iso2/vattuthanhly.php?error=export_failed');
+            exit;
+        }
+    }
 }

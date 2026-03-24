@@ -1,6 +1,7 @@
 -- Bảng kế hoạch bảo dưỡng thiết bị định kỳ
 CREATE TABLE IF NOT EXISTS `ke_hoach_bao_duong_dinh_ky_iso` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `thietbi_id` int(11) DEFAULT NULL COMMENT 'ID thiết bị (tham chiếu thietbi_iso.stt)',
   `nam` int(4) NOT NULL COMMENT 'Năm kế hoạch',
   `ten_thietbi` varchar(500) DEFAULT NULL COMMENT 'Tên thiết bị',
   `so_serial` varchar(100) DEFAULT NULL COMMENT 'Số serial',
@@ -13,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `ke_hoach_bao_duong_dinh_ky_iso` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `created_by` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  KEY `idx_thietbi_id` (`thietbi_id`),
   KEY `idx_nam` (`nam`),
   KEY `idx_so_serial` (`so_serial`(50)),
   KEY `idx_ten_thietbi` (`ten_thietbi`(191))

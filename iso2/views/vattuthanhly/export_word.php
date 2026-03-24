@@ -139,8 +139,8 @@
     <div class="header-container">
         <div class="header-left">
             <div>LD Việt-Nga Vietsovpetro/СП «Вьетсовпетро»</div>
-            <div>XN Dia vật lý GK/ КПП</div>
-            <div>Xưởng Sửa chữa thiết bị dia vật lý / ЦРГО</div>
+            <div>XN Địa vật lý GK/ КПП</div>
+            <div>Xưởng Sửa chữa thiết bị địa vật lý / ЦРГО</div>
         </div>
         <div class="header-right">
             <div><strong>Phụ lục 2/Приложение 2</strong></div>
@@ -257,21 +257,6 @@
         </tbody>
     </table>
 
-    <div style="margin-top: 20px; font-size: 12pt;">
-        <p><strong>Tổng số hiện vật (ghi bằng chữ):</strong> <?php echo ucfirst($totalInWords); ?> mục.</p>
-        <p><strong>Общее количество предметов (прописью):</strong></p>
-    </div>
-
-    <div style="margin-top: 20px; font-size: 12pt;">
-        <p><strong>Những vật phế liệu dưới đây cần được nhập kho:</strong></p>
-        <p style="font-style: italic;"><strong>Списанные предметы, подлежащие оприходованию в качестве утиля:</strong></p>
-    </div>
-
-    <div style="margin-top: 20px; font-size: 12pt;">
-        <p><strong>Những vật phế thải không nhập kho sẽ được hủy bỏ.</strong></p>
-        <p style="font-style: italic;"><strong>Неоприходованные отходы, подлежащие утилизации.</strong></p>
-    </div>
-
     <div style="margin-top: 40px; font-size: 11pt;">
         <div style="margin-bottom: 20px;">
             <p><strong>Phó chủ tịch hội đồng / Зам. председателя:</strong></p>
@@ -332,9 +317,18 @@
             </table>
         </div>
 
-        <div style="margin-bottom: 10px;">
+        <div style="margin-bottom: 20px;">
             <p><strong>Viza:</strong></p>
-            <p>Trưởng phòng KTKH-TMDV/</p>
+            <table style="border: none; width: 100%;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 60%; vertical-align: bottom;">
+                        Trưởng phòng KTKH-TMDV/ Начальник ПЭОКиС
+                    </td>
+                    <td style="border: none; width: 40%; vertical-align: bottom; text-align: right;">
+                        _________________
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <div style="margin-top: 20px; font-size: 10pt;">

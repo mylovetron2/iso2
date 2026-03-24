@@ -1,0 +1,145 @@
+# 🚀 SETUP NHANH - CHỨC NĂNG GIỎ HÀNG & PHIẾU ĐẶT HÀNG
+
+## ✅ ĐÃ HOÀN THÀNH
+
+Toàn bộ code đã được implement xong! Bao gồm:
+- ✅ 4 bảng database + permissions
+- ✅ 2 Controllers (GioHangController, PhieuDatHangController)
+- ✅ 2 Routers (giohang.php, phieudathang.php)
+- ✅ 6 View files
+- ✅ Integration vào header và trang vật tư thanh lý
+- ✅ JavaScript cho cart badge và AJAX
+
+## 📋 CẦN LÀM GÌ TIẾP?
+
+### Bước 1: Chạy SQL Scripts ⚠️ QUAN TRỌNG!
+
+```bash
+cd d:\projectISO2\iso2
+
+# Chạy lần lượt 5 files SQL này:
+mysql -u root -p iso2 < create_table_cart_giohang.sql
+mysql -u root -p iso2 < create_table_phieu_dat_hang.sql
+mysql -u root -p iso2 < create_table_phieu_dat_hang_chi_tiet.sql
+mysql -u root -p iso2 < create_table_lich_su_nhap_kho.sql
+mysql -u root -p iso2 < add_giohang_phieudathang_permissions.sql
+```
+
+**HOẶC** chạy trong phpMyAdmin:
+1. Mở phpMyAdmin → Database `iso2`
+2. Tab "SQL"
+3. Copy nội dung từng file và Execute
+
+### Bước 2: Kiểm tra Permissions
+
+Đảm bảo user/role có đủ permissions:
+- `giohang.view`, `giohang.add`, `giohang.edit`, `giohang.delete`
+- `phieudathang.view`, `phieudathang.create`, `phieudathang.approve`, etc.
+
+File permissions SQL đã tự động gán cho role Admin (id=1).
+
+### Bước 3: Test Chức Năng
+
+1. **Login vào hệ thống**
+2. **Vào trang "Vật tư thanh lý"**
+   - Kiểm tra thấy 3 nút mới:
+     - 🛒 "Tạo phiếu đặt hàng" (cam)
+     - 👜 "Giỏ hàng" (tím) + badge
+     - 📄 "Quản lý phiếu ĐH" (indigo)
+   - Mỗi dòng vật tư có icon 🛒+ (thêm vào giỏ)
+
+3. **Test Giỏ Hàng**
+   - Click icon 🛒+ ở vài vật tư
+   - Kiểm tra badge tăng lên
+   - Vào "Giỏ hàng" → xem danh sách
+   - Thay đổi số lượng, ghi chú
+   - Click "Tạo Phiếu Đặt Hàng"
+
+4. **Test Phiếu Đặt Hàng**
+   - Điền form tạo phiếu
+   - Lưu phiếu → xem chi tiết
+   - Duyệt phiếu (nếu có quyền)
+   - Nhận hàng → Nhập kho
+   - Kiểm tra tồn kho đã tăng chưa
+
+## 🔧 TROUBLESHOOTING
+
+### "Không thấy nút Giỏ hàng"
+→ Chạy lại file `add_giohang_phieudathang_permissions.sql`
+
+### "Badge không hiển thị số lượng"
+→ Mở F12 Console, kiểm tra lỗi JavaScript
+→ Kiểm tra URL: `giohang.php?action=getCount` có chạy không
+
+### "Lỗi khi thêm vào giỏ"
+→ Kiểm tra bảng `cart_vattu_thanh_ly` đã tạo chưa
+→ Check error log PHP
+
+### "Nhập kho không cập nhật tồn"
+→ Kiểm tra cột `soluong_conlai` có trong bảng `vattu_thanh_ly_iso`
+
+## 📁 FILES ĐÃ TẠO/SỬA
+
+### Files mới tạo (24 files):
+```
+✅ create_table_cart_giohang.sql
+✅ create_table_phieu_dat_hang.sql
+✅ create_table_phieu_dat_hang_chi_tiet.sql
+✅ create_table_lich_su_nhap_kho.sql
+✅ add_giohang_phieudathang_permissions.sql
+
+✅ controllers/GioHangController.php
+✅ controllers/PhieuDatHangController.php
+
+✅ giohang.php
+✅ phieudathang.php
+
+✅ views/giohang/index.php
+✅ views/phieudathang/index.php
+✅ views/phieudathang/create.php
+✅ views/phieudathang/view.php
+✅ views/phieudathang/receive.php
+
+✅ GIOHANG_PHIEUDATHANG_README.md (documentation đầy đủ)
+✅ SETUP_NHANH.txt (file này)
+```
+
+### Files đã sửa (2 files):
+```
+🔧 views/vattuthanhly/index.php
+   - Thêm 3 nút: Giỏ hàng, Quản lý phiếu ĐH
+   - Thêm icon 🛒+ cho mỗi dòng
+   - Thêm JavaScript: addToCart(), loadCartCount()
+
+🔧 views/layouts/header.php
+   - Thêm menu "Giỏ hàng" với badge
+   - Thêm menu "Phiếu đặt hàng"
+```
+
+## 🎯 WORKFLOW HOÀN CHỈNH
+
+```
+[Trang vật tư] 
+  → Click 🛒+
+    → [Giỏ hàng] (lưu tạm)
+      → Click "Tạo Phiếu"
+        → [Form tạo phiếu] 
+          → Lưu phiếu (status: draft)
+            → [Duyệt phiếu] (status: ordered)
+              → [Nhận hàng] (status: received)
+                → [Nhập kho] (status: stocked)
+                  → ✅ Tồn kho tăng!
+```
+
+## 📞 SUPPORT
+
+Đọc file `GIOHANG_PHIEUDATHANG_README.md` để biết:
+- Chi tiết cấu trúc database
+- API endpoints
+- Hướng dẫn sử dụng đầy đủ
+- Troubleshooting chi tiết
+
+---
+**Status:** ✅ READY TO USE  
+**Next Action:** Chạy SQL scripts → Test chức năng  
+**ETA:** 5-10 phút setup

@@ -154,6 +154,21 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-boxes mr-2"></i> Vật tư thanh lý
                             </a>
                         </li>
+                        <?php if (hasPermission('giohang.view')): ?>
+                        <li>
+                            <a href="/iso2/giohang.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80 relative">
+                                <i class="fas fa-shopping-bag mr-2"></i> Giỏ hàng
+                                <span id="sidebar-cart-badge" class="hidden ml-auto bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"></span>
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('phieudathang.view')): ?>
+                        <li>
+                            <a href="/iso2/phieudathang.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-file-invoice mr-2"></i> Phiếu đặt hàng
+                            </a>
+                        </li>
+                        <?php endif; ?>
                         <?php if (hasPermission('phanloai_vattu.view')): ?>
                         <li>
                             <a href="/iso2/phanloaivattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
@@ -168,7 +183,21 @@ require_once __DIR__ . '/../../config/constants.php';
                             </a>
                         </li>
                         <?php endif; ?>
+                        <li>
+                            <a href="/iso2/thongke_vattu_thanh_ly.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-chart-bar mr-2"></i> Thống kê vật tư thanh lý
+                            </a>
+                        </li>
                     </ul>
+                </li>
+                <?php endif; ?>
+
+                <!-- 3.6. Giao Nhận Thiết Bị -->
+                <?php if (isLoggedIn() && hasPermission('giaonhanthietbi.view')): ?>
+                <li>
+                    <a href="/iso2/giaonhanthietbi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-exchange-alt mr-2"></i> Giao Nhận Thiết Bị
+                    </a>
                 </li>
                 <?php endif; ?>
 

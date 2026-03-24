@@ -37,7 +37,6 @@ function escapeWordText($text) {
     return $text;
 }
 ?>
-<!DOCTYPE html>
 <html xmlns:v="urn:schemas-microsoft-com:vml"
 xmlns:o="urn:schemas-microsoft-com:office:office"
 xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -45,11 +44,13 @@ xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
 xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv=Content-Type content="text/html; charset=unicode">
 <style>
 @page Section1 {
     size: 595.3pt 841.9pt; /* A4 */
     margin: 1.0cm 1.5cm 1.0cm 2.0cm;
+    mso-footer-margin: .5in;
+    mso-footer: f1;
 }
 div.Section1 { page: Section1; }
 
@@ -68,8 +69,26 @@ table, th, td {
     border: 1px solid black;
 }
 
+/* Remove borders from footer */
+table#hrdftrtbl table,
+table#hrdftrtbl td {
+    border: none !important;
+}
+
 th, td {
     padding: 4px;
+}
+
+p.MsoFooter, li.MsoFooter, div.MsoFooter {
+    margin: 0in;
+    margin-bottom: .0001pt;
+    mso-pagination: widow-orphan;
+    tab-stops: center 3.0in right 6.0in;
+    font-size: 12.0pt;
+}
+
+table#hrdftrtbl {
+    margin: 0in 0in 0in 9in;
 }
 
 .header-left {
@@ -154,7 +173,7 @@ th {
 <div style="margin-bottom: 10px;">
     <div style="width: 100%; text-align: left;">
         <div style="font-weight: bold; font-size: 13pt; line-height: 1.3;">
-            XN DIA VẬT LÝ GK<br/>
+            XN ĐỊA VẬT LÝ GK<br/>
             XƯỞNG SCTBĐVL
         </div>
     </div>
@@ -264,6 +283,25 @@ th {
         <td style="border: none; width: 34%; text-align: center; vertical-align: top;">
             <div class="signature-title">Bộ phận quản lý, sử dụng TB</div>
             <div style="margin-top: 80px;"></div>
+        </td>
+    </tr>
+</table>
+
+<table id='hrdftrtbl' border='0' cellspacing='0' cellpadding='0'>
+    <tr>
+        <td>
+            <div style='mso-element:footer' id="f1">
+                <p class="MsoFooter">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="footer">
+                                <span lang=VI style='mso-ansi-language:VI'>BM.25.06<br/>
+	01/09/2020 <o:p></o:p></span>
+                            </td>
+                        </tr>
+                    </table>
+                </p>
+            </div>
         </td>
     </tr>
 </table>

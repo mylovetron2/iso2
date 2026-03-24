@@ -99,6 +99,21 @@ $allPermissions = [
     'kehoach_kiemdinh.edit' => 'Sửa kế hoạch kiểm định',
     'kehoach_kiemdinh.export' => 'Xuất kế hoạch kiểm định',
     
+    'giohang.view' => 'Xem giỏ hàng',
+    'giohang.add' => 'Thêm vào giỏ hàng',
+    'giohang.edit' => 'Sửa giỏ hàng',
+    'giohang.delete' => 'Xóa khỏi giỏ hàng',
+    
+    'phieudathang.view' => 'Xem phiếu đặt hàng',
+    'phieudathang.create' => 'Tạo phiếu đặt hàng',
+    'phieudathang.edit' => 'Sửa phiếu đặt hàng',
+    'phieudathang.delete' => 'Xóa phiếu đặt hàng',
+    'phieudathang.approve' => 'Duyệt phiếu đặt hàng',
+    'phieudathang.receive' => 'Nhận hàng',
+    'phieudathang.stock' => 'Nhập kho',
+    'phieudathang.cancel' => 'Hủy phiếu',
+    'phieudathang.export' => 'Xuất Excel phiếu ĐH',
+    
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
 ];
@@ -133,6 +148,8 @@ $permissionGroups = [
     'Quản lý Mỏ' => ['mo.view', 'mo.create', 'mo.edit', 'mo.delete'],
     'Hiệu Chuẩn/Kiểm Định' => ['hieuchuan.view', 'hieuchuan.create', 'hieuchuan.edit', 'hieuchuan.delete'],
     'Kế hoạch Kiểm Định' => ['kehoach_kiemdinh.view', 'kehoach_kiemdinh.edit', 'kehoach_kiemdinh.export'],
+    'Giỏ hàng' => ['giohang.view', 'giohang.add', 'giohang.edit', 'giohang.delete'],
+    'Phiếu đặt hàng' => ['phieudathang.view', 'phieudathang.create', 'phieudathang.edit', 'phieudathang.delete', 'phieudathang.approve', 'phieudathang.receive', 'phieudathang.stock', 'phieudathang.cancel', 'phieudathang.export'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
 ];
 ?>

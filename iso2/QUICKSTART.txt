@@ -1,0 +1,86 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║   ✅ HƯỚNG DẪN NHANH - GIỎ HÀNG & PHIẾU ĐẶT HÀNG                        ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+⚠️  LƯU Ý: Database KHÔNG có bảng permissions!
+    Permissions lưu trong roles.permissions (JSON array)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 BƯỚC 1: TẠO 4 BẢNG DATABASE (2 phút)
+
+   Qua phpMyAdmin:
+   1. Mở phpMyAdmin
+   2. Chọn database: diavatly_db
+   3. Tab "SQL"
+   4. Copy file: setup_giohang_phieudathang.sql
+   5. Click "Go"
+
+   Kết quả: ✅ HOÀN TẤT! Đã tạo 4 bảng
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 BƯỚC 2: THÊM PERMISSIONS VÀO ROLES (30 giây)
+
+   Mở trình duyệt:
+   http://localhost/iso2/grant_giohang_phieudathang_permissions.php
+
+   Kết quả: ✅ HOÀN TẤT! Đã cập nhật X role(s)
+            13 permissions đã được thêm
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 BƯỚC 3: KIỂM TRA GIAO DIỆN (2 phút)
+
+   1. Vào: http://localhost/iso2/vattuthanhly.php
+   2. Clear cache: Ctrl + Shift + R
+   3. Tìm 2 nút mới:
+      • "Giỏ hàng" (màu tím, có badge)
+      • "Quản lý phiếu ĐH" (màu xanh)
+   4. Tìm icon 🛒 ở mỗi dòng vật tư
+   5. Click thử → Badge cập nhật real-time
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 WORKFLOW PHIẾU ĐẶT HÀNG
+
+   NHÁP → Duyệt → ĐÃ ĐẶT → Nhận hàng → ĐÃ NHẬN → Nhập kho → ĐÃ NHẬP KHO
+
+   1. Thêm vào giỏ hàng (click 🛒)
+   2. Vào Giỏ hàng → "Tạo Phiếu Đặt Hàng"
+   3. Điền thông tin → "Lưu Phiếu"
+   4. "Duyệt Phiếu" (nếu có quyền approve)
+   5. "Nhận Hàng" (nhập số lượng thực nhận)
+   6. "Nhập Kho" (cập nhật tồn kho tự động)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ XỬ LÝ LỖI
+
+   • Badge không hiển thị
+     → Ctrl + Shift + R (hard refresh)
+     → F12 Console kiểm tra lỗi
+
+   • Không thấy nút giỏ hàng
+     → Chạy lại BƯỚC 2 (grant permissions)
+     → Logout và login lại
+
+   • Thêm vào giỏ không được
+     → Kiểm tra bảng cart_vattu_thanh_ly đã tạo chưa
+     → F12 Network xem response lỗi gì
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 DOCUMENTATION CHI TIẾT
+
+   • SETUP_GIOHANG_PERMISSIONS.md    - Hướng dẫn đầy đủ
+   • RA_SOAT_VA_SUA_SUMMARY.md       - Tổng kết thay đổi
+   • GIOHANG_PHIEUDATHANG_README.md  - Chi tiết kỹ thuật
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 XONG! Chỉ cần 2 bước là sẵn sàng sử dụng!
+
+╚══════════════════════════════════════════════════════════════════════════╝

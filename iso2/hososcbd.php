@@ -60,6 +60,14 @@ switch ($action) {
         $controller->exportWord();
         break;
 
+    case 'exportphieusc':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportPhieuSC();
+        break;
+
     case 'exportlistpdf':
         if (!hasPermission('hososcbd.view')) {
             header('Location: /iso2/hososcbd.php?error=permission_denied');

@@ -9,23 +9,32 @@ require_once __DIR__ . '/../layouts/header.php';
 .vattu-row:hover {
     background-color: #f9fafb;
 }
+#vattuTable td {
+    position: relative;
+    overflow: visible !important;
+}
 .autocomplete-items {
     position: absolute;
     border: 1px solid #d4d4d4;
     border-bottom: none;
     border-top: none;
-    z-index: 99;
+    z-index: 9999;
     top: 100%;
     left: 0;
-    right: 0;
+    min-width: 400px;
     max-height: 200px;
     overflow-y: auto;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 .autocomplete-items div {
     padding: 10px;
     cursor: pointer;
     background-color: #fff;
     border-bottom: 1px solid #d4d4d4;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 .autocomplete-items div:hover {
     background-color: #e9e9e9;
@@ -122,15 +131,15 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold mb-4 border-b pb-2">6. Danh mục vật tư</h2>
             
-            <div class="overflow-x-auto">
-                <table class="min-w-full border" id="vattuTable">
+            <div style="overflow-x: auto; overflow-y: visible;">
+                <table class="min-w-full border" id="vattuTable" style="position: relative;">
                     <thead class="bg-gray-100">
                         <tr>
                             <th class="border px-2 py-2 text-sm w-12">STT</th>
                             <th class="border px-2 py-2 text-sm w-32">Mã vật tư</th>
                             <th class="border px-2 py-2 text-sm">Tên vật tư</th>
                             <th class="border px-2 py-2 text-sm w-20">ĐVT</th>
-                            <th class="border px-2 py-2 text-sm w-24">Nhận</th>
+                            <th class="border px-2 py-2 text-sm w-24" style="display: none;">Nhận</th>
                             <th class="border px-2 py-2 text-sm w-24">Tiêu hao</th>
                             <th class="border px-2 py-2 text-sm w-48">Ghi chú</th>
                             <th class="border px-2 py-2 text-sm w-16">Xóa</th>
@@ -195,13 +204,13 @@ function addVatTuRow() {
                    class="w-full border-0 px-2 py-1 text-sm text-center donvi-display bg-gray-50" 
                    id="donvi-${rowCounter}">
         </td>
-        <td class="border px-2 py-2">
+        <td class="border px-2 py-2" style="display: none;">
             <input type="number" step="0.01" min="0"
                    class="w-full border-0 px-2 py-1 text-sm text-right soluong-nhan" 
                    id="nhan-${rowCounter}">
         </td>
         <td class="border px-2 py-2">
-            <input type="number" step="0.01" min="0"
+            <input type="number" step="1" min="0"
                    class="w-full border-0 px-2 py-1 text-sm text-right soluong-tieuhao" 
                    id="tieuhao-${rowCounter}">
         </td>
@@ -310,8 +319,10 @@ document.getElementById('phieuForm').addEventListener('submit', function(e) {
     document.getElementById('vattuItemsInput').value = JSON.stringify(items);
 });
 
-// Add first row on load
-addVatTuRow();
+// Add 10 rows on load
+for (let i = 0; i < 10; i++) {
+    addVatTuRow();
+}
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Login Issue</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .success { background: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 10px 0; }
+        .error { background: #f8d7da; padding: 15px; border-left: 4px solid #dc3545; margin: 10px 0; }
+        .info { background: #d1ecf1; padding: 15px; border-left: 4px solid #0c5460; margin: 10px 0; }
+        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 FIX LỖI ĐĂNG NHẬP</h1>
+    
+    <div class="error">
+        <h3>❌ Vấn đề: Không vào được trang đăng nhập</h3>
+        <p>Có thể do code mới thêm vào gây lỗi PHP</p>
+    </div>
+    
+    <h2>🔍 BƯỚC 1: Kiểm tra lỗi</h2>
+    <a href="/iso2/debug_login_issue.php" class="btn">▶ Chạy Debug Script</a>
+    <p><small>Script sẽ kiểm tra: database, models, permissions, header.php</small></p>
+    
+    <hr>
+    
+    <h2>🔧 BƯỚC 2: Giải pháp nhanh (nếu vẫn lỗi)</h2>
+    
+    <div class="info">
+        <h4>Option 1: Tạm thời tắt giỏ hàng trong header</h4>
+        <p>Mở file: <code>views/layouts/header.php</code></p>
+        <p>Tìm dòng 157-172 (phần giohang và phieudathang)</p>
+        <p>Comment lại bằng cách thêm <code>&lt;!-- ... --&gt;</code>:</p>
+        <pre>&lt;!--
+&lt;?php if (hasPermission('giohang.view')): ?&gt;
+    ...
+&lt;?php endif; ?&gt;
+--&gt;</pre>
+    </div>
+    
+    <div class="info">
+        <h4>Option 2: Đổi tên file tạm thời</h4>
+        <p>Đổi tên các file mới để tắt chức năng:</p>
+        <ul>
+            <li><code>giohang.php</code> → <code>giohang.php.bak</code></li>
+            <li><code>phieudathang.php</code> → <code>phieudathang.php.bak</code></li>
+        </ul>
+    </div>
+    
+    <hr>
+    
+    <h2>🎯 BƯỚC 3: Test lại login</h2>
+    <a href="/iso2/views/auth/login.php" class="btn">▶ Login Page (Direct)</a>
+    <a href="/iso2/index.php" class="btn">▶ Home Page</a>
+    
+    <hr>
+    
+    <h2>📋 Checklist xử lý</h2>
+    <ol>
+        <li>✅ Chạy debug script để xem lỗi cụ thể</li>
+        <li>⏳ Nếu thấy lỗi User.php hoặc permissions.php → Report lại</li>
+        <li>⏳ Nếu thấy lỗi header.php → Comment phần giohang tạm thời</li>
+        <li>⏳ Nếu không thấy lỗi gì → Kiểm tra PHP error log</li>
+    </ol>
+    
+    <hr>
+    
+    <h2>🆘 PHP Error Log Location</h2>
+    <p>Kiểm tra file log:</p>
+    <ul>
+        <li>XAMPP: <code>C:\xampp\apache\logs\error.log</code></li>
+        <li>WAMP: <code>C:\wamp64\logs\php_error.log</code></li>
+        <li>Laravel Valet/Herd: <code>~/.config/valet/Log/</code></li>
+    </ul>
+    
+    <hr>
+    
+    <div class="success">
+        <h3>✅ Sau khi fix xong</h3>
+        <p>Chạy lại 2 bước cài đặt giỏ hàng:</p>
+        <ol>
+            <li>SQL: Chạy <code>setup_giohang_phieudathang.sql</code></li>
+            <li>PHP: Mở <code>grant_giohang_phieudathang_permissions.php</code></li>
+        </ol>
+    </div>
+    
+    <hr>
+    <p><em>File này: <code>fix_login_issue.html</code></em></p>
+</body>
+</html>

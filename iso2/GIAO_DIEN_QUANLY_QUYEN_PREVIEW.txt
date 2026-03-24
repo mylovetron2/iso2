@@ -1,0 +1,172 @@
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    QUẢN LÝ QUYỀN ROLE - PREVIEW                         │
+│                                                                         │
+│  Sau khi thêm permissions, giao diện sẽ có thêm 2 NHÓM MỚI:            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║  ROLE: Admin                                      [💾 Lưu quyền]      ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║                                                                       ║
+║  ┌─────────────────────┐  ┌─────────────────────┐  ┌────────────────┐ ║
+║  │ 📁 Giỏ hàng         │  │ 📁 Phiếu đặt hàng   │  │ 📁 Vật tư...   │ ║
+║  ├─────────────────────┤  ├─────────────────────┤  ├────────────────┤ ║
+║  │ ☑ Xem giỏ hàng     │  │ ☑ Xem phiếu ĐH      │  │ ☑ Xem vật tư   │ ║
+║  │ ☑ Thêm vào giỏ     │  │ ☑ Tạo phiếu ĐH      │  │ ☑ Tạo vật tư   │ ║
+║  │ ☑ Sửa giỏ hàng     │  │ ☑ Sửa phiếu ĐH      │  │ ☑ Sửa vật tư   │ ║
+║  │ ☑ Xóa khỏi giỏ     │  │ ☑ Xóa phiếu ĐH      │  │ ☑ Xóa vật tư   │ ║
+║  │                     │  │ ☑ Duyệt phiếu ĐH    │  └────────────────┘ ║
+║  │                     │  │ ☑ Nhận hàng         │                     ║
+║  │                     │  │ ☑ Nhập kho          │  ┌────────────────┐ ║
+║  │                     │  │ ☑ Hủy phiếu         │  │ 📁 Project...  │ ║
+║  │                     │  │ ☑ Xuất Excel        │  ├────────────────┤ ║
+║  └─────────────────────┘  └─────────────────────┘  │ ☑ Xem project  │ ║
+║                                                     │ ☑ Tạo project  │ ║
+║                                                     │ ...            │ ║
+║                                                     └────────────────┘ ║
+║                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║  ROLE: User                                       [💾 Lưu quyền]      ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║                                                                       ║
+║  ┌─────────────────────┐  ┌─────────────────────┐  ┌────────────────┐ ║
+║  │ 📁 Giỏ hàng         │  │ 📁 Phiếu đặt hàng   │  │ 📁 Vật tư...   │ ║
+║  ├─────────────────────┤  ├─────────────────────┤  ├────────────────┤ ║
+║  │ ☑ Xem giỏ hàng     │  │ ☑ Xem phiếu ĐH      │  │ ☑ Xem vật tư   │ ║
+║  │ ☑ Thêm vào giỏ     │  │ ☑ Tạo phiếu ĐH      │  │ ☐ Tạo vật tư   │ ║
+║  │ ☑ Sửa giỏ hàng     │  │ ☑ Sửa phiếu ĐH      │  │ ☐ Sửa vật tư   │ ║
+║  │ ☑ Xóa khỏi giỏ     │  │ ☐ Xóa phiếu ĐH      │  │ ☐ Xóa vật tư   │ ║
+║  │                     │  │ ☐ Duyệt phiếu ĐH    │  └────────────────┘ ║
+║  │                     │  │ ☐ Nhận hàng         │                     ║
+║  │                     │  │ ☐ Nhập kho          │                     ║
+║  │                     │  │ ☐ Hủy phiếu         │                     ║
+║  │                     │  │ ☐ Xuất Excel        │                     ║
+║  └─────────────────────┘  └─────────────────────┘                     ║
+║                                                                       ║
+║  User thường chỉ cần:                                                 ║
+║  ✅ Giỏ hàng: Tất cả (view, add, edit, delete) - 4 permissions       ║
+║  ✅ Phiếu ĐH: Cơ bản (view, create, edit) - 3 permissions            ║
+║  ❌ Phiếu ĐH: Nâng cao (approve, receive, stock...) - Manager/Admin  ║
+║                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  HƯỚNG DẪN SỬ DỤNG                                                    │
+├───────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. VÀO TRANG QUẢN LÝ QUYỀN:                                          │
+│     https://diavatly.cloud/iso2/views/admin/permissions_manager.php   │
+│                                                                       │
+│  2. TÌM ROLE CẦN CẤP QUYỀN (vd: Admin, User, Manager...)              │
+│                                                                       │
+│  3. SCROLL XUỐNG, TÌM 2 NHÓM MỚI:                                     │
+│     📁 Giỏ hàng                                                       │
+│     📁 Phiếu đặt hàng                                                 │
+│                                                                       │
+│  4. TICK/CHỌN CÁC CHECKBOX MUỐN CẤP:                                  │
+│     ☑ Click vào checkbox để chọn                                     │
+│     ☐ Bỏ qua nếu không muốn cấp quyền đó                             │
+│                                                                       │
+│  5. CLICK NÚT "LƯU QUYỀN" Ở GÓC PHẢI TRÊN CỦA TỪNG ROLE               │
+│                                                                       │
+│  6. SAU KHI LƯU XONG:                                                 │
+│     ✅ Thấy message: "Cập nhật quyền thành công!"                    │
+│     ✅ Các checkbox đã chọn vẫn còn tích                             │
+│                                                                       │
+│  7. USER PHẢI LOGOUT VÀ LOGIN LẠI:                                    │
+│     - Session cache permissions cũ                                    │
+│     - Phải login lại để load permissions mới                          │
+│                                                                       │
+│  8. TEST:                                                             │
+│     - Check: check_user_permissions.php                               │
+│     - Vào: vattuthanhly.php                                           │
+│     - Click: Giỏ hàng (không còn lỗi!)                                │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  GỢI Ý CẤP QUYỀN                                                      │
+├───────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  🔴 ROLE: Admin (Quản trị viên)                                       │
+│     ☑ TẤT CẢ 13 permissions (giohang + phieudathang)                 │
+│     → Có thể làm mọi thứ                                              │
+│                                                                       │
+│  🟠 ROLE: Manager (Quản lý)                                           │
+│     ☑ giohang: view, add, edit, delete (4)                           │
+│     ☑ phieudathang: view, create, edit, approve, receive, stock,     │
+│                     export (7)                                        │
+│     ☐ phieudathang: delete, cancel (2 - chỉ Admin)                   │
+│     → Có thể quản lý workflow nhưng không xóa/hủy                     │
+│                                                                       │
+│  🟢 ROLE: User (Nhân viên)                                            │
+│     ☑ giohang: view, add, edit, delete (4)                           │
+│     ☑ phieudathang: view, create, edit (3)                           │
+│     ☐ Tất cả các quyền approve, receive, stock... (chỉ Manager)      │
+│     → Có thể dùng giỏ hàng và tạo phiếu, nhưng không duyệt/nhập kho  │
+│                                                                       │
+│  🔵 ROLE: Viewer (Chỉ xem)                                            │
+│     ☑ giohang: view (1)                                               │
+│     ☑ phieudathang: view (1)                                          │
+│     ☐ Tất cả quyền khác                                               │
+│     → Chỉ xem, không thao tác                                         │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  SAU KHI CẤP QUYỀN XONG                                               │
+├───────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  ✅ BƯỚC 1: Logout và Login lại                                       │
+│  ✅ BƯỚC 2: Check permissions                                         │
+│     → check_user_permissions.php                                      │
+│     → Should see: "✅ ĐÃ CÓ TẤT CẢ PERMISSIONS GIỎ HÀNG!"           │
+│                                                                       │
+│  ✅ BƯỚC 3: Test giỏ hàng                                             │
+│     → vattuthanhly.php                                                │
+│     → Click "Giỏ hàng" (không còn redirect lỗi!)                      │
+│     → Click 🛒 thêm vào giỏ → Badge tăng                              │
+│                                                                       │
+│  ✅ BƯỚC 4: Test workflow đầy đủ                                      │
+│     1. Thêm items vào giỏ                                             │
+│     2. Xem giỏ hàng                                                   │
+│     3. Tạo phiếu đặt hàng                                             │
+│     4. Workflow: Draft → Ordered → Received → Stocked                 │
+│     5. Kiểm tra tồn kho tăng                                           │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+
+════════════════════════════════════════════════════════════════════════
+  TỔNG KẾT
+════════════════════════════════════════════════════════════════════════
+
+✅ ĐÃ THÊM 2 NHÓM MỚI VÀO GIAO DIỆN QUẢN LÝ QUYỀN:
+   1. Giỏ hàng (4 permissions)
+   2. Phiếu đặt hàng (9 permissions)
+
+✅ ADMIN CÓ THỂ:
+   - Vào trang Quản lý quyền
+   - Tick/Chọn permissions cho từng Role
+   - Lưu quyền
+   - User logout/login lại để áp dụng
+
+✅ SAU KHI CẤP QUYỀN:
+   - User có thể sử dụng chức năng Giỏ hàng
+   - Không còn bị redirect lỗi
+   - Workflow hoạt động đầy đủ
+
+════════════════════════════════════════════════════════════════════════
+
+🚀 BẮT ĐẦU NGAY: 
+   https://diavatly.cloud/iso2/views/admin/permissions_manager.php
+
+📖 HƯỚNG DẪN CHI TIẾT:
+   File: HUONG_DAN_CAP_QUYEN.md
+
+════════════════════════════════════════════════════════════════════════
