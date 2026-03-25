@@ -10,7 +10,16 @@ $statusColors = [
     'stocked' => 'bg-purple-500',
     'cancelled' => 'bg-red-500'
 ];
+$statusLabels = [
+    'draft' => 'Nháp',
+    'ordered' => 'Đã đặt hàng',
+    'partial_received' => 'Nhận một phần',
+    'received' => 'Đã nhận đủ',
+    'stocked' => 'Đã nhập kho',
+    'cancelled' => 'Đã hủy'
+];
 $colorClass = $statusColors[$phieu['trang_thai']] ?? 'bg-gray-500';
+$statusLabel = $statusLabels[$phieu['trang_thai']] ?? $phieu['trang_thai'];
 ?>
 
 <div class="container mx-auto px-4 py-6">
@@ -20,7 +29,7 @@ $colorClass = $statusColors[$phieu['trang_thai']] ?? 'bg-gray-500';
             <div>
                 <h1 class="text-3xl font-bold text-blue-600"><?php echo htmlspecialchars($phieu['ma_phieu']); ?></h1>
                 <span class="<?php echo $colorClass; ?> text-white px-3 py-1 rounded text-sm inline-block mt-2">
-                    <?php echo strtoupper($phieu['trang_thai']); ?>
+                    <?php echo $statusLabel; ?>
                 </span>
             </div>
             <div class="flex gap-2">
@@ -38,7 +47,7 @@ $colorClass = $statusColors[$phieu['trang_thai']] ?? 'bg-gray-500';
                 <?php if (in_array($phieu['trang_thai'], ['ordered', 'partial_received']) && hasPermission('phieudathang.receive')): ?>
                     <a href="phieudathang.php?action=receive&id=<?php echo $phieu['id']; ?>" 
                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                        <i class="fas fa-box mr-1"></i> Nhận Hàng & Nhập Kho
+                        <i class="fas fa-box mr-1"></i> Nhập Hàng
                     </a>
                 <?php endif; ?>
 
@@ -52,6 +61,11 @@ $colorClass = $statusColors[$phieu['trang_thai']] ?? 'bg-gray-500';
                         </button>
                     </form>
                 <?php endif; ?>
+
+                <a href="phieudathang.php?action=exportExcel&id=<?php echo $phieu['id']; ?>" 
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">
+                    <i class="fas fa-file-excel mr-1"></i> Xuất Excel
+                </a>
 
                 <a href="phieudathang.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
                     <i class="fas fa-arrow-left mr-1"></i> Quay lại

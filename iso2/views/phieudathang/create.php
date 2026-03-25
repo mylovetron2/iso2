@@ -22,7 +22,7 @@ $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
                     <div class="flex items-center justify-center w-10 h-10 rounded-full <?php echo $step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'; ?> font-bold">
                         2
                     </div>
-                    <span class="ml-2 font-semibold <?php echo $step === 2 ? 'text-blue-600' : 'text-gray-600'; ?>">Thông tin NCC</span>
+                    <span class="ml-2 font-semibold <?php echo $step === 2 ? 'text-blue-600' : 'text-gray-600'; ?>">Xác nhận</span>
                 </div>
             </div>
         </div>
@@ -185,14 +185,14 @@ $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
                 <a href="phieudathang.php?action=create&step=2" 
                    id="btn-next-step"
                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
-                    <i class="fas fa-arrow-right mr-1"></i> Tiếp tục: Nhập thông tin NCC
+                    <i class="fas fa-arrow-right mr-1"></i> Tiếp tục: Xác nhận
                 </a>
             </div>
 
         <?php else: ?>
-            <!-- BƯỚC 2: NHẬP THÔNG TIN NCC -->
+            <!-- BƯỚC 2: XÁC NHẬN -->
             <h1 class="text-2xl font-bold mb-6">
-                <i class="fas fa-building text-blue-600 mr-2"></i> Bước 2: Thông Tin Nhà Cung Cấp
+                <i class="fas fa-check-circle text-blue-600 mr-2"></i> Bước 2: Xác nhận
             </h1>
 
             <?php if (empty($cartItems)): ?>
@@ -206,7 +206,7 @@ $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
                         </div>
                     </div>
                 </div>
-                <div class="flex justify-start">
+                <div class="flex justify-start" style="display: none;">
                     <a href="phieudathang.php?action=create&step=1" 
                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
                         <i class="fas fa-arrow-left mr-1"></i> Quay lại chọn vật tư
@@ -247,37 +247,34 @@ $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
                 <!-- Form nhập thông tin NCC -->
                 <form method="POST" action="phieudathang.php?action=store">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
+                        <div style="display: none;">
                             <label class="block text-sm font-semibold mb-2">
                                 Nhà cung cấp <span class="text-red-600">*</span>
                             </label>
                             <input type="text" 
                                    name="nha_cung_cap" 
-                                   required
                                    class="w-full border rounded px-3 py-2" 
                                    placeholder="Tên nhà cung cấp...">
                         </div>
-                        <div>
+                        <div style="display: none;">
                             <label class="block text-sm font-semibold mb-2">
                                 Số hợp đồng NCC <span class="text-red-600">*</span>
                             </label>
                             <input type="text" 
                                    name="so_hd_ncc" 
-                                   required
                                    class="w-full border rounded px-3 py-2" 
                                    placeholder="Số hợp đồng...">
                         </div>
-                        <div>
+                        <div style="display: none;">
                             <label class="block text-sm font-semibold mb-2">
                                 Ngày giao dự kiến <span class="text-red-600">*</span>
                             </label>
                             <input type="date" 
                                    name="ngay_du_kien_nhan" 
-                                   required
                                    class="w-full border rounded px-3 py-2"
                                    value="<?php echo date('Y-m-d', strtotime('+7 days')); ?>">
                         </div>
-                        <div>
+                        <div style="display: none;">
                             <label class="block text-sm font-semibold mb-2">Ghi chú</label>
                             <textarea name="ghi_chu" 
                                       rows="1"
@@ -287,11 +284,7 @@ $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
                     </div>
 
                     <!-- Buttons -->
-                    <div class="flex gap-3 justify-between">
-                        <a href="phieudathang.php?action=create&step=1" 
-                           class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
-                            <i class="fas fa-arrow-left mr-1"></i> Quay lại chọn vật tư
-                        </a>
+                    <div class="flex gap-3 justify-end">
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-semibold">
                             <i class="fas fa-check-circle mr-1"></i> Tạo Phiếu Đặt Hàng
                         </button>

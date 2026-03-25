@@ -396,17 +396,13 @@ button.text-red-600:hover {
             </a>
             <?php endif; ?>
             
-            <a href="phieudathang.php?action=create&step=1" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
+            <!-- <a href="phieudathang.php?action=create&step=1" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded" style="display: none;">
                 <i class="fas fa-shopping-cart mr-1"></i> Tạo phiếu đặt hàng
-            </a>
+            </a> -->
             
             <a href="giohang.php" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded relative">
                 <i class="fas fa-shopping-bag mr-1"></i> Giỏ hàng
                 <span id="cart-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"></span>
-            </a>
-            
-            <a href="phieudathang.php" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
-                <i class="fas fa-file-invoice mr-1"></i> Quản lý phiếu ĐH
             </a>
             
             <!-- Dropdown menu cho các chức năng khác -->
@@ -416,6 +412,10 @@ button.text-red-600:hover {
                     <i class="fas fa-caret-down"></i>
                 </button>
                 <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <a href="phieudathang.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-file-invoice mr-3 text-indigo-600 w-5"></i>
+                        <span>Quản lý phiếu ĐH</span>
+                    </a>
                     <?php if (hasPermission('vattu.create')): ?>
                     <a href="import_vattu_excel.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
                         <i class="fas fa-file-excel mr-3 text-emerald-600 w-5"></i>
@@ -563,7 +563,7 @@ button.text-red-600:hover {
                                class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết" onclick="event.stopPropagation();">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <button onclick="addToCart(<?php echo $item['stt']; ?>, event)" 
+                            <button id="cart-btn-<?php echo $item['stt']; ?>" onclick="addToCart(<?php echo $item['stt']; ?>, event)" 
                                     class="text-purple-600 hover:text-purple-800 mx-1" 
                                     title="Thêm vào giỏ hàng">
                                 <i class="fas fa-cart-plus"></i>
@@ -1164,6 +1164,16 @@ function loadCartCount() {
 function addToCart(vattuStt, event) {
     event.stopPropagation();
     
+    // Get button and disable it
+    const button = document.getElementById('cart-btn-' + vattuStt);
+    if (button) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    
+    // Show loading notification
+    const loadingNotif = showNotification('info', 'Đang thêm vào giỏ hàng...');
+    
     const formData = new FormData();
     formData.append('vattu_stt', vattuStt);
     formData.append('so_luong', 1);
@@ -1174,6 +1184,15 @@ function addToCart(vattuStt, event) {
     })
     .then(response => response.json())
     .then(data => {
+        // Remove loading notification
+        if (loadingNotif) loadingNotif.remove();
+        
+        // Re-enable button
+        if (button) {
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+        
         if (data.success) {
             // Show success message
             showNotification('success', data.message);
@@ -1190,27 +1209,51 @@ function addToCart(vattuStt, event) {
         }
     })
     .catch(error => {
+        // Remove loading notification
+        if (loadingNotif) loadingNotif.remove();
+        
+        // Re-enable button
+        if (button) {
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+        
         console.error('Error:', error);
         showNotification('error', 'Có lỗi xảy ra khi thêm vào giỏ hàng');
     });
 }
 
 function showNotification(type, message) {
-    const colorClass = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    let colorClass = 'bg-red-500';
+    let icon = 'exclamation-circle';
+    
+    if (type === 'success') {
+        colorClass = 'bg-green-500';
+        icon = 'check-circle';
+    } else if (type === 'info') {
+        colorClass = 'bg-blue-500';
+        icon = 'spinner fa-spin';
+    }
+    
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 ${colorClass} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all`;
     notification.innerHTML = `
         <div class="flex items-center gap-2">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <i class="fas fa-${icon}"></i>
             <span>${message}</span>
         </div>
     `;
     document.body.appendChild(notification);
     
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    // Auto-hide for success/error messages only, not for info (loading)
+    if (type !== 'info') {
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    return notification;
 }
 </script>
 

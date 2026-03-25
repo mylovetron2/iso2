@@ -70,7 +70,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-times mr-1"></i> Hủy
                 </a>
                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
-                    <i class="fas fa-check mr-1"></i> Xác Nhận Nhận Hàng & Nhập Kho
+                    <i class="fas fa-check mr-1"></i> Xác Nhận Nhập Hàng
                 </button>
             </div>
         </form>

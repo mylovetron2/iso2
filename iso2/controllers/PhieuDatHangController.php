@@ -179,17 +179,6 @@ class PhieuDatHangController
         }
 
         try {
-            // Validate thông tin NCC
-            if (empty($_POST['nha_cung_cap'])) {
-                throw new Exception('Vui lòng nhập tên nhà cung cấp');
-            }
-            if (empty($_POST['so_hd_ncc'])) {
-                throw new Exception('Vui lòng nhập số hợp đồng');
-            }
-            if (empty($_POST['ngay_du_kien_nhan'])) {
-                throw new Exception('Vui lòng chọn ngày giao dự kiến');
-            }
-
             // Lấy items từ giỏ hàng
             $cartItems = $this->getCartItemsForOrder();
             
@@ -214,9 +203,9 @@ class PhieuDatHangController
                 $ma_phieu,
                 $this->userId,
                 $_POST['ghi_chu'] ?? null,
-                $_POST['nha_cung_cap'],
-                $_POST['so_hd_ncc'],
-                $_POST['ngay_du_kien_nhan'],
+                $_POST['nha_cung_cap'] ?? null,
+                $_POST['so_hd_ncc'] ?? null,
+                $_POST['ngay_du_kien_nhan'] ?? date('Y-m-d', strtotime('+7 days')),
                 $this->userId  // Người tạo cũng là người duyệt
             ]);
 
@@ -789,5 +778,199 @@ class PhieuDatHangController
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM cart_vattu_thanh_ly WHERE user_id = ?");
         $stmt->execute([$this->userId]);
         return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Xuất phiếu đặt hàng ra Excel theo mẫu specification
+     */
+    public function exportExcel(): void
+    {
+        try {
+            $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+            
+            if ($id <= 0) {
+                throw new Exception('ID phiếu không hợp lệ');
+            }
+
+            // Lấy thông tin phiếu
+            $stmt = $this->db->prepare("
+                SELECT 
+                    p.*,
+                    u.username as ten_nguoi_lap,
+                    ud.username as ten_nguoi_duyet
+                FROM phieu_dat_hang p
+                LEFT JOIN users u ON p.nguoi_lap = u.stt
+                LEFT JOIN users ud ON p.nguoi_duyet = ud.stt
+                WHERE p.id = ?
+            ");
+            $stmt->execute([$id]);
+            $phieu = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$phieu) {
+                throw new Exception('Không tìm thấy phiếu');
+            }
+
+            // Lấy chi tiết vật tư
+            $stmt = $this->db->prepare("
+                SELECT 
+                    ct.*,
+                    v.mavattu
+                FROM phieu_dat_hang_chi_tiet ct
+                LEFT JOIN vattu_thanh_ly_iso v ON ct.vattu_stt = v.stt
+                WHERE ct.phieu_id = ?
+                ORDER BY ct.id
+            ");
+            $stmt->execute([$id]);
+            $chi_tiet = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Tạo Excel file
+            require_once __DIR__ . '/../vendor/autoload.php';
+            
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Set default font to Times New Roman
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman');
+            $spreadsheet->getDefaultStyle()->getFont()->setSize(11);
+            
+            // Set page orientation to landscape
+            $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+            
+            // Column widths
+            $sheet->getColumnDimension('A')->setWidth(5);
+            $sheet->getColumnDimension('B')->setWidth(25);
+            $sheet->getColumnDimension('C')->setWidth(25);
+            $sheet->getColumnDimension('D')->setWidth(25);
+            $sheet->getColumnDimension('E')->setWidth(25);
+            $sheet->getColumnDimension('F')->setWidth(12);
+            $sheet->getColumnDimension('G')->setWidth(10);
+            $sheet->getColumnDimension('H')->setWidth(15);
+            
+            $currentRow = 1;
+            
+            // Title row
+            $sheet->mergeCells("A{$currentRow}:H{$currentRow}");
+            $sheet->setCellValue("A{$currentRow}", "СПЕЦИФИКАЦИЯ - Danh mục vật tư thiết bị");
+            $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            // Subtitle row
+            $year = date('Y', strtotime($phieu['ngay_lap']));
+            $sheet->mergeCells("A{$currentRow}:H{$currentRow}");
+            $sheet->setCellValue("A{$currentRow}", "ИЗМЕРИТЕЛЬНЫЕ ПРИБОРЫ НА {$year} ГОД");
+            $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            // Department row
+            $sheet->mergeCells("A{$currentRow}:H{$currentRow}");
+            $sheet->setCellValue("A{$currentRow}", "Подразделение: КПГ");
+            $sheet->getStyle("A{$currentRow}")->getFont()->setBold(true);
+            $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+            
+            // Empty row
+            $currentRow++;
+            
+            // Header row 1 - Main headers
+            $headerRow1 = $currentRow;
+            $sheet->mergeCells("A{$headerRow1}:A" . ($headerRow1 + 1));
+            $sheet->setCellValue("A{$headerRow1}", "П/п\n(Stt)");
+            
+            $sheet->mergeCells("B{$headerRow1}:D{$headerRow1}");
+            $sheet->setCellValue("B{$headerRow1}", "Наименование (Tên hàng hóa)");
+            
+            $sheet->mergeCells("E{$headerRow1}:E" . ($headerRow1 + 1));
+            $sheet->setCellValue("E{$headerRow1}", "Тех. Характеристики\n(Đặc tính kỹ thuật)");
+            
+            $sheet->mergeCells("F{$headerRow1}:F" . ($headerRow1 + 1));
+            $sheet->setCellValue("F{$headerRow1}", "Eдапи Доп vị\ntính");
+            
+            $sheet->mergeCells("G{$headerRow1}:G" . ($headerRow1 + 1));
+            $sheet->setCellValue("G{$headerRow1}", "Oбъем\n(Số lượng)");
+            
+            $sheet->mergeCells("H{$headerRow1}:H" . ($headerRow1 + 1));
+            $sheet->setCellValue("H{$headerRow1}", "Примечание\n(Ghi chú)");
+            
+            // Header row 2 - Sub headers for name columns
+            $headerRow2 = $currentRow + 1;
+            $sheet->setCellValue("B{$headerRow2}", "На Англ. Языке (Tiếng Anh)");
+            $sheet->setCellValue("C{$headerRow2}", "На Русс. языке (Tiếng Nga)");
+            $sheet->setCellValue("D{$headerRow2}", "На Вьетнам. Языке (Tiếng Việt)");
+            
+            // Style header rows
+            $headerRange = "A{$headerRow1}:H{$headerRow2}";
+            $sheet->getStyle($headerRange)->getFont()->setBold(true);
+            $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($headerRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet->getStyle($headerRange)->getAlignment()->setWrapText(true);
+            $sheet->getStyle($headerRange)->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('FFE0E0E0');
+            $sheet->getStyle($headerRange)->getBorders()->getAllBorders()
+                ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            
+            $currentRow = $headerRow2 + 1;
+            
+            // Data rows
+            $stt = 1;
+            foreach ($chi_tiet as $item) {
+                $sheet->setCellValue("A{$currentRow}", $stt);
+                $sheet->setCellValue("B{$currentRow}", $item['ten_tieng_anh'] ?? '');
+                $sheet->setCellValue("C{$currentRow}", $item['ten_tieng_nga'] ?? '');
+                $sheet->setCellValue("D{$currentRow}", $item['ten_tieng_viet'] ?? '');
+                $sheet->setCellValue("E{$currentRow}", $item['dac_tinh_ky_thuat'] ?? '');
+                $sheet->setCellValue("F{$currentRow}", $item['don_vi'] ?? '');
+                $sheet->setCellValue("G{$currentRow}", $item['so_luong_dat']);
+                $sheet->setCellValue("H{$currentRow}", $item['ghi_chu'] ?? '');
+                
+                // Style data row
+                $sheet->getStyle("A{$currentRow}:H{$currentRow}")->getBorders()->getAllBorders()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("F{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("G{$currentRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                
+                // Wrap text for long content
+                $sheet->getStyle("B{$currentRow}:E{$currentRow}")->getAlignment()->setWrapText(true);
+                $sheet->getStyle("H{$currentRow}")->getAlignment()->setWrapText(true);
+                
+                $currentRow++;
+                $stt++;
+            }
+            
+            // Footer section
+            $currentRow += 2;
+            
+            $sheet->setCellValue("B{$currentRow}", "Зам. директора КПГ");
+            $sheet->setCellValue("F{$currentRow}", "Нгуен Зун Нгок");
+            $sheet->getStyle("B{$currentRow}")->getFont()->setBold(true);
+            $sheet->getStyle("F{$currentRow}")->getFont()->setBold(true);
+            
+            $currentRow++;
+            $sheet->setCellValue("B{$currentRow}", "Кý tắt - Виппь:");
+            $currentRow++;
+            $sheet->setCellValue("C{$currentRow}", "Хướнg trường ХССТВРУЛ / Начальник ЦPГO");
+            $sheet->setCellValue("F{$currentRow}", "Данг Ван Туэ");
+            
+            // Set filename
+            $filename = "Phieu_Dat_Hang_{$phieu['ma_phieu']}_" . date('YmdHis') . ".xlsx";
+            
+            // Output file
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Error in PhieuDatHangController::exportExcel: " . $e->getMessage());
+            $_SESSION['error'] = 'Lỗi khi xuất Excel: ' . $e->getMessage();
+            header("Location: phieudathang.php?action=view&id=" . ($id ?? 0));
+            exit;
+        }
     }
 }

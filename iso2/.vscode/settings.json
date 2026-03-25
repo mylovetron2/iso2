@@ -1,3 +1,68 @@
 {
-    "liveServer.settings.port": 5501
+  // Loại trừ các file/folder khỏi file watching để giảm tải CPU
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/vendor/**": true,
+    "**/.hg/store/**": true,
+    "**/tmp/**": true,
+    "**/temp/**": true,
+    "**/*.log": true,
+    "**/.cache/**": true
+  },
+
+  // Loại trừ khỏi search để tăng tốc tìm kiếm
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/*.log": true,
+    "**/tmp": true,
+    "**/temp": true,
+    "**/.git": true,
+    "**/.cache": true,
+    "**/composer.lock": true,
+    "**/package-lock.json": true
+  },
+
+  // Loại trừ khỏi file explorer
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/*.log": false  // Hiển thị log files nhưng không watch
+  },
+
+  // Tối ưu hóa PHP IntelliSense
+  "php.suggest.basic": false,  // Tắt basic suggestions nếu dùng Intelephense
+  
+  // Giảm số lượng file được index
+  "files.maxMemoryForLargeFilesMB": 4096,
+  
+  // Auto save để giảm file watching
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // Tắt telemetry
+  "telemetry.telemetryLevel": "off",
+
+  // Git optimization
+  "git.enabled": true,
+  "git.autorefresh": false,  // Tắt auto refresh
+  "git.autofetch": false,    // Tắt auto fetch
+
+  // Editor optimization
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.acceptSuggestionOnCommitCharacter": false,
+
+  // Tắt minimap nếu không dùng
+  // "editor.minimap.enabled": false,
+
+  // Breadcrumbs optimization
+  "breadcrumbs.enabled": true
 }

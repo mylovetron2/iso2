@@ -91,6 +91,12 @@ try {
             // TODO: Implement export method if needed
             throw new Exception('Chức năng đang phát triển');
             break;
+            
+        case 'exportExcel':
+            // Xuất Excel theo mẫu specification
+            checkPermission('phieudathang.view');
+            $controller->exportExcel();
+            break;
 
         default:
             throw new Exception('Action không tồn tại');
