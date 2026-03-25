@@ -1,0 +1,165 @@
+# ===== PHP PROJECT GITIGNORE =====
+
+# Composer dependencies
+/vendor/
+composer.lock
+composer.phar
+
+# Node modules (if any)
+node_modules/
+package-lock.json
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.tmp
+*.temp
+
+# IDE and Editor files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.buildpath
+
+# PHP Storm
+.phpunit.result.cache
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Cache and temporary files
+/cache/
+/tmp/
+/temp/
+*.cache
+
+# Upload directories (if contains user uploads)
+# /uploads/
+# /public/uploads/
+
+# PDF, Image, and Archive files (IMPORTANT!)
+*.pdf
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.mp3
+*.wav
+
+# PNG/JPG files (uncomment if you have many images)
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+
+# Test and debug files
+debug*.php
+test*.php
+check*.php
+execute_*.php
+
+# SQL dumps and migration logs
+*_dump.sql
+migration_*.log
+
+# Session files
+/sessions/
+
+# Error logs
+error_log
+php_errors.log
+error.log
+
+# Git
+.git/
+
+# Windows thumbnail cache
+Thumbs.db
+
+# Mac
+.DS_Store
+
+# Linux
+*~
+
+# PhpStorm
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+
+# Composer
+/vendor/
+
+# NPM
+node_modules/
+
+# Yarn
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+
+# PHP-CS-Fixer
+.php_cs.cache
+
+# PHPUnit
+.phpunit.result.cache
+/coverage/
+
+# Laravel (if using)
+/storage/*.key
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+
+# Specific to this project
+libs/tcpdf.zip
+26_2.png
+err*.png
+error*.png
+*.htm
+HoSoSCBD_*.pdf
+KH-HCKD-*.doc
+baocaothang-*.doc

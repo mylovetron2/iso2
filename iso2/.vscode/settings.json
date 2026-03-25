@@ -64,5 +64,27 @@
   // "editor.minimap.enabled": false,
 
   // Breadcrumbs optimization
-  "breadcrumbs.enabled": true
+  "breadcrumbs.enabled": true,
+
+  // ===== COPILOT OPTIMIZATION - Giảm tải CPU/RAM =====
+  // Tắt auto-context gathering (nguyên nhân chính gây chậm)
+  "github.copilot.chat.context.enabled": false,
+  
+  // Giới hạn thời gian Copilot xử lý
+  "github.copilot.editor.enableAutoCompletions": true,
+  
+  // Chỉ enable Copilot cho các ngôn ngữ cần thiết
+  "github.copilot.enable": {
+    "*": true,
+    "markdown": false,
+    "plaintext": false,
+    "scminput": false
+  },
+  
+  // Giảm số lượng suggestions
+  "github.copilot.advanced": {
+    "debug.overrideEngine": "gpt-4",
+    "debug.overrideProxyUrl": "",
+    "length": 500
+  }
 }
