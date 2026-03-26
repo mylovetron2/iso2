@@ -269,7 +269,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <input type="text" name="<?php echo $device['tbField']; ?>" list="tbhtList" placeholder="Tên thiết bị hỗ trợ" 
                                value="<?php echo htmlspecialchars($device['tb']); ?>"
                                class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500"
-                               onchange="fillSerial(this)">
+                               onchange="fillSerial(this)" oninput="fillSerial(this)">
                     </div>
                     <div class="flex-1">
                         <input type="text" name="<?php echo $device['serialField']; ?>" placeholder="Serial/Mã số" 
@@ -289,8 +289,9 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php foreach ($thietBiHoTroList as $tb): ?>
                 <option value="<?php echo htmlspecialchars($tb['tenthietbi']); ?>" 
                         data-serial="<?php echo htmlspecialchars($tb['serialnumber']); ?>"
-                        data-tenvt="<?php echo htmlspecialchars($tb['tenvt']); ?>">
-                    <?php echo htmlspecialchars($tb['tenthietbi'] . ' - ' . $tb['serialnumber']); ?>
+                        data-tenvt="<?php echo htmlspecialchars($tb['tenvt']); ?>"
+                        data-chusohuu="<?php echo htmlspecialchars($tb['chusohuu']); ?>">
+                    <?php echo htmlspecialchars($tb['tenthietbi'] . ' - ' . $tb['serialnumber'] . (!empty($tb['chusohuu']) ? ' (' . $tb['chusohuu'] . ')' : '')); ?>
                 </option>
             <?php endforeach; ?>
         </datalist>
@@ -303,14 +304,26 @@ require_once __DIR__ . '/../layouts/header.php';
             const selectedValue = input.value;
             const datalist = document.getElementById('tbhtList');
             const options = datalist.querySelectorAll('option');
+            const serialInput = input.closest('.device-row').querySelector('input[name*="serial"]');
             
+            let found = false;
             for (let option of options) {
                 if (option.value === selectedValue) {
-                    const serialInput = input.closest('.device-row').querySelector('input[name*="serial"]');
                     if (serialInput && option.dataset.serial) {
                         serialInput.value = option.dataset.serial;
+                        serialInput.readOnly = true;
+                        serialInput.classList.add('bg-gray-100', 'cursor-not-allowed');
                     }
+                    found = true;
                     break;
+                }
+            }
+            
+            // Nếu không tìm thấy trong datalist hoặc ô bị xóa trống, mở khóa
+            if (!found || !selectedValue) {
+                if (serialInput) {
+                    serialInput.readOnly = false;
+                    serialInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
                 }
             }
         }
@@ -326,7 +339,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div class="flex-1">
                     <input type="text" name="${fieldName}" list="tbhtList" placeholder="Tên thiết bị hỗ trợ" 
                            class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-teal-500"
-                           onchange="fillSerial(this)">
+                           onchange="fillSerial(this)" oninput="fillSerial(this)">
                 </div>
                 <div class="flex-1">
                     <input type="text" name="${serialName}" placeholder="Serial/Mã số" 
@@ -348,6 +361,16 @@ require_once __DIR__ . '/../layouts/header.php';
                 alert('Phải có ít nhất 1 dòng thiết bị');
             }
         }
+        
+        // Khóa các ô serial đã có khi load trang
+        document.addEventListener('DOMContentLoaded', function() {
+            const deviceInputs = document.querySelectorAll('input[list="tbhtList"]');
+            deviceInputs.forEach(input => {
+                if (input.value) {
+                    fillSerial(input);
+                }
+            });
+        });
         </script>
 
         <!-- Buttons -->

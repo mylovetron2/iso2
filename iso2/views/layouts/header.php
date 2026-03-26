@@ -2,6 +2,14 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
 require_once __DIR__ . '/../../config/constants.php';
+
+// Kiểm tra database đang sử dụng
+$isLocalhost = false;
+$dbSelectionFile = __DIR__ . '/../../config/db_selection.php';
+if (file_exists($dbSelectionFile)) {
+    $currentDb = require $dbSelectionFile;
+    $isLocalhost = ($currentDb === 'localhost');
+}
 ?><!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -57,7 +65,14 @@ require_once __DIR__ . '/../../config/constants.php';
     <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out fixed top-0 left-0 h-full z-40 overflow-y-auto">
         <div class="mb-8 flex items-center justify-between">
-            <a href="index.php" class="text-2xl font-bold tracking-wide">\n -  Quản lý ISO </a>
+            <div class="flex flex-col">
+                <a href="index.php" class="text-2xl font-bold tracking-wide">Quản lý ISO</a>
+                <?php if ($isLocalhost): ?>
+                    <span class="mt-1 text-xs bg-yellow-500 text-black px-2 py-1 rounded font-semibold w-fit">
+                        <i class="fas fa-bug mr-1"></i>Bản DEBUG
+                    </span>
+                <?php endif; ?>
+            </div>
             <button id="sidebarClose" class="lg:hidden text-white text-xl focus:outline-none" aria-label="Close Sidebar">
                 <i class="fas fa-times"></i>
             </button>
@@ -348,6 +363,11 @@ require_once __DIR__ . '/../../config/constants.php';
                                 <i class="fas fa-history mr-2"></i> Nhật ký hoạt động
                             </a>
                         </li>
+                        <li>
+                            <a href="/iso2/admin_database_switch.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-database mr-2"></i> Chuyển đổi Database
+                            </a>
+                        </li>
                         <?php /* Ẩn Cấu trúc Project
                         <li class="pt-2 border-t border-blue-600">
                             <div class="text-xs text-blue-300 px-3 py-1">Cấu trúc Project</div>
@@ -379,6 +399,14 @@ require_once __DIR__ . '/../../config/constants.php';
     </aside>
     <!-- Overlay for mobile -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
+    
+    <?php if ($isLocalhost): ?>
+    <!-- Debug mode indicator -->
+    <div class="fixed top-4 right-4 z-50 bg-yellow-500 text-black px-3 py-2 rounded-lg shadow-lg font-bold text-sm flex items-center">
+        <i class="fas fa-bug mr-2"></i>BẢN DEBUG (Localhost)
+    </div>
+    <?php endif; ?>
+    
     <!-- Main Content -->
     <main id="mainContent" class="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 transition-all duration-300 lg:ml-64 mt-16 lg:mt-0">
 <script>

@@ -171,7 +171,8 @@ class ThietBiHoTro extends BaseModel {
             
             $sql = "SELECT COALESCE(tenthietbi, '') as tenthietbi, 
                            COALESCE(serialnumber, '') as serialnumber, 
-                           COALESCE(tenvt, '') as tenvt 
+                           COALESCE(tenvt, '') as tenvt, 
+                           COALESCE(chusohuu, '') as chusohuu 
                     FROM {$this->table} 
                     ORDER BY tenthietbi ASC";
             $stmt = $this->query($sql);

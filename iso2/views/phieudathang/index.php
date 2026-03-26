@@ -45,10 +45,8 @@ require_once __DIR__ . '/../layouts/header.php';
             <div>
                 <select name="trang_thai" class="w-full border border-gray-300 rounded px-3 py-2">
                     <option value="">-- Tất cả trạng thái --</option>
-                    <option value="draft" <?php echo ($trang_thai ?? '') === 'draft' ? 'selected' : ''; ?>>Nháp</option>
                     <option value="ordered" <?php echo ($trang_thai ?? '') === 'ordered' ? 'selected' : ''; ?>>Đã đặt hàng</option>
                     <option value="partial_received" <?php echo ($trang_thai ?? '') === 'partial_received' ? 'selected' : ''; ?>>Nhận một phần</option>
-                    <option value="received" <?php echo ($trang_thai ?? '') === 'received' ? 'selected' : ''; ?>>Đã nhận đủ</option>
                     <option value="stocked" <?php echo ($trang_thai ?? '') === 'stocked' ? 'selected' : ''; ?>>Đã nhập kho</option>
                     <option value="cancelled" <?php echo ($trang_thai ?? '') === 'cancelled' ? 'selected' : ''; ?>>Đã hủy</option>
                 </select>
