@@ -295,8 +295,25 @@ function getPrefillValue($field, $default = '') {
                 </p>
             </div>
 
-            <div id="deviceContainer" class="space-y-4" style="display: none;">
-                <!-- Devices will be added here dynamically -->
+            <div id="deviceContainer" style="display: none;">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-blue-500 to-cyan-500">
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold w-16">STT</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">TÊN THIẾT BỊ</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">SỐ MÁY</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">TÌNH TRẠNG KỸ THUẬT</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">NỘI DUNG YÊU CẦU</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">MÁY TỦ ĐÃI VỀ XƯỞNG</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold w-20">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceTableBody">
+                            <!-- Devices will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Nút thêm thiết bị ở phía dưới -->
@@ -309,23 +326,15 @@ function getPrefillValue($field, $default = '') {
         </div>
 
 <style>
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.device-item.new {
-    animation: slideIn 0.3s ease-out;
-}
-
+/* Table styling for device list */
 .device-item:hover {
-    transform: translateY(-2px);
+    background-color: #f9fafb;
+}
+
+@media print {
+    .border-gray-300 {
+        border-color: #000 !important;
+    }
 }
 </style>
 
@@ -397,6 +406,7 @@ function handleFormSubmit(event) {
 
 function addDevice() {
     deviceIndex++;
+    const tbody = document.getElementById('deviceTableBody');
     const container = document.getElementById('deviceContainer');
     
     // Show container if first device
@@ -404,73 +414,49 @@ function addDevice() {
         container.style.display = 'block';
     }
     
-    const deviceHTML = `
-        <div class="device-item new border-2 border-gray-300 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50 shadow-md transition-all duration-300 hover:shadow-lg" data-device-index="${deviceIndex}">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-gray-800 flex items-center">
-                    <span class="device-number bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full w-8 h-8 flex items-center justify-center text-base mr-2 shadow-md">${deviceIndex}</span>
-                    <span>Thiết bị <span class="device-index">${deviceIndex}</span></span>
-                </h3>
+    const deviceRow = `
+        <tr class="device-item hover:bg-gray-50 transition-colors" data-device-index="${deviceIndex}">
+            <td class="border border-gray-300 px-2 py-2 text-center">
+                <span class="device-number font-bold text-blue-600">${deviceIndex}</span>
+            </td>
+            <td class="border border-gray-300 px-2 py-2">
+                <input type="text" name="devices[${deviceIndex}][mavt]" readonly
+                       class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
+                       placeholder="Chọn từ danh sách">
+                <input type="hidden" name="devices[${deviceIndex}][tenvt]" class="tenvt-hidden">
+                <input type="hidden" name="devices[${deviceIndex}][model]" class="model-hidden">
+            </td>
+            <td class="border border-gray-300 px-2 py-2">
+                <input type="text" name="devices[${deviceIndex}][somay]" readonly
+                       class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
+                       placeholder="Chọn từ danh sách">
+            </td>
+            <td class="border border-gray-300 px-2 py-2">
+                <textarea name="devices[${deviceIndex}][honghoc]" rows="2"
+                          class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:border-blue-500 resize-none text-sm"
+                          placeholder="Nhập tình trạng..."></textarea>
+            </td>
+            <td class="border border-gray-300 px-2 py-2">
+                <textarea name="devices[${deviceIndex}][noidungyc]" rows="2"
+                          class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:border-blue-500 resize-none text-sm"
+                          placeholder="Nhập nội dung yêu cầu..."></textarea>
+            </td>
+            <td class="border border-gray-300 px-2 py-2">
+                <select name="devices[${deviceIndex}][vitrimaybd]"
+                        class="vitri-select w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:border-blue-500 text-sm">
+                    <option value="">-- Chọn --</option>
+                </select>
+            </td>
+            <td class="border border-gray-300 px-2 py-2 text-center">
                 <button type="button" onclick="removeDevice(this)" 
-                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded font-semibold transition-colors flex items-center text-sm">
-                    <i class="fas fa-trash mr-1"></i>Xóa
+                        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors">
+                    <i class="fas fa-trash"></i>
                 </button>
-            </div>
-            
-            <!-- Readonly Info Section -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs text-gray-600 font-semibold mb-1">Mã vật tư</label>
-                        <input type="text" name="devices[${deviceIndex}][mavt]" readonly
-                               class="device-input w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-700 font-semibold cursor-not-allowed"
-                               placeholder="Chọn từ danh sách">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 font-semibold mb-1">Số máy</label>
-                        <input type="text" name="devices[${deviceIndex}][somay]" readonly
-                               class="device-input w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-700 font-semibold cursor-not-allowed"
-                               placeholder="Chọn từ danh sách">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 font-semibold mb-1">Model</label>
-                        <input type="text" name="devices[${deviceIndex}][model]" readonly
-                               class="device-input w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-700 font-semibold cursor-not-allowed"
-                               placeholder="Chọn từ danh sách">
-                    </div>
-                </div>
-                <p class="text-xs text-blue-600 mt-2 flex items-center">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Sử dụng nút "Thêm thiết bị" để chọn từ danh sách
-                </p>
-            </div>
-            
-            <!-- Editable Fields Section -->
-            <div class="grid grid-cols-1 gap-3">
-                <div>
-                    <label class="block text-sm text-gray-700 font-semibold mb-1">Vị trí máy BD</label>
-                    <select name="devices[${deviceIndex}][vitrimaybd]"
-                            class="vitri-select w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:border-blue-500 transition-all">
-                        <option value="">-- Chọn vị trí --</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-700 font-semibold mb-1">Tình trạng kỹ thuật</label>
-                    <textarea name="devices[${deviceIndex}][honghoc]" rows="2"
-                              class="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:border-blue-500 transition-all"
-                              placeholder="Nhập tình trạng kỹ thuật của thiết bị"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-700 font-semibold mb-1">Nội dung yêu cầu</label>
-                    <textarea name="devices[${deviceIndex}][noidungyc]" rows="2"
-                              class="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:border-blue-500 transition-all"
-                              placeholder="Nhập nội dung yêu cầu bảo dưỡng"></textarea>
-                </div>
-            </div>
-        </div>
+            </td>
+        </tr>
     `;
     
-    container.insertAdjacentHTML('beforeend', deviceHTML);
+    tbody.insertAdjacentHTML('beforeend', deviceRow);
     updateDeviceCount();
     
     // Update datalists for new device
@@ -483,36 +469,31 @@ function addDevice() {
         populateVitriSelect();
     }
     
-    // Remove 'new' class after animation
+    // Scroll to new row
     setTimeout(() => {
-        const newDevice = container.lastElementChild;
-        if (newDevice) {
-            newDevice.classList.remove('new');
+        const newRow = tbody.lastElementChild;
+        if (newRow) {
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, 300);
-    
-    // Scroll to new device
-    setTimeout(() => {
-        container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
 }
 
 function removeDevice(button) {
-    const deviceItem = button.closest('.device-item');
+    const row = button.closest('tr');
+    const tbody = document.getElementById('deviceTableBody');
     const container = document.getElementById('deviceContainer');
     
     // Add fade out animation
-    deviceItem.style.opacity = '0';
-    deviceItem.style.transform = 'translateX(100px)';
-    deviceItem.style.transition = 'all 0.3s ease-out';
+    row.style.opacity = '0';
+    row.style.transition = 'opacity 0.3s ease-out';
     
     setTimeout(() => {
-        deviceItem.remove();
+        row.remove();
         updateDeviceCount();
         renumberDevices();
         
         // Hide container if no devices left
-        if (container.children.length === 0) {
+        if (tbody.children.length === 0) {
             container.style.display = 'none';
         }
     }, 300);
@@ -524,14 +505,15 @@ function updateDeviceCount() {
 }
 
 function renumberDevices() {
-    const devices = document.querySelectorAll('.device-item');
-    devices.forEach((device, index) => {
+    const rows = document.querySelectorAll('.device-item');
+    rows.forEach((row, index) => {
         const displayNumber = index + 1;
-        const numberSpan = device.querySelector('.device-number');
-        const indexSpan = device.querySelector('.device-index');
+        const numberSpan = row.querySelector('.device-number');
         
         if (numberSpan) numberSpan.textContent = displayNumber;
-        if (indexSpan) indexSpan.textContent = displayNumber;
+        
+        // Update data-device-index attribute
+        row.setAttribute('data-device-index', displayNumber);
     });
 }
 </script>
@@ -1079,7 +1061,7 @@ function selectDeviceFromSearch(mavt, somay, model, tenvt) {
         const index = item.getAttribute('data-device-index');
         const mavtInput = item.querySelector(`input[name="devices[${index}][mavt]"]`);
         
-        if (!mavtInput.value) {
+        if (!mavtInput || !mavtInput.value) {
             targetItem = item;
             currentTargetDeviceIndex = index;
             break;
@@ -1094,58 +1076,65 @@ function selectDeviceFromSearch(mavt, somay, model, tenvt) {
             const newDeviceItems = document.querySelectorAll('.device-item');
             targetItem = newDeviceItems[newDeviceItems.length - 1];
             currentTargetDeviceIndex = targetItem.getAttribute('data-device-index');
-            fillDeviceData(currentTargetDeviceIndex, mavt, somay, model);
+            fillDeviceData(currentTargetDeviceIndex, mavt, somay, model, tenvt);
         }, 100);
     } else {
-        fillDeviceData(currentTargetDeviceIndex, mavt, somay, model);
+        fillDeviceData(currentTargetDeviceIndex, mavt, somay, model, tenvt);
     }
     
     closeQuickSearch();
     showNotification(`Đã chọn: ${mavt} - S/N: ${somay}`, 'success');
 }
 
-function fillDeviceData(deviceIndex, mavt, somay, model) {
-    const mavtInput = document.querySelector(`input[name="devices[${deviceIndex}][mavt]"]`);
-    const somayInput = document.querySelector(`input[name="devices[${deviceIndex}][somay]"]`);
-    const modelInput = document.querySelector(`input[name="devices[${deviceIndex}][model]"]`);
+function fillDeviceData(deviceIndex, mavt, somay, model, tenvt = '') {
+    const row = document.querySelector(`.device-item[data-device-index="${deviceIndex}"]`);
+    if (!row) return;
     
-    if (mavtInput) {
-        // Temporarily remove readonly to set value
+    const mavtInput = row.querySelector(`input[name="devices[${deviceIndex}][mavt]"]`);
+    const tenvtHidden = row.querySelector('.tenvt-hidden');
+    const somayInput = row.querySelector(`input[name="devices[${deviceIndex}][somay]"]`);
+    const modelHidden = row.querySelector('.model-hidden');
+    
+    // Set mã vật tư (visible)
+    if (mavtInput && mavt) {
         mavtInput.removeAttribute('readonly');
         mavtInput.value = mavt;
         mavtInput.setAttribute('readonly', 'readonly');
-        mavtInput.dispatchEvent(new Event('change'));
     }
     
+    // Set tên thiết bị (hidden)
+    if (tenvtHidden && tenvt) {
+        tenvtHidden.value = tenvt;
+    }
+    
+    // Set số máy
     if (somayInput && somay) {
         somayInput.removeAttribute('readonly');
         somayInput.value = somay;
         somayInput.setAttribute('readonly', 'readonly');
     }
     
-    if (modelInput && model) {
-        modelInput.removeAttribute('readonly');
-        modelInput.value = model;
-        modelInput.setAttribute('readonly', 'readonly');
+    // Set model (hidden)
+    if (modelHidden && model) {
+        modelHidden.value = model;
     }
     
-    // Scroll to the device and highlight
-    const deviceItem = document.querySelector(`.device-item[data-device-index="${deviceIndex}"]`);
-    if (deviceItem) {
-        deviceItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        deviceItem.classList.add('ring-4', 'ring-green-400');
+    // Scroll to the row and highlight
+    if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.classList.add('bg-green-100');
         
-        // Focus on first editable field
         setTimeout(() => {
-            const vitriInput = deviceItem.querySelector(`input[name="devices[${deviceIndex}][vitrimaybd]"]`);
-            if (vitriInput) {
-                vitriInput.focus();
+            row.classList.remove('bg-green-100');
+        }, 2000);
+        
+        // Focus on first editable field (tình trạng kỹ thuật)
+        setTimeout(() => {
+            const honghocInput = row.querySelector(`textarea[name="devices[${deviceIndex}][honghoc]"]`);
+            if (honghocInput) {
+                honghocInput.focus();
             }
         }, 300);
-        
-        setTimeout(() => {
-            deviceItem.classList.remove('ring-4', 'ring-green-400');
-        }, 2000);
     }
 }
 
