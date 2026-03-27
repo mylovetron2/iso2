@@ -74,16 +74,49 @@ class HoSoSCBD extends BaseModel
         
         $whereClause = implode(' AND ', $where);
         
-        $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt
+        $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
+                       COUNT(DISTINCT k.id) as bddk_count,
+                       GROUP_CONCAT(DISTINCT 
+                           CONCAT(
+                               IF(k.qui_1 IS NOT NULL AND k.qui_1 != '', CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
+                               IF(k.qui_2 IS NOT NULL AND k.qui_2 != '', CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
+                               IF(k.qui_3 IS NOT NULL AND k.qui_3 != '', CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
+                               IF(k.qui_4 IS NOT NULL AND k.qui_4 != '', CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
+                           )
+                       ) as bddk_quarters_raw
                 FROM {$this->table} h
                 LEFT JOIN donvi_iso d ON h.madv = d.madv
                 LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id
                 WHERE $whereClause
+                GROUP BY h.stt
                 ORDER BY h.ngayyc DESC, h.phieu DESC
                 LIMIT $limit OFFSET $offset";
         
         $stmt = $this->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Process quarters with completion status
+        foreach ($results as &$row) {
+            if (!empty($row['bddk_quarters_raw'])) {
+                $quarters = array_unique(explode(',', trim($row['bddk_quarters_raw'], ',')));
+                $quarters = array_filter($quarters);
+                sort($quarters);
+                
+                $quarterData = [];
+                foreach ($quarters as $q) {
+                    if (strpos($q, ':') !== false) {
+                        list($quarter, $status) = explode(':', $q);
+                        $quarterData[] = ['quarter' => $quarter, 'completed' => (int)$status === 1];
+                    }
+                }
+                $row['bddk_quarters'] = $quarterData;
+            } else {
+                $row['bddk_quarters'] = [];
+            }
+        }
+        
+        return $results;
     }
     
     /**

@@ -29,8 +29,9 @@ class KeHoachBaoDuongDinhKyController
             $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', ''
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
             $sapxep = $_GET['sapxep'] ?? ''; // '', 'qui_1', 'qui_2', 'qui_3', 'qui_4'
+            $thietbi_id = isset($_GET['thietbi_id']) ? (int)$_GET['thietbi_id'] : 0;
             
-            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep);
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id);
             $total = count($items);
             
             // Lấy danh sách các năm có dữ liệu
@@ -459,10 +460,16 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Lấy danh sách kế hoạch
      */
-    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = ''): array
+    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = '', int $thietbi_id = 0): array
     {
         $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
+
+        // Lọc theo thiết bị ID
+        if ($thietbi_id > 0) {
+            $sql .= " AND thietbi_id = :thietbi_id";
+            $params[':thietbi_id'] = $thietbi_id;
+        }
 
         if (!empty($search)) {
             $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2)";

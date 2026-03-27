@@ -169,6 +169,7 @@ $devices = $detail['devices'];
                         <th class="px-2 md:px-4 py-2 border">Tên thiết bị</th>
                         <th class="px-2 md:px-4 py-2 border hidden md:table-cell">Số máy</th>
                         <th class="px-2 md:px-4 py-2 border hidden lg:table-cell">Model</th>
+                        <th class="px-2 md:px-4 py-2 border hidden xl:table-cell">BDDK</th>
                         <th class="px-2 md:px-4 py-2 border">Trạng thái</th>
                         <th class="px-2 md:px-4 py-2 border">Thao tác</th>
                     </tr>
@@ -187,6 +188,32 @@ $devices = $detail['devices'];
                             <td class="px-2 md:px-4 py-2 border"><?php echo htmlspecialchars($device['tenvt'] ?? ''); ?></td>
                             <td class="px-2 md:px-4 py-2 border hidden md:table-cell"><?php echo htmlspecialchars($device['somay']); ?></td>
                             <td class="px-2 md:px-4 py-2 border hidden lg:table-cell"><?php echo htmlspecialchars($device['model']); ?></td>
+                            <td class="px-2 md:px-4 py-2 border text-center hidden xl:table-cell">
+                                <?php if (!empty($device['bddk_quarters'])): ?>
+                                    <a href="/iso2/kehoachbaoduongdinhky.php?thietbi_id=<?php echo $device['thietbi_stt']; ?>" 
+                                       class="inline-flex flex-wrap gap-1"
+                                       title="Xem kế hoạch bảo dưỡng định kỳ">
+                                        <?php 
+                                        foreach ($device['bddk_quarters'] as $qData) {
+                                            $quarterName = str_replace('Q', 'Quý ', $qData['quarter']);
+                                            $isCompleted = $qData['completed'];
+                                            
+                                            if ($isCompleted) {
+                                                // Đã hoàn thành: màu xanh đậm + dấu tích
+                                                echo '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">';
+                                                echo '<i class="fas fa-check mr-1"></i>' . htmlspecialchars($quarterName);
+                                                echo '</span>';
+                                            } else {
+                                                // Chưa hoàn thành: màu xám
+                                                echo '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">';
+                                                echo htmlspecialchars($quarterName);
+                                                echo '</span>';
+                                            }
+                                        }
+                                        ?>
+                                    </a>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-2 md:px-4 py-2 border text-center">
                                 <?php
                                 // Xác định trạng thái

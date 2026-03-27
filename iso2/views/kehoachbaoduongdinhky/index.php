@@ -40,6 +40,19 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Filter -->
     <form method="GET" class="bg-white rounded-lg shadow p-4 mb-6">
+        <?php if (isset($_GET['thietbi_id']) && $_GET['thietbi_id'] > 0): ?>
+            <input type="hidden" name="thietbi_id" value="<?php echo (int)$_GET['thietbi_id']; ?>">
+            <div class="mb-4 p-3 bg-teal-50 border border-teal-300 rounded flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-filter text-teal-600 mr-2"></i>
+                    <span class="text-teal-800 font-semibold">Đang lọc theo thiết bị ID: <?php echo (int)$_GET['thietbi_id']; ?></span>
+                </div>
+                <a href="kehoachbaoduongdinhky.php?nam=<?php echo $nam; ?>" 
+                   class="text-teal-600 hover:text-teal-800 font-semibold">
+                    <i class="fas fa-times mr-1"></i>Xóa bộ lọc
+                </a>
+            </div>
+        <?php endif; ?>
         <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Năm:</label>
