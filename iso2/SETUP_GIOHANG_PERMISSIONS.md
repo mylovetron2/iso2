@@ -279,7 +279,7 @@ Nếu không có, thêm:
 ```sql
 ALTER TABLE vattu_thanh_ly_iso 
 ADD COLUMN soluong_conlai DECIMAL(10,2) DEFAULT 0 
-AFTER soluong;
+AFTER soluong;git
 ```
 
 ---

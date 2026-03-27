@@ -63,8 +63,8 @@ function getPrefillValue($field, $default = '') {
     </div>
     <?php endif; ?>
 
-    <!-- Action Buttons at Top -->
-    <div class="flex gap-3 mb-6 p-4 bg-gray-50 rounded border-2 border-blue-500">
+    <!-- Action Buttons at Top - FIXED/STICKY -->
+    <div class="sticky top-0 z-50 flex gap-3 mb-6 p-4 bg-white rounded border-2 border-blue-500 shadow-lg">
         <button type="button" id="saveButton" onclick="submitFormWithLoading();" 
                 style="background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; font-size: 18px; font-weight: bold; border: none; cursor: pointer; display: inline-block;">
             <i class="fas fa-save" style="margin-right: 8px;"></i><span id="saveButtonText">Lưu hồ sơ</span>
@@ -300,13 +300,13 @@ function getPrefillValue($field, $default = '') {
                     <table class="min-w-full border-collapse border border-gray-300">
                         <thead>
                             <tr class="bg-gradient-to-r from-blue-500 to-cyan-500">
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold w-16">STT</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">TÊN THIẾT BỊ</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">SỐ MÁY</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">TÌNH TRẠNG KỸ THUẬT</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">NỘI DUNG YÊU CẦU</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold">MÁY TỦ ĐÃI VỀ XƯỞNG</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-bold w-20">Xóa</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold w-16">Stt</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Tên thiết bị</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Số máy</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Tình trạng kỹ thuật</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Nội dung yêu cầu</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Máy từ đâu về xưởng</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold w-20">Xóa</th>
                             </tr>
                         </thead>
                         <tbody id="deviceTableBody">

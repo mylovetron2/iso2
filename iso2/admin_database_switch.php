@@ -108,7 +108,13 @@ require_once __DIR__ . '/views/layouts/header.php';
                             <li>Dữ liệu hiển thị sẽ khác nhau giữa 2 database</li>
                             <li>Đề xuất tạo backup trước khi chuyển đổi</li>
                             <li>Chỉ chuyển khi cần thiết và đã thông báo người dùng</li>
+                            <li><strong class="text-red-700">Database Localhost có thể thiếu tables → Phải kiểm tra trước!</strong></li>
                         </ul>
+                        <div class="mt-3">
+                            <a href="check_database_tables.php" class="inline-block bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded font-semibold">
+                                <i class="fas fa-search mr-2"></i>Kiểm tra Tables Database
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -142,6 +148,24 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <span class="ml-2 text-gray-800"><?php echo $databases[$currentSelection]['user']; ?></span>
                 </div>
             </div>
+            
+            <?php if ($currentSelection === 'localhost'): ?>
+                <div class="mt-4 p-3 bg-red-100 border border-red-300 rounded">
+                    <p class="text-sm text-red-700 font-semibold">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <strong>Lưu ý:</strong> Database localhost có thể thiếu tables cần thiết!
+                    </p>
+                    <p class="text-sm text-red-600 mt-1">
+                        Nếu gặp lỗi khi truy cập các trang như <code>/hososcbd.php</code>, 
+                        hãy kiểm tra database có đầy đủ tables chưa.
+                    </p>
+                    <div class="mt-2">
+                        <a href="check_database_tables.php" class="inline-block bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                            <i class="fas fa-search mr-1"></i>Kiểm tra ngay
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Form chuyển đổi -->
