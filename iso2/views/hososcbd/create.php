@@ -301,10 +301,9 @@ function getPrefillValue($field, $default = '') {
                         <thead>
                             <tr class="bg-gradient-to-r from-blue-500 to-cyan-500">
                                 <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold w-16">Stt</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Tên thiết bị</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Số máy</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Tình trạng kỹ thuật</th>
-                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Nội dung yêu cầu</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold" style="width: 20%;">Tên thiết bị (Số máy)</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold" style="width: 20%;">Tình trạng kỹ thuật</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold" style="width: 20%;">Nội dung yêu cầu</th>
                                 <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold">Máy từ đâu về xưởng</th>
                                 <th class="border border-gray-300 px-3 py-2 text-center text-white font-semibold w-20">Xóa</th>
                             </tr>
@@ -421,15 +420,11 @@ function addDevice() {
             </td>
             <td class="border border-gray-300 px-2 py-2">
                 <input type="text" name="devices[${deviceIndex}][mavt]" readonly
-                       class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
+                       class="device-display w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
                        placeholder="Chọn từ danh sách">
+                <input type="hidden" name="devices[${deviceIndex}][somay]" class="somay-hidden">
                 <input type="hidden" name="devices[${deviceIndex}][tenvt]" class="tenvt-hidden">
                 <input type="hidden" name="devices[${deviceIndex}][model]" class="model-hidden">
-            </td>
-            <td class="border border-gray-300 px-2 py-2">
-                <input type="text" name="devices[${deviceIndex}][somay]" readonly
-                       class="w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
-                       placeholder="Chọn từ danh sách">
             </td>
             <td class="border border-gray-300 px-2 py-2">
                 <textarea name="devices[${deviceIndex}][honghoc]" rows="2"
@@ -1092,13 +1087,14 @@ function fillDeviceData(deviceIndex, mavt, somay, model, tenvt = '') {
     
     const mavtInput = row.querySelector(`input[name="devices[${deviceIndex}][mavt]"]`);
     const tenvtHidden = row.querySelector('.tenvt-hidden');
-    const somayInput = row.querySelector(`input[name="devices[${deviceIndex}][somay]"]`);
+    const somayHidden = row.querySelector('.somay-hidden');
     const modelHidden = row.querySelector('.model-hidden');
     
-    // Set mã vật tư (visible)
+    // Set mã vật tư + số máy (visible) - hiển thị cả hai trong cùng ô
     if (mavtInput && mavt) {
         mavtInput.removeAttribute('readonly');
-        mavtInput.value = mavt;
+        const displayText = somay ? `${mavt} (${somay})` : mavt;
+        mavtInput.value = displayText;
         mavtInput.setAttribute('readonly', 'readonly');
     }
     
@@ -1107,11 +1103,9 @@ function fillDeviceData(deviceIndex, mavt, somay, model, tenvt = '') {
         tenvtHidden.value = tenvt;
     }
     
-    // Set số máy
-    if (somayInput && somay) {
-        somayInput.removeAttribute('readonly');
-        somayInput.value = somay;
-        somayInput.setAttribute('readonly', 'readonly');
+    // Set số máy (hidden)
+    if (somayHidden && somay) {
+        somayHidden.value = somay;
     }
     
     // Set model (hidden)

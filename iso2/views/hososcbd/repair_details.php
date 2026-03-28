@@ -14,6 +14,7 @@ foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
 }
 
 // Load models
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../models/HoSoSCBD.php';
 require_once __DIR__ . '/../../models/ThietBiHoTro.php';
 $model = new HoSoSCBD();
@@ -32,6 +33,41 @@ $item = $model->findById($stt);
 if (!$item) {
     header("Location: hososcbd.php");
     exit;
+}
+
+// Load thông tin bảo dưỡng định kỳ (BDDK) nếu có
+$bddkInfo = null;
+$thietbi = null;
+try {
+    if (!empty($item['mavt']) && !empty($item['somay'])) {
+        $db = getDBConnection();
+        
+        // Bước 1: Tìm thietbi_id từ bảng thietbi_iso
+        $sqlThietBi = "SELECT stt as thietbi_id FROM thietbi_iso 
+                       WHERE mavt = :mavt AND somay = :somay
+                       LIMIT 1";
+        $stmtThietBi = $db->prepare($sqlThietBi);
+        $stmtThietBi->execute([
+            ':mavt' => $item['mavt'],
+            ':somay' => $item['somay']
+        ]);
+        $thietbi = $stmtThietBi->fetch(PDO::FETCH_ASSOC);
+        
+        if ($thietbi && !empty($thietbi['thietbi_id'])) {
+            $thietbi_id = $thietbi['thietbi_id'];
+            
+            // Bước 2: Tìm kế hoạch BDDK theo thietbi_id
+            $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso 
+                    WHERE thietbi_id = :thietbi_id
+                    ORDER BY nam DESC 
+                    LIMIT 1";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([':thietbi_id' => $thietbi_id]);
+            $bddkInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+    }
+} catch (Exception $e) {
+    error_log("Error loading BDDK info: " . $e->getMessage());
 }
 
 // Handle form submission BEFORE any output
@@ -145,6 +181,67 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php if (isset($errorMessage)): ?>
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
         <i class="fas fa-times-circle mr-2"></i><?php echo $errorMessage; ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Thông tin Bảo dưỡng định kỳ (BDDK) -->
+    <?php if ($bddkInfo): ?>
+    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-300 rounded-lg p-3 mb-6 shadow-md">
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+            <!-- BDDK Badge -->
+            <div class="flex items-center gap-2">
+                <i class="fas fa-calendar-check text-purple-600"></i>
+                <span class="font-bold text-purple-700">BDDK</span>
+            </div>
+            <div class="text-gray-400">|</div>
+            <!-- Năm và Nhóm -->
+            <div class="flex items-center gap-2">
+                <span class="font-semibold text-purple-700">Năm:</span>
+                <span class="font-bold text-purple-900 bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($bddkInfo['nam'] ?? ''); ?></span>
+            </div>
+            <div class="text-gray-400">|</div>
+            <div class="flex items-center gap-2">
+                <span class="font-semibold text-purple-700">Nhóm SC:</span>
+                <span class="font-bold text-purple-900 bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($bddkInfo['nhomsc'] ?? ''); ?></span>
+            </div>
+            <div class="text-gray-400">|</div>
+            
+            <!-- 4 Quý -->
+            <?php for ($q = 1; $q <= 4; $q++): 
+                $qui_field = "qui_$q";
+                $hoantat_field = "qui_{$q}_hoantat";
+                $qui_value = trim($bddkInfo[$qui_field] ?? '');
+                $is_hoantat = !empty($bddkInfo[$hoantat_field]);
+                $has_plan = !empty($qui_value);
+            ?>
+            <div class="flex items-center gap-1">
+                <span class="font-semibold text-blue-700">Q<?php echo $q; ?>:</span>
+                <?php if ($is_hoantat): ?>
+                    <span class="bg-green-500 text-white px-3 py-1 rounded font-bold text-xs">✓</span>
+                <?php elseif ($has_plan): ?>
+                    <span class="bg-orange-400 px-3 py-1 rounded">&nbsp;</span>
+                <?php else: ?>
+                    <span class="bg-gray-200 px-3 py-1 rounded">&nbsp;</span>
+                <?php endif; ?>
+            </div>
+            <?php endfor; ?>
+            
+            <?php if (!empty($bddkInfo['ghi_chu'])): ?>
+            <div class="text-gray-400">|</div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-sticky-note text-yellow-600"></i>
+                <span class="text-gray-700 italic"><?php echo htmlspecialchars($bddkInfo['ghi_chu']); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php else: ?>
+    <!-- Hiển thị thông báo nếu không có dữ liệu BDDK -->
+    <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-6">
+        <p class="text-sm text-yellow-700">
+            <i class="fas fa-info-circle mr-2"></i>
+            <strong>Thông tin BDDK:</strong> Không tìm thấy kế hoạch bảo dưỡng định kỳ cho thiết bị <strong><?php echo htmlspecialchars($item['mavt'] ?? ''); ?></strong> (Số máy: <strong><?php echo htmlspecialchars($item['somay'] ?? ''); ?></strong>)
+        </p>
     </div>
     <?php endif; ?>
 

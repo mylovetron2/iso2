@@ -58,14 +58,14 @@ if (file_exists($dbSelectionFile)) {
 
 <body class="bg-gray-100">
 <!-- Sidebar Toggle Button (hiện trên cả mobile và desktop) -->
-<button id="sidebarToggle" class="fixed top-4 left-4 z-50 bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600 transition-all duration-300" aria-label="Toggle Sidebar">
+<button id="sidebarToggle" class="fixed top-4 left-4 z-[70] bg-blue-700 text-white p-3 rounded-full shadow-lg focus:outline-none hover:bg-blue-600 transition-all duration-300" aria-label="Toggle Sidebar">
     <i class="fas fa-bars text-lg"></i>
 </button>
 <div class="flex min-h-screen">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out fixed top-0 left-0 h-full z-40 overflow-y-auto">
-        <div class="mb-8 flex items-center justify-between">
-            <div class="flex flex-col">
+    <aside id="sidebar" class="w-64 bg-blue-700 text-white flex flex-col py-6 px-4 min-h-screen transition-transform duration-300 ease-in-out fixed top-0 left-0 h-full z-[60] overflow-y-auto">
+        <div class="mb-3 flex items-center justify-between pl-14">
+            <div class="flex flex-col flex-1">
                 <a href="index.php" class="text-2xl font-bold tracking-wide">Quản lý ISO</a>
                 <?php if ($isLocalhost): ?>
                     <span class="mt-1 text-xs bg-yellow-500 text-black px-2 py-1 rounded font-semibold w-fit">
@@ -83,7 +83,7 @@ if (file_exists($dbSelectionFile)) {
                 <?php if (isLoggedIn() && hasPermission('hososcbd.view')): ?>
                 <li>
                     <a href="/iso2/hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBĐ
+                        <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBD
                     </a>
                 </li>
                 <?php endif; ?>
