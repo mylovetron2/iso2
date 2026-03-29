@@ -128,7 +128,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">CV</th>
-                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">BDDK</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">BDDK</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Xem/Sửa</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Chi tiết</th>
@@ -219,7 +219,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         echo '<span class="inline-block ' . $cvColor . ' text-xs font-bold px-2 py-1 rounded">' . htmlspecialchars($cvDisplay) . '</span>';
                         ?>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-center hidden xl:table-cell">
+                    <td class="px-2 md:px-4 py-2 border text-center">
                         <?php if (!empty($item['thietbi_stt']) && !empty($item['bddk_quarters'])): ?>
                             <a href="/iso2/kehoachbaoduongdinhky.php?thietbi_id=<?php echo $item['thietbi_stt']; ?>" 
                                class="inline-flex flex-wrap gap-1"

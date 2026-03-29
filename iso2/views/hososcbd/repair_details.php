@@ -70,6 +70,46 @@ try {
     error_log("Error loading BDDK info: " . $e->getMessage());
 }
 
+// Load danh sách người thực hiện
+$nguoiThucHienList = [];
+if (!empty($item['hoso'])) {
+    try {
+        $db = getDBConnection();
+        $stmt = $db->prepare("
+            SELECT stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt,
+                   giolv1, giolv2, giolv3, giolv4, giolv5, giolv6,
+                   giolv7, giolv8, giolv9, giolv10, giolv11, giolv12
+            FROM ngthuchien_iso 
+            WHERE mahoso = :mahoso 
+            ORDER BY stt ASC
+        ");
+        $stmt->execute([':mahoso' => $item['hoso']]);
+        $nguoiThucHienList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error fetching nguoi thuc hien: " . $e->getMessage());
+    }
+}
+
+// Load danh sách tên người thực hiện để gợi ý từ bảng resume
+$nguoiThucHienAutocomplete = [];
+try {
+    $db = getDBConnection();
+    
+    $stmt = $db->prepare("
+        SELECT DISTINCT hoten 
+        FROM resume 
+        WHERE hoten IS NOT NULL 
+          AND hoten != '' 
+          AND nghiviec != 'yes'
+          AND donvi LIKE :donvi
+        ORDER BY hoten ASC
+    ");
+    $stmt->execute([':donvi' => '%chuẩn chỉnh máy địa vật lý%']);
+    $nguoiThucHienAutocomplete = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    error_log("Error fetching nguoi thuc hien autocomplete from resume: " . $e->getMessage());
+}
+
 // Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -101,6 +141,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $success = $model->update($stt, $data);
         if ($success !== false) {
+            // Xử lý cập nhật BDDK nếu checkbox được chọn
+            if (isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1') {
+                $ngayth = $data['ngayth'];
+                if ($ngayth !== '0000-00-00' && $thietbi && !empty($thietbi['thietbi_id'])) {
+                    try {
+                        // Tính quý từ tháng
+                        $month = (int)date('n', strtotime($ngayth));
+                        $quarter = ceil($month / 3); // 1-3 => 1, 4-6 => 2, 7-9 => 3, 10-12 => 4
+                        
+                        // Lấy năm hiện tại
+                        $nam = (int)date('Y', strtotime($ngayth));
+                        
+                        // Update bảng BDDK
+                        $db = getDBConnection();
+                        $hoantat_field = "qui_{$quarter}_hoantat";
+                        
+                        $sqlUpdate = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
+                                      SET $hoantat_field = 1
+                                      WHERE thietbi_id = :thietbi_id 
+                                        AND nam = :nam";
+                        $stmtUpdate = $db->prepare($sqlUpdate);
+                        $stmtUpdate->execute([
+                            ':thietbi_id' => $thietbi['thietbi_id'],
+                            ':nam' => $nam
+                        ]);
+                        
+                        error_log("BDDK Updated: thietbi_id={$thietbi['thietbi_id']}, nam=$nam, quy=$quarter, ngayth=$ngayth");
+                    } catch (Exception $e) {
+                        error_log("Error updating BDDK: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Xử lý lưu người thực hiện
+            if (!empty($item['hoso']) && isset($_POST['nguoi_hoten'])) {
+                try {
+                    $db = getDBConnection();
+                    $mahoso = $item['hoso'];
+                    $mavt = $item['mavt'];
+                    $somay = $item['somay'];
+                    $ngayth = $data['ngayth'];
+                    $ngaykt = $data['ngaykt'];
+                    $currentMonth = (int)date('n'); // Tháng hiện tại (1-12)
+                    $giolv_field = "giolv{$currentMonth}";
+                    
+                    $hoten_array = $_POST['nguoi_hoten'] ?? [];
+                    $gio_array = $_POST['nguoi_gio'] ?? [];
+                    
+                    // Lấy danh sách người thực hiện hiện có
+                    $stmtExisting = $db->prepare("SELECT stt FROM ngthuchien_iso WHERE mahoso = :mahoso ORDER BY stt ASC");
+                    $stmtExisting->execute([':mahoso' => $mahoso]);
+                    $existingList = $stmtExisting->fetchAll(PDO::FETCH_COLUMN);
+                    
+                    // Xác định STT mới cho người mới thêm vào
+                    $stmtMaxStt = $db->prepare("SELECT COALESCE(MAX(stt), 0) as max_stt FROM ngthuchien_iso");
+                    $stmtMaxStt->execute();
+                    $maxStt = (int)$stmtMaxStt->fetch(PDO::FETCH_ASSOC)['max_stt'];
+                    $nextStt = $maxStt + 1;
+                    
+                    $processedIndices = [];
+                    
+                    // Bước 1: Cập nhật hoặc xóa các bản ghi hiện có
+                    foreach ($existingList as $idx => $existingStt) {
+                        $formIndex = $idx; // Index trong form tương ứng với vị trí trong DB
+                        
+                        if (isset($hoten_array[$formIndex]) && trim($hoten_array[$formIndex]) !== '') {
+                            // Cập nhật bản ghi
+                            $hoten = trim($hoten_array[$formIndex]);
+                            $gio = floatval($gio_array[$formIndex] ?? 0);
+                            
+                            $sqlUpdate = "UPDATE ngthuchien_iso SET 
+                                hoten = :hoten,
+                                giolv = :giolv,
+                                mamay = :mamay,
+                                somay = :somay,
+                                ngayth = :ngayth,
+                                ngaykt = :ngaykt,
+                                {$giolv_field} = :giolv_month
+                                WHERE stt = :stt";
+                            $stmtUpdate = $db->prepare($sqlUpdate);
+                            $stmtUpdate->execute([
+                                ':hoten' => $hoten,
+                                ':giolv' => $gio,
+                                ':mamay' => $mavt,
+                                ':somay' => $somay,
+                                ':ngayth' => $ngayth,
+                                ':ngaykt' => $ngaykt,
+                                ':giolv_month' => $gio,
+                                ':stt' => $existingStt
+                            ]);
+                            $processedIndices[] = $formIndex;
+                        } else {
+                            // Xóa bản ghi nếu tên bị xóa
+                            $sqlDelete = "DELETE FROM ngthuchien_iso WHERE stt = :stt";
+                            $stmtDelete = $db->prepare($sqlDelete);
+                            $stmtDelete->execute([':stt' => $existingStt]);
+                        }
+                    }
+                    
+                    // Bước 2: Thêm người mới (từ index sau số lượng bản ghi cũ)
+                    for ($i = count($existingList); $i < 8; $i++) {
+                        if (isset($hoten_array[$i]) && trim($hoten_array[$i]) !== '') {
+                            $hoten = trim($hoten_array[$i]);
+                            $gio = floatval($gio_array[$i] ?? 0);
+                            
+                            $sqlInsert = "INSERT INTO ngthuchien_iso (
+                                stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field}
+                            ) VALUES (
+                                :stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :giolv_month
+                            )";
+                            $stmtInsert = $db->prepare($sqlInsert);
+                            $stmtInsert->execute([
+                                ':stt' => $nextStt,
+                                ':mahoso' => $mahoso,
+                                ':mamay' => $mavt,
+                                ':somay' => $somay,
+                                ':hoten' => $hoten,
+                                ':giolv' => $gio,
+                                ':ngayth' => $ngayth,
+                                ':ngaykt' => $ngaykt,
+                                ':giolv_month' => $gio
+                            ]);
+                            $nextStt++;
+                        }
+                    }
+                    
+                } catch (Exception $e) {
+                    error_log("Error saving nguoi thuc hien: " . $e->getMessage());
+                }
+            }
+            
             // Build redirect URL with preserved filters
             $redirectUrl = '/iso2/hososcbd.php';
             // Get filter params from POST (hidden inputs) or from initial GET
@@ -245,7 +416,259 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <?php endif; ?>
 
-    <form method="POST" class="space-y-6">
+    <!-- Checkbox BDDK hoàn tất -->
+    <?php if ($bddkInfo): 
+        // Tính quý từ ngày thực hiện
+        $ngayth = $item['ngayth'];
+        $currentQuarter = 0;
+        $isAlreadyCompleted = false;
+        
+        if ($ngayth && $ngayth !== '0000-00-00') {
+            $month = (int)date('n', strtotime($ngayth));
+            $currentQuarter = ceil($month / 3);
+            $hoantat_field = "qui_{$currentQuarter}_hoantat";
+            $isAlreadyCompleted = !empty($bddkInfo[$hoantat_field]);
+        }
+    ?>
+    <div class="bg-purple-50 p-4 rounded-lg border-2 border-purple-300 mb-6">
+        <label class="flex items-center gap-3 <?php echo $isAlreadyCompleted ? 'opacity-75' : 'cursor-pointer'; ?>">
+            <input type="checkbox" name="bddk_hoantat" value="1" 
+                   <?php echo $isAlreadyCompleted ? 'checked disabled' : ''; ?>
+                   class="w-5 h-5 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500">
+            <div class="flex-1">
+                <span class="font-bold text-purple-700 text-base">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <?php if ($isAlreadyCompleted): ?>
+                        ✓ Đã hoàn thành BDDK (Quý <?php echo $currentQuarter; ?>)
+                    <?php else: ?>
+                        Đánh dấu hoàn thành BDDK
+                    <?php endif; ?>
+                </span>
+                <p class="text-sm text-purple-600 mt-1">
+                    <?php if ($isAlreadyCompleted): ?>
+                        Quý <?php echo $currentQuarter; ?> của năm <?php echo $bddkInfo['nam']; ?> đã được đánh dấu hoàn tất
+                    <?php elseif ($currentQuarter > 0): ?>
+                        Khi chọn, Quý <?php echo $currentQuarter; ?> (từ ngày thực hiện) sẽ được đánh dấu hoàn tất trong kế hoạch BDDK
+                    <?php else: ?>
+                        Vui lòng nhập ngày thực hiện để xác định quý cần hoàn thành
+                    <?php endif; ?>
+                </p>
+            </div>
+        </label>
+    </div>
+    <?php endif; ?>
+
+    <!-- Người thực hiện -->
+    <div class="border-l-4 border-indigo-500 pl-4 mb-6">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold text-indigo-700">
+                <i class="fas fa-users mr-2"></i>Người thực hiện
+            </h2>
+            <button type="button" onclick="addPersonRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
+                <i class="fas fa-user-plus mr-1"></i> Thêm người
+            </button>
+        </div>
+        <div id="personList" class="space-y-2">
+            <?php 
+            // Chuẩn bị danh sách người thực hiện (tối đa 8)
+            $persons = [];
+            for ($i = 0; $i < 8; $i++) {
+                if (isset($nguoiThucHienList[$i])) {
+                    $persons[] = [
+                        'hoten' => $nguoiThucHienList[$i]['hoten'] ?? '',
+                        'giolv' => $nguoiThucHienList[$i]['giolv'] ?? ''
+                    ];
+                } else {
+                    $persons[] = ['hoten' => '', 'giolv' => ''];
+                }
+            }
+            
+            // Hiển thị ít nhất 2 dòng, hoặc số dòng đã có + 1
+            $displayCount = max(2, count($nguoiThucHienList) > 0 ? count($nguoiThucHienList) : 1);
+            
+            for ($idx = 0; $idx < $displayCount && $idx < 8; $idx++): 
+                $person = $persons[$idx];
+            ?>
+            <div class="person-row flex gap-2 items-start bg-indigo-50 p-2 rounded">
+                <div class="flex-1 relative">
+                    <input type="text" 
+                           name="nguoi_hoten[<?php echo $idx; ?>]" 
+                           list="nguoiThList" 
+                           placeholder="Chọn từ danh sách..." 
+                           value="<?php echo htmlspecialchars($person['hoten']); ?>"
+                           class="person-name-input w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
+                           onblur="validatePersonNameStrict(this)"
+                           autocomplete="off"
+                           form="repair-form">
+                    <span class="warning-icon absolute right-2 top-1/2 transform -translate-y-1/2 text-red-500" 
+                          style="display:none;" 
+                          title="❌ Tên không hợp lệ">
+                        <i class="fas fa-times-circle"></i>
+                    </span>
+                </div>
+                <div class="w-24">
+                    <input type="number" name="nguoi_gio[<?php echo $idx; ?>]" placeholder="Giờ" 
+                           value="<?php echo htmlspecialchars($person['giolv']); ?>"
+                           step="0.5" min="0" max="24"
+                           class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
+                           form="repair-form">
+                </div>
+                <button type="button" onclick="removePersonRow(this)" class="text-red-600 hover:text-red-800 px-2 py-1" title="Xóa">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <?php endfor; ?>
+        </div>
+    </div>
+
+    <script>
+    let personIndex = <?php echo $displayCount; ?>;
+    
+    // Danh sách người thực hiện hợp lệ (chỉ chấp nhận tên trong danh sách này)
+    const validPersonList = <?php echo json_encode($nguoiThucHienAutocomplete); ?>;
+    
+    function validatePersonNameStrict(input) {
+        const value = input.value.trim();
+        const row = input.closest('.person-row');
+        const warningIcon = row.querySelector('.warning-icon');
+        
+        if (value === '') {
+            // Tên rỗng - OK, bỏ cảnh báo
+            input.classList.remove('border-red-500', 'border-2', 'bg-red-50');
+            if (warningIcon) warningIcon.style.display = 'none';
+            return;
+        }
+        
+        // Kiểm tra tên CÓ trong danh sách không
+        const isValid = validPersonList.includes(value);
+        
+        if (!isValid) {
+            // Tên KHÔNG hợp lệ - BẮT BUỘC xóa
+            input.classList.add('border-red-500', 'border-2', 'bg-red-50');
+            if (warningIcon) warningIcon.style.display = 'block';
+            
+            // Thông báo lỗi
+            alert(`❌ TÊN KHÔNG HỢP LỆ\n\nTên "${value}" không có trong danh sách nhân viên.\n\nVui lòng chọn tên từ danh sách gợi ý.`);
+            
+            // Xóa tên và focus lại
+            input.value = '';
+            input.classList.remove('border-red-500', 'border-2', 'bg-red-50');
+            if (warningIcon) warningIcon.style.display = 'none';
+            input.focus();
+        } else {
+            // Tên hợp lệ - bỏ cảnh báo
+            input.classList.remove('border-red-500', 'border-2', 'bg-red-50');
+            if (warningIcon) warningIcon.style.display = 'none';
+        }
+    }
+    
+    function validateFormBeforeSubmit() {
+        // Kiểm tra tất cả tên người thực hiện trước khi submit
+        const personInputs = document.querySelectorAll('.person-name-input');
+        const invalidNames = [];
+        
+        personInputs.forEach((input, index) => {
+            const value = input.value.trim();
+            if (value !== '' && !validPersonList.includes(value)) {
+                invalidNames.push({
+                    index: index + 1,
+                    name: value
+                });
+            }
+        });
+        
+        if (invalidNames.length > 0) {
+            let errorMsg = '❌ KHÔNG THỂ LƯU\n\nCác tên sau KHÔNG có trong danh sách nhân viên:\n\n';
+            invalidNames.forEach(item => {
+                errorMsg += `• Người ${item.index}: "${item.name}"\n`;
+            });
+            errorMsg += '\nVui lòng chọn tên từ danh sách hoặc xóa các tên không hợp lệ.';
+            
+            alert(errorMsg);
+            
+            // Focus vào input đầu tiên bị lỗi
+            if (personInputs[invalidNames[0].index - 1]) {
+                personInputs[invalidNames[0].index - 1].focus();
+                personInputs[invalidNames[0].index - 1].classList.add('border-red-500', 'border-2', 'bg-red-50');
+            }
+            
+            return false; // Ngăn submit
+        }
+        
+        return true; // Cho phép submit
+    }
+    
+    function addPersonRow() {
+        if (personIndex >= 8) {
+            alert('Tối đa 8 người thực hiện!');
+            return;
+        }
+        
+        const container = document.getElementById('personList');
+        const row = document.createElement('div');
+        row.className = 'person-row flex gap-2 items-start bg-indigo-50 p-2 rounded';
+        row.innerHTML = `
+            <div class="flex-1 relative">
+                <input type="text" 
+                       name="nguoi_hoten[${personIndex}]" 
+                       list="nguoiThList" 
+                       placeholder="Chọn từ danh sách..." 
+                       class="person-name-input w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
+                       onblur="validatePersonNameStrict(this)"
+                       autocomplete="off"
+                       form="repair-form">
+                <span class="warning-icon absolute right-2 top-1/2 transform -translate-y-1/2 text-red-500" 
+                      style="display:none;" 
+                      title="❌ Tên không hợp lệ">
+                    <i class="fas fa-times-circle"></i>
+                </span>
+            </div>
+            <div class="w-24">
+                <input type="number" name="nguoi_gio[${personIndex}]" placeholder="Giờ" 
+                       step="0.5" min="0" max="24"
+                       class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
+                       form="repair-form">
+            </div>
+            <button type="button" onclick="removePersonRow(this)" class="text-red-600 hover:text-red-800 px-2 py-1" title="Xóa">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(row);
+        personIndex++;
+    }
+    
+    function removePersonRow(button) {
+        const row = button.closest('.person-row');
+        const personRows = document.querySelectorAll('.person-row');
+        
+        if (personRows.length > 1) {
+            row.remove();
+            // Re-index remaining rows
+            const remainingRows = document.querySelectorAll('.person-row');
+            remainingRows.forEach((r, idx) => {
+                const hotenInput = r.querySelector('input[name^="nguoi_hoten"]');
+                const gioInput = r.querySelector('input[name^="nguoi_gio"]');
+                if (hotenInput) hotenInput.name = `nguoi_hoten[${idx}]`;
+                if (gioInput) gioInput.name = `nguoi_gio[${idx}]`;
+            });
+            personIndex = remainingRows.length;
+        } else {
+            // Clear inputs and reset state
+            const nameInput = row.querySelector('.person-name-input');
+            const gioInput = row.querySelector('input[type="number"]');
+            const warningIcon = row.querySelector('.warning-icon');
+            
+            if (nameInput) {
+                nameInput.value = '';
+                nameInput.classList.remove('border-red-500', 'border-2', 'bg-red-50');
+            }
+            if (gioInput) gioInput.value = '';
+            if (warningIcon) warningIcon.style.display = 'none';
+        }
+    }
+    </script>
+
+    <form method="POST" class="space-y-6" id="repair-form" onsubmit="return validateFormBeforeSubmit()">
         <!-- Hidden inputs to preserve filters -->
         <?php foreach ($filterParams as $key => $value): ?>
             <input type="hidden" name="filter_<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
@@ -390,6 +813,13 @@ require_once __DIR__ . '/../layouts/header.php';
                         data-chusohuu="<?php echo htmlspecialchars($tb['chusohuu']); ?>">
                     <?php echo htmlspecialchars($tb['tenthietbi'] . ' - ' . $tb['serialnumber'] . (!empty($tb['chusohuu']) ? ' (' . $tb['chusohuu'] . ')' : '')); ?>
                 </option>
+            <?php endforeach; ?>
+        </datalist>
+
+        <!-- Datalist for người thực hiện -->
+        <datalist id="nguoiThList">
+            <?php foreach ($nguoiThucHienAutocomplete as $tenNguoi): ?>
+                <option value="<?php echo htmlspecialchars($tenNguoi); ?>">
             <?php endforeach; ?>
         </datalist>
 
