@@ -15,11 +15,11 @@ try {
         exit;
     }
     
-    // Get all devices (mavt + somay + model) for this unit
-    $sql = "SELECT mavt, tenvt, somay, model, mamay 
-            FROM thietbi_iso 
-            WHERE madv = ? 
-            ORDER BY mavt ASC, somay ASC";
+    // Get all devices for this unit
+    $sql = "SELECT stt as id, mavattu as mavt, tenthietbi as ten_thiet_bi, somay as ky_ma_hieu 
+            FROM thietbihckd_iso 
+            WHERE bophansh = ? 
+            ORDER BY mavattu ASC, somay ASC";
     
     $stmt = $db->prepare($sql);
     $stmt->execute([$madv]);

@@ -106,10 +106,11 @@ class GiaoNhanThietBiController
             $stmt = $this->db->query("
                 SELECT 
                     stt as id, 
-                    tenvt as ten_thiet_bi, 
+                    mavattu as mavt,
+                    tenthietbi as ten_thiet_bi, 
                     somay as ky_ma_hieu
-                FROM thietbi_iso 
-                ORDER BY tenvt ASC
+                FROM thietbihckd_iso 
+                ORDER BY tenthietbi ASC
             ");
             $thietbiList = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
@@ -146,7 +147,19 @@ class GiaoNhanThietBiController
                 throw new Exception('Vui lòng nhập đầy đủ thông tin người giao, đơn vị và ngày giao!');
             }
             
-            if (empty($thietbi_ids) || count($thietbi_ids) === 0) {
+            // Filter out empty device IDs and get valid devices
+            $validDevices = [];
+            foreach ($thietbi_ids as $index => $id) {
+                if (!empty(trim($id))) {
+                    $validDevices[] = [
+                        'id' => trim($id),
+                        'tinhtrang' => $tinhtrang_list[$index] ?? '',
+                        'ghichu' => $ghichu_tb_list[$index] ?? ''
+                    ];
+                }
+            }
+            
+            if (empty($validDevices)) {
                 throw new Exception('Vui lòng chọn ít nhất 1 thiết bị!');
             }
             
@@ -172,7 +185,7 @@ class GiaoNhanThietBiController
                 ':donvi_giao' => $donvi_giao,
                 ':ngay_giao' => $ngay_giao,
                 ':ghichu' => $ghichu,
-                ':tong_thietbi' => count($thietbi_ids),
+                ':tong_thietbi' => count($validDevices),
                 ':created_by' => $_SESSION['user_id'] ?? null
             ]);
             
@@ -191,11 +204,13 @@ class GiaoNhanThietBiController
                 )
             ");
             
-            foreach ($thietbi_ids as $index => $thietbi_id) {
-                // Lấy tên và ký mã hiệu từ bảng thietbi_iso
+            foreach ($validDevices as $device) {
+                $thietbi_id = $device['id'];
+                
+                // Lấy tên và ký mã hiệu từ bảng thietbihckd_iso
                 $stmtTB = $this->db->prepare("
-                    SELECT tenvt as ten_thiet_bi, somay as ky_ma_hieu 
-                    FROM thietbi_iso 
+                    SELECT tenthietbi as ten_thiet_bi, somay as ky_ma_hieu 
+                    FROM thietbihckd_iso 
                     WHERE stt = ?
                 ");
                 $stmtTB->execute([$thietbi_id]);
@@ -210,14 +225,14 @@ class GiaoNhanThietBiController
                     ':thietbi_id' => $thietbi_id,
                     ':ten_thietbi' => $thietbi['ten_thiet_bi'],
                     ':ky_ma_hieu' => $thietbi['ky_ma_hieu'],
-                    ':tinhtrang' => $tinhtrang_list[$index] ?? '',
-                    ':ghichu' => $ghichu_tb_list[$index] ?? ''
+                    ':tinhtrang' => $device['tinhtrang'],
+                    ':ghichu' => $device['ghichu']
                 ]);
             }
             
             $this->db->commit();
             
-            $_SESSION['success'] = "Tạo phiếu nhận thành công! (" . count($thietbi_ids) . " thiết bị)";
+            $_SESSION['success'] = "Tạo phiếu nhận thành công! (" . count($validDevices) . " thiết bị)";
             header('Location: giaonhanthietbi.php?action=view&id=' . $phieu_id);
             exit;
             
