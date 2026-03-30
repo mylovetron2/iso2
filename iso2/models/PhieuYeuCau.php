@@ -202,15 +202,15 @@ class PhieuYeuCau extends BaseModel
         $sqlDevices = "SELECT h.*, t.tenvt, t.stt as thietbi_stt,
                        GROUP_CONCAT(DISTINCT 
                            CONCAT(
-                               IF(k.qui_1 IS NOT NULL AND k.qui_1 != '', CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
-                               IF(k.qui_2 IS NOT NULL AND k.qui_2 != '', CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
-                               IF(k.qui_3 IS NOT NULL AND k.qui_3 != '', CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
-                               IF(k.qui_4 IS NOT NULL AND k.qui_4 != '', CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
+                               IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
+                               IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
+                               IF((k.qui_3 IS NOT NULL AND k.qui_3 != '') OR k.qui_3_hoantat = 1, CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
+                               IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
                            )
                        ) as bddk_quarters_raw
                        FROM {$this->table} h
                        LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
-                       LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id
+                       LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
                        WHERE h.phieu = $phieuEscaped
                        GROUP BY h.stt
                        ORDER BY h.stt ASC";

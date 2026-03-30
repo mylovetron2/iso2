@@ -27,6 +27,12 @@ class ThongKeHCKDController
                 return;
             }
             
+            // Check if export Excel is requested
+            if (isset($_GET['action']) && $_GET['action'] === 'exportExcel') {
+                $this->exportExcel();
+                return;
+            }
+            
             // Get date range from query params
             $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
             $denngay = $_GET['denngay'] ?? date('Y-m-d'); // Today
@@ -159,7 +165,7 @@ class ThongKeHCKDController
                     <td style="width: 5%; text-align: center; border: 1px solid #000;">' . $stt++ . '</td>
                     <td style="width: 10%; border: 1px solid #000;">' . htmlspecialchars($item['sohs'] ?? '') . '</td>
                     <td style="width: 18%; border: 1px solid #000;">' . htmlspecialchars($item['tenthietbi'] ?? '') . '</td>
-                    <td style="width: 12%; border: 1px solid #000;">' . htmlspecialchars($item['tenthietbi'] ?? '') . '</td>
+                    <td style="width: 12%; border: 1px solid #000;">' . htmlspecialchars($item['tenmay'] ?? '') . '</td>
                     <td style="width: 8%; text-align: center; border: 1px solid #000;">' . $congviec . '</td>
                     <td style="width: 12%; text-align: center; border: 1px solid #000;">' . $ngayhc . '</td>
                     <td style="width: 13%; border: 1px solid #000;">' . htmlspecialchars($item['nhanvien'] ?? '') . '</td>
@@ -180,6 +186,147 @@ class ThongKeHCKDController
             error_log("Error in ThongKeHCKDController::exportPDF: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             die('Có lỗi xảy ra khi xuất PDF: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Xuất báo cáo Excel
+     */
+    public function exportExcel(): void
+    {
+        try {
+            // Get date range from query params
+            $tungay = $_GET['tungay'] ?? date('Y-m-01');
+            $denngay = $_GET['denngay'] ?? date('Y-m-d');
+            $search = $_GET['search'] ?? '';
+            
+            // Get data
+            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search);
+            
+            // Load PhpSpreadsheet
+            require_once(__DIR__ . '/../vendor/autoload.php');
+            
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Thong ke HC-KD');
+            
+            // Title section
+            $sheet->mergeCells('A1:I1');
+            $sheet->setCellValue('A1', 'XN Địa Vật Lý GK - Xưởng SC&CCMĐVL');
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->mergeCells('A2:I2');
+            $sheet->setCellValue('A2', 'LIỆT KÊ CÔNG TÁC HIỆU CHUẨN THIẾT BỊ');
+            $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->mergeCells('A3:I3');
+            $sheet->setCellValue('A3', 'Từ ' . date('d-m-Y', strtotime($tungay)) . ' đến ' . date('d-m-Y', strtotime($denngay)));
+            $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(11);
+            $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            
+            // Headers
+            $headers = ['STT', 'SỐ HỒ SƠ', 'TÊN MÁY', 'SỐ MÁY', 'C.VIỆC', 'NTH', 'NH.VIÊN', 'NƠI.TH', 'Bộ phận'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '5', $header);
+                $col++;
+            }
+            
+            // Header style
+            $headerStyle = [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF']
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '4472C4']
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]
+            ];
+            $sheet->getStyle('A5:I5')->applyFromArray($headerStyle);
+            
+            // Data rows
+            $row = 6;
+            $stt = 1;
+            foreach ($items as $item) {
+                $congviec = $item['congviec'] ?? 'HC';
+                $ngayhc = date('d/m/Y', strtotime($item['ngayhc']));
+                
+                $sheet->setCellValue('A' . $row, $stt++);
+                $sheet->setCellValue('B' . $row, $item['sohs'] ?? '');
+                $sheet->setCellValue('C' . $row, $item['tenthietbi'] ?? '');
+                $sheet->setCellValue('D' . $row, $item['tenmay'] ?? '');  // Sửa: dùng tenmay thay vì tenthietbi
+                $sheet->setCellValue('E' . $row, $congviec);
+                $sheet->setCellValue('F' . $row, $ngayhc);
+                $sheet->setCellValue('G' . $row, $item['nhanvien'] ?? '');
+                $sheet->setCellValue('H' . $row, $item['bophansh'] ?? '');
+                $sheet->setCellValue('I' . $row, $item['chusohuu'] ?? '');
+                
+                $row++;
+            }
+            
+            // Apply borders to data
+            $lastRow = $row - 1;
+            if ($lastRow >= 6) {
+                $sheet->getStyle('A5:I' . $lastRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000']
+                        ]
+                    ]
+                ]);
+                
+                // Center align columns - only if there's data
+                $sheet->getStyle('A6:A' . $lastRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E6:F' . $lastRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('H6:H' . $lastRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            }
+            
+            // Column widths
+            $sheet->getColumnDimension('A')->setWidth(6);
+            $sheet->getColumnDimension('B')->setWidth(15);
+            $sheet->getColumnDimension('C')->setWidth(25);
+            $sheet->getColumnDimension('D')->setWidth(15);
+            $sheet->getColumnDimension('E')->setWidth(10);
+            $sheet->getColumnDimension('F')->setWidth(13);
+            $sheet->getColumnDimension('G')->setWidth(20);
+            $sheet->getColumnDimension('H')->setWidth(12);
+            $sheet->getColumnDimension('I')->setWidth(20);
+            
+            // Output Excel file
+            $filename = 'baocao-hckd-' . $tungay . '-' . $denngay . '.xlsx';
+            
+            // Clean any previous output
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("Error in ThongKeHCKDController::exportExcel: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            die('Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage());
         }
     }
 }

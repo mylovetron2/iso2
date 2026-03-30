@@ -11,10 +11,16 @@ require_once __DIR__ . '/../layouts/header.php';
             <i class="fas fa-chart-line mr-2 text-blue-600"></i> Thống Kê Hiệu Chuẩn/Kiểm Định
         </h1>
         <?php if (!empty($items)): ?>
-        <a href="thongke_hckd.php?action=exportPDF&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
-           class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
-            <i class="fas fa-file-pdf mr-1"></i> Xuất PDF
-        </a>
+        <div class="flex gap-2">
+            <a href="thongke_hckd.php?action=exportExcel&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-file-excel mr-1"></i> Xuất Excel
+            </a>
+            <a href="thongke_hckd.php?action=exportPDF&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
+               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-file-pdf mr-1"></i> Xuất PDF
+            </a>
+        </div>
         <?php endif; ?>
     </div>
 

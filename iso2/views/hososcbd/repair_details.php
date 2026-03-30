@@ -434,6 +434,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <label class="flex items-center gap-3 <?php echo $isAlreadyCompleted ? 'opacity-75' : 'cursor-pointer'; ?>">
             <input type="checkbox" name="bddk_hoantat" value="1" 
                    <?php echo $isAlreadyCompleted ? 'checked disabled' : ''; ?>
+                   form="repair-form"
                    class="w-5 h-5 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500">
             <div class="flex-1">
                 <span class="font-bold text-purple-700 text-base">
