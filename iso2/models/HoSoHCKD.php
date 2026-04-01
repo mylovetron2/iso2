@@ -173,7 +173,7 @@ class HoSoHCKD extends BaseModel {
     /**
      * Lấy danh sách hồ sơ HC/KĐ theo khoảng thời gian
      */
-    public function getByDateRange(string $tungay, string $denngay, string $search = ''): array {
+    public function getByDateRange(string $tungay, string $denngay, string $search = '', string $bophan = ''): array {
         try {
             $sql = "SELECT h.*, 
                            t.tenthietbi, t.tenviettat, t.bophansh, t.thoihankd, t.chusohuu,
@@ -195,6 +195,11 @@ class HoSoHCKD extends BaseModel {
             if ($search) {
                 $sql .= " AND (h.tenmay LIKE :search OR h.sohs LIKE :search OR t.tenthietbi LIKE :search OR h.nhanvien LIKE :search)";
                 $params['search'] = "%$search%";
+            }
+            
+            if ($bophan) {
+                $sql .= " AND t.bophansh = :bophan";
+                $params['bophan'] = $bophan;
             }
             
             $sql .= " ORDER BY h.ngayhc DESC, h.stt DESC";

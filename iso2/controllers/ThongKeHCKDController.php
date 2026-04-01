@@ -37,9 +37,13 @@ class ThongKeHCKDController
             $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
             $denngay = $_GET['denngay'] ?? date('Y-m-d'); // Today
             $search = $_GET['search'] ?? '';
+            $bophan = $_GET['bophan'] ?? '';
+            
+            // Get list of departments for filter
+            $bophanList = $this->thietBiModel->getAllBoPhanSH();
             
             // Get statistics
-            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search);
+            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search, $bophan);
             $total = count($items);
             
             // Group by công việc (HC/CM)
@@ -69,6 +73,8 @@ class ThongKeHCKDController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $bophan = $_GET['bophan'] ?? '';
+            $bophanList = [];
             $error = 'Có lỗi xảy ra: ' . $e->getMessage();
             
             require_once __DIR__ . '/../views/thongke_hckd/index.php';
@@ -85,9 +91,10 @@ class ThongKeHCKDController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $bophan = $_GET['bophan'] ?? '';
             
             // Get data
-            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search);
+            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search, $bophan);
             
             // Load TCPDF library
             require_once(__DIR__ . '/../libs/tcpdf/tcpdf.php');
@@ -199,9 +206,10 @@ class ThongKeHCKDController
             $tungay = $_GET['tungay'] ?? date('Y-m-01');
             $denngay = $_GET['denngay'] ?? date('Y-m-d');
             $search = $_GET['search'] ?? '';
+            $bophan = $_GET['bophan'] ?? '';
             
             // Get data
-            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search);
+            $items = $this->hoSoModel->getByDateRange($tungay, $denngay, $search, $bophan);
             
             // Load PhpSpreadsheet
             require_once(__DIR__ . '/../vendor/autoload.php');

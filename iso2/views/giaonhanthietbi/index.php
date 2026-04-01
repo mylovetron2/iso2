@@ -179,6 +179,9 @@ $statusInfo = [
                                 Số TB
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Thiết Bị
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Đơn Vị Giao
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -214,6 +217,21 @@ $statusInfo = [
                                         <i class="fas fa-cubes mr-1 text-gray-500"></i>
                                         <?= $record['so_thietbi'] ?> thiết bị
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-900">
+                                    <div class="max-w-md">
+                                        <?php 
+                                        $danhSachTB = $record['danh_sach_thietbi'] ?? 'Chưa có thiết bị';
+                                        if ($danhSachTB && $danhSachTB !== 'Chưa có thiết bị') {
+                                            $thietbiArray = explode(', ', $danhSachTB);
+                                            foreach ($thietbiArray as $tb) {
+                                                echo '<div class="py-0.5 whitespace-nowrap">' . htmlspecialchars($tb) . '</div>';
+                                            }
+                                        } else {
+                                            echo '<span class="text-gray-400 italic">Chưa có thiết bị</span>';
+                                        }
+                                        ?>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     <?= htmlspecialchars($record['ten_donvi_giao'] ?? 'N/A') ?>

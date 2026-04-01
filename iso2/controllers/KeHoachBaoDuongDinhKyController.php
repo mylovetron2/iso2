@@ -30,8 +30,9 @@ class KeHoachBaoDuongDinhKyController
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
             $sapxep = $_GET['sapxep'] ?? ''; // '', 'qui_1', 'qui_2', 'qui_3', 'qui_4'
             $thietbi_id = isset($_GET['thietbi_id']) ? (int)$_GET['thietbi_id'] : 0;
+            $thietbi_id_filter = $_GET['thietbi_id_filter'] ?? ''; // '', 'null', 'notnull'
             
-            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id);
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id, $thietbi_id_filter);
             $total = count($items);
             
             // Lấy danh sách các năm có dữ liệu
@@ -307,7 +308,8 @@ class KeHoachBaoDuongDinhKyController
             $nhomsc = $_GET['nhomsc'] ?? '';
             $trangthai = $_GET['trangthai'] ?? '';
             $sapxep = $_GET['sapxep'] ?? '';
-            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep);
+            $thietbi_id_filter = $_GET['thietbi_id_filter'] ?? '';
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, 0, $thietbi_id_filter);
 
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
@@ -460,15 +462,22 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Lấy danh sách kế hoạch
      */
-    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = '', int $thietbi_id = 0): array
+    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = '', int $thietbi_id = 0, string $thietbi_id_filter = ''): array
     {
         $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
 
-        // Lọc theo thiết bị ID
+        // Lọc theo thiết bị ID cụ thể
         if ($thietbi_id > 0) {
             $sql .= " AND thietbi_id = :thietbi_id";
             $params[':thietbi_id'] = $thietbi_id;
+        }
+        
+        // Lọc theo trạng thái thiết bị ID (null/not null)
+        if ($thietbi_id_filter === 'null') {
+            $sql .= " AND (thietbi_id IS NULL OR thietbi_id = 0)";
+        } elseif ($thietbi_id_filter === 'notnull') {
+            $sql .= " AND thietbi_id IS NOT NULL AND thietbi_id > 0";
         }
 
         if (!empty($search)) {
@@ -484,7 +493,7 @@ class KeHoachBaoDuongDinhKyController
         }
 
         // Lọc theo nhóm sửa chữa
-        if (!empty($nhomsc) && in_array($nhomsc, ['RDNGA', 'CNC'])) {
+        if (!empty($nhomsc) && in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
             $sql .= " AND nhomsc = :nhomsc";
             $params[':nhomsc'] = $nhomsc;
         }

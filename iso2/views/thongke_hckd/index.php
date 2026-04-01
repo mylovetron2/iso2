@@ -12,11 +12,11 @@ require_once __DIR__ . '/../layouts/header.php';
         </h1>
         <?php if (!empty($items)): ?>
         <div class="flex gap-2">
-            <a href="thongke_hckd.php?action=exportExcel&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
+            <a href="thongke_hckd.php?action=exportExcel&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>&bophan=<?php echo urlencode($bophan ?? ''); ?>" 
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-excel mr-1"></i> Xuất Excel
             </a>
-            <a href="thongke_hckd.php?action=exportPDF&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>" 
+            <a href="thongke_hckd.php?action=exportPDF&tungay=<?php echo urlencode($tungay); ?>&denngay=<?php echo urlencode($denngay); ?>&search=<?php echo urlencode($search); ?>&bophan=<?php echo urlencode($bophan ?? ''); ?>" 
                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-pdf mr-1"></i> Xuất PDF
             </a>
@@ -33,7 +33,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Filter Form -->
     <form method="get" class="mb-6 bg-gray-50 p-4 rounded-lg">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-calendar-alt text-blue-600"></i> Từ ngày
@@ -63,6 +63,21 @@ require_once __DIR__ . '/../layouts/header.php';
                        value="<?php echo htmlspecialchars($search); ?>" 
                        placeholder="Mã VT, Số HS, Tên TB, Nhân viên..."
                        class="border rounded px-3 py-2 w-full">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <i class="fas fa-sitemap text-blue-600"></i> Bộ phận
+                </label>
+                <select name="bophan" class="border rounded px-3 py-2 w-full">
+                    <option value="">-- Tất cả --</option>
+                    <?php foreach ($bophanList as $bp): ?>
+                        <option value="<?php echo htmlspecialchars($bp['madv']); ?>" 
+                                <?php echo ($bophan ?? '') === $bp['madv'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($bp['tendv']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <div class="flex gap-2">

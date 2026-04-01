@@ -24,6 +24,7 @@ require_once __DIR__ . '/../layouts/header.php';
             if (!empty($search)) $exportUrl .= "&search=" . urlencode($search);
             if (isset($qui) && $qui > 0) $exportUrl .= "&qui=" . $qui;            if (!empty($nhomsc)) $exportUrl .= "&nhomsc=" . urlencode($nhomsc);            if (!empty($trangthai)) $exportUrl .= "&trangthai=" . urlencode($trangthai);
             if (!empty($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
+            if (!empty($thietbi_id_filter)) $exportUrl .= "&thietbi_id_filter=" . urlencode($thietbi_id_filter);
             ?>
             <a href="<?php echo $exportUrl; ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-excel mr-1"></i> Xuất Excel
@@ -53,7 +54,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </a>
             </div>
         <?php endif; ?>
-        <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Năm:</label>
                 <select name="nam" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -74,11 +75,12 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
             
             <div>
-                <label class="block text-sm font-medium mb-1">Nhóm SC:</label>
+                <label class="block text-sm font-medium mb-1">Nhóm máy:</label>
                 <select name="nhomsc" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
                     <option value="" <?php echo !isset($nhomsc) || $nhomsc == '' ? 'selected' : ''; ?>>Tất cả</option>
                     <option value="RDNGA" <?php echo isset($nhomsc) && $nhomsc == 'RDNGA' ? 'selected' : ''; ?>>RDNGA</option>
                     <option value="CNC" <?php echo isset($nhomsc) && $nhomsc == 'CNC' ? 'selected' : ''; ?>>CNC</option>
+                    <option value="KTKT" <?php echo isset($nhomsc) && $nhomsc == 'KTKT' ? 'selected' : ''; ?>>KTKT</option>
                 </select>
             </div>
             
@@ -88,6 +90,15 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="" <?php echo !isset($trangthai) || $trangthai == '' ? 'selected' : ''; ?>>Tất cả</option>
                     <option value="hoantat" <?php echo isset($trangthai) && $trangthai == 'hoantat' ? 'selected' : ''; ?>>Đã hoàn thành</option>
                     <option value="chuahoantat" <?php echo isset($trangthai) && $trangthai == 'chuahoantat' ? 'selected' : ''; ?>>Chưa hoàn thành</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Thiết bị ID:</label>
+                <select name="thietbi_id_filter" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
+                    <option value="" <?php echo !isset($thietbi_id_filter) || $thietbi_id_filter == '' ? 'selected' : ''; ?>>Tất cả</option>
+                    <option value="null" <?php echo isset($thietbi_id_filter) && $thietbi_id_filter == 'null' ? 'selected' : ''; ?>>Chưa có ID</option>
+                    <option value="notnull" <?php echo isset($thietbi_id_filter) && $thietbi_id_filter == 'notnull' ? 'selected' : ''; ?>>Đã có ID</option>
                 </select>
             </div>
             

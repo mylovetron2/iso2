@@ -41,7 +41,8 @@ class GiaoNhanThietBiController
                         gn.*,
                         dv_giao.tendv as ten_donvi_giao,
                         dv_nhan.tendv as ten_donvi_nhan,
-                        COUNT(ct.id) as so_thietbi
+                        COUNT(ct.id) as so_thietbi,
+                        GROUP_CONCAT(CONCAT(ct.ten_thietbi, ' (', ct.ky_ma_hieu, ')') SEPARATOR ', ') as danh_sach_thietbi
                     FROM giao_nhan_thietbi_iso gn
                     LEFT JOIN donvi_iso dv_giao ON gn.donvi_giao = dv_giao.madv
                     LEFT JOIN donvi_iso dv_nhan ON gn.donvi_nhan = dv_nhan.madv
