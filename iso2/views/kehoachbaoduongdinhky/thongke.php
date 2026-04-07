@@ -79,8 +79,8 @@ require_once __DIR__ . '/../layouts/header.php';
                 <select name="nhomsc" class="border rounded px-3 py-2 w-full">
                     <option value="">-- Tất cả --</option>
                     <option value="RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>RDNGA</option>
-                    <option value="CNC" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC' ? 'selected' : ''; ?>>CNC</option>
-                    <option value="CNC+RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC+RDNGA' ? 'selected' : ''; ?>>CNC + RDNGA</option>
+                    <option value="CNC" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC' ? 'selected' : ''; ?>>CNM</option>
+                    <option value="CNC+RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC+RDNGA' ? 'selected' : ''; ?>>CNM + RDNGA</option>
                     <option value="KTKT" <?php echo ($_GET['nhomsc'] ?? '') === 'KTKT' ? 'selected' : ''; ?>>KTKT</option>
                 </select>
             </div>
@@ -124,7 +124,16 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php if (!empty($_GET['nhomsc'])): ?>
                 <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm">
                     <i class="fas fa-cogs mr-1"></i>
-                    Nhóm: <?php echo htmlspecialchars($_GET['nhomsc']); ?>
+                    Nhóm: <?php 
+                        $nhomscDisplay = $_GET['nhomsc'];
+                        if ($nhomscDisplay === 'CNC') {
+                            echo 'CNM';
+                        } elseif ($nhomscDisplay === 'CNC+RDNGA') {
+                            echo 'CNM + RDNGA';
+                        } else {
+                            echo htmlspecialchars($nhomscDisplay);
+                        }
+                    ?>
                 </span>
             <?php endif; ?>
         </div>
@@ -334,7 +343,10 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="px-4 py-2 border"><?php echo $idx + 1; ?></td>
                             <td class="px-4 py-2 border"><?php echo htmlspecialchars($item['ten_thietbi']); ?></td>
                             <td class="px-4 py-2 border font-semibold"><?php echo htmlspecialchars($item['so_serial']); ?></td>
-                            <td class="px-4 py-2 border"><?php echo htmlspecialchars($item['nhomsc'] ?? '-'); ?></td>
+                            <td class="px-4 py-2 border"><?php 
+                                $nhomsc = $item['nhomsc'] ?? '-';
+                                echo $nhomsc === 'CNC' ? 'CNM' : htmlspecialchars($nhomsc);
+                            ?></td>
                             
                             <?php for ($q = 1; $q <= 4; $q++): ?>
                                 <?php 

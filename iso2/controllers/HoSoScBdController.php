@@ -323,6 +323,7 @@ class HoSoScBdController
                         'model' => trim($device['model'] ?? ''),
                         'vitrimaybd' => trim($device['vitrimaybd'] ?? ''),
                         'honghoc' => trim($device['honghoc'] ?? ''),
+                        'noidung' => trim($device['noidungyc'] ?? ''),
                         'lo' => trim($device['lo'] ?? ''),
                         'gieng' => trim($device['gieng'] ?? ''),
                         'mo' => trim($device['mo'] ?? '')

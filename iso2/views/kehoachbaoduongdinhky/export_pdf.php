@@ -67,10 +67,13 @@
                 $rowNum++;
             ?>
             <tr>
-                <td style="text-align: center;"><?php echo $rowNum; ?></td>
-                <td><?php echo htmlspecialchars($plan['ten_thietbi'] ?? '-'); ?></td>
-                <td style="text-align: center;"><?php echo htmlspecialchars($plan['so_serial'] ?? '-'); ?></td>
-                <td style="text-align: center;"><?php echo htmlspecialchars($plan['nhomsc'] ?? '-'); ?></td>
+                <td width="5%" style="text-align: center;"><?php echo $rowNum; ?></td>
+                <td width="35%"><?php echo htmlspecialchars($plan['ten_thietbi'] ?? '-'); ?></td>
+                <td width="15%" style="text-align: center;"><?php echo htmlspecialchars($plan['so_serial'] ?? '-'); ?></td>
+                <td width="9%" style="text-align: center;"><?php 
+                    $nhomsc = $plan['nhomsc'] ?? '-';
+                    echo $nhomsc === 'CNC' ? 'CNM' : htmlspecialchars($nhomsc);
+                ?></td>
                 
                 <?php 
                 // Display quarters
@@ -81,12 +84,12 @@
                     $isCompleted = !empty($plan[$quiHoanTat]);
                     
                     if (!$hasContent):
-                        echo '<td style="text-align: center; background-color: #f3f4f6;">-</td>';
+                        echo '<td width="9%" style="text-align: center; background-color: #f3f4f6;">-</td>';
                     else:
                         if ($isCompleted):
-                            echo '<td style="text-align: center; background-color: #d1fae5; color: #16a34a;"><b>&#10003;</b></td>';
+                            echo '<td width="9%" style="text-align: center; background-color: #d1fae5; color: #16a34a;"><b>&#10003;</b></td>';
                         else:
-                            echo '<td style="text-align: center; background-color: #fee2e2; color: #dc2626;"><b>&#10007;</b></td>';
+                            echo '<td width="9%" style="text-align: center; background-color: #fee2e2; color: #dc2626;"><b>&#10007;</b></td>';
                         endif;
                     endif;
                 endfor;

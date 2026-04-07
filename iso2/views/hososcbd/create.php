@@ -419,9 +419,9 @@ function addDevice() {
                 <span class="device-number font-bold text-blue-600">${deviceIndex}</span>
             </td>
             <td class="border border-gray-300 px-2 py-2">
-                <input type="text" name="devices[${deviceIndex}][mavt]" readonly
-                       class="device-display w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm"
+                <input type="text" class="device-display w-full px-2 py-1.5 bg-gray-50 border border-gray-300 rounded text-gray-700 cursor-not-allowed text-sm" readonly
                        placeholder="Chọn từ danh sách">
+                <input type="hidden" name="devices[${deviceIndex}][mavt]" class="mavt-hidden">
                 <input type="hidden" name="devices[${deviceIndex}][somay]" class="somay-hidden">
                 <input type="hidden" name="devices[${deviceIndex}][tenvt]" class="tenvt-hidden">
                 <input type="hidden" name="devices[${deviceIndex}][model]" class="model-hidden">
@@ -825,9 +825,9 @@ function updateMavtDataLists() {
     
     deviceItems.forEach((item, index) => {
         const deviceIndex = item.getAttribute('data-device-index');
-        const mavtInput = item.querySelector(`input[name="devices[${deviceIndex}][mavt]"]`);
+        const displayInput = item.querySelector('.device-display');
         
-        if (!mavtInput) return;
+        if (!displayInput) return;
         
         // Create unique datalist ID
         const datalistId = `mavt-list-${deviceIndex}`;
@@ -842,25 +842,14 @@ function updateMavtDataLists() {
         datalist = document.createElement('datalist');
         datalist.id = datalistId;
         
-        // Populate datalist with available devices
+        // Populate datalist with available devices (hiển thị mavt)
         datalist.innerHTML = window.availableDevices.map(d => 
-            `<option value="${d.mavt}">${d.mavt} - ${d.tenvt}</option>`
+            `<option value="${d.mavt}">${d.mavt} (${d.somay || ''}) - ${d.tenvt}</option>`
         ).join('');
         
         // Attach datalist to input
-        mavtInput.setAttribute('list', datalistId);
-        mavtInput.parentNode.appendChild(datalist);
-        
-        // Add change event to auto-fill model when mavt is selected
-        mavtInput.addEventListener('change', function() {
-            const selectedDevice = window.availableDevices.find(d => d.mavt === this.value);
-            if (selectedDevice && selectedDevice.model) {
-                const modelInput = item.querySelector(`input[name="devices[${deviceIndex}][model]"]`);
-                if (modelInput && !modelInput.value) {
-                    modelInput.value = selectedDevice.model;
-                }
-            }
-        });
+        displayInput.setAttribute('list', datalistId);
+        displayInput.parentNode.appendChild(datalist);
     });
 }
 
@@ -942,6 +931,34 @@ function addDeviceManually() {
     
     // Add new empty device slot
     addDevice();
+    
+    // Get the newly added device row
+    setTimeout(() => {
+        const deviceItems = document.querySelectorAll('.device-item');
+        const lastItem = deviceItems[deviceItems.length - 1];
+        
+        if (lastItem) {
+            const displayInput = lastItem.querySelector('.device-display');
+            const mavtHidden = lastItem.querySelector('.mavt-hidden');
+            
+            if (displayInput) {
+                // Enable manual input
+                displayInput.removeAttribute('readonly');
+                displayInput.classList.remove('bg-gray-50', 'cursor-not-allowed');
+                displayInput.classList.add('bg-white');
+                displayInput.placeholder = 'Nhập mã vật tư...';
+                displayInput.focus();
+                
+                // Add listener to sync display input to mavt hidden field
+                // When user types manually, we assume tenvt = mavt (same value)
+                displayInput.addEventListener('input', function() {
+                    if (mavtHidden) {
+                        mavtHidden.value = this.value; // For manual entry, use same value
+                    }
+                });
+            }
+        }
+    }, 100);
     
     // Show notification
     showNotification('Đã thêm thiết bị mới. Vui lòng điền thông tin.', 'info');
@@ -1054,7 +1071,7 @@ function selectDeviceFromSearch(mavt, somay, model, tenvt) {
     
     for (let item of deviceItems) {
         const index = item.getAttribute('data-device-index');
-        const mavtInput = item.querySelector(`input[name="devices[${index}][mavt]"]`);
+        const mavtInput = item.querySelector('.mavt-hidden');
         
         if (!mavtInput || !mavtInput.value) {
             targetItem = item;
@@ -1085,17 +1102,22 @@ function fillDeviceData(deviceIndex, mavt, somay, model, tenvt = '') {
     const row = document.querySelector(`.device-item[data-device-index="${deviceIndex}"]`);
     if (!row) return;
     
-    const mavtInput = row.querySelector(`input[name="devices[${deviceIndex}][mavt]"]`);
+    const displayInput = row.querySelector('.device-display');
+    const mavtHidden = row.querySelector('.mavt-hidden');
     const tenvtHidden = row.querySelector('.tenvt-hidden');
     const somayHidden = row.querySelector('.somay-hidden');
     const modelHidden = row.querySelector('.model-hidden');
     
-    // Set mã vật tư + số máy (visible) - hiển thị cả hai trong cùng ô
-    if (mavtInput && mavt) {
-        mavtInput.removeAttribute('readonly');
+    // Set display field: mavt (somay)
+    if (displayInput && mavt) {
         const displayText = somay ? `${mavt} (${somay})` : mavt;
-        mavtInput.value = displayText;
-        mavtInput.setAttribute('readonly', 'readonly');
+        displayInput.value = displayText;
+        displayInput.setAttribute('readonly', 'readonly');
+    }
+    
+    // Set mã vật tư (hidden) - CHỈ LƯU MÃ VẬT TƯ
+    if (mavtHidden && mavt) {
+        mavtHidden.value = mavt;
     }
     
     // Set tên thiết bị (hidden)

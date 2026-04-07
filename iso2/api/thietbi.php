@@ -15,11 +15,12 @@ try {
         exit;
     }
     
-    // Get all devices for this unit
-    $sql = "SELECT stt as id, mavattu as mavt, tenthietbi as ten_thiet_bi, somay as ky_ma_hieu 
-            FROM thietbihckd_iso 
-            WHERE bophansh = ? 
-            ORDER BY mavattu ASC, somay ASC";
+    // Get all devices for this unit from thietbi_iso
+    // Return field names that match what the view expects
+    $sql = "SELECT stt as id, mavt, tenvt, somay 
+            FROM thietbi_iso 
+            WHERE madv = ? 
+            ORDER BY mavt ASC, somay ASC";
     
     $stmt = $db->prepare($sql);
     $stmt->execute([$madv]);
