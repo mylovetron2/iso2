@@ -61,9 +61,13 @@ $sql = "SELECT t.*,
         GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as thang_thuchien,
         GROUP_CONCAT(DISTINCT k.thang_dot2 ORDER BY k.thang_dot2) as thang_dot2,
         MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
-        MAX(k.donvi_thuchien) as donvi_thuchien
+        MAX(k.donvi_thuchien) as donvi_thuchien,
+        GROUP_CONCAT(DISTINCT MONTH(h.ngayhc) ORDER BY h.ngayhc) as inspected_months,
+        COUNT(DISTINCT h.stt) as inspection_count
         FROM thietbihckd_iso t
         INNER JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
+        LEFT JOIN hosohckd_iso h ON (t.mavattu = h.tenmay OR t.somay = h.tenmay) 
+            AND YEAR(h.ngayhc) = 2026
         WHERE $whereClause
         GROUP BY t.stt
         ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
@@ -146,6 +150,7 @@ header('Cache-Control: max-age=0');
                 <col style="width: 60px;"> <!-- Tháng <?= $i ?> -->
             <?php endfor; ?>
             <col style="width: 120px;"> <!-- Chủ sở hữu -->
+            <col style="width: 100px;"> <!-- Đã KĐ -->
         </colgroup>
         <thead>
             <tr>
@@ -157,6 +162,7 @@ header('Cache-Control: max-age=0');
                 <th rowspan="2">Nơi thực hiện</th>
                 <th colspan="12">Tháng</th>
                 <th rowspan="2">Chủ sở hữu</th>
+                <th rowspan="2">Đã KĐ</th>
             </tr>
             <tr>
                 <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -170,6 +176,8 @@ header('Cache-Control: max-age=0');
             foreach ($allData as $item): 
                 $selectedMonths = !empty($item['thang_thuchien']) ? explode(',', $item['thang_thuchien']) : [];
                 $selectedMonths2 = !empty($item['thang_dot2']) ? explode(',', $item['thang_dot2']) : [];
+                $inspectedMonths = !empty($item['inspected_months']) ? explode(',', $item['inspected_months']) : [];
+                $hasInspection = (int)($item['inspection_count'] ?? 0) > 0;
             ?>
             <tr>
                 <td><?= $displaySTT++ ?></td>
@@ -239,9 +247,18 @@ header('Cache-Control: max-age=0');
                         }
                     }
                     
+                    // Kiểm tra tháng đã kiểm định
+                    $isInspected = in_array((string)$month, $inspectedMonths);
+                    
                     $highlightClass = '';
                     $styleAttr = ' style="width: 60px; min-width: 60px;"';
-                    if ($isGreen) {
+                    $cellContent = '&nbsp;';
+                    
+                    if ($isInspected) {
+                        // Ưu tiên hiển thị tháng đã kiểm định (xanh nhạt + dấu ✓)
+                        $styleAttr = ' style="width: 60px; min-width: 60px; background-color: #d4edda; color: #28a745; font-weight: bold; font-size: 14pt; border: 2px solid #28a745;"';
+                        $cellContent = '✓';
+                    } elseif ($isGreen) {
                         $highlightClass = ' class="highlight-green"';
                         $styleAttr = ' style="width: 60px; min-width: 60px; background-color: #2196F3;"';
                     } elseif ($isOrange) {
@@ -249,7 +266,7 @@ header('Cache-Control: max-age=0');
                         $styleAttr = ' style="width: 60px; min-width: 60px; background-color: #FF9800;"';
                     }
                 ?>
-                    <td<?= $styleAttr ?>>&nbsp;</td>
+                    <td<?= $styleAttr ?>><?= $cellContent ?></td>
                 <?php endfor; ?>
                 
                 <?php 
@@ -268,6 +285,13 @@ header('Cache-Control: max-age=0');
                 }
                 ?>
                 <td><?= htmlspecialchars($chusohuuValue) ?></td>
+                <td style="<?= $hasInspection ? 'background-color: #d4edda; color: #28a745; font-weight: bold;' : '' ?>">
+                    <?php if ($hasInspection): ?>
+                        ✓ (T: <?= implode(', ', $inspectedMonths) ?>)
+                    <?php else: ?>
+                        -
+                    <?php endif; ?>
+                </td>
             </tr>
             <?php endforeach; ?>
         </tbody>

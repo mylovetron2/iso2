@@ -99,6 +99,35 @@ switch ($action) {
         $controller->updateThietbiId();
         break;
         
+    case 'updateDonViFields':
+        // Kiểm tra quyền chỉnh sửa
+        if (!hasPermission('kehoachbaoduong.edit')) {
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền cập nhật']);
+            exit;
+        }
+        $controller->updateDonViFields();
+        break;
+        
+    case 'thongke':
+        // Kiểm tra quyền xem
+        if (!hasPermission('kehoachbaoduong.view')) {
+            $_SESSION['error'] = 'Bạn không có quyền xem thống kê';
+            header('Location: /iso2/index.php');
+            exit;
+        }
+        $controller->thongke();
+        break;
+        
+    case 'exportPdf':
+        // Kiểm tra quyền xem
+        if (!hasPermission('kehoachbaoduong.view')) {
+            $_SESSION['error'] = 'Bạn không có quyền xuất báo cáo';
+            header('Location: /iso2/index.php');
+            exit;
+        }
+        $controller->exportPdf();
+        break;
+        
     default:
         $_SESSION['error'] = 'Action không hợp lệ';
         header('Location: /iso2/index.php');

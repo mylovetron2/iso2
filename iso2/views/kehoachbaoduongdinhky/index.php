@@ -12,6 +12,11 @@ require_once __DIR__ . '/../layouts/header.php';
             <i class="fas fa-tools mr-2 text-blue-600"></i> Kế hoạch Bảo dưỡng thiết bị định kỳ
         </h1>
         <div class="flex gap-2">
+            <a href="kehoachbaoduongdinhky.php?action=thongke&nam=<?php echo $nam; ?>" 
+               class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-chart-bar mr-1"></i> Thống kê
+            </a>
+            
             <?php if (false && hasPermission('kehoachbaoduong.create')): ?>
             <a href="kehoachbaoduongdinhky.php?action=import" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-import mr-1"></i> Import Excel
@@ -193,6 +198,8 @@ require_once __DIR__ . '/../layouts/header.php';
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 2</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 3</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 4</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Đơn vị làm chính</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Đơn vị làm phụ</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ghi chú</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50">Trạng thái hoàn thành</th>
                     </tr>
@@ -301,6 +308,124 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <span class="text-gray-300">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600 border-l border-r border-gray-300">
+                                <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+                                    <div class="donvi-chinh-container" data-kehoach-id="<?php echo $item['id']; ?>">
+                                        <!-- Chế độ xem (mặc định) -->
+                                        <div class="donvi-chinh-view flex items-center justify-between">
+                                            <span class="donvi-chinh-text">
+                                                <?php 
+                                                $donviChinh = $item['donvi_lam_chinh'] ?? '';
+                                                if (!empty($donviChinh)) {
+                                                    $colorClass = '';
+                                                    if ($donviChinh === 'KTKT') {
+                                                        $colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                                                    } elseif ($donviChinh === 'ĐVLTH') {
+                                                        $colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                                                    } elseif ($donviChinh === 'CNM') {
+                                                        $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                                                    } elseif ($donviChinh === 'RDNGA') {
+                                                        $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                                    }
+                                                    echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviChinh) . '</span>';
+                                                } else {
+                                                    echo '<span class="text-gray-400">--</span>';
+                                                }
+                                                ?>
+                                            </span>
+                                            <button type="button" class="donvi-chinh-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                        </div>
+                                        <!-- Chế độ sửa (ẩn) -->
+                                        <div class="donvi-chinh-edit hidden">
+                                            <select class="donvi-chinh-select w-full border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                <option value="" <?php echo empty($item['donvi_lam_chinh']) ? 'selected' : ''; ?>>--</option>
+                                                <option value="KTKT" class="bg-blue-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'KTKT' ? 'selected' : ''; ?>>⬢ KTKT</option>
+                                                <option value="ĐVLTH" class="bg-green-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'ĐVLTH' ? 'selected' : ''; ?>>⬢ ĐVLTH</option>
+                                                <option value="CNM" class="bg-orange-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'CNM' ? 'selected' : ''; ?>>⬢ CNM</option>
+                                                <option value="RDNGA" class="bg-purple-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>⬢ RDNGA</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <?php 
+                                    $donviChinh = $item['donvi_lam_chinh'] ?? '';
+                                    if (!empty($donviChinh)) {
+                                        $colorClass = '';
+                                        if ($donviChinh === 'KTKT') {
+                                            $colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                                        } elseif ($donviChinh === 'ĐVLTH') {
+                                            $colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                                        } elseif ($donviChinh === 'CNM') {
+                                            $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                                        } elseif ($donviChinh === 'RDNGA') {
+                                            $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                        }
+                                        echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviChinh) . '</span>';
+                                    }
+                                    ?>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600 border-r border-gray-300">
+                                <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+                                    <div class="donvi-phu-container" data-kehoach-id="<?php echo $item['id']; ?>">
+                                        <!-- Chế độ xem (mặc định) -->
+                                        <div class="donvi-phu-view flex items-center justify-between">
+                                            <span class="donvi-phu-text">
+                                                <?php 
+                                                $donviPhu = $item['donvi_lam_phu'] ?? '';
+                                                if (!empty($donviPhu)) {
+                                                    $colorClass = '';
+                                                    if ($donviPhu === 'KTKT') {
+                                                        $colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                                                    } elseif ($donviPhu === 'ĐVLTH') {
+                                                        $colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                                                    } elseif ($donviPhu === 'CNM') {
+                                                        $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                                                    } elseif ($donviPhu === 'RDNGA') {
+                                                        $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                                    }
+                                                    echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviPhu) . '</span>';
+                                                } else {
+                                                    echo '<span class="text-gray-400">--</span>';
+                                                }
+                                                ?>
+                                            </span>
+                                            <button type="button" class="donvi-phu-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa">
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </button>
+                                        </div>
+                                        <!-- Chế độ sửa (ẩn) -->
+                                        <div class="donvi-phu-edit hidden">
+                                            <select class="donvi-phu-select w-full border border-gray-300 rounded px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                <option value="" <?php echo empty($item['donvi_lam_phu']) ? 'selected' : ''; ?>>--</option>
+                                                <option value="KTKT" class="bg-blue-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'KTKT' ? 'selected' : ''; ?>>⬢ KTKT</option>
+                                                <option value="ĐVLTH" class="bg-green-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'ĐVLTH' ? 'selected' : ''; ?>>⬢ ĐVLTH</option>
+                                                <option value="CNM" class="bg-orange-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'CNM' ? 'selected' : ''; ?>>⬢ CNM</option>
+                                                <option value="RDNGA" class="bg-purple-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>⬢ RDNGA</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <?php 
+                                    $donviPhu = $item['donvi_lam_phu'] ?? '';
+                                    if (!empty($donviPhu)) {
+                                        $colorClass = '';
+                                        if ($donviPhu === 'KTKT') {
+                                            $colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                                        } elseif ($donviPhu === 'ĐVLTH') {
+                                            $colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                                        } elseif ($donviPhu === 'CNM') {
+                                            $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                                        } elseif ($donviPhu === 'RDNGA') {
+                                            $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                        }
+                                        echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviPhu) . '</span>';
+                                    }
+                                    ?>
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-600">
@@ -507,6 +632,228 @@ document.addEventListener('DOMContentLoaded', function() {
         .finally(() => {
             inputElement.disabled = false;
             inputElement.style.backgroundColor = originalBg;
+        });
+    }
+    
+    // Xử lý nút sửa Đơn vị làm chính
+    document.querySelectorAll('.donvi-chinh-edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.donvi-chinh-container');
+            const viewDiv = container.querySelector('.donvi-chinh-view');
+            const editDiv = container.querySelector('.donvi-chinh-edit');
+            
+            // Ẩn view, hiện edit
+            viewDiv.classList.add('hidden');
+            editDiv.classList.remove('hidden');
+            
+            // Focus vào dropdown
+            const select = editDiv.querySelector('.donvi-chinh-select');
+            select.focus();
+        });
+    });
+    
+    // Xử lý nút sửa Đơn vị làm phụ
+    document.querySelectorAll('.donvi-phu-edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const container = this.closest('.donvi-phu-container');
+            const viewDiv = container.querySelector('.donvi-phu-view');
+            const editDiv = container.querySelector('.donvi-phu-edit');
+            
+            // Ẩn view, hiện edit
+            viewDiv.classList.add('hidden');
+            editDiv.classList.remove('hidden');
+            
+            // Focus vào dropdown
+            const select = editDiv.querySelector('.donvi-phu-select');
+            select.focus();
+        });
+    });
+    
+    // Xử lý dropdown đơn vị làm chính
+    document.querySelectorAll('.donvi-chinh-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const container = this.closest('.donvi-chinh-container');
+            saveDonViFields(container);
+        });
+        
+        // Ấn Escape để hủy
+        select.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const container = this.closest('.donvi-chinh-container');
+                cancelDonViEdit(container, 'chinh');
+            }
+        });
+        
+        // Click ra ngoài (blur) để quay lại view mode
+        select.addEventListener('blur', function() {
+            setTimeout(() => {
+                const container = this.closest('.donvi-chinh-container');
+                if (container) {
+                    const editDiv = container.querySelector('.donvi-chinh-edit');
+                    if (!editDiv.classList.contains('hidden')) {
+                        cancelDonViEdit(container, 'chinh');
+                    }
+                }
+            }, 200); // Delay nhỏ để change event có thể fire trước
+        });
+    });
+    
+    // Xử lý dropdown đơn vị làm phụ
+    document.querySelectorAll('.donvi-phu-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const container = this.closest('.donvi-phu-container');
+            saveDonViFields(container);
+        });
+        
+        // Ấn Escape để hủy
+        select.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const container = this.closest('.donvi-phu-container');
+                cancelDonViEdit(container, 'phu');
+            }
+        });
+        
+        // Click ra ngoài (blur) để quay lại view mode
+        select.addEventListener('blur', function() {
+            setTimeout(() => {
+                const container = this.closest('.donvi-phu-container');
+                if (container) {
+                    const editDiv = container.querySelector('.donvi-phu-edit');
+                    if (!editDiv.classList.contains('hidden')) {
+                        cancelDonViEdit(container, 'phu');
+                    }
+                }
+            }, 200); // Delay nhỏ để change event có thể fire trước
+        });
+    });
+    
+    function cancelDonViEdit(container, type) {
+        const viewDiv = container.querySelector(`.donvi-${type}-view`);
+        const editDiv = container.querySelector(`.donvi-${type}-edit`);
+        
+        // Hiển view, ẩn edit
+        viewDiv.classList.remove('hidden');
+        editDiv.classList.add('hidden');
+    }
+    
+    function saveDonViFields(triggerContainer) {
+        const row = triggerContainer.closest('tr');
+        const donviChinhContainer = row.querySelector('.donvi-chinh-container');
+        const donviPhuContainer = row.querySelector('.donvi-phu-container');
+        
+        const kehoachId = triggerContainer.dataset.kehoachId;
+        const donviLamChinh = donviChinhContainer ? donviChinhContainer.querySelector('.donvi-chinh-select').value : '';
+        const donviLamPhu = donviPhuContainer ? donviPhuContainer.querySelector('.donvi-phu-select').value : '';
+        
+        // Disable selects và hiển thị loading
+        const allSelects = row.querySelectorAll('.donvi-chinh-select, .donvi-phu-select');
+        const allEditDivs = row.querySelectorAll('.donvi-chinh-edit, .donvi-phu-edit');
+        
+        allSelects.forEach(sel => {
+            sel.disabled = true;
+            sel.style.backgroundColor = '#fef3c7';
+        });
+        
+        // Thêm text "Đang lưu..."
+        allEditDivs.forEach(div => {
+            const existingMsg = div.querySelector('.saving-message');
+            if (!existingMsg) {
+                const savingMsg = document.createElement('div');
+                savingMsg.className = 'saving-message text-xs text-blue-600 mt-1';
+                savingMsg.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang lưu...';
+                div.appendChild(savingMsg);
+            }
+        });
+        
+        // Gửi AJAX request
+        fetch('kehoachbaoduongdinhky.php?action=updateDonViFields', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                kehoach_id: parseInt(kehoachId),
+                donvi_lam_chinh: donviLamChinh,
+                donvi_lam_phu: donviLamPhu
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cập nhật text hiển thị
+                if (donviChinhContainer) {
+                    const textSpan = donviChinhContainer.querySelector('.donvi-chinh-text');
+                    let htmlContent = '';
+                    if (donviLamChinh) {
+                        let colorClass = '';
+                        if (donviLamChinh === 'KTKT') {
+                            colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                        } else if (donviLamChinh === 'ĐVLTH') {
+                            colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                        } else if (donviLamChinh === 'CNM') {
+                            colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                        } else if (donviLamChinh === 'RDNGA') {
+                            colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                        }
+                        htmlContent = '<span class="' + colorClass + '">' + donviLamChinh + '</span>';
+                    } else {
+                        htmlContent = '<span class="text-gray-400">--</span>';
+                    }
+                    textSpan.innerHTML = htmlContent;
+                    
+                    // Chuyển về chế độ xem
+                    donviChinhContainer.querySelector('.donvi-chinh-view').classList.remove('hidden');
+                    donviChinhContainer.querySelector('.donvi-chinh-edit').classList.add('hidden');
+                }
+                
+                if (donviPhuContainer) {
+                    const textSpan = donviPhuContainer.querySelector('.donvi-phu-text');
+                    let htmlContent = '';
+                    if (donviLamPhu) {
+                        let colorClass = '';
+                        if (donviLamPhu === 'KTKT') {
+                            colorClass = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+                        } else if (donviLamPhu === 'ĐVLTH') {
+                            colorClass = 'bg-green-100 text-green-800 px-2 py-1 rounded';
+                        } else if (donviLamPhu === 'CNM') {
+                            colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
+                        } else if (donviLamPhu === 'RDNGA') {
+                            colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                        }
+                        htmlContent = '<span class="' + colorClass + '">' + donviLamPhu + '</span>';
+                    } else {
+                        htmlContent = '<span class="text-gray-400">--</span>';
+                    }
+                    textSpan.innerHTML = htmlContent;
+                    
+                    // Chuyển về chế độ xem
+                    donviPhuContainer.querySelector('.donvi-phu-view').classList.remove('hidden');
+                    donviPhuContainer.querySelector('.donvi-phu-edit').classList.add('hidden');
+                }
+                
+                // Hiệu ứng xanh
+                allSelects.forEach(sel => sel.style.backgroundColor = '#d1fae5');
+                setTimeout(() => {
+                    allSelects.forEach(sel => sel.style.backgroundColor = '');
+                }, 500);
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi cập nhật đơn vị');
+        })
+        .finally(() => {
+            // Xóa message "Đang lưu..."
+            allEditDivs.forEach(div => {
+                const savingMsg = div.querySelector('.saving-message');
+                if (savingMsg) {
+                    savingMsg.remove();
+                }
+            });
+            
+            allSelects.forEach(sel => sel.disabled = false);
         });
     }
 });
