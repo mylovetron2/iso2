@@ -8,22 +8,6 @@ require_once __DIR__ . '/../layouts/header.php';
     <h1 class="text-2xl font-bold mb-4 flex items-center">
         <i class="fas fa-handshake mr-2 text-red-600"></i> Quản lý Phiếu Bàn Giao
     </h1>
-    
-    <!-- Stats -->
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-blue-700"><?php echo $stats['total']; ?></div>
-            <div class="text-sm text-gray-600">Tổng số phiếu</div>
-        </div>
-        <div class="bg-yellow-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-yellow-700"><?php echo $stats['nhap']; ?></div>
-            <div class="text-sm text-gray-600">Nháp</div>
-        </div>
-        <div class="bg-green-100 rounded p-4 text-center">
-            <div class="text-2xl font-bold text-green-700"><?php echo $stats['daduyet']; ?></div>
-            <div class="text-sm text-gray-600">Đã duyệt</div>
-        </div>
-    </div>
 
     <!-- Messages -->
     <?php if (isset($_SESSION['success'])): ?>
@@ -43,15 +27,8 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
                 <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
-                       placeholder="Tìm số phiếu, phiếu YC, người giao/nhận..." 
+                       placeholder="Tìm số phiếu, phiếu YC, mã VT, số máy, người giao/nhận..." 
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-            </div>
-            <div>
-                <select name="trangthai" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                    <option value="">-- Trạng thái --</option>
-                    <option value="0" <?php echo $trangthai === '0' ? 'selected' : ''; ?>>Nháp</option>
-                    <option value="1" <?php echo $trangthai === '1' ? 'selected' : ''; ?>>Đã duyệt</option>
-                </select>
             </div>
             <div>
                 <select name="donvi" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
@@ -67,6 +44,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                     <i class="fas fa-search mr-2"></i>Tìm kiếm
                 </button>
+            </div>
+            <div>
+                <a href="phieubangiao.php" class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded inline-block text-center">
+                    <i class="fas fa-redo mr-2"></i>Reset
+                </a>
             </div>
         </div>
     </form>
@@ -90,15 +72,14 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-4 py-2 border text-left">Ngày BG</th>
                     <th class="px-4 py-2 border text-left">Người Giao</th>
                     <th class="px-4 py-2 border text-left">Người Nhận</th>
-                    <th class="px-4 py-2 border text-center">Số TB</th>
-                    <th class="px-4 py-2 border text-center">Trạng thái</th>
+                    <th class="px-4 py-2 border text-left">Danh sách thiết bị (Mã VT - Số máy)</th>
                     <th class="px-4 py-2 border text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Chưa có phiếu bàn giao nào</p>
                     </td>
@@ -113,40 +94,21 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-4 py-2 border"><?php echo date('d/m/Y', strtotime($item['ngaybg'])); ?></td>
                     <td class="px-4 py-2 border"><?php echo htmlspecialchars($item['nguoigiao']); ?></td>
                     <td class="px-4 py-2 border"><?php echo htmlspecialchars($item['nguoinhan']); ?></td>
-                    <td class="px-4 py-2 border text-center">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-semibold">
-                            <?php echo $item['so_thietbi']; ?> TB
-                        </span>
-                    </td>
-                    <td class="px-4 py-2 border text-center">
-                        <?php if ($item['trangthai'] == 1): ?>
-                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">
-                                <i class="fas fa-check-circle mr-1"></i>Đã duyệt
-                            </span>
-                        <?php else: ?>
-                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">
-                                <i class="fas fa-file mr-1"></i>Nháp
-                            </span>
-                        <?php endif; ?>
+                    <td class="px-4 py-2 border">
+                        <div class="text-sm text-gray-700 break-words">
+                            <?php echo htmlspecialchars($item['danh_sach_thietbi'] ?? ''); ?>
+                            <span class="text-xs text-gray-500 ml-1">(<?php echo $item['so_thietbi']; ?> TB)</span>
+                        </div>
                     </td>
                     <td class="px-4 py-2 border text-center">
                         <a href="phieubangiao.php?action=view&id=<?php echo $item['stt']; ?>" 
                            class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.edit')): ?>
-                        <a href="phieubangiao.php?action=edit&id=<?php echo $item['stt']; ?>" 
-                           class="text-yellow-600 hover:text-yellow-800 mx-1" title="Sửa">
-                            <i class="fas fa-edit"></i>
+                        <a href="phieubangiao.php?action=export_word&id=<?php echo $item['stt']; ?>" 
+                           class="text-purple-600 hover:text-purple-800 mx-1" title="Xuất Word">
+                            <i class="fas fa-file-word"></i>
                         </a>
-                        <?php endif; ?>
-                        <?php if ($item['trangthai'] == 0 && hasPermission('phieubangiao.delete')): ?>
-                        <button onclick="deletePhieu(<?php echo $item['stt']; ?>, '<?php echo htmlspecialchars($item['sophieu']); ?>')" 
-                                class="text-red-600 hover:text-red-800 mx-1" 
-                                title="Xóa phiếu #<?php echo $item['stt']; ?>">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>

@@ -77,6 +77,28 @@ switch ($action) {
         break;
 
     // ============================================================
+    // SỬA PHIẾU NHẬN TỪ ĐỘI (chỉ khi trạng thái: da_nhan)
+    // ============================================================
+    
+    case 'edit':
+        if (!hasPermission('giaonhanthietbi.edit')) {
+            $_SESSION['error'] = 'Bạn không có quyền sửa phiếu';
+            header('Location: /iso2/giaonhanthietbi.php');
+            exit;
+        }
+        $controller->edit();
+        break;
+
+    case 'update':
+        if (!hasPermission('giaonhanthietbi.edit')) {
+            $_SESSION['error'] = 'Bạn không có quyền sửa phiếu';
+            header('Location: /iso2/giaonhanthietbi.php');
+            exit;
+        }
+        $controller->update();
+        break;
+
+    // ============================================================
     // BƯỚC 2: GỬI ĐI KIỂM ĐỊNH (dang_kiem_dinh)
     // ============================================================
     
@@ -131,6 +153,19 @@ switch ($action) {
             exit;
         }
         $controller->delete();
+        break;
+
+    // ============================================================
+    // EXPORT WORD
+    // ============================================================
+    
+    case 'exportWord':
+        if (!hasPermission('giaonhanthietbi.view')) {
+            $_SESSION['error'] = 'Bạn không có quyền xuất file';
+            header('Location: /iso2/giaonhanthietbi.php');
+            exit;
+        }
+        $controller->exportWord();
         break;
 
     // ============================================================

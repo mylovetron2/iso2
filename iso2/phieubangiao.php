@@ -38,6 +38,14 @@ switch ($action) {
         $controller->view();
         break;
 
+    case 'print':
+        $controller->print();
+        break;
+
+    case 'export_word':
+        $controller->exportWord();
+        break;
+
     case 'edit':
         if (!hasPermission('phieubangiao.edit')) {
             header('Location: /iso2/phieubangiao.php?error=permission_denied');

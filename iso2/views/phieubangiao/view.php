@@ -29,7 +29,7 @@ $statusIcon = [
 ];
 ?>
 <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-6">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 no-print">
         <h1 class="text-2xl font-bold flex items-center">
             <i class="fas fa-file-alt mr-2 text-blue-600"></i>Chi Tiết Phiếu Bàn Giao
         </h1>
@@ -42,9 +42,15 @@ $statusIcon = [
             </a>
         </div>
     </div>
+    
+    <!-- Tiêu đề cho bản in -->
+    <div class="text-center mb-6 print-only" style="display: none;">
+        <h1 class="text-2xl font-bold text-gray-800">PHIẾU BÀN GIAO THIẾT BỊ</h1>
+        <p class="text-sm text-gray-600 mt-2">Số: <?php echo htmlspecialchars($item['sophieu']); ?></p>
+    </div>
 
     <?php if (isset($_SESSION['success'])): ?>
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 no-print">
             <i class="fas fa-check-circle mr-2"></i><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
@@ -192,7 +198,7 @@ $statusIcon = [
 
     <!-- Action buttons -->
     <?php if ($item['trangthai'] == 0): ?>
-    <div class="mt-6 pt-4 border-t flex gap-3">
+    <div class="mt-6 pt-4 border-t flex gap-3 no-print">
         <?php if (hasPermission('phieubangiao.edit')): ?>
         <a href="phieubangiao.php?action=edit&id=<?php echo $item['stt']; ?>" 
            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
@@ -212,11 +218,61 @@ $statusIcon = [
 
 <style>
 @media print {
-    .no-print, button, a {
+    /* Ẩn các phần tử không cần in */
+    .no-print, 
+    button, 
+    a.bg-gray-500,
+    a.bg-blue-600,
+    a.bg-red-600,
+    .border-t.flex.gap-3 {
         display: none !important;
     }
+    
+    /* Hiển thị tiêu đề bản in */
+    .print-only {
+        display: block !important;
+    }
+    
+    /* Tối ưu bố cục */
+    .max-w-7xl {
+        max-width: 100% !important;
+    }
+    
     .bg-gradient-to-r {
         background: #eff6ff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    /* Đảm bảo màu nền được in */
+    .bg-blue-50, .bg-blue-100 {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .bg-green-100, .bg-yellow-50 {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    /* Tránh xuống trang giữa bảng */
+    table {
+        page-break-inside: auto;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    /* Ẩn shadow khi in */
+    .shadow-md {
+        box-shadow: none !important;
+    }
+    
+    /* Ẩn phần thông tin hệ thống */
+    .bg-gray-50.border-t-2 {
+        display: none !important;
     }
 }
 </style>

@@ -37,6 +37,13 @@ $currentStatus = $statusInfo[$record['trangthai']] ?? ['label' => 'N/A', 'color'
             Chi Tiết Phiếu #<?= $record['id'] ?>
         </h1>
         <div class="flex gap-2">
+            <!-- Export Word Button -->
+            <a href="giaonhanthietbi.php?action=exportWord&id=<?= $record['id'] ?>" 
+               class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition duration-200"
+               title="Xuất file Word">
+                <i class="fas fa-file-word mr-2"></i>Xuất Word
+            </a>
+            
             <!-- Action buttons based on status -->
             <?php if ($record['trangthai'] === 'da_nhan' && isset($_SESSION['user_id'])): ?>
                 <a href="giaonhanthietbi.php?action=editGuiKiemDinh&id=<?= $record['id'] ?>" 

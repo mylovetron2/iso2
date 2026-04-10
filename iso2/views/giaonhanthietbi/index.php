@@ -254,6 +254,15 @@ $statusInfo = [
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
+                                        <!-- Edit (only for da_nhan status) -->
+                                        <?php if ($record['trangthai'] === 'da_nhan' && isset($_SESSION['user_id'])): ?>
+                                            <a href="giaonhanthietbi.php?action=edit&id=<?= $record['id'] ?>" 
+                                               class="text-purple-600 hover:text-purple-900"
+                                               title="Sửa phiếu">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                        
                                         <!-- Action buttons based on status -->
                                         <?php if ($record['trangthai'] === 'da_nhan' && isset($_SESSION['user_id'])): ?>
                                             <a href="giaonhanthietbi.php?action=editGuiKiemDinh&id=<?= $record['id'] ?>" 

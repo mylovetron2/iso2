@@ -96,6 +96,12 @@ class PhieuBanGiaoController
 
         // GET: Hiển thị form xác nhận
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Prepare số phiếu preview cho từng phiếu YC
+            $sophieuPreview = [];
+            foreach ($groupedByPhieu as $phieuyc => $devices) {
+                $sophieuPreview[$phieuyc] = $this->model->getNextSoPhieuForPhieuYC((string)$phieuyc);
+            }
+            
             require_once __DIR__ . '/../views/phieubangiao/confirm_create.php';
             return;
         }
@@ -107,19 +113,23 @@ class PhieuBanGiaoController
 
             try {
                 foreach ($groupedByPhieu as $phieuyc => $devices) {
-                    // Tạo phiếu bàn giao
-                    $sophieu = $this->model->getNextSoPhieu();
+                    // Tạo số phiếu bàn giao: {phieu}-{slbg} dựa trên phiếu đã có
+                    $sophieu = $this->model->getNextSoPhieuForPhieuYC((string)$phieuyc);
+                    
+                    // Parse slbg từ số phiếu (ví dụ: "1984-1" => slbg = 1)
+                    $slbgParts = explode('-', $sophieu);
+                    $newSlbg = (int)end($slbgParts);
                     
                     $phieuData = [
                         'sophieu' => $sophieu,
-                        'phieuyc' => $phieuyc,
+                        'phieuyc' => (string)$phieuyc,
                         'ngaybg' => $_POST['ngaybg_' . $phieuyc] ?? date('Y-m-d'),
                         'nguoigiao' => $_POST['nguoigiao_' . $phieuyc] ?? '',
                         'nguoinhan' => $_POST['nguoinhan_' . $phieuyc] ?? '',
-                        'donvigiao' => $devices[0]['madv'], // Lấy từ TB đầu tiên
+                        'donvigiao' => 'XSCTBĐVL', // Mặc định Xưởng SCTBĐVL
                         'donvinhan' => $_POST['donvinhan_' . $phieuyc] ?? '',
                         'ghichu' => $_POST['ghichu_' . $phieuyc] ?? '',
-                        'trangthai' => isset($_POST['duyet_' . $phieuyc]) ? 1 : 0,
+                        'trangthai' => 1, // Duyệt phiếu ngay không cần lưu nháp
                         'nguoitao' => $_SESSION['username'] ?? ''
                     ];
 
@@ -135,8 +145,11 @@ class PhieuBanGiaoController
                                 'ghichu' => $_POST['ghichu_tb_' . $device['stt']] ?? ''
                             ];
 
-                            // Cập nhật trạng thái bg=1 trong hososcbd
-                            $this->hosoModel->update($device['stt'], ['bg' => 1]);
+                            // Cập nhật trạng thái bg=1 và slbg mới trong hososcbd
+                            $this->hosoModel->update($device['stt'], [
+                                'bg' => 1,
+                                'slbg' => $newSlbg
+                            ]);
                         }
 
                         $this->thietBiModel->createMultiple($sophieu, $thietBiList);
@@ -188,6 +201,55 @@ class PhieuBanGiaoController
         $devices = $item['thietbi'] ?? [];
 
         require_once __DIR__ . '/../views/phieubangiao/view.php';
+    }
+
+    public function print(): void
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if (!$id) {
+            echo "Không tìm thấy ID phiếu";
+            exit;
+        }
+
+        $item = $this->model->getDetailWithDevices($id);
+        
+        if (!$item) {
+            echo "Không tìm thấy phiếu bàn giao";
+            exit;
+        }
+
+        // Extract devices for print view
+        $devices = $item['thietbi'] ?? [];
+
+        require_once __DIR__ . '/../views/phieubangiao/print.php';
+    }
+
+    public function exportWord(): void
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
+        if (!$id) {
+            echo "Không tìm thấy ID phiếu";
+            exit;
+        }
+
+        $item = $this->model->getDetailWithDevices($id);
+        
+        if (!$item) {
+            echo "Không tìm thấy phiếu bàn giao";
+            exit;
+        }
+
+        // Extract devices for export
+        $devices = $item['thietbi'] ?? [];
+
+        // Set headers for Word download
+        header("Content-Type: application/vnd.ms-word");
+        header("Content-Disposition: attachment; filename=BienBanBanGiao_" . $item['sophieu'] . ".doc");
+        header("Cache-Control: max-age=0");
+
+        require_once __DIR__ . '/../views/phieubangiao/export_word.php';
     }
 
     public function edit(): void

@@ -31,7 +31,7 @@ class PhieuBanGiao extends BaseModel
         $where = ["1=1"];
         
         if ($search) {
-            $where[] = "(p.sophieu LIKE $searchEscaped OR p.phieuyc LIKE $searchEscaped OR p.nguoigiao LIKE $searchEscaped OR p.nguoinhan LIKE $searchEscaped)";
+            $where[] = "(p.sophieu LIKE $searchEscaped OR p.phieuyc LIKE $searchEscaped OR p.nguoigiao LIKE $searchEscaped OR p.nguoinhan LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped)";
         }
         
         if ($phieuyc) {
@@ -53,15 +53,17 @@ class PhieuBanGiao extends BaseModel
         
         $sql = "SELECT p.*, 
                        COUNT(pt.stt) as so_thietbi,
+                       GROUP_CONCAT(DISTINCT CONCAT(h.mavt, ' (', h.somay, ')') SEPARATOR ', ') as danh_sach_thietbi,
                        dg.tendv as ten_donvi_giao,
                        dn.tendv as ten_donvi_nhan
                 FROM {$this->table} p
                 LEFT JOIN phieubangiao_thietbi_iso pt ON p.sophieu = pt.sophieu
+                LEFT JOIN hososcbd_iso h ON pt.hososcbd_stt = h.stt
                 LEFT JOIN donvi_iso dg ON p.donvigiao = dg.madv
                 LEFT JOIN donvi_iso dn ON p.donvinhan = dn.madv
                 WHERE $whereClause
                 GROUP BY p.stt
-                ORDER BY p.ngaybg DESC, p.sophieu DESC
+                ORDER BY p.stt DESC
                 LIMIT $limit OFFSET $offset";
         
         $stmt = $this->query($sql);
@@ -82,27 +84,32 @@ class PhieuBanGiao extends BaseModel
         $where = ["1=1"];
         
         if ($search) {
-            $where[] = "(sophieu LIKE $searchEscaped OR phieuyc LIKE $searchEscaped OR nguoigiao LIKE $searchEscaped OR nguoinhan LIKE $searchEscaped)";
+            $where[] = "(p.sophieu LIKE $searchEscaped OR p.phieuyc LIKE $searchEscaped OR p.nguoigiao LIKE $searchEscaped OR p.nguoinhan LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped)";
         }
         
         if ($phieuyc) {
             $phieuyc_escaped = $this->db->quote($phieuyc);
-            $where[] = "phieuyc = $phieuyc_escaped";
+            $where[] = "p.phieuyc = $phieuyc_escaped";
         }
         
         if ($trangthai !== '') {
             $trangthaiEscaped = $this->db->quote($trangthai);
-            $where[] = "trangthai = $trangthaiEscaped";
+            $where[] = "p.trangthai = $trangthaiEscaped";
         }
         
         if ($donvi) {
             $donviEscaped = $this->db->quote($donvi);
-            $where[] = "(donvigiao = $donviEscaped OR donvinhan = $donviEscaped)";
+            $where[] = "(p.donvigiao = $donviEscaped OR p.donvinhan = $donviEscaped)";
         }
         
         $whereClause = implode(' AND ', $where);
         
-        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE $whereClause";
+        // JOIN với các bảng liên quan để tìm kiếm theo mavt và somay
+        $sql = "SELECT COUNT(DISTINCT p.stt) 
+                FROM {$this->table} p
+                LEFT JOIN phieubangiao_thietbi_iso pt ON p.sophieu = pt.sophieu
+                LEFT JOIN hososcbd_iso h ON pt.hososcbd_stt = h.stt
+                WHERE $whereClause";
         $stmt = $this->query($sql);
         return (int)$stmt->fetchColumn();
     }
@@ -123,6 +130,39 @@ class PhieuBanGiao extends BaseModel
         }
         
         return 'PBG-' . str_pad((string)$nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+    
+    /**
+     * Lấy số phiếu bàn giao tiếp theo cho một phiếu yêu cầu
+     * Format: {phieuyc}-{slbg}
+     */
+    public function getNextSoPhieuForPhieuYC(string $phieuyc): string
+    {
+        $phieuyc = trim($phieuyc);
+        $phieuyc_escaped = $this->db->quote($phieuyc);
+        
+        // Tìm tất cả phiếu bàn giao của phiếu YC này
+        $sql = "SELECT sophieu FROM {$this->table} 
+                WHERE phieuyc = $phieuyc_escaped 
+                   OR sophieu LIKE CONCAT($phieuyc_escaped, '-%')
+                ORDER BY sophieu DESC";
+        
+        $stmt = $this->query($sql);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $maxSlbg = 0;
+        foreach ($results as $row) {
+            // Parse số sau dấu gạch ngang: "1984-1" => 1, "1984-2" => 2
+            if (preg_match('/^' . preg_quote($phieuyc, '/') . '-(\d+)$/', $row['sophieu'], $matches)) {
+                $slbg = (int)$matches[1];
+                if ($slbg > $maxSlbg) {
+                    $maxSlbg = $slbg;
+                }
+            }
+        }
+        
+        $newSlbg = $maxSlbg + 1;
+        return $phieuyc . '-' . $newSlbg;
     }
     
     /**

@@ -8,21 +8,14 @@ require_once __DIR__ . '/../config/database.php';
 try {
     $db = getDBConnection();
     
-    $madv = $_GET['madv'] ?? '';
-    
-    // Get devices from thietbi_iso (for hososcbd module)
+    // Get all devices from thietbihckd_iso (for giao nhan thiet bi module)
     // Return field names that match what the view expects
-    $sql = "SELECT stt as id, mavt, tenvt, somay 
-            FROM thietbi_iso";
+    $sql = "SELECT stt as id, mavattu as mavt, tenthietbi as tenvt, somay 
+            FROM thietbihckd_iso 
+            ORDER BY mavattu ASC, somay ASC";
     
-    if ($madv) {
-        $sql .= " WHERE madv = ?";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$madv]);
-    } else {
-        $stmt = $db->prepare($sql);
-        $stmt->execute();
-    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
     
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

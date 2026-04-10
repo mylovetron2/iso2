@@ -110,22 +110,9 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 2. Bàn giao -->
                 <?php if (isLoggedIn() && hasPermission('phieubangiao.view')): ?>
                 <li>
-                    <div id="bangiaoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                    <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-clipboard-check mr-2"></i> Bàn giao
-                        <i id="bangiaoCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
-                    </div>
-                    <ul id="bangiaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
-                        <li>
-                            <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
-                                <i class="fas fa-clipboard-list mr-2"></i> Theo thiết bị
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/iso2/phieubangiao_phieuyc.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
-                                <i class="fas fa-file-invoice mr-2"></i> Theo phiếu YC
-                            </a>
-                        </li>
-                    </ul>
+                    </a>
                 </li>
                 <?php endif; ?>
 
@@ -532,7 +519,8 @@ if (vattuBtn && vattuMenu && vattuCaret) {
     });
 }
 
-// Expand/collapse menu Bàn giao
+// Expand/collapse menu Bàn giao - DISABLED (menu is now a direct link)
+/*
 const bangiaoBtn = document.getElementById('bangiaoMenuBtn');
 const bangiaoMenu = document.getElementById('bangiaoMenu');
 const bangiaoCaret = document.getElementById('bangiaoCaret');
@@ -542,6 +530,7 @@ if (bangiaoBtn && bangiaoMenu && bangiaoCaret) {
         bangiaoCaret.classList.toggle('rotate-180');
     });
 }
+*/
 
 // Expand/collapse menu Thống kê
 const thongkeBtn = document.getElementById('thongkeMenuBtn');

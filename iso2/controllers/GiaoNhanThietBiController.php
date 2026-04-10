@@ -248,6 +248,191 @@ class GiaoNhanThietBiController
     }
 
     /**
+     * SỬA PHIẾU NHẬN TỪ ĐỘI (chỉ cho phép khi trạng thái: da_nhan)
+     */
+    public function edit(): void
+    {
+        try {
+            $id = (int)($_GET['id'] ?? 0);
+            
+            if (!$id) {
+                throw new Exception('ID phiếu không hợp lệ');
+            }
+            
+            // Lấy thông tin phiếu
+            $stmt = $this->db->prepare("
+                SELECT * FROM giao_nhan_thietbi_iso WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+            $phieu = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$phieu) {
+                throw new Exception('Không tìm thấy phiếu này');
+            }
+            
+            // Chỉ cho phép sửa khi trạng thái là 'da_nhan'
+            if ($phieu['trangthai'] !== 'da_nhan') {
+                throw new Exception('Chỉ có thể sửa phiếu ở trạng thái "Nhận từ đội"');
+            }
+            
+            // Lấy danh sách thiết bị của phiếu
+            $stmtChiTiet = $this->db->prepare("
+                SELECT * FROM giao_nhan_thietbi_chitiet WHERE phieu_id = ? ORDER BY id ASC
+            ");
+            $stmtChiTiet->execute([$id]);
+            $devices = $stmtChiTiet->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Lấy danh sách đơn vị
+            $stmtDonVi = $this->db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv");
+            $donviList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+            
+            require __DIR__ . '/../views/giaonhanthietbi/edit.php';
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            header('Location: giaonhanthietbi.php');
+            exit;
+        }
+    }
+
+    /**
+     * CẬP NHẬT PHIẾU NHẬN TỪ ĐỘI (chỉ cho phép khi trạng thái: da_nhan)
+     */
+    public function update(): void
+    {
+        try {
+            $id = (int)($_POST['id'] ?? 0);
+            
+            if (!$id) {
+                throw new Exception('ID phiếu không hợp lệ');
+            }
+            
+            // Kiểm tra phiếu và trạng thái
+            $stmt = $this->db->prepare("SELECT trangthai FROM giao_nhan_thietbi_iso WHERE id = ?");
+            $stmt->execute([$id]);
+            $phieu = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$phieu) {
+                throw new Exception('Không tìm thấy phiếu này');
+            }
+            
+            if ($phieu['trangthai'] !== 'da_nhan') {
+                throw new Exception('Chỉ có thể sửa phiếu ở trạng thái "Nhận từ đội"');
+            }
+            
+            // Validate
+            $nguoi_giao = trim($_POST['nguoi_giao'] ?? '');
+            $donvi_giao = trim($_POST['donvi_giao'] ?? '');
+            $ngay_giao = trim($_POST['ngay_giao'] ?? '');
+            $ghichu = trim($_POST['ghichu'] ?? '');
+            
+            $thietbi_ids = $_POST['thietbi_id'] ?? [];
+            $tinhtrang_list = $_POST['tinhtrang'] ?? [];
+            $ghichu_tb_list = $_POST['ghichu_thietbi'] ?? [];
+            
+            if (!$nguoi_giao || !$donvi_giao || !$ngay_giao) {
+                throw new Exception('Vui lòng nhập đầy đủ thông tin người giao, đơn vị và ngày giao!');
+            }
+            
+            // Filter out empty device IDs
+            $validDevices = [];
+            foreach ($thietbi_ids as $index => $device_id) {
+                if (!empty(trim($device_id))) {
+                    $validDevices[] = [
+                        'id' => trim($device_id),
+                        'tinhtrang' => $tinhtrang_list[$index] ?? '',
+                        'ghichu' => $ghichu_tb_list[$index] ?? ''
+                    ];
+                }
+            }
+            
+            if (empty($validDevices)) {
+                throw new Exception('Vui lòng chọn ít nhất 1 thiết bị!');
+            }
+            
+            $this->db->beginTransaction();
+            
+            // UPDATE master record
+            $stmtUpdate = $this->db->prepare("
+                UPDATE giao_nhan_thietbi_iso SET
+                    nguoi_giao = :nguoi_giao,
+                    donvi_giao = :donvi_giao,
+                    ngay_giao = :ngay_giao,
+                    ghichu = :ghichu,
+                    tong_thietbi = :tong_thietbi,
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            
+            $stmtUpdate->execute([
+                ':nguoi_giao' => $nguoi_giao,
+                ':donvi_giao' => $donvi_giao,
+                ':ngay_giao' => $ngay_giao,
+                ':ghichu' => $ghichu,
+                ':tong_thietbi' => count($validDevices),
+                ':id' => $id
+            ]);
+            
+            // DELETE old detail records
+            $stmtDelete = $this->db->prepare("DELETE FROM giao_nhan_thietbi_chitiet WHERE phieu_id = ?");
+            $stmtDelete->execute([$id]);
+            
+            // INSERT new detail records
+            $stmtChiTiet = $this->db->prepare("
+                INSERT INTO giao_nhan_thietbi_chitiet (
+                    phieu_id, thietbi_id, ten_thietbi, ky_ma_hieu,
+                    soluong, tinhtrang, ghichu,
+                    created_at, updated_at
+                ) VALUES (
+                    :phieu_id, :thietbi_id, :ten_thietbi, :ky_ma_hieu,
+                    1, :tinhtrang, :ghichu,
+                    NOW(), NOW()
+                )
+            ");
+            
+            foreach ($validDevices as $device) {
+                $thietbi_id = $device['id'];
+                
+                // Lấy thông tin từ thietbihckd_iso
+                $stmtTB = $this->db->prepare("
+                    SELECT tenthietbi as ten_thiet_bi, somay as ky_ma_hieu 
+                    FROM thietbihckd_iso 
+                    WHERE stt = ?
+                ");
+                $stmtTB->execute([$thietbi_id]);
+                $thietbi = $stmtTB->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$thietbi) {
+                    throw new Exception("Không tìm thấy thiết bị ID: $thietbi_id");
+                }
+                
+                $stmtChiTiet->execute([
+                    ':phieu_id' => $id,
+                    ':thietbi_id' => $thietbi_id,
+                    ':ten_thietbi' => $thietbi['ten_thiet_bi'],
+                    ':ky_ma_hieu' => $thietbi['ky_ma_hieu'],
+                    ':tinhtrang' => $device['tinhtrang'],
+                    ':ghichu' => $device['ghichu']
+                ]);
+            }
+            
+            $this->db->commit();
+            
+            $_SESSION['success'] = "Cập nhật phiếu thành công! (" . count($validDevices) . " thiết bị)";
+            header('Location: giaonhanthietbi.php?action=view&id=' . $id);
+            exit;
+            
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $_SESSION['error'] = 'Lỗi khi cập nhật phiếu: ' . $e->getMessage();
+            header('Location: giaonhanthietbi.php?action=edit&id=' . ($id ?? 0));
+            exit;
+        }
+    }
+
+    /**
      * BƯỚC 2: Form gửi đi kiểm định
      */
     public function editGuiKiemDinh(): void
@@ -553,6 +738,53 @@ class GiaoNhanThietBiController
                 $this->db->rollBack();
             }
             $_SESSION['error'] = 'Lỗi khi xóa: ' . $e->getMessage();
+            header('Location: giaonhanthietbi.php');
+            exit;
+        }
+    }
+
+    /**
+     * Export phiếu giao nhận ra Word
+     */
+    public function exportWord(): void
+    {
+        try {
+            $id = (int)($_GET['id'] ?? 0);
+            if (!$id) {
+                throw new Exception('ID không hợp lệ');
+            }
+            
+            // Lấy thông tin phiếu
+            $stmt = $this->db->prepare("
+                SELECT gn.*, 
+                       dv_giao.tendv as ten_donvi_giao,
+                       dv_nhan.tendv as ten_donvi_nhan
+                FROM giao_nhan_thietbi_iso gn
+                LEFT JOIN donvi_iso dv_giao ON gn.donvi_giao = dv_giao.madv
+                LEFT JOIN donvi_iso dv_nhan ON gn.donvi_nhan = dv_nhan.madv
+                WHERE gn.id = ?
+            ");
+            $stmt->execute([$id]);
+            $record = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$record) {
+                throw new Exception('Không tìm thấy phiếu');
+            }
+            
+            // Lấy danh sách thiết bị
+            $stmtChiTiet = $this->db->prepare("
+                SELECT * FROM giao_nhan_thietbi_chitiet 
+                WHERE phieu_id = ? 
+                ORDER BY id
+            ");
+            $stmtChiTiet->execute([$id]);
+            $thietbiList = $stmtChiTiet->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Xuất Word
+            require_once __DIR__ . '/../views/giaonhanthietbi/export_word.php';
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = 'Lỗi khi xuất file: ' . $e->getMessage();
             header('Location: giaonhanthietbi.php');
             exit;
         }
