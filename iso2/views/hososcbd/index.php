@@ -77,6 +77,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="chuabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuabg') ? 'selected' : ''; ?>>Chưa bàn giao</option>
                 <option value="dabg" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'dabg') ? 'selected' : ''; ?>>Đã bàn giao</option>
                 <option value="TTKTDB" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'TTKTDB') ? 'selected' : ''; ?>>TTKTDB</option>
+                <option value="tamdung" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'tamdung') ? 'selected' : ''; ?>>Tạm dừng</option>
             </select>
             
             <select name="nhomsc" class="border rounded px-3 py-2 text-sm md:text-base">
@@ -159,6 +160,12 @@ require_once __DIR__ . '/../layouts/header.php';
                                title="Xem chi tiết hồ sơ">
                                 <?php echo htmlspecialchars($item['hoso']); ?>
                             </a>
+                            <?php if (!empty($item['is_tamdung']) && $item['is_tamdung'] == 1): ?>
+                                <span class="inline-block ml-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded" 
+                                      title="Hồ sơ đang tạm dừng">
+                                    <i class="fas fa-pause-circle mr-1"></i>TẠM DỪNG
+                                </span>
+                            <?php endif; ?>
                         <?php else: ?>
                             <span class="text-gray-400">-</span>
                         <?php endif; ?>
@@ -303,26 +310,35 @@ require_once __DIR__ . '/../layouts/header.php';
                         }
                         $filterQuery = !empty($currentFilters) ? '&' . http_build_query($currentFilters) : '';
                         ?>
-                        <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs mx-1" 
-                           title="Thông tin sửa chữa & Thiết bị đo">
-                            <i class="fas fa-wrench mr-1"></i>
-                            <span class="hidden sm:inline">SC</span>
-                        </a>
-                        <a href="hososcbd_congviec.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs mx-1" 
-                           title="Công việc sửa chữa">
-                            <i class="fas fa-tasks mr-1"></i>
-                            <span class="hidden sm:inline">CV</span>
-                        </a>
-                        <?php /* Ẩn nút bàn giao
-                        <a href="hososcbd_handover_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                           class="inline-flex items-center bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs mx-1" 
-                           title="Thông tin bàn giao">
-                            <i class="fas fa-handshake mr-1"></i>
-                            <span class="hidden sm:inline">BG</span>
-                        </a>
-                        */ ?>
+                        <div class="flex flex-wrap gap-1 justify-center">
+                            <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
+                               class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs" 
+                               title="Thông tin sửa chữa & Thiết bị đo">
+                                <i class="fas fa-wrench mr-1"></i>
+                                <span class="hidden sm:inline">SC</span>
+                            </a>
+                            <a href="hososcbd_congviec.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
+                               class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" 
+                               title="Công việc sửa chữa">
+                                <i class="fas fa-tasks mr-1"></i>
+                                <span class="hidden sm:inline">CV</span>
+                            </a>
+                            
+                            <!-- Nút quản lý tạm dừng (gom tạm dừng/tiếp tục + lịch sử) -->
+                            <?php
+                            $isTamDung = !empty($item['is_tamdung']) && $item['is_tamdung'] == 1;
+                            $btnColor = $isTamDung ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600';
+                            $btnIcon = $isTamDung ? 'fa-play-circle' : 'fa-pause-circle';
+                            $btnText = $isTamDung ? 'Tiếp tục' : 'Tạm dừng';
+                            ?>
+                            <button 
+                                onclick="openQuanLyTamDungModal('<?php echo htmlspecialchars($item['hoso'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($item['mavt'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($item['somay'], ENT_QUOTES); ?>', <?php echo $isTamDung ? 'true' : 'false'; ?>)" 
+                                class="inline-flex items-center <?php echo $btnColor; ?> text-white px-2 py-1 rounded text-xs" 
+                                title="Quản lý tạm dừng & lịch sử">
+                                <i class="fas <?php echo $btnIcon; ?> mr-1"></i>
+                                <span class="hidden sm:inline"><?php echo $btnText; ?></span>
+                            </button>
+                        </div>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -403,5 +419,10 @@ require_once __DIR__ . '/../layouts/header.php';
         Hiển thị <?php echo count($items); ?> / <?php echo $total; ?> hồ sơ
     </div>
 </div>
+
+<?php 
+// Include modals for pause/resume functionality
+require_once __DIR__ . '/partials/tamdung_modals.php'; 
+?>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

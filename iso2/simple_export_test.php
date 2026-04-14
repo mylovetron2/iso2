@@ -8,7 +8,7 @@ $detail = $model->getPhieuDetail('1997');
 
 if (!$detail) {
     echo "No data\n";
-    exit;
+    exit;/
 }
 
 echo "Data loaded: " . count($detail['devices']) . " devices\n";
