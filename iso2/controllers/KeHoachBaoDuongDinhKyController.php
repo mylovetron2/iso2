@@ -737,11 +737,10 @@ class KeHoachBaoDuongDinhKyController
             ];
             
         } else {
-            // LOGIC CŨ: Thống kê tổng quát theo tất cả quý
+            // LÔGIC TỔNG QUÁT: Thống kê tất cả quý
             $statistics = [
                 'da_hoan_thanh' => [],
-                'chua_hoan_thanh' => [],
-                'hoan_thanh_mot_phan' => []
+                'chua_hoan_thanh' => []
             ];
             
             $totalQuarters = 0;
@@ -789,15 +788,12 @@ class KeHoachBaoDuongDinhKyController
                 if ($plannedCount === 0) {
                     // Không có kế hoạch nào -> bỏ qua
                     continue;
-                } elseif ($completedCount === $plannedCount) {
-                    // Hoàn thành tất cả
+                } elseif ($completedCount > 0) {
+                    // Đã hoàn thành ít nhất 1 quý -> coi như đã hoàn thành
                     $statistics['da_hoan_thanh'][] = $plan;
-                } elseif ($completedCount === 0) {
-                    // Chưa hoàn thành gì
-                    $statistics['chua_hoan_thanh'][] = $plan;
                 } else {
-                    // Hoàn thành một phần
-                    $statistics['hoan_thanh_mot_phan'][] = $plan;
+                    // Chưa hoàn thành quý nào
+                    $statistics['chua_hoan_thanh'][] = $plan;
                 }
             }
             
@@ -805,7 +801,6 @@ class KeHoachBaoDuongDinhKyController
                 'total_plans' => count($plans),
                 'da_hoan_thanh' => count($statistics['da_hoan_thanh']),
                 'chua_hoan_thanh' => count($statistics['chua_hoan_thanh']),
-                'hoan_thanh_mot_phan' => count($statistics['hoan_thanh_mot_phan']),
                 'total_quarters' => $totalQuarters,
                 'completed_quarters' => $completedQuarters,
                 'tyle_hoan_thanh' => $totalQuartersForPercent > 0 
@@ -904,10 +899,6 @@ class KeHoachBaoDuongDinhKyController
                     <span style="font-weight: bold;">Chưa hoàn thành:</span>
                     <span style="font-weight: bold; color: #dc2626;"><?php echo $statistics['summary']['chua_hoan_thanh']; ?> thiết bị</span>
                 </div>
-                <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-                    <span style="font-weight: bold;">Hoàn thành một phần:</span>
-                    <span style="font-weight: bold; color: #f59e0b;"><?php echo $statistics['summary']['hoan_thanh_mot_phan'] ?? 0; ?> thiết bị</span>
-                </div>
             <?php endif; ?>
             
             <div style="border-bottom: none; margin-top: 10px; background-color: white; padding: 8px;">
@@ -952,21 +943,18 @@ class KeHoachBaoDuongDinhKyController
                     'Chưa hoàn thành: ' . $data[3] . ' (' . round(($data[3]/$total)*100, 1) . '%)'
                 ];
             } else {
-                // Khi không chọn quý: 3 trạng thái
+                // Khi không chọn quý: 2 trạng thái
                 $data = [
                     $statistics['summary']['da_hoan_thanh'],
-                    $statistics['summary']['chua_hoan_thanh'],
-                    $statistics['summary']['hoan_thanh_mot_phan'] ?? 0
+                    $statistics['summary']['chua_hoan_thanh']
                 ];
                 $colors = [
-                    [22, 163, 74],    // Green
-                    [220, 38, 38],    // Red
-                    [245, 158, 11]    // Amber
+                    [22, 163, 74],    // Green - Đã hoàn thành
+                    [220, 38, 38]     // Red - Chưa hoàn thành
                 ];
                 $labels = [
                     'Đã hoàn thành: ' . $data[0] . ' (' . round(($data[0]/$total)*100, 1) . '%)',
-                    'Chưa hoàn thành: ' . $data[1] . ' (' . round(($data[1]/$total)*100, 1) . '%)',
-                    'Hoàn thành một phần: ' . $data[2] . ' (' . round(($data[2]/$total)*100, 1) . '%)'
+                    'Chưa hoàn thành: ' . $data[1] . ' (' . round(($data[1]/$total)*100, 1) . '%)'
                 ];
             }
             

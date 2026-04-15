@@ -180,8 +180,8 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
     <?php else: ?>
-        <!-- Khi không chọn quý: 3 trạng thái -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <!-- Khi không chọn quý: 2 trạng thái -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <div class="text-sm text-gray-600">Tổng thiết bị</div>
                 <div class="text-2xl font-bold text-blue-700"><?php echo $statistics['summary']['total_plans']; ?></div>
@@ -190,16 +190,13 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
                 <div class="text-sm text-gray-600">Đã hoàn thành</div>
                 <div class="text-2xl font-bold text-green-700"><?php echo $statistics['summary']['da_hoan_thanh']; ?></div>
-            </div>
-            
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                <div class="text-sm text-gray-600">Hoàn thành một phần</div>
-                <div class="text-2xl font-bold text-yellow-700"><?php echo $statistics['summary']['hoan_thanh_mot_phan'] ?? 0; ?></div>
+                <div class="text-xs text-gray-500 mt-1">Đã hoàn thành ít nhất 1 quý</div>
             </div>
             
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                 <div class="text-sm text-gray-600">Chưa hoàn thành</div>
                 <div class="text-2xl font-bold text-red-700"><?php echo $statistics['summary']['chua_hoan_thanh']; ?></div>
+                <div class="text-xs text-gray-500 mt-1">Chưa hoàn thành quý nào</div>
             </div>
         </div>
     <?php endif; ?>
@@ -293,12 +290,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 </li>
                 <li class="mr-2">
                     <button class="tab-button inline-block p-4 border-b-2 border-transparent hover:text-gray-600" 
-                            data-tab="hoan_thanh_mot_phan">
-                        <i class="fas fa-clock mr-1"></i>Hoàn thành một phần (<?php echo $statistics['summary']['hoan_thanh_mot_phan'] ?? 0; ?>)
-                    </button>
-                </li>
-                <li class="mr-2">
-                    <button class="tab-button inline-block p-4 border-b-2 border-transparent hover:text-gray-600" 
                             data-tab="chua_hoan_thanh">
                         <i class="fas fa-exclamation-triangle mr-1"></i>Chưa hoàn thành (<?php echo $statistics['summary']['chua_hoan_thanh']; ?>)
                     </button>
@@ -311,7 +302,7 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php 
     $tabList = !empty($statistics['summary']['selected_qui']) 
         ? ['da_hoan_thanh', 'truoc_han', 'sau_han', 'chua_hoan_thanh']
-        : ['da_hoan_thanh', 'hoan_thanh_mot_phan', 'chua_hoan_thanh'];
+        : ['da_hoan_thanh', 'chua_hoan_thanh'];
     
     foreach ($tabList as $status): 
     ?>
@@ -446,21 +437,18 @@ new Chart(ctxPie, {
 new Chart(ctxPie, {
     type: 'doughnut',
     data: {
-        labels: ['Đã hoàn thành', 'Hoàn thành một phần', 'Chưa hoàn thành'],
+        labels: ['Đã hoàn thành', 'Chưa hoàn thành'],
         datasets: [{
             data: [
                 <?php echo $statistics['summary']['da_hoan_thanh']; ?>,
-                <?php echo $statistics['summary']['hoan_thanh_mot_phan'] ?? 0; ?>,
                 <?php echo $statistics['summary']['chua_hoan_thanh']; ?>
             ],
             backgroundColor: [
                 'rgba(34, 197, 94, 0.8)',   // Green - Đã hoàn thành
-                'rgba(234, 179, 8, 0.8)',   // Yellow - Hoàn thành một phần
                 'rgba(239, 68, 68, 0.8)'    // Red - Chưa hoàn thành
             ],
             borderColor: [
                 'rgb(34, 197, 94)',
-                'rgb(234, 179, 8)',
                 'rgb(239, 68, 68)'
             ],
             borderWidth: 2
@@ -515,8 +503,6 @@ document.querySelectorAll('.tab-button').forEach(button => {
         // Color based on status
         if (targetTab === 'da_hoan_thanh') {
             this.classList.add('border-green-600', 'text-green-600');
-        } else if (targetTab === 'hoan_thanh_mot_phan') {
-            this.classList.add('border-yellow-600', 'text-yellow-600');
         } else if (targetTab === 'truoc_han') {
             this.classList.add('border-teal-600', 'text-teal-600');
         } else if (targetTab === 'sau_han') {

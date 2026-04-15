@@ -474,7 +474,14 @@ require_once __DIR__ . '/views/layouts/header.php';
 </style>
 
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <a href="/iso2/thietbihckd.php" class="back-link">← Quay lại danh sách thiết bị</a>
+    <div class="flex items-center justify-between mb-4">
+        <a href="/iso2/thietbihckd.php" class="back-link">← Quay lại danh sách thiết bị</a>
+        <a href="/iso2/kehoach_thietbi_2026_thongke.php" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm" 
+           style="text-decoration: none;">
+            <i class="fas fa-chart-bar"></i> Xem thống kê
+        </a>
+    </div>
     
     <h1 class="text-2xl font-bold mb-4">📅 Kế hoạch Kiểm định Thiết bị Năm 2026</h1>
         

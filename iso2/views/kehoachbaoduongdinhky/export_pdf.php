@@ -28,10 +28,9 @@
             'chua_hoan_thanh' => ['title' => 'CHI TIẾT - CHƯA HOÀN THÀNH', 'class' => 'status-incomplete']
         ];
     } else {
-        // Khi không chọn quý: 3 trạng thái
+        // Khi không chọn quý: 2 trạng thái
         $statusData = [
             'da_hoan_thanh' => ['title' => 'CHI TIẾT - ĐÃ HOÀN THÀNH', 'class' => 'status-complete'],
-            'hoan_thanh_mot_phan' => ['title' => 'CHI TIẾT - HOÀN THÀNH MỘT PHẦN', 'class' => 'status-partial'],
             'chua_hoan_thanh' => ['title' => 'CHI TIẾT - CHƯA HOÀN THÀNH', 'class' => 'status-incomplete']
         ];
     }
@@ -51,9 +50,8 @@
         <thead>
             <tr style="background-color: #2563eb; color: white;">
                 <th width="5%" style="text-align: center;"><b>STT</b></th>
-                <th width="35%"><b>Tên thiết bị</b></th>
+                <th width="44%"><b>Tên thiết bị</b></th>
                 <th width="15%" style="text-align: center;"><b>Số S/N</b></th>
-                <th width="9%" style="text-align: center;"><b>Nhóm</b></th>
                 <th width="9%" style="text-align: center;"><b>Quý 1</b></th>
                 <th width="9%" style="text-align: center;"><b>Quý 2</b></th>
                 <th width="9%" style="text-align: center;"><b>Quý 3</b></th>
@@ -68,12 +66,8 @@
             ?>
             <tr>
                 <td width="5%" style="text-align: center;"><?php echo $rowNum; ?></td>
-                <td width="35%"><?php echo htmlspecialchars($plan['ten_thietbi'] ?? '-'); ?></td>
+                <td width="44%"><?php echo htmlspecialchars($plan['ten_thietbi'] ?? '-'); ?></td>
                 <td width="15%" style="text-align: center;"><?php echo htmlspecialchars($plan['so_serial'] ?? '-'); ?></td>
-                <td width="9%" style="text-align: center;"><?php 
-                    $nhomsc = $plan['nhomsc'] ?? '-';
-                    echo $nhomsc === 'CNC' ? 'CNM' : htmlspecialchars($nhomsc);
-                ?></td>
                 
                 <?php 
                 // Display quarters

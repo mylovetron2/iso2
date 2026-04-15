@@ -163,7 +163,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <?php if (!empty($item['is_tamdung']) && $item['is_tamdung'] == 1): ?>
                                 <span class="inline-block ml-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded" 
                                       title="Hồ sơ đang tạm dừng">
-                                    <i class="fas fa-pause-circle mr-1"></i>TẠM DỪNG
+                                    <i class="fas fa-pause-circle mr-1"></i>PAUSED
                                 </span>
                             <?php endif; ?>
                         <?php else: ?>
@@ -329,7 +329,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             $isTamDung = !empty($item['is_tamdung']) && $item['is_tamdung'] == 1;
                             $btnColor = $isTamDung ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600';
                             $btnIcon = $isTamDung ? 'fa-play-circle' : 'fa-pause-circle';
-                            $btnText = $isTamDung ? 'Tiếp tục' : 'Tạm dừng';
+                            $btnText = $isTamDung ? 'Resume' : 'Pause';
                             ?>
                             <button 
                                 onclick="openQuanLyTamDungModal('<?php echo htmlspecialchars($item['hoso'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($item['mavt'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($item['somay'], ENT_QUOTES); ?>', <?php echo $isTamDung ? 'true' : 'false'; ?>)" 

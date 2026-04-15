@@ -459,7 +459,21 @@ function loadDevicesForUnit() {
     
     const madv = madvSelect.value;
     
-    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+    // Get phieu and stt for proper validation
+    const phieuInput = document.querySelector('input[name="phieu"]');
+    const phieu = phieuInput ? phieuInput.value.trim() : '';
+    const stt = <?php echo isset($stt) ? $stt : (isset($_GET['id']) ? (int)$_GET['id'] : 0); ?>;
+    
+    // Build API URL
+    let url = `/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`;
+    if (phieu) {
+        url += `&phieu=${encodeURIComponent(phieu)}`;
+    }
+    if (stt) {
+        url += `&excludeStt=${stt}`;
+    }
+    
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -482,9 +496,24 @@ function openDeviceSearch() {
     const panel = document.getElementById('deviceSearchPanel');
     panel.classList.remove('hidden');
     
+    // Get phieu and stt for proper validation
+    const phieuInput = document.querySelector('input[name="phieu"]');
+    const phieu = phieuInput ? phieuInput.value.trim() : '';
+    const stt = <?php echo isset($stt) ? $stt : (isset($_GET['id']) ? (int)$_GET['id'] : 0); ?>;
+    
     // Load devices and show results
     const madv = madvSelect.value;
-    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+    
+    // Build API URL
+    let url = `/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`;
+    if (phieu) {
+        url += `&phieu=${encodeURIComponent(phieu)}`;
+    }
+    if (stt) {
+        url += `&excludeStt=${stt}`;
+    }
+    
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -558,18 +587,30 @@ function displayDeviceResults(devices, query = '') {
         const mavtText = highlightText(device.mavt || '', query);
         const somayText = highlightText(device.somay || '', query);
         const modelText = highlightText(device.model || '', query);
+        const isAvailable = device.is_available !== false;
+        const disabledClass = !isAvailable ? 'opacity-50 cursor-not-allowed' : '';
+        const hoverClass = isAvailable ? 'hover:bg-blue-50 cursor-pointer' : '';
+        const onclickAttr = isAvailable ? `onclick="selectDevice('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay)}', '${escapeHtml(device.model)}', ${isAvailable})"` : '';
+        const statusBadge = !isAvailable ? '<span class="inline-block ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Đang sử dụng</span>' : '';
+        const buttonContent = isAvailable ? '<i class="fas fa-check mr-1"></i>Chọn' : '<i class="fas fa-lock mr-1"></i>Không khả dụng';
+        const buttonClass = isAvailable ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed';
         
         return `
-            <div class="border rounded-lg p-4 mb-3 hover:bg-blue-50 cursor-pointer transition-colors"
-                 onclick="selectDevice('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay)}', '${escapeHtml(device.model)}')">
+            <div class="border rounded-lg p-4 mb-3 transition-colors ${hoverClass} ${disabledClass}"
+                 data-available="${isAvailable}"
+                 ${onclickAttr}>
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
-                        <div class="font-semibold text-lg text-blue-600 mb-1">${mavtText}</div>
+                        <div class="font-semibold text-lg text-blue-600 mb-1">
+                            ${mavtText}
+                            ${statusBadge}
+                        </div>
                         <div class="text-gray-700"><strong>Số máy:</strong> ${somayText}</div>
                         <div class="text-gray-700"><strong>Model:</strong> ${modelText}</div>
+                        ${!isAvailable ? '<div class="text-xs text-red-600 mt-2"><i class="fas fa-info-circle mr-1"></i>Thiết bị này đang được sử dụng trong phiếu khác (chưa bàn giao)</div>' : ''}
                     </div>
-                    <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold text-sm">
-                        <i class="fas fa-check mr-1"></i>Chọn
+                    <button type="button" class="${buttonClass} px-4 py-2 rounded font-semibold text-sm" ${!isAvailable ? 'disabled' : ''}>
+                        ${buttonContent}
                     </button>
                 </div>
             </div>
@@ -580,7 +621,13 @@ function displayDeviceResults(devices, query = '') {
 }
 
 // Select device
-function selectDevice(mavt, somay, model) {
+function selectDevice(mavt, somay, model, isAvailable = true) {
+    // Check if device is available
+    if (!isAvailable) {
+        showNotification('Thiết bị này đang được sử dụng trong phiếu khác (chưa bàn giao). Vui lòng chọn thiết bị khác.', 'error');
+        return;
+    }
+    
     document.getElementById('mavt').value = mavt;
     document.getElementById('somay').value = somay;
     document.getElementById('model').value = model;

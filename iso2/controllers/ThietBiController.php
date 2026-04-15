@@ -104,10 +104,19 @@ class ThietBiController
                 'hosomay' => trim($_POST['hosomay'] ?? ''),
                 'mamay' => trim($_POST['mamay'] ?? '')
             ];
+            
+            // Auto-generate mamay nếu chưa được nhập: mavt-model-somay
+            if (empty($data['mamay'])) {
+                $parts = [];
+                if (!empty($data['mavt'])) $parts[] = $data['mavt'];
+                if (!empty($data['model'])) $parts[] = $data['model'];
+                if (!empty($data['somay'])) $parts[] = $data['somay'];
+                $data['mamay'] = implode('-', $parts);
+            }
 
             $errors = [];
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
-            if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';
+            if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';            if (empty($data['model'])) $errors[] = 'Model không được để trống';            if (empty($data['model'])) $errors[] = 'Model không được để trống';
             if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
             if (empty($data['madv'])) $errors[] = 'Đơn vị không được để trống';
 
@@ -159,10 +168,20 @@ class ThietBiController
                 'hosomay' => trim($_POST['hosomay'] ?? ''),
                 'mamay' => trim($_POST['mamay'] ?? '')
             ];
+            
+            // Auto-generate mamay nếu chưa được nhập: mavt-model-somay
+            if (empty($data['mamay'])) {
+                $parts = [];
+                if (!empty($data['mavt'])) $parts[] = $data['mavt'];
+                if (!empty($data['model'])) $parts[] = $data['model'];
+                if (!empty($data['somay'])) $parts[] = $data['somay'];
+                $data['mamay'] = implode('-', $parts);
+            }
 
             $errors = [];
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
             if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';
+            if (empty($data['model'])) $errors[] = 'Model không được để trống';
             if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
             if (empty($data['madv'])) $errors[] = 'Đơn vị không được để trống';
 

@@ -58,10 +58,11 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
-                    Model
+                    Model <span class="text-red-500">*</span>
                 </label>
                 <input type="text" name="model"
                        value="<?php echo isset($_POST['model']) ? htmlspecialchars($_POST['model']) : htmlspecialchars($item['model']); ?>"
+                       required
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
 
@@ -136,9 +137,13 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Mã máy</label>
+                <label class="block text-gray-700 font-semibold mb-2">
+                    Mã máy
+                    <span class="text-sm text-gray-500 font-normal">(Tự động: mavt-model-somay)</span>
+                </label>
                 <input type="text" name="mamay"
                        value="<?php echo isset($_POST['mamay']) ? htmlspecialchars($_POST['mamay']) : htmlspecialchars($item['mamay']); ?>"
+                       placeholder="VD: TP7-38-452 (hoặc để trống để tự động tạo)"
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
         </div>

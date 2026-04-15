@@ -773,8 +773,19 @@ function loadDevicesForUnit(madv, selectElement) {
         selectElement.disabled = true;
     }
     
+    // Get current phieu number (if adding to existing phieu)
+    const phieuInput = document.querySelector('input[name="phieu"]');
+    const phieu = phieuInput ? phieuInput.value.trim() : '';
+    
+    // Build API URL with phieu parameter if available
+    let url = `/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`;
+    if (phieu) {
+        url += `&phieu=${encodeURIComponent(phieu)}`;
+        console.log('Loading devices for phieu:', phieu);
+    }
+    
     // Load devices for this unit
-    fetch(`/iso2/api/thietbi.php?madv=${encodeURIComponent(madv)}`)
+    fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error('HTTP error ' + response.status);
@@ -842,10 +853,13 @@ function updateMavtDataLists() {
         datalist = document.createElement('datalist');
         datalist.id = datalistId;
         
-        // Populate datalist with available devices (hiển thị mavt)
-        datalist.innerHTML = window.availableDevices.map(d => 
-            `<option value="${d.mavt}">${d.mavt} (${d.somay || ''}) - ${d.tenvt}</option>`
-        ).join('');
+        // Populate datalist with available devices
+        // Add "(Đang sử dụng)" note for unavailable devices
+        datalist.innerHTML = window.availableDevices.map(d => {
+            const isAvailable = d.is_available !== false;
+            const statusNote = !isAvailable ? ' (Đang sử dụng - Không khả dụng)' : '';
+            return `<option value="${d.mavt}">${d.mavt} (${d.somay || ''}) - ${d.tenvt}${statusNote}</option>`;
+        }).join('');
         
         // Attach datalist to input
         displayInput.setAttribute('list', datalistId);
@@ -1011,10 +1025,18 @@ function displaySearchResults(devices, query = '') {
         return 0;
     });
     
-    resultsDiv.innerHTML = sorted.map((device, index) => `
-        <div class="device-result ${index === selectedSearchIndex ? 'selected' : ''} bg-white border-2 border-gray-300 hover:border-green-500 rounded-lg p-3 cursor-pointer transition-all hover:shadow-md group"
+    resultsDiv.innerHTML = sorted.map((device, index) => {
+        const isAvailable = device.is_available !== false; // Default to true if not specified
+        const disabledClass = !isAvailable ? 'opacity-50 cursor-not-allowed' : '';
+        const hoverClass = isAvailable ? 'hover:border-green-500 hover:shadow-md cursor-pointer' : '';
+        const onclickAttr = isAvailable ? `onclick="selectDeviceFromSearch('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay || '')}', '${escapeHtml(device.model || '')}', '${escapeHtml(device.tenvt)}', ${isAvailable})"` : '';
+        const statusBadge = !isAvailable ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Đang sử dụng</span>' : '';
+        
+        return `
+        <div class="device-result ${index === selectedSearchIndex ? 'selected' : ''} bg-white border-2 border-gray-300 ${hoverClass} rounded-lg p-3 transition-all group ${disabledClass}"
              data-index="${index}"
-             onclick="selectDeviceFromSearch('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay || '')}', '${escapeHtml(device.model || '')}', '${escapeHtml(device.tenvt)}')">
+             data-available="${isAvailable}"
+             ${onclickAttr}>
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
@@ -1024,17 +1046,20 @@ function displaySearchResults(devices, query = '') {
                             <i class="fas fa-barcode text-xs mr-1"></i>${highlightText(escapeHtml(device.somay || 'N/A'), query)}
                         </span>
                         ${device.model ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">${highlightText(escapeHtml(device.model), query)}</span>` : ''}
+                        ${statusBadge}
                     </div>
                     <div class="text-sm text-gray-700 mt-1.5">${highlightText(escapeHtml(device.tenvt), query)}</div>
                     ${device.mamay ? `<div class="text-xs text-gray-500 mt-1 font-mono">${highlightText(escapeHtml(device.mamay), query)}</div>` : ''}
+                    ${!isAvailable ? '<div class="text-xs text-red-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Thiết bị này đang được sử dụng trong phiếu khác (chưa bàn giao)</div>' : ''}
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded hidden group-hover:inline-block">Enter để chọn</span>
-                    <i class="fas fa-chevron-right text-gray-400 group-hover:text-green-500 transition-colors"></i>
+                    ${isAvailable ? '<span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded hidden group-hover:inline-block">Enter để chọn</span>' : '<i class="fas fa-lock text-red-400 text-lg"></i>'}
+                    ${isAvailable ? '<i class="fas fa-chevron-right text-gray-400 group-hover:text-green-500 transition-colors"></i>' : ''}
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     // Auto-select first result
     selectedSearchIndex = -1;
@@ -1043,8 +1068,35 @@ function displaySearchResults(devices, query = '') {
 function selectSearchResult(index) {
     const results = document.querySelectorAll('.device-result');
     
+    if (results.length === 0) return;
+    
+    // Ensure index is within bounds
     if (index < 0) index = 0;
     if (index >= results.length) index = results.length - 1;
+    
+    // Skip unavailable devices when navigating with arrow keys
+    let attempts = 0;
+    const maxAttempts = results.length;
+    
+    while (attempts < maxAttempts) {
+        const result = results[index];
+        const isAvailable = result.getAttribute('data-available') === 'true';
+        
+        if (isAvailable) {
+            // Found an available device
+            break;
+        }
+        
+        // Move to next item
+        index++;
+        if (index >= results.length) {
+            index = 0; // Wrap around
+        }
+        attempts++;
+    }
+    
+    // If all devices are unavailable, just select the current index
+    // (validation will prevent actual selection)
     
     // Remove previous selection
     results.forEach(r => r.classList.remove('selected', 'ring-2', 'ring-green-400', 'border-green-500'));
@@ -1064,9 +1116,31 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function selectDeviceFromSearch(mavt, somay, model, tenvt) {
-    // Find first empty device slot or create new one
+function selectDeviceFromSearch(mavt, somay, model, tenvt, isAvailable = true) {
+    // Check if device is available
+    if (!isAvailable) {
+        showNotification('Thiết bị này đang được sử dụng trong phiếu khác (chưa bàn giao). Vui lòng chọn thiết bị khác.', 'error');
+        return;
+    }
+    
+    // Check if device already exists in current form
     const deviceItems = document.querySelectorAll('.device-item');
+    for (let item of deviceItems) {
+        const mavtInput = item.querySelector('.mavt-hidden');
+        const somayInput = item.querySelector('.somay-hidden');
+        
+        if (mavtInput && somayInput) {
+            const existingMavt = mavtInput.value.trim();
+            const existingSomay = somayInput.value.trim();
+            
+            if (existingMavt === mavt && existingSomay === somay) {
+                showNotification(`Thiết bị ${mavt} - S/N: ${somay} đã có trong danh sách. Không thể thêm trùng.`, 'error');
+                return;
+            }
+        }
+    }
+    
+    // Find first empty device slot or create new one
     let targetItem = null;
     
     for (let item of deviceItems) {
@@ -1203,10 +1277,23 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (e.key === 'Enter') {
             e.preventDefault();
             if (selectedSearchIndex >= 0 && results[selectedSearchIndex]) {
-                results[selectedSearchIndex].click();
+                const selectedResult = results[selectedSearchIndex];
+                const isAvailable = selectedResult.getAttribute('data-available') === 'true';
+                
+                if (!isAvailable) {
+                    showNotification('Thiết bị này đang được sử dụng trong phiếu khác (chưa bàn giao). Vui lòng chọn thiết bị khác.', 'error');
+                    return;
+                }
+                
+                selectedResult.click();
             } else if (results.length > 0) {
-                // Select first result if none selected
-                results[0].click();
+                // Select first available result if none selected
+                const firstAvailable = Array.from(results).find(r => r.getAttribute('data-available') === 'true');
+                if (firstAvailable) {
+                    firstAvailable.click();
+                } else {
+                    showNotification('Không có thiết bị khả dụng trong danh sách', 'warning');
+                }
             }
         } else if (e.key === 'Escape') {
             closeQuickSearch();

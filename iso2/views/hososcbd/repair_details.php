@@ -510,7 +510,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div class="w-24">
                     <input type="number" name="nguoi_gio[<?php echo $idx; ?>]" placeholder="Giờ" 
                            value="<?php echo htmlspecialchars($person['giolv']); ?>"
-                           step="0.5" min="0" max="24"
+                           step="0.5" min="0"
                            class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
                            form="repair-form">
                 </div>
@@ -626,7 +626,7 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
             <div class="w-24">
                 <input type="number" name="nguoi_gio[${personIndex}]" placeholder="Giờ" 
-                       step="0.5" min="0" max="24"
+                       step="0.5" min="0"
                        class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
                        form="repair-form">
             </div>
