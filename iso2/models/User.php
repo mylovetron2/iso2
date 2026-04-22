@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/BaseModel.php';
 
 class User extends BaseModel {
+    protected string $primaryKey = 'stt'; // Users table uses 'stt' as primary key
+    
     public function __construct() {
         parent::__construct('users');
     }
@@ -86,5 +88,41 @@ class User extends BaseModel {
         $sql = "UPDATE users SET remember_token = NULL WHERE stt = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$userStt]);
+    }
+    
+    /**
+     * Cập nhật thông tin profile của user
+     */
+    public function updateProfile(int $userStt, array $data): bool {
+        $fields = [];
+        $values = [];
+        
+        if (isset($data['email'])) {
+            $fields[] = 'email = ?';
+            $values[] = $data['email'];
+        }
+        
+        if (isset($data['hoten'])) {
+            $fields[] = 'hoten = ?';
+            $values[] = $data['hoten'];
+        }
+        
+        if (empty($fields)) {
+            return false;
+        }
+        
+        $values[] = $userStt;
+        $sql = "UPDATE users SET " . implode(', ', $fields) . " WHERE stt = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($values);
+    }
+    
+    /**
+     * Cập nhật mật khẩu của user
+     */
+    public function updatePassword(int $userStt, string $hashedPassword): bool {
+        $sql = "UPDATE users SET password = ? WHERE stt = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$hashedPassword, $userStt]);
     }
 }

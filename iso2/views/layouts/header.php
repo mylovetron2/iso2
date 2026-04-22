@@ -79,6 +79,16 @@ if (file_exists($dbSelectionFile)) {
         </div>
         <nav class="flex-1">
             <ul class="space-y-2">
+                <!-- Dashboard -->
+                <?php if (isLoggedIn()): ?>
+                <li>
+                    <a href="/iso2/dashboard.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 bg-gradient-to-r from-blue-600/30 to-transparent border-l-4 border-yellow-400">
+                        <i class="fas fa-chart-pie mr-2 text-yellow-300"></i> 
+                        <span class="font-semibold">Dashboard</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+
                 <!-- 1. Hồ sơ SCBD -->
                 <?php if (isLoggedIn() && hasPermission('hososcbd.view')): ?>
                 <li>
@@ -377,7 +387,13 @@ if (file_exists($dbSelectionFile)) {
         </nav>
         <div class="mt-8 border-t border-blue-600 pt-4">
             <?php if (isLoggedIn()): ?>
-                <div class="mb-2">Hello, <?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
+                <div class="mb-3 px-3">
+                    <div class="text-sm text-blue-200 mb-1">Xin chào,</div>
+                    <div class="font-semibold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
+                </div>
+                <a href="/iso2/profile.php" class="block px-3 py-2 rounded hover:bg-blue-600 mb-2">
+                    <i class="fas fa-user-circle mr-2"></i>Thông tin cá nhân
+                </a>
                 <a href="/iso2/logout.php" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
             <?php else: ?>
                 <a href="login.php" class="block px-3 py-2 rounded hover:bg-blue-600">Login</a>

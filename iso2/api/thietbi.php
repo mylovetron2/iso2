@@ -32,7 +32,7 @@ try {
         $params[] = $phieu;
         $params[] = $phieu;
         
-        $sql = "SELECT t.stt as id, t.mavt, t.tenvt, t.somay,
+        $sql = "SELECT t.stt as id, t.mavt, t.tenvt, t.somay, t.model,
                        CASE 
                            WHEN EXISTS (
                                SELECT 1 FROM hososcbd_iso h 
@@ -60,7 +60,7 @@ try {
         $stmt->execute($params);
     } else {
         // Không có số phiếu: chỉ kiểm tra thiết bị đang được sử dụng (bg=0)
-        $sql = "SELECT t.stt as id, t.mavt, t.tenvt, t.somay,
+        $sql = "SELECT t.stt as id, t.mavt, t.tenvt, t.somay, t.model,
                        CASE 
                            WHEN EXISTS (
                                SELECT 1 FROM hososcbd_iso h 
