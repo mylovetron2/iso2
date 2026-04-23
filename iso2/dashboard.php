@@ -154,61 +154,45 @@ try {
 require_once __DIR__ . '/views/layouts/header.php';
 ?>
 
-<div class="max-w-7xl mx-auto px-4 py-6">
+<div class="max-w-7xl mx-auto px-4 py-8">
     <!-- Header -->
-    <div class="mb-8 pb-5 border-b-2 border-gray-300">
-        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <i class="fas fa-chart-line text-blue-600"></i>
-            Dashboard Thống Kê
-        </h1>
-        <p class="text-gray-600 text-sm mt-2">
-            Tổng quan tình hình quản lý thiết bị và hồ sơ SCBĐ
-        </p>
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p class="text-sm text-gray-500 mt-1">Tổng quan quản lý thiết bị và hồ sơ</p>
     </div>
 
-    <!-- Detailed Statistics -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Statistics Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
         <!-- 1. THIẾT BỊ HỖ TRỢ -->
-        <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-l-4 border-orange-500">
-            <div class="px-5 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
-                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-tools text-orange-600"></i>
-                    Thiết Bị Hỗ Trợ
-                </h2>
+        <div class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div class="px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-700">Thiết Bị Hỗ Trợ</h2>
             </div>
-            <div class="p-5 space-y-3">
+            <div class="p-4 space-y-3">
                 <!-- Sắp hết hạn -->
                 <?php if ($sapHetHan30Ngay > 0): ?>
-                <div class="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-300 rounded-lg p-4 shadow-md hover:shadow-lg transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <span class="text-xs font-medium text-orange-700 uppercase tracking-wide">Cảnh báo</span>
-                            <p class="text-sm font-semibold text-orange-900 mt-1">Sắp hết hạn (30 ngày)</p>
-                        </div>
-                        <div class="bg-orange-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-                            <span class="text-2xl font-bold"><?php echo $sapHetHan30Ngay; ?></span>
+                <div class="bg-orange-50 border border-orange-200 rounded-md p-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="text-xs text-orange-600 font-medium mb-1">Sắp hết hạn (30 ngày)</div>
+                            <div class="text-2xl font-bold text-orange-700"><?php echo $sapHetHan30Ngay; ?></div>
                         </div>
                     </div>
                     <a href="/iso2/thietbihotro.php?trangthai=saphethan" 
-                       class="inline-flex items-center text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-md font-medium transition-colors shadow">
-                        <i class="fas fa-arrow-right mr-1"></i> Xem chi tiết
+                       class="inline-block mt-2 text-xs text-orange-700 hover:text-orange-900 font-medium">
+                        Xem chi tiết →
                     </a>
                     
                     <?php if (count($danhSachSapHetHan) > 0): ?>
-                    <div class="mt-4 pt-3 border-t-2 border-orange-300 space-y-2 max-h-48 overflow-y-auto">
+                    <div class="mt-3 pt-3 border-t border-orange-200 space-y-2 max-h-40 overflow-y-auto">
                         <?php foreach ($danhSachSapHetHan as $tb): ?>
-                        <div class="text-xs bg-white rounded-md p-3 border border-orange-200 shadow hover:shadow-md transition-shadow">
-                            <div class="font-semibold text-gray-800 truncate"><?php echo htmlspecialchars($tb['tenthietbi']); ?></div>
-                            <div class="text-gray-500 mt-1.5">SN: <?php echo htmlspecialchars($tb['serialnumber'] ?? 'N/A'); ?></div>
-                            <div class="flex justify-between items-center mt-2 pt-2 border-t border-orange-100">
-                                <span class="text-gray-500 text-[10px]">
-                                    <i class="far fa-calendar-alt mr-1"></i>
-                                    <?php echo date('d/m/Y', strtotime($tb['ngaykdtt'])); ?>
-                                </span>
-                                <span class="bg-orange-600 text-white px-2 py-0.5 rounded-full font-bold text-[10px]">
-                                    <?php echo $tb['so_ngay_con_lai']; ?> ngày
-                                </span>
+                        <div class="text-xs bg-white rounded p-2 border border-orange-100">
+                            <div class="font-medium text-gray-800 truncate"><?php echo htmlspecialchars($tb['tenthietbi']); ?></div>
+                            <div class="text-gray-500 mt-1">SN: <?php echo htmlspecialchars($tb['serialnumber'] ?? 'N/A'); ?></div>
+                            <div class="flex justify-between items-center mt-1.5 text-[10px]">
+                                <span class="text-gray-400"><?php echo date('d/m/Y', strtotime($tb['ngaykdtt'])); ?></span>
+                                <span class="text-orange-600 font-semibold"><?php echo $tb['so_ngay_con_lai']; ?> ngày</span>
                             </div>
                         </div>
                         <?php endforeach; ?>
@@ -218,69 +202,49 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endif; ?>
                 
                 <!-- Stats -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center py-2.5 px-3 bg-green-50 rounded-md border border-green-200">
-                        <span class="text-sm text-green-800 font-medium">
-                            <i class="fas fa-check-circle mr-1"></i>
-                            Còn hạn
-                        </span>
-                        <span class="font-bold text-green-700 text-base"><?php echo number_format($tbhtConHan); ?></span>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                        <span class="text-gray-600">Còn hạn</span>
+                        <span class="font-semibold text-gray-900"><?php echo number_format($tbhtConHan); ?></span>
                     </div>
-                    <div class="flex justify-between items-center py-2.5 px-3 bg-red-50 rounded-md border border-red-200">
-                        <span class="text-sm text-red-800 font-medium">
-                            <i class="fas fa-times-circle mr-1"></i>
-                            Hết hạn
-                        </span>
-                        <span class="font-bold text-red-700 text-base"><?php echo number_format($tbhtHetHan); ?></span>
+                    <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                        <span class="text-gray-600">Hết hạn</span>
+                        <span class="font-semibold text-red-600"><?php echo number_format($tbhtHetHan); ?></span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- 2. GIAO NHẬN THIẾT BỊ -->
-        <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-l-4 border-blue-500">
-            <div class="px-5 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-exchange-alt text-blue-600"></i>
-                    Giao Nhận Thiết Bị
-                </h2>
+        <div class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div class="px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-700">Giao Nhận Thiết Bị</h2>
             </div>
-            <div class="p-5 space-y-3">
+            <div class="p-4 space-y-3">
                 <!-- Đang kiểm định -->
                 <?php if ($dangKiemDinh > 0): ?>
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4 shadow-md hover:shadow-lg transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <span class="text-xs font-medium text-blue-700 uppercase tracking-wide">Đang xử lý</span>
-                            <p class="text-sm font-semibold text-blue-900 mt-1">Đang kiểm định</p>
-                        </div>
-                        <div class="bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-                            <span class="text-2xl font-bold"><?php echo $dangKiemDinh; ?></span>
+                <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="text-xs text-blue-600 font-medium mb-1">Đang kiểm định</div>
+                            <div class="text-2xl font-bold text-blue-700"><?php echo $dangKiemDinh; ?></div>
                         </div>
                     </div>
                     <a href="/iso2/giaonhanthietbi.php?trangthai=dang_kiem_dinh" 
-                       class="inline-flex items-center text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium transition-colors shadow">
-                        <i class="fas fa-arrow-right mr-1"></i> Xem chi tiết
+                       class="inline-block mt-2 text-xs text-blue-700 hover:text-blue-900 font-medium">
+                        Xem chi tiết →
                     </a>
                     
                     <?php if (count($danhSachDangKiemDinh) > 0): ?>
-                    <div class="mt-4 pt-3 border-t-2 border-blue-300 space-y-2 max-h-48 overflow-y-auto">
+                    <div class="mt-3 pt-3 border-t border-blue-200 space-y-2 max-h-40 overflow-y-auto">
                         <?php foreach ($danhSachDangKiemDinh as $phieu): ?>
                         <a href="/iso2/giaonhanthietbi.php?action=view&id=<?php echo $phieu['id']; ?>" 
-                           class="block text-xs bg-white rounded-md p-3 border border-blue-200 shadow hover:shadow-md hover:border-blue-400 transition-all">
-                            <div class="font-semibold text-gray-800">
-                                <i class="fas fa-file-alt text-blue-600 mr-1"></i>
-                                Phiếu #<?php echo $phieu['id']; ?> - <?php echo htmlspecialchars($phieu['nguoi_giao']); ?>
-                            </div>
-                            <div class="text-gray-500 mt-1.5"><?php echo htmlspecialchars($phieu['ten_donvi_giao'] ?? 'N/A'); ?></div>
-                            <div class="flex justify-between items-center mt-2 pt-2 border-t border-blue-100">
-                                <span class="text-gray-500 text-[10px]">
-                                    <i class="far fa-calendar mr-1"></i>
-                                    <?php echo date('d/m/Y', strtotime($phieu['ngay_giao'])); ?>
-                                </span>
-                                <span class="bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold text-[10px]">
-                                    <?php echo $phieu['tong_thietbi'] ?? 0; ?> TB
-                                </span>
+                           class="block text-xs bg-white rounded p-2 border border-blue-100 hover:border-blue-300 transition-colors">
+                            <div class="font-medium text-gray-800">Phiếu #<?php echo $phieu['id']; ?> - <?php echo htmlspecialchars($phieu['nguoi_giao']); ?></div>
+                            <div class="text-gray-500 mt-1"><?php echo htmlspecialchars($phieu['ten_donvi_giao'] ?? 'N/A'); ?></div>
+                            <div class="flex justify-between items-center mt-1.5 text-[10px]">
+                                <span class="text-gray-400"><?php echo date('d/m/Y', strtotime($phieu['ngay_giao'])); ?></span>
+                                <span class="text-blue-600 font-semibold"><?php echo $phieu['tong_thietbi'] ?? 0; ?> TB</span>
                             </div>
                         </a>
                         <?php endforeach; ?>
@@ -291,39 +255,28 @@ require_once __DIR__ . '/views/layouts/header.php';
                 
                 <!-- Đã nhận -->
                 <?php if ($daNhan > 0): ?>
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 shadow-md hover:shadow-lg transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <span class="text-xs font-medium text-green-700 uppercase tracking-wide">Chờ xử lý</span>
-                            <p class="text-sm font-semibold text-green-900 mt-1">Đã nhận (chưa gửi KĐ)</p>
-                        </div>
-                        <div class="bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-                            <span class="text-2xl font-bold"><?php echo $daNhan; ?></span>
+                <div class="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="text-xs text-green-600 font-medium mb-1">Đã nhận (chưa gửi KĐ)</div>
+                            <div class="text-2xl font-bold text-green-700"><?php echo $daNhan; ?></div>
                         </div>
                     </div>
                     <a href="/iso2/giaonhanthietbi.php?trangthai=da_nhan" 
-                       class="inline-flex items-center text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md font-medium transition-colors shadow">
-                        <i class="fas fa-arrow-right mr-1"></i> Xem chi tiết
+                       class="inline-block mt-2 text-xs text-green-700 hover:text-green-900 font-medium">
+                        Xem chi tiết →
                     </a>
                     
                     <?php if (count($danhSachDaNhan) > 0): ?>
-                    <div class="mt-4 pt-3 border-t-2 border-green-300 space-y-2 max-h-48 overflow-y-auto">
+                    <div class="mt-3 pt-3 border-t border-green-200 space-y-2 max-h-40 overflow-y-auto">
                         <?php foreach ($danhSachDaNhan as $phieu): ?>
                         <a href="/iso2/giaonhanthietbi.php?action=view&id=<?php echo $phieu['id']; ?>" 
-                           class="block text-xs bg-white rounded-md p-3 border border-green-200 shadow hover:shadow-md hover:border-green-400 transition-all">
-                            <div class="font-semibold text-gray-800">
-                                <i class="fas fa-file-alt text-green-600 mr-1"></i>
-                                Phiếu #<?php echo $phieu['id']; ?> - <?php echo htmlspecialchars($phieu['nguoi_giao']); ?>
-                            </div>
-                            <div class="text-gray-500 mt-1.5"><?php echo htmlspecialchars($phieu['ten_donvi_giao'] ?? 'N/A'); ?></div>
-                            <div class="flex justify-between items-center mt-2 pt-2 border-t border-green-100">
-                                <span class="text-gray-500 text-[10px]">
-                                    <i class="far fa-calendar mr-1"></i>
-                                    <?php echo date('d/m/Y', strtotime($phieu['ngay_giao'])); ?>
-                                </span>
-                                <span class="bg-green-600 text-white px-2 py-0.5 rounded-full font-bold text-[10px]">
-                                    <?php echo $phieu['tong_thietbi'] ?? 0; ?> TB
-                                </span>
+                           class="block text-xs bg-white rounded p-2 border border-green-100 hover:border-green-300 transition-colors">
+                            <div class="font-medium text-gray-800">Phiếu #<?php echo $phieu['id']; ?> - <?php echo htmlspecialchars($phieu['nguoi_giao']); ?></div>
+                            <div class="text-gray-500 mt-1"><?php echo htmlspecialchars($phieu['ten_donvi_giao'] ?? 'N/A'); ?></div>
+                            <div class="flex justify-between items-center mt-1.5 text-[10px]">
+                                <span class="text-gray-400"><?php echo date('d/m/Y', strtotime($phieu['ngay_giao'])); ?></span>
+                                <span class="text-green-600 font-semibold"><?php echo $phieu['tong_thietbi'] ?? 0; ?> TB</span>
                             </div>
                         </a>
                         <?php endforeach; ?>
@@ -333,65 +286,43 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endif; ?>
                 
                 <!-- Stats -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center py-2.5 px-3 bg-gray-50 rounded-md border border-gray-200">
-                        <span class="text-sm text-gray-700 font-medium">
-                            <i class="fas fa-check-double mr-1"></i>
-                            Đã giao (hoàn thành)
-                        </span>
-                        <span class="font-bold text-gray-800 text-base"><?php echo number_format($daGiao); ?></span>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                        <span class="text-gray-600">Đã giao (hoàn thành)</span>
+                        <span class="font-semibold text-gray-900"><?php echo number_format($daGiao); ?></span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- 3. HỒ SƠ SCBĐ -->
-        <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-l-4 border-red-500">
-            <div class="px-5 py-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-white">
-                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-folder-open text-red-600"></i>
-                    Hồ Sơ SCBĐ
-                </h2>
+        <div class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+            <div class="px-4 py-3 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-700">Hồ Sơ SCBĐ</h2>
             </div>
-            <div class="p-5 space-y-3">
-                <!-- Stats Grid -->
-                <div class="space-y-3">
+            <div class="p-4">
+                <div class="space-y-2">
                     <?php if ($chuaThucHien > 0): ?>
                     <a href="/iso2/hososcbd.php?trangthai=chuath" 
-                       class="flex justify-between items-center py-4 px-4 bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-300 rounded-lg hover:shadow-md transition-all">
-                        <div>
-                            <span class="text-xs font-medium text-gray-600 uppercase tracking-wide block">Chờ thực hiện</span>
-                            <span class="text-sm font-semibold text-gray-900 mt-0.5 block">Chưa thực hiện</span>
-                        </div>
-                        <div class="bg-gray-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md">
-                            <span class="text-xl font-bold"><?php echo $chuaThucHien; ?></span>
-                        </div>
+                       class="flex justify-between items-center py-3 px-3 bg-gray-50 hover:bg-gray-100 rounded transition-colors">
+                        <span class="text-sm text-gray-700">Chưa thực hiện</span>
+                        <span class="text-lg font-bold text-gray-900"><?php echo $chuaThucHien; ?></span>
                     </a>
                     <?php endif; ?>
                     
                     <?php if ($dangLam > 0): ?>
                     <a href="/iso2/hososcbd.php?trangthai=danglam" 
-                       class="flex justify-between items-center py-4 px-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-lg hover:shadow-md transition-all">
-                        <div>
-                            <span class="text-xs font-medium text-yellow-700 uppercase tracking-wide block">Đang xử lý</span>
-                            <span class="text-sm font-semibold text-yellow-900 mt-0.5 block">Đang làm</span>
-                        </div>
-                        <div class="bg-yellow-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md">
-                            <span class="text-xl font-bold"><?php echo $dangLam; ?></span>
-                        </div>
+                       class="flex justify-between items-center py-3 px-3 bg-yellow-50 hover:bg-yellow-100 rounded transition-colors">
+                        <span class="text-sm text-yellow-800">Đang làm</span>
+                        <span class="text-lg font-bold text-yellow-700"><?php echo $dangLam; ?></span>
                     </a>
                     <?php endif; ?>
                     
                     <?php if ($chuaBanGiao > 0): ?>
                     <a href="/iso2/hososcbd.php?trangthai=chuabg" 
-                       class="flex justify-between items-center py-4 px-4 bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-lg hover:shadow-md transition-all">
-                        <div>
-                            <span class="text-xs font-medium text-orange-700 uppercase tracking-wide block">Cần bàn giao</span>
-                            <span class="text-sm font-semibold text-orange-900 mt-0.5 block">Chưa bàn giao</span>
-                        </div>
-                        <div class="bg-orange-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md">
-                            <span class="text-xl font-bold"><?php echo $chuaBanGiao; ?></span>
-                        </div>
+                       class="flex justify-between items-center py-3 px-3 bg-orange-50 hover:bg-orange-100 rounded transition-colors">
+                        <span class="text-sm text-orange-800">Chưa bàn giao</span>
+                        <span class="text-lg font-bold text-orange-700"><?php echo $chuaBanGiao; ?></span>
                     </a>
                     <?php endif; ?>
                 </div>
@@ -400,8 +331,8 @@ require_once __DIR__ . '/views/layouts/header.php';
     </div>
 
     <!-- Footer -->
-    <div class="mt-8 text-center">
-        <p class="text-xs text-gray-400">Dữ liệu được cập nhật tự động</p>
+    <div class="mt-6 text-center">
+        <p class="text-xs text-gray-400">Cập nhật tự động</p>
     </div>
 </div>
 
