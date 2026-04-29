@@ -125,7 +125,7 @@ class HoSoScBdController
                             'description' => "Tạo {$successCount} hồ sơ mới: " . implode(', ', $deviceList)
                         ]);
                         
-                        header("Location: /iso2/hososcbd.php?success=created&count={$successCount}");
+                        header("Location: /iso2/phieuyeucau.php?action=view&phieu=" . urlencode($commonData['phieu']));
                         exit;
                     }
                     $errors[] = 'Có lỗi xảy ra khi tạo hồ sơ';

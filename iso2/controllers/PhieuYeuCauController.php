@@ -342,7 +342,7 @@ class PhieuYeuCauController
                 $mavt[$i] = $device['mavt'] ?? '';
                 $model[$i] = $device['model'] ?? '';
                 $somay[$i] = $device['somay'] ?? '';
-                $tinhtrang[$i] = $device['ttktbefore'] ?? '';
+                $tinhtrang[$i] = $device['honghoc'] ?? '';
                 $yeucau[$i] = $device['cv'] ?? '';
                 $vitri[$i] = $device['vitrimaybd'] ?? '';
             }

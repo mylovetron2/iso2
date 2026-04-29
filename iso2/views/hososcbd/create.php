@@ -249,9 +249,14 @@ function getPrefillValue($field, $default = '') {
                 <div class="relative mb-2">
                     <input type="text" id="quickSearchInput" 
                            placeholder="🔍 Tìm thiết bị: Gõ mã vật tư, số máy, tên... (dùng ↑↓ Enter)"
-                           class="w-full px-4 py-3 pl-10 pr-20 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:border-yellow-600 text-base shadow-sm"
+                           class="w-full px-4 py-3 pl-10 pr-28 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:border-yellow-600 text-base shadow-sm"
                            autocomplete="off">
                     <i class="fas fa-search absolute left-3 top-4 text-yellow-500"></i>
+                    <button type="button" onclick="refreshDeviceList()" 
+                            class="absolute right-14 top-2.5 text-blue-600 hover:text-blue-800 bg-white hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                            title="Tải lại danh sách thiết bị">
+                        <i class="fas fa-sync-alt text-lg"></i>
+                    </button>
                     <button type="button" onclick="closeQuickSearch()" 
                             class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 bg-white hover:bg-gray-100 px-2 py-1 rounded transition-colors">
                         <i class="fas fa-times text-lg"></i>
@@ -983,6 +988,57 @@ function closeQuickSearch() {
     document.getElementById('quickSearchInput').value = '';
     document.getElementById('quickSearchResults').innerHTML = '';
     selectedSearchIndex = -1;
+}
+
+function refreshDeviceList() {
+    const madvSelect = document.querySelector('select[name="madv"]');
+    
+    if (!madvSelect || !madvSelect.value) {
+        showNotification('Vui lòng chọn đơn vị trước khi tải lại danh sách', 'warning');
+        return;
+    }
+    
+    // Show loading notification
+    const refreshBtn = event.target.closest('button');
+    const originalHTML = refreshBtn.innerHTML;
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-lg"></i>';
+    
+    // Clear search input and results
+    document.getElementById('quickSearchInput').value = '';
+    document.getElementById('quickSearchResults').innerHTML = `
+        <div class="text-center py-6">
+            <i class="fas fa-spinner fa-spin text-blue-600 text-3xl mb-2"></i>
+            <p class="text-gray-600">Đang tải lại danh sách thiết bị...</p>
+        </div>
+    `;
+    
+    // Reload devices
+    loadDevicesForUnit(madvSelect.value, null);
+    
+    // Wait a bit then show results and restore button
+    setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalHTML;
+        
+        // Show all devices after reload
+        if (window.availableDevices && window.availableDevices.length > 0) {
+            displaySearchResults(window.availableDevices);
+            showNotification(`Đã tải lại ${window.availableDevices.length} thiết bị`, 'success');
+        } else {
+            document.getElementById('quickSearchResults').innerHTML = `
+                <div class="text-center py-6 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                    <i class="fas fa-inbox text-gray-300 text-4xl mb-2"></i>
+                    <p class="text-gray-600 mb-2">Không tìm thấy thiết bị nào</p>
+                    <p class="text-sm text-gray-500">Vui lòng sử dụng nút "Nhập thủ công" bên dưới</p>
+                </div>
+            `;
+            showNotification('Không tìm thấy thiết bị nào cho đơn vị này', 'info');
+        }
+        
+        // Focus search input
+        document.getElementById('quickSearchInput').focus();
+    }, 500);
 }
 
 function highlightText(text, query) {
