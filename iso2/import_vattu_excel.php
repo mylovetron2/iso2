@@ -86,7 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
         // Đọc file Excel
         $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
         $worksheet = $spreadsheet->getActiveSheet();
-        $rows = $worksheet->toArray();
+        
+        // Đọc dữ liệu với các tùy chọn giữ nguyên giá trị
+        // Tham số: null, calculateFormulas=true, formatData=true, returnCellRef=false
+        $rows = $worksheet->toArray(null, true, false, false);
         
         // Bỏ qua dòng header (dòng đầu tiên)
         array_shift($rows);
@@ -129,14 +132,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
             // H: ĐVT tiếng Nga
             // I: ĐVT tiếng Việt
             // J: Số lượng tồn
-            // K: Đơn giá
-            // L: Ngày nhận (dd/mm/yyyy)
-            // M: Số hợp đồng
-            // N: Ngày ký HĐ (dd/mm/yyyy)
-            // O: Người quản lý
-            // P: Vị trí bảo quản
-            // Q: Phân loại (mã hoặc tên)
-            // R: Số Serial
+            // K: Đơn giá (VNĐ)
+            // L: Đơn giá (USD)
+            // M: Ngày nhận (dd/mm/yyyy)
+            // N: Số hợp đồng
+            // O: Ngày ký HĐ (dd/mm/yyyy)
+            // P: Người quản lý
+            // Q: Vị trí bảo quản
+            // R: Phân loại (mã hoặc tên)
+            // S: Số Serial
             
             $mavattu = trim($row[1] ?? '');
             if (empty($mavattu)) {
@@ -145,9 +149,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                 continue;
             }
             
-            // Map phân loại (cột Q)
+            // Map phân loại (cột R)
             $phanloai_id = $defaultPhanLoaiId; // Mặc định
-            $phanloaiInput = trim($row[16] ?? '');
+            $phanloaiInput = trim($row[17] ?? '');
             if (!empty($phanloaiInput)) {
                 $phanloaiUpper = strtoupper($phanloaiInput);
                 if (isset($phanLoaiMap[$phanloaiUpper])) {
@@ -167,19 +171,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
             
             // Chuyển đổi ngày tháng từ Excel
             $ngaynhan = null;
-            if (!empty($row[11])) {
-                $ngaynhan = convertExcelDate($row[11]);
+            if (!empty($row[12])) {
+                $ngaynhan = convertExcelDate($row[12]);
             }
             
             $ngaykyhd = null;
-            if (!empty($row[13])) {
-                $ngaykyhd = convertExcelDate($row[13]);
+            if (!empty($row[14])) {
+                $ngaykyhd = convertExcelDate($row[14]);
             }
             
             // Prepare data
             $data = [
                 'mavattu' => $mavattu,
-                'so_serial' => trim($row[17] ?? '') ?: null,
+                'so_serial' => trim($row[18] ?? '') ?: null,
                 'phanloai_id' => $phanloai_id,
                 'vi_tri_sap_xep' => !empty($row[0]) ? (int)$row[0] : 999,
                 'ten_tienganh' => trim($row[2] ?? '') ?: null,
@@ -189,13 +193,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                 'dactinhkt_tiengviet' => trim($row[6] ?? '') ?: null,
                 'dvt_tiengnga' => trim($row[7] ?? '') ?: null,
                 'dvt_tiengviet' => trim($row[8] ?? '') ?: null,
-                'soluong_conlai' => !empty($row[9]) ? (float)$row[9] : null,
-                'dongia' => !empty($row[10]) ? (float)$row[10] : null,
+                'soluong_conlai' => !empty($row[9]) ? floatval($row[9]) : null,
+                'dongia' => !empty($row[10]) && is_numeric($row[10]) ? floatval($row[10]) : null,
+                'dongia_usd' => !empty($row[11]) && is_numeric($row[11]) ? floatval($row[11]) : null,
                 'ngaynhan' => $ngaynhan,
-                'sohd' => trim($row[12] ?? '') ?: null,
+                'sohd' => trim($row[13] ?? '') ?: null,
                 'ngaykyhd' => $ngaykyhd,
-                'nguoiquanly' => trim($row[14] ?? '') ?: null,
-                'vitribaoquan' => trim($row[15] ?? '') ?: null,
+                'nguoiquanly' => trim($row[15] ?? '') ?: null,
+                'vitribaoquan' => trim($row[16] ?? '') ?: null,
                 'ghichu' => null,
             ];
             
@@ -204,12 +209,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                 $sql = "INSERT INTO vattu_thanh_ly_iso (
                     mavattu, so_serial, phanloai_id, vi_tri_sap_xep, ten_tienganh, ten_tiengnga, ten_tiengviet,
                     dactinhkt_tiengnga, dactinhkt_tiengviet,
-                    dvt_tiengnga, dvt_tiengviet, soluong_conlai, dongia, ngaynhan,
+                    dvt_tiengnga, dvt_tiengviet, soluong_conlai, dongia, dongia_usd, ngaynhan,
                     sohd, ngaykyhd, nguoiquanly, vitribaoquan, ghichu
                 ) VALUES (
                     :mavattu, :so_serial, :phanloai_id, :vi_tri_sap_xep, :ten_tienganh, :ten_tiengnga, :ten_tiengviet,
                     :dactinhkt_tiengnga, :dactinhkt_tiengviet,
-                    :dvt_tiengnga, :dvt_tiengviet, :soluong_conlai, :dongia, :ngaynhan,
+                    :dvt_tiengnga, :dvt_tiengviet, :soluong_conlai, :dongia, :dongia_usd, :ngaynhan,
                     :sohd, :ngaykyhd, :nguoiquanly, :vitribaoquan, :ghichu
                 )";
                 
@@ -336,14 +341,15 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <tr><td class="px-2 py-1 border text-center font-mono">H</td><td class="px-2 py-1 border">ĐVT tiếng Nga</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">Cái</td></tr>
                     <tr><td class="px-2 py-1 border text-center font-mono">I</td><td class="px-2 py-1 border">ĐVT tiếng Việt</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">Cái</td></tr>
                     <tr><td class="px-2 py-1 border text-center font-mono">J</td><td class="px-2 py-1 border">Số lượng tồn</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">50</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">K</td><td class="px-2 py-1 border">Đơn giá</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">50500</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">L</td><td class="px-2 py-1 border">Ngày nhận</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">20/11/2025</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">M</td><td class="px-2 py-1 border">Số HĐ</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">0044/25/DV-LSTE</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">N</td><td class="px-2 py-1 border">Ngày ký HĐ</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">20/07/2025</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">O</td><td class="px-2 py-1 border">Người quản lý</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">T.N Sang</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">P</td><td class="px-2 py-1 border">Vị trí bảo quản</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">P1. Nga</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">Q</td><td class="px-2 py-1 border">Phân loại</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">VT hoặc Vật tư</td></tr>
-                    <tr><td class="px-2 py-1 border text-center font-mono">R</td><td class="px-2 py-1 border">Số Serial</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">SN123456</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">K</td><td class="px-2 py-1 border">Đơn giá (VNĐ)</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">50500</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">L</td><td class="px-2 py-1 border">Đơn giá (USD)</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">2.15</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">M</td><td class="px-2 py-1 border">Ngày nhận</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">20/11/2025</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">N</td><td class="px-2 py-1 border">Số HĐ</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">0044/25/DV-LSTE</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">O</td><td class="px-2 py-1 border">Ngày ký HĐ</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">20/07/2025</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">P</td><td class="px-2 py-1 border">Người quản lý</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">T.N Sang</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">Q</td><td class="px-2 py-1 border">Vị trí bảo quản</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border">P1. Nga</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">R</td><td class="px-2 py-1 border">Phân loại</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">VT hoặc Vật tư</td></tr>
+                    <tr><td class="px-2 py-1 border text-center font-mono">S</td><td class="px-2 py-1 border">Số Serial</td><td class="px-2 py-1 border text-center">-</td><td class="px-2 py-1 border font-mono">SN123456</td></tr>
                 </tbody>
             </table>
         </div>

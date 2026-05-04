@@ -421,6 +421,10 @@ button.text-red-600:hover {
                         <i class="fas fa-file-excel mr-3 text-emerald-600 w-5"></i>
                         <span>Import Excel</span>
                     </a>
+                    <a href="import_vattu_compare.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-file-import mr-3 text-teal-600 w-5"></i>
+                        <span>Import Excel (So sánh mã)</span>
+                    </a>
                     <?php endif; ?>
                     <a href="thongke_vattu_thanh_ly.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
                         <i class="fas fa-chart-bar mr-3 text-purple-600 w-5"></i>
@@ -471,7 +475,8 @@ button.text-red-600:hover {
                         <th class="px-4 py-2 border text-left">Tên (TA/Nga/Việt)</th>
                         <th class="px-4 py-2 border text-center">ĐVT</th>
                         <th class="px-4 py-2 border text-right">SL còn lại</th>
-                        <th class="px-4 py-2 border text-right">Đơn giá</th>
+                        <th class="px-4 py-2 border text-right">Đơn giá (VNĐ)</th>
+                        <th class="px-4 py-2 border text-right">Đơn giá (USD)</th>
                         <th class="px-4 py-2 border text-center">Ngày nhận</th>
                         <th class="px-4 py-2 border text-center">Số HĐ</th>
                         <th class="px-4 py-2 border text-left">Người quản lý</th>
@@ -482,7 +487,7 @@ button.text-red-600:hover {
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>Không có vật tư nào</p>
                         </td>
@@ -543,6 +548,9 @@ button.text-red-600:hover {
                         </td>
                         <td class="px-4 py-2 border text-right">
                             <?php echo $item['dongia'] ? number_format($item['dongia'], 0) : '-'; ?>
+                        </td>
+                        <td class="px-4 py-2 border text-right">
+                            <?php echo $item['dongia_usd'] ? number_format($item['dongia_usd'], 2) : '-'; ?>
                         </td>
                         <td class="px-4 py-2 border text-center">
                             <?php echo $item['ngaynhan'] ? date('d/m/Y', strtotime($item['ngaynhan'])) : '-'; ?>

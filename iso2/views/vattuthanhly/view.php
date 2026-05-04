@@ -307,10 +307,18 @@ h6 {
                             </tr>
                             <tr class="border-b hover:bg-gray-50">
                                 <th class="py-2 text-left text-gray-700">
-                                    <i class="fas fa-tag text-blue-600 mr-1"></i> Đơn giá
+                                    <i class="fas fa-tag text-blue-600 mr-1"></i> Đơn giá (VNĐ)
                                 </th>
                                 <td class="py-2 text-right font-bold">
                                     <?php echo $vattu['dongia'] ? number_format($vattu['dongia'], 0) . ' ₫' : '-'; ?>
+                                </td>
+                            </tr>
+                            <tr class="border-b hover:bg-gray-50">
+                                <th class="py-2 text-left text-gray-700">
+                                    <i class="fas fa-dollar-sign text-green-600 mr-1"></i> Đơn giá (USD)
+                                </th>
+                                <td class="py-2 text-right font-bold">
+                                    <?php echo $vattu['dongia_usd'] ? number_format($vattu['dongia_usd'], 2) . ' $' : '-'; ?>
                                 </td>
                             </tr>
                             <tr class="border-b hover:bg-blue-50">

@@ -52,14 +52,15 @@ try {
         'H1' => 'ĐVT tiếng Nga',
         'I1' => 'ĐVT tiếng Việt',
         'J1' => 'Số lượng tồn',
-        'K1' => 'Đơn giá',
-        'L1' => 'Ngày nhận',
-        'M1' => 'Số HĐ',
-        'N1' => 'Ngày ký HĐ',
-        'O1' => 'Người quản lý',
-        'P1' => 'Vị trí bảo quản',
-        'Q1' => 'Phân loại',
-        'R1' => 'Số Serial',
+        'K1' => 'Đơn giá (VNĐ)',
+        'L1' => 'Đơn giá (USD)',
+        'M1' => 'Ngày nhận',
+        'N1' => 'Số HĐ',
+        'O1' => 'Ngày ký HĐ',
+        'P1' => 'Người quản lý',
+        'Q1' => 'Vị trí bảo quản',
+        'R1' => 'Phân loại',
+        'S1' => 'Số Serial',
     ];
 
     foreach ($headers as $cell => $value) {
@@ -89,12 +90,12 @@ try {
         ],
     ];
 
-    $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+    $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
 
     // Column widths
     $widths = ['A' => 8, 'B' => 20, 'C' => 30, 'D' => 30, 'E' => 30, 'F' => 35, 'G' => 35,
-               'H' => 15, 'I' => 15, 'J' => 12, 'K' => 15, 'L' => 15, 'M' => 18,
-               'N' => 15, 'O' => 20, 'P' => 20, 'Q' => 15, 'R' => 15];
+               'H' => 15, 'I' => 15, 'J' => 12, 'K' => 15, 'L' => 15, 'M' => 15, 'N' => 18,
+               'O' => 15, 'P' => 20, 'Q' => 20, 'R' => 15, 'S' => 15];
     
     foreach ($widths as $col => $width) {
         $sheet->getColumnDimension($col)->setWidth($width);
@@ -108,13 +109,13 @@ try {
          'Tụ điện ALUM 22UF 20% 450V RADIAL TH', 
          'Конденсатор ALUM 22мкФ 20% 450V RADIAL Размер: max Φ 20.00mm Kích thước: max Φ 20.00mm',
          'Tụ điện ALUM 22UF 20% 450V RADIAL Kích thước: max Φ 20.00mm',
-         'Cái', 'Cái', 50, 50500, '20/11/2025', '0044/25/DV-LSTE', 
+         'Cái', 'Cái', 50, 50500, 2.15, '20/11/2025', '0044/25/DV-LSTE', 
          '20/07/2025', 'T.N Sang', 'P1. Nga', 'Vật tư', ''],
         [2, '011.002.00859', 'RES 1K OHM 1W 1% AXIAL', 'Резистор 1K OHM 1W 1% AXIAL', 
          'Điện trở 1K OHM 1W 1% AXIAL',
          'Резистор 1K OHM, 1W, ±0.1%, ≥50ppm/°C, AXIAL, термостойкий ≥ 175°C',
          'Điện trở 1K OHM, 1W, ±0.1%, ≥50ppm/°C, AXIAL',
-         'Cái', 'Cái', 8, 295000, '20/11/2025', '0044/25/DV-LSTE', 
+         'Cái', 'Cái', 8, 295000, 12.55, '20/11/2025', '0044/25/DV-LSTE', 
          '20/07/2025', 'T.N Sang', 'P1. Nga', 'Vật tư', ''],
     ];
 
@@ -141,7 +142,7 @@ try {
         ],
     ];
 
-    $sheet->getStyle('A2:R' . ($row - 1))->applyFromArray($dataStyle);
+    $sheet->getStyle('A2:S' . ($row - 1))->applyFromArray($dataStyle);
 
     // Notes
     $noteRow = $row + 2;

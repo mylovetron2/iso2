@@ -122,6 +122,13 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
+                <label class="block font-medium mb-2">Đơn giá (USD)</label>
+                <input type="number" step="0.01" name="dongia_usd" 
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="0.00">
+            </div>
+
+            <div>
                 <label class="block font-medium mb-2">Ngày nhận</label>
                 <input type="date" name="ngaynhan" 
                        class="w-full border rounded px-3 py-2">

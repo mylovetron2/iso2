@@ -30,6 +30,12 @@ $devices = $detail['devices'];
                title="In phiếu YC">
                 <i class="fas fa-file-word mr-1"></i> In phiếu YC
             </a>
+            <a href="phieuyeucau.php?action=exportworddetail&phieu=<?php echo urlencode($summary['phieu']); ?>" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+               target="_blank"
+               title="In danh sách thiết bị chi tiết">
+                <i class="fas fa-file-word mr-1"></i> In chi tiết
+            </a>
             <a href="phieuyeucau.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                 <i class="fas fa-arrow-left mr-1"></i> Quay lại
             </a>

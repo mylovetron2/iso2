@@ -388,6 +388,35 @@ class PhieuYeuCauController
     }
 
     /**
+     * Export danh sách thiết bị chi tiết (với BDDK) ra Word/Excel
+     */
+    public function exportWordDetail(): void
+    {
+        $phieu = $_GET['phieu'] ?? '';
+        
+        if (empty($phieu)) {
+            $_SESSION['error'] = 'Số phiếu không hợp lệ';
+            header('Location: /iso2/phieuyeucau.php');
+            exit;
+        }
+
+        $detail = $this->model->getPhieuDetail($phieu);
+        
+        if (!$detail) {
+            $_SESSION['error'] = 'Không tìm thấy phiếu này';
+            header('Location: /iso2/phieuyeucau.php');
+            exit;
+        }
+
+        // Chuẩn bị dữ liệu
+        $summary = $detail['summary'];
+        $devices = $detail['devices'];
+        
+        // Xuất Word/Excel với danh sách chi tiết
+        require_once __DIR__ . '/../views/phieuyeucau/export_word_detail.php';
+    }
+
+    /**
      * Lấy dữ liệu thiết bị từ POST
      */
     private function getDevicesPostData(): array

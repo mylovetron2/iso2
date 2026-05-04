@@ -60,6 +60,11 @@ switch ($action) {
         $controller->exportWord();
         break;
 
+    case 'exportworddetail':
+        // Export Word Detail (danh sách thiết bị với BDDK)
+        $controller->exportWordDetail();
+        break;
+
     case 'exportpdf':
         // Export PDF
         $controller->exportPdf();
