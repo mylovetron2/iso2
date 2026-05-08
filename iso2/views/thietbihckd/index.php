@@ -227,7 +227,17 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 py-2 border text-center">
                         <?php if (hasPermission('thietbi.edit')): ?>
-                        <a href="thietbihckd.php?action=edit&id=<?php echo $item['stt']; ?>" 
+                        <?php
+                        // Build query string to preserve search filters
+                        $editParams = ['action' => 'edit', 'id' => $item['stt']];
+                        if (!empty($_GET['search'])) $editParams['search'] = $_GET['search'];
+                        if (!empty($_GET['bophansh'])) $editParams['bophansh'] = $_GET['bophansh'];
+                        if (!empty($_GET['loaitb'])) $editParams['loaitb'] = $_GET['loaitb'];
+                        if (!empty($_GET['filter'])) $editParams['filter'] = $_GET['filter'];
+                        if (!empty($_GET['page'])) $editParams['page'] = $_GET['page'];
+                        $editUrl = 'thietbihckd.php?' . http_build_query($editParams);
+                        ?>
+                        <a href="<?php echo htmlspecialchars($editUrl); ?>" 
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </a>

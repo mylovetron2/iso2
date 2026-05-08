@@ -99,8 +99,10 @@ $ttktafter = $item['ttktafter'] ?? '';
 $ghichufinal = $item['ghichu'] ?? '';
 
 // Filename
-$phieuClean = preg_replace('/[^a-zA-Z0-9_-]/', '_', $item['hoso'] ?? 'unknown');
-$filename = 'PhieuThucHienCongViec_' . $phieuClean . '_' . date('YmdHis') . '.doc';
+$mavtClean = preg_replace('/[^a-zA-Z0-9_-]/', '_', $mavtu);
+$somayClean = preg_replace('/[^a-zA-Z0-9_-]/', '_', $somay);
+$phieuClean = preg_replace('/[^a-zA-Z0-9_-]/', '_', $item['phieu'] ?? $item['hoso'] ?? 'unknown');
+$filename = 'phieu_thuchien_' . $mavtClean . '_' . $somayClean . '_' . $phieuClean . '.doc';
 
 header('Content-Type: application/vnd.ms-word; charset=UTF-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

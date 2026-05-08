@@ -125,6 +125,10 @@ table td {
 </div>
 <?php endif; ?>
 
+<div style="margin-top: 8pt; margin-bottom: 8pt; font-size: 9pt; font-style: italic; color: #666;">
+    <b>Chú thích:</b> Q: Quý | KH: Kế hoạch | TH: Thực hiện
+</div>
+
 <table>
     <thead>
         <tr>
@@ -158,13 +162,61 @@ table td {
             } else {
                 $bddkDisplay = '-';
             }
+            
+            // Xử lý HC/KĐ (Kế hoạch kiểm định)
+            $kiemdinhDisplay = '';
+            
+            // Kế hoạch (lấy từ planned_months CSV)
+            $kehoachParts = [];
+            if (!empty($device['planned_months'])) {
+                $plannedMonths = explode(',', $device['planned_months']);
+                foreach ($plannedMonths as $month) {
+                    $month = trim($month);
+                    if ($month !== '') {
+                        $kehoachParts[] = 'T' . $month;
+                    }
+                }
+            }
+            // Bổ sung đợt 2 nếu có
+            if (!empty($device['planned_months_dot2'])) {
+                $plannedMonthsDot2 = explode(',', $device['planned_months_dot2']);
+                foreach ($plannedMonthsDot2 as $month) {
+                    $month = trim($month);
+                    if ($month !== '' && !in_array('T' . $month, $kehoachParts)) {
+                        $kehoachParts[] = 'T' . $month;
+                    }
+                }
+            }
+            
+            // Thực hiện
+            $thuchienParts = [];
+            if (!empty($device['inspected_months'])) {
+                $inspectedMonths = explode(',', $device['inspected_months']);
+                foreach ($inspectedMonths as $month) {
+                    $month = trim($month);
+                    if ($month !== '') {
+                        $thuchienParts[] = 'T' . $month;
+                    }
+                }
+            }
+            
+            // Ghép KH và TH
+            $displayParts = [];
+            if (!empty($kehoachParts)) {
+                $displayParts[] = 'KH: ' . implode(', ', $kehoachParts);
+            }
+            if (!empty($thuchienParts)) {
+                $displayParts[] = 'TH: ' . implode(', ', $thuchienParts);
+            }
+            
+            $kiemdinhDisplay = !empty($displayParts) ? implode(' | ', $displayParts) : '';
         ?>
         <tr>
             <td class="center"><?php echo $stt; ?></td>
             <td class="center"><?php echo escapeText($device['mavt'] ?? ''); ?></td>
             <td class="center"><?php echo escapeText($device['somay'] ?? ''); ?></td>
             <td class="center"><?php echo $bddkDisplay; ?></td>
-            <td class="center"></td>
+            <td class="center"><?php echo escapeText($kiemdinhDisplay); ?></td>
             <td></td>
         </tr>
         <?php 

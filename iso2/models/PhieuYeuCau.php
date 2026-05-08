@@ -200,6 +200,10 @@ class PhieuYeuCau extends BaseModel
         
         // Lấy danh sách thiết bị
         $sqlDevices = "SELECT h.*, t.tenvt, t.stt as thietbi_stt,
+                       thckd.stt as thckd_stt,
+                       GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
+                       GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
+                       GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
                        GROUP_CONCAT(DISTINCT 
                            CONCAT(
                                IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
@@ -210,7 +214,13 @@ class PhieuYeuCau extends BaseModel
                        ) as bddk_quarters_raw
                        FROM {$this->table} h
                        LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                       LEFT JOIN thietbihckd_iso thckd ON (
+                           (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+                           OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
+                       )
                        LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
+                       LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
+                       LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
                        WHERE h.phieu = $phieuEscaped
                        GROUP BY h.stt
                        ORDER BY h.stt ASC";

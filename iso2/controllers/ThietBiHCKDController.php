@@ -105,6 +105,7 @@ class ThietBiHCKDController
             // Get lists for form dropdowns
             $boPhanList = $this->model->getAllBoPhanSH();
             $loaiTBList = $this->model->getAllLoaiTB();
+            $error = ''; // Initialize error variable
             
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = [
@@ -168,6 +169,17 @@ class ThietBiHCKDController
             exit;
         }
 
+        $error = ''; // Initialize error variable
+        
+        // Lưu search parameters để redirect về đúng trang
+        $returnParams = [
+            'search' => $_GET['search'] ?? '',
+            'bophansh' => $_GET['bophansh'] ?? '',
+            'loaitb' => $_GET['loaitb'] ?? '',
+            'filter' => $_GET['filter'] ?? '',
+            'page' => $_GET['page'] ?? ''
+        ];
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'mavattu' => trim($_POST['mavattu'] ?? ''),
@@ -194,7 +206,21 @@ class ThietBiHCKDController
             if (empty($errors)) {
                 $success = $this->model->update($stt, $data);
                 if ($success) {
-                    header('Location: /iso2/thietbihckd.php?success=updated');
+                    // Build redirect URL với search parameters từ POST
+                    $params = [
+                        'success' => 'updated',
+                        'search' => $_POST['return_search'] ?? '',
+                        'bophansh' => $_POST['return_bophansh'] ?? '',
+                        'loaitb' => $_POST['return_loaitb'] ?? '',
+                        'filter' => $_POST['return_filter'] ?? '',
+                        'page' => $_POST['return_page'] ?? ''
+                    ];
+                    
+                    // Remove empty params
+                    $params = array_filter($params, function($v) { return $v !== ''; });
+                    
+                    $queryString = http_build_query($params);
+                    header('Location: /iso2/thietbihckd.php?' . $queryString);
                     exit;
                 }
                 $errors[] = 'Có lỗi xảy ra khi cập nhật thiết bị';

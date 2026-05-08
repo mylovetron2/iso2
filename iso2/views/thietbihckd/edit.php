@@ -9,13 +9,20 @@ require_once __DIR__ . '/../layouts/header.php';
         <i class="fas fa-edit mr-2"></i> Sửa Thiết Bị HC/KĐ
     </h1>
 
-    <?php if (isset($error)): ?>
+    <?php if (!empty($error)): ?>
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <?php echo htmlspecialchars($error); ?>
         </div>
     <?php endif; ?>
 
     <form method="POST" class="space-y-4">
+        <!-- Hidden fields để giữ search parameters -->
+        <input type="hidden" name="return_search" value="<?php echo htmlspecialchars($returnParams['search'] ?? ''); ?>">
+        <input type="hidden" name="return_bophansh" value="<?php echo htmlspecialchars($returnParams['bophansh'] ?? ''); ?>">
+        <input type="hidden" name="return_loaitb" value="<?php echo htmlspecialchars($returnParams['loaitb'] ?? ''); ?>">
+        <input type="hidden" name="return_filter" value="<?php echo htmlspecialchars($returnParams['filter'] ?? ''); ?>">
+        <input type="hidden" name="return_page" value="<?php echo htmlspecialchars($returnParams['page'] ?? ''); ?>">
+        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Mã vật tư <span class="text-red-500">*</span></label>
@@ -48,7 +55,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium mb-1">Hãng sản xuất</label>
                 <input type="text" name="hangsx" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo htmlspecialchars($item['hangsx']); ?>">
+                       value="<?php echo htmlspecialchars($item['hangsx'] ?? ''); ?>">
             </div>
 
             <div>
@@ -68,7 +75,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium mb-1">Chủ sở hữu</label>
                 <input type="text" name="chusohuu" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo htmlspecialchars($item['chusohuu']); ?>">
+                       value="<?php echo htmlspecialchars($item['chusohuu'] ?? ''); ?>">
             </div>
 
             <div>
@@ -88,14 +95,20 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium mb-1">Ngày kiểm tra/nghiệm thu</label>
                 <input type="date" name="ngayktnghiemthu" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo $item['ngayktnghiemthu'] ? date('Y-m-d', strtotime($item['ngayktnghiemthu'])) : '1970-01-01'; ?>">
+                       value="<?php 
+                           if (!empty($item['ngayktnghiemthu']) && $item['ngayktnghiemthu'] != '0000-00-00' && $item['ngayktnghiemthu'] != '0000-00-00 00:00:00') {
+                               echo date('Y-m-d', strtotime($item['ngayktnghiemthu']));
+                           } else {
+                               echo '1970-01-01';
+                           }
+                       ?>">
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-1">Thời hạn kiểm định (tháng)</label>
                 <input type="text" name="thoihankd" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo htmlspecialchars($item['thoihankd']); ?>"
+                       value="<?php echo htmlspecialchars($item['thoihankd'] ?? ''); ?>"
                        placeholder="Ví dụ: 12, 24, 36">
             </div>
 
@@ -103,7 +116,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium mb-1">TLKT</label>
                 <input type="text" name="tlkt" 
                        class="w-full border rounded px-3 py-2" 
-                       value="<?php echo htmlspecialchars($item['tlkt']); ?>">
+                       value="<?php echo htmlspecialchars($item['tlkt'] ?? ''); ?>">
             </div>
 
             <div>
@@ -119,7 +132,10 @@ require_once __DIR__ . '/../layouts/header.php';
             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
                 <i class="fas fa-save mr-1"></i> Cập nhật
             </button>
-            <a href="thietbihckd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+            <a href="thietbihckd.php?<?php 
+                $params = isset($returnParams) ? array_filter($returnParams, function($v) { return $v !== ''; }) : [];
+                echo http_build_query($params);
+            ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                 <i class="fas fa-times mr-1"></i> Hủy
             </a>
         </div>
