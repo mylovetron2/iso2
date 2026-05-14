@@ -130,6 +130,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">CV</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">BDDK</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">HC/KĐ</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Xem/Sửa</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Chi tiết</th>
@@ -138,7 +139,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có hồ sơ nào</p>
                     </td>
@@ -253,6 +254,74 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php else: ?>
                             <span class="text-gray-400 text-xs">-</span>
                         <?php endif; ?>
+                    </td>
+                    <td class="px-2 md:px-4 py-2 border text-center hidden xl:table-cell">
+                        <?php
+                        // Xử lý HC/KĐ (Kế hoạch kiểm định)
+                        // Kế hoạch (lấy từ planned_months CSV)
+                        $kehoachParts = [];
+                        if (!empty($item['planned_months'])) {
+                            $plannedMonths = explode(',', $item['planned_months']);
+                            foreach ($plannedMonths as $month) {
+                                $month = trim($month);
+                                if ($month !== '') {
+                                    $kehoachParts[] = (int)$month;
+                                }
+                            }
+                        }
+                        // Bổ sung đợt 2 nếu có
+                        if (!empty($item['planned_months_dot2'])) {
+                            $plannedMonthsDot2 = explode(',', $item['planned_months_dot2']);
+                            foreach ($plannedMonthsDot2 as $month) {
+                                $month = trim($month);
+                                if ($month !== '' && !in_array((int)$month, $kehoachParts)) {
+                                    $kehoachParts[] = (int)$month;
+                                }
+                            }
+                        }
+                        
+                        // Thực hiện
+                        $thuchienParts = [];
+                        if (!empty($item['inspected_months'])) {
+                            $inspectedMonths = explode(',', $item['inspected_months']);
+                            foreach ($inspectedMonths as $month) {
+                                $month = trim($month);
+                                if ($month !== '') {
+                                    $thuchienParts[] = (int)$month;
+                                }
+                            }
+                        }
+                        
+                        // Hiển thị dạng badge giống BDDK
+                        if (!empty($kehoachParts) || !empty($thuchienParts)):
+                            echo '<div class="inline-flex flex-wrap gap-1">';
+                            
+                            // Lấy tất cả tháng unique
+                            $allMonths = array_unique(array_merge($kehoachParts, $thuchienParts));
+                            sort($allMonths);
+                            
+                            foreach ($allMonths as $month) {
+                                $monthName = 'T' . $month;
+                                $isCompleted = in_array($month, $thuchienParts);
+                                
+                                if ($isCompleted) {
+                                    // Đã thực hiện: màu xanh đậm + dấu tích
+                                    echo '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">';
+                                    echo '<i class="fas fa-check mr-1"></i>' . htmlspecialchars($monthName);
+                                    echo '</span>';
+                                } else {
+                                    // Chỉ kế hoạch: màu xám
+                                    echo '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">';
+                                    echo htmlspecialchars($monthName);
+                                    echo '</span>';
+                                }
+                            }
+                            
+                            echo '</div>';
+                        else:
+                            echo '<span class="text-gray-400">-</span>';
+                        endif;
+                        ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php 

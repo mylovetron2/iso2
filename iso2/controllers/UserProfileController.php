@@ -135,10 +135,10 @@ class UserProfileController {
         
         // Validate current password
         $passwordValid = false;
-        if (password_verify($currentPassword, $user['password'])) {
+        if ($user['password'] === $currentPassword) {
             $passwordValid = true;
-        } elseif ($user['password'] === $currentPassword) {
-            // Hỗ trợ user cũ với password plaintext
+        } elseif (password_verify($currentPassword, $user['password'])) {
+            // Hỗ trợ user cũ với password đã hash
             $passwordValid = true;
         }
         
@@ -164,10 +164,8 @@ class UserProfileController {
             exit;
         }
         
-        // Cập nhật mật khẩu
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        
-        if ($this->userModel->updatePassword($userId, $hashedPassword)) {
+        // Cập nhật mật khẩu (lưu plaintext)
+        if ($this->userModel->updatePassword($userId, $newPassword)) {
             $_SESSION['success'] = 'Thay đổi mật khẩu thành công';
         } else {
             $_SESSION['error'] = 'Có lỗi khi thay đổi mật khẩu';

@@ -99,12 +99,21 @@ class HoSoSCBD extends BaseModel
                                    IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
                                )
                            ) as bddk_quarters_raw,
+                           GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
+                           GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
+                           GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
                            COALESCE(td_latest.trangthai, 'none') as tamdung_status,
                            IF(td_latest.trangthai = 'dang_tam_dung', 1, 0) as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
                     LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                    LEFT JOIN thietbihckd_iso thckd ON (
+                        (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+                        OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
+                    )
                     LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
+                    LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
+                    LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
                     LEFT JOIN (
                         SELECT hoso, trangthai
                         FROM hososcbd_tamdung td1
@@ -131,11 +140,20 @@ class HoSoSCBD extends BaseModel
                                    IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
                                )
                            ) as bddk_quarters_raw,
+                           GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
+                           GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
+                           GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
                            0 as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
                     LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                    LEFT JOIN thietbihckd_iso thckd ON (
+                        (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+                        OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
+                    )
                     LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
+                    LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
+                    LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
                     WHERE $whereClause
                     GROUP BY h.stt
                     ORDER BY h.ngayyc DESC, h.phieu DESC

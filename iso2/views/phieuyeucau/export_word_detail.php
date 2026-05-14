@@ -126,7 +126,7 @@ table td {
 <?php endif; ?>
 
 <div style="margin-top: 8pt; margin-bottom: 8pt; font-size: 9pt; font-style: italic; color: #666;">
-    <b>Chú thích:</b> Q: Quý | KH: Kế hoạch | TH: Thực hiện
+    <b>Chú thích:</b> Q: Quý | ✓: Đã thực hiện | Màu xám: Kế hoạch
 </div>
 
 <table>
@@ -173,7 +173,7 @@ table td {
                 foreach ($plannedMonths as $month) {
                     $month = trim($month);
                     if ($month !== '') {
-                        $kehoachParts[] = 'T' . $month;
+                        $kehoachParts[] = (int)$month;
                     }
                 }
             }
@@ -182,8 +182,8 @@ table td {
                 $plannedMonthsDot2 = explode(',', $device['planned_months_dot2']);
                 foreach ($plannedMonthsDot2 as $month) {
                     $month = trim($month);
-                    if ($month !== '' && !in_array('T' . $month, $kehoachParts)) {
-                        $kehoachParts[] = 'T' . $month;
+                    if ($month !== '' && !in_array((int)$month, $kehoachParts)) {
+                        $kehoachParts[] = (int)$month;
                     }
                 }
             }
@@ -195,28 +195,43 @@ table td {
                 foreach ($inspectedMonths as $month) {
                     $month = trim($month);
                     if ($month !== '') {
-                        $thuchienParts[] = 'T' . $month;
+                        $thuchienParts[] = (int)$month;
                     }
                 }
             }
             
-            // Ghép KH và TH
-            $displayParts = [];
-            if (!empty($kehoachParts)) {
-                $displayParts[] = 'KH: ' . implode(', ', $kehoachParts);
+            // Hiển thị dạng badge giống BDDK
+            if (!empty($kehoachParts) || !empty($thuchienParts)) {
+                $kiemdinhParts = [];
+                
+                // Lấy tất cả tháng unique
+                $allMonths = array_unique(array_merge($kehoachParts, $thuchienParts));
+                sort($allMonths);
+                
+                foreach ($allMonths as $month) {
+                    $monthName = 'T' . $month;
+                    $isCompleted = in_array($month, $thuchienParts);
+                    
+                    if ($isCompleted) {
+                        // Đã thực hiện: màu xanh + dấu tích
+                        $kiemdinhParts[] = '<span class="bddk-complete">✓ ' . escapeText($monthName) . '</span>';
+                    } else {
+                        // Chỉ kế hoạch: màu xám
+                        $kiemdinhParts[] = '<span class="bddk-incomplete">' . escapeText($monthName) . '</span>';
+                    }
+                }
+                
+                $kiemdinhDisplay = implode(' ', $kiemdinhParts);
+            } else {
+                $kiemdinhDisplay = '';
             }
-            if (!empty($thuchienParts)) {
-                $displayParts[] = 'TH: ' . implode(', ', $thuchienParts);
-            }
-            
-            $kiemdinhDisplay = !empty($displayParts) ? implode(' | ', $displayParts) : '';
         ?>
         <tr>
             <td class="center"><?php echo $stt; ?></td>
             <td class="center"><?php echo escapeText($device['mavt'] ?? ''); ?></td>
             <td class="center"><?php echo escapeText($device['somay'] ?? ''); ?></td>
             <td class="center"><?php echo $bddkDisplay; ?></td>
-            <td class="center"><?php echo escapeText($kiemdinhDisplay); ?></td>
+            <td class="center"><?php echo $kiemdinhDisplay !== '' ? $kiemdinhDisplay : '-'; ?></td>
             <td></td>
         </tr>
         <?php 
