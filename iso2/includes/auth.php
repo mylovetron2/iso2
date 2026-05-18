@@ -42,6 +42,7 @@ if (!function_exists('login')) {
             $_SESSION['user_name'] = $user['username'];
             $_SESSION['user_email'] = isset($user['email']) ? $user['email'] : '';
             $_SESSION['role'] = isset($user['role']) ? $user['role'] : 'user';
+            $_SESSION['nhom'] = isset($user['nhom']) && !empty($user['nhom']) ? $user['nhom'] : 'RDNGA';
             return true;
         }
     }
@@ -62,5 +63,15 @@ if (!function_exists('requireAuth')) {
             header('Location: login.php');
             exit;
         }
+    }
+}
+
+if (!function_exists('getUserNhom')) {
+    /**
+     * Lấy nhóm của user hiện tại (RDNGA hoặc CNC)
+     * @return string Nhóm của user, mặc định là RDNGA
+     */
+    function getUserNhom(): string {
+        return $_SESSION['nhom'] ?? 'RDNGA';
     }
 }

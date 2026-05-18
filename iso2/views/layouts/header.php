@@ -374,6 +374,13 @@ if (file_exists($dbSelectionFile)) {
                                 <i class="fas fa-database mr-2"></i> Chuyển đổi Database
                             </a>
                         </li>
+                        <?php if (hasRole(ROLE_ADMIN) || hasPermission('backup.view')): ?>
+                        <li>
+                            <a href="/iso2/admin_backup.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-download mr-2"></i> Backup Database
+                            </a>
+                        </li>
+                        <?php endif; ?>
                         <?php /* Ẩn Cấu trúc Project
                         <li class="pt-2 border-t border-blue-600">
                             <div class="text-xs text-blue-300 px-3 py-1">Cấu trúc Project</div>

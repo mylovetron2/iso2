@@ -26,12 +26,15 @@ class PhieuBanGiao extends BaseModel
         int $offset = 0,
         int $limit = 20
     ): array {
-        $searchEscaped = $this->db->quote("%$search%");
-        
         $where = ["1=1"];
         
+        // Tách chuỗi search thành các từ riêng biệt
         if ($search) {
-            $where[] = "(p.sophieu LIKE $searchEscaped OR p.phieuyc LIKE $searchEscaped OR p.nguoigiao LIKE $searchEscaped OR p.nguoinhan LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped)";
+            $keywords = array_filter(array_map('trim', explode(' ', $search)));
+            foreach ($keywords as $keyword) {
+                $keywordEscaped = $this->db->quote("%$keyword%");
+                $where[] = "(p.sophieu LIKE $keywordEscaped OR p.phieuyc LIKE $keywordEscaped OR p.nguoigiao LIKE $keywordEscaped OR p.nguoinhan LIKE $keywordEscaped OR h.mavt LIKE $keywordEscaped OR h.somay LIKE $keywordEscaped)";
+            }
         }
         
         if ($phieuyc) {
@@ -79,12 +82,15 @@ class PhieuBanGiao extends BaseModel
         string $trangthai = '',
         string $donvi = ''
     ): int {
-        $searchEscaped = $this->db->quote("%$search%");
-        
         $where = ["1=1"];
         
+        // Tách chuỗi search thành các từ riêng biệt
         if ($search) {
-            $where[] = "(p.sophieu LIKE $searchEscaped OR p.phieuyc LIKE $searchEscaped OR p.nguoigiao LIKE $searchEscaped OR p.nguoinhan LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped)";
+            $keywords = array_filter(array_map('trim', explode(' ', $search)));
+            foreach ($keywords as $keyword) {
+                $keywordEscaped = $this->db->quote("%$keyword%");
+                $where[] = "(p.sophieu LIKE $keywordEscaped OR p.phieuyc LIKE $keywordEscaped OR p.nguoigiao LIKE $keywordEscaped OR p.nguoinhan LIKE $keywordEscaped OR h.mavt LIKE $keywordEscaped OR h.somay LIKE $keywordEscaped)";
+            }
         }
         
         if ($phieuyc) {

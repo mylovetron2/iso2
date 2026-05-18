@@ -28,12 +28,15 @@ class HoSoSCBD extends BaseModel
         string $fromDate = '',
         string $toDate = ''
     ): array {
-        $searchEscaped = $this->db->quote("%$search%");
-        
         $where = ["1=1"];
         
+        // Tách chuỗi search thành các từ riêng biệt
         if ($search) {
-            $where[] = "(h.maql LIKE $searchEscaped OR h.phieu LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped OR h.madv LIKE $searchEscaped OR d.tendv LIKE $searchEscaped)";
+            $keywords = array_filter(array_map('trim', explode(' ', $search)));
+            foreach ($keywords as $keyword) {
+                $keywordEscaped = $this->db->quote("%$keyword%");
+                $where[] = "(h.maql LIKE $keywordEscaped OR h.phieu LIKE $keywordEscaped OR h.mavt LIKE $keywordEscaped OR h.somay LIKE $keywordEscaped OR h.madv LIKE $keywordEscaped OR d.tendv LIKE $keywordEscaped)";
+            }
         }
         
         if ($nhomsc) {
@@ -198,12 +201,15 @@ class HoSoSCBD extends BaseModel
         string $fromDate = '',
         string $toDate = ''
     ): int {
-        $searchEscaped = $this->db->quote("%$search%");
-        
         $where = ["1=1"];
         
+        // Tách chuỗi search thành các từ riêng biệt
         if ($search) {
-            $where[] = "(h.maql LIKE $searchEscaped OR h.phieu LIKE $searchEscaped OR h.mavt LIKE $searchEscaped OR h.somay LIKE $searchEscaped OR h.madv LIKE $searchEscaped OR d.tendv LIKE $searchEscaped)";
+            $keywords = array_filter(array_map('trim', explode(' ', $search)));
+            foreach ($keywords as $keyword) {
+                $keywordEscaped = $this->db->quote("%$keyword%");
+                $where[] = "(h.maql LIKE $keywordEscaped OR h.phieu LIKE $keywordEscaped OR h.mavt LIKE $keywordEscaped OR h.somay LIKE $keywordEscaped OR h.madv LIKE $keywordEscaped OR d.tendv LIKE $keywordEscaped)";
+            }
         }
         
         if ($nhomsc) {

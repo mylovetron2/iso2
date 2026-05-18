@@ -98,6 +98,29 @@ require_once __DIR__ . '/../layouts/header.php';
         <p class="text-gray-600 mt-2">Theo dõi tất cả các thao tác trên hệ thống</p>
     </div>
 
+    <!-- Admin Navigation -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap gap-2 items-center">
+            <div class="flex flex-wrap gap-2">
+                <a href="/iso2/admin_user_permissions.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-users-cog mr-1"></i> Phân quyền User
+                </a>
+                <a href="/iso2/views/admin/permissions_manager.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-key mr-1"></i> Quản lý quyền
+                </a>
+                <a href="/iso2/admin_database_switch.php" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-database mr-1"></i> Chuyển DB
+                </a>
+                <a href="/iso2/admin_backup.php" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-download mr-1"></i> Backup
+                </a>
+                <a href="/iso2/hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

@@ -77,14 +77,31 @@ require_once __DIR__ . '/views/layouts/header.php';
 
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold flex items-center">
-                <i class="fas fa-database mr-3 text-blue-600"></i>
-                Chuyển đổi Database
-            </h1>
-            <a href="index.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-                <i class="fas fa-arrow-left mr-2"></i>Quay lại
-            </a>
+        <!-- Admin Navigation -->
+        <div class="mb-6 pb-4 border-b">
+            <div class="flex flex-wrap gap-2 items-center mb-4">
+                <h1 class="text-2xl font-bold flex items-center mr-4">
+                    <i class="fas fa-database mr-3 text-blue-600"></i>
+                    Chuyển đổi Database
+                </h1>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="/iso2/admin_user_permissions.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-users-cog mr-1"></i> Phân quyền User
+                </a>
+                <a href="/iso2/views/admin/permissions_manager.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-key mr-1"></i> Quản lý quyền
+                </a>
+                <a href="/iso2/views/admin/activity_logs.php" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-history mr-1"></i> Nhật ký
+                </a>
+                <a href="/iso2/admin_backup.php" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-download mr-1"></i> Backup
+                </a>
+                <a href="/iso2/hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Trang chủ
+                </a>
+            </div>
         </div>
 
         <?php if ($message): ?>

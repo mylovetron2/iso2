@@ -106,6 +106,28 @@ let selectedDevices = new Set();
 // Load devices on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadDevices();
+    
+    // Xử lý Enter key trong các ô tìm kiếm
+    const searchInput = document.getElementById('searchInput');
+    const filterPhieu = document.getElementById('filterPhieu');
+    
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadDevices();
+            }
+        });
+    }
+    
+    if (filterPhieu) {
+        filterPhieu.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadDevices();
+            }
+        });
+    }
 });
 
 function loadDevices() {

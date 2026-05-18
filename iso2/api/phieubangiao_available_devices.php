@@ -34,9 +34,13 @@ $where[] = "h.ngaykt IS NOT NULL";
 $where[] = "h.ngaykt != '0000-00-00'";
 $where[] = "h.bg = 0"; // Chưa bàn giao
 
+// Tách chuỗi search thành các từ riêng biệt
 if ($search) {
-    $search_escaped = $db->quote("%$search%");
-    $where[] = "(h.mavt LIKE $search_escaped OR t.tenvt LIKE $search_escaped OR h.somay LIKE $search_escaped OR h.maql LIKE $search_escaped)";
+    $keywords = array_filter(array_map('trim', explode(' ', $search)));
+    foreach ($keywords as $keyword) {
+        $keyword_escaped = $db->quote("%$keyword%");
+        $where[] = "(h.mavt LIKE $keyword_escaped OR t.tenvt LIKE $keyword_escaped OR h.somay LIKE $keyword_escaped OR h.maql LIKE $keyword_escaped)";
+    }
 }
 
 if ($madv) {

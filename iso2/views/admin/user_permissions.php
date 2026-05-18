@@ -120,7 +120,31 @@ $title = 'Phân quyền User';
 require_once __DIR__ . '/../layouts/header.php';
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-8 mt-4 md:mt-8">
-    <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center"><i class="fas fa-user-shield mr-2"></i> Phân quyền User</h2>
+    <!-- Admin Navigation -->
+    <div class="mb-6 pb-4 border-b">
+        <div class="flex flex-wrap gap-2 items-center">
+            <h2 class="text-xl md:text-2xl font-bold flex items-center mr-4">
+                <i class="fas fa-user-shield mr-2"></i> Phân quyền User
+            </h2>
+            <div class="flex flex-wrap gap-2 ml-auto">
+                <a href="/iso2/views/admin/permissions_manager.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-key mr-1"></i> Quản lý quyền
+                </a>
+                <a href="/iso2/views/admin/activity_logs.php" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-history mr-1"></i> Nhật ký
+                </a>
+                <a href="/iso2/admin_database_switch.php" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-database mr-1"></i> Chuyển DB
+                </a>
+                <a href="/iso2/admin_backup.php" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-download mr-1"></i> Backup
+                </a>
+                <a href="/iso2/hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
     
     <?php if (isset($_GET['success'])): ?>
         <?php if ($_GET['success'] === 'created'): ?>

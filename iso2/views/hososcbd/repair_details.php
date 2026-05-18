@@ -692,8 +692,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Nhóm SC <span class="text-red-500">*</span></label>
-                    <input type="text" name="nhomsc" required value="<?php echo htmlspecialchars($item['nhomsc']); ?>"
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                    <select name="nhomsc" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                        <?php $currentNhomsc = $item['nhomsc'] ?? getUserNhom(); ?>
+                        <option value="RDNGA" <?php echo ($currentNhomsc === 'RDNGA') ? 'selected' : ''; ?>>RDNGA</option>
+                        <option value="CNC" <?php echo ($currentNhomsc === 'CNC') ? 'selected' : ''; ?>>CNC</option>
+                    </select>
                 </div>
                 <div class="hidden">
                     <label class="block text-gray-700 font-semibold mb-2">Ngày bắt đầu TT</label>

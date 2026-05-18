@@ -121,6 +121,10 @@ $allPermissions = [
     
     'activitylogs.view' => 'Xem nhật ký hoạt động',
     'activitylogs.export' => 'Xuất nhật ký hoạt động',
+    
+    'backup.create' => 'Tạo backup database',
+    'backup.download' => 'Tải xuống backup',
+    'backup.view' => 'Xem danh sách backup',
 ];
 
 // Cập nhật quyền cho role
@@ -159,10 +163,36 @@ $permissionGroups = [
     'Giỏ hàng' => ['giohang.view', 'giohang.add', 'giohang.edit', 'giohang.delete'],
     'Phiếu đặt hàng' => ['phieudathang.view', 'phieudathang.create', 'phieudathang.edit', 'phieudathang.delete', 'phieudathang.approve', 'phieudathang.receive', 'phieudathang.stock', 'phieudathang.cancel', 'phieudathang.export'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
+    'Backup Database' => ['backup.create', 'backup.download', 'backup.view'],
 ];
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-8 mt-4 md:mt-8">
-    <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center"><i class="fas fa-shield-alt mr-2"></i> Quản lý quyền Role</h2>
+    <!-- Admin Navigation -->
+    <div class="mb-6 pb-4 border-b">
+        <div class="flex flex-wrap gap-2 items-center">
+            <h2 class="text-xl md:text-2xl font-bold flex items-center mr-4">
+                <i class="fas fa-shield-alt mr-2"></i> Quản lý quyền Role
+            </h2>
+            <div class="flex flex-wrap gap-2 ml-auto">
+                <a href="/iso2/admin_user_permissions.php" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-users-cog mr-1"></i> Phân quyền User
+                </a>
+                <a href="/iso2/views/admin/activity_logs.php" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-history mr-1"></i> Nhật ký
+                </a>
+                <a href="/iso2/admin_database_switch.php" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-database mr-1"></i> Chuyển DB
+                </a>
+                <a href="/iso2/admin_backup.php" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-download mr-1"></i> Backup
+                </a>
+                <a href="/iso2/hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+    
     <?php if (isset($_GET['success'])): ?>
         <div class="mb-4 text-green-600 text-center bg-green-50 p-3 rounded"><i class="fas fa-check-circle mr-2"></i>Cập nhật quyền thành công!</div>
     <?php endif; ?>

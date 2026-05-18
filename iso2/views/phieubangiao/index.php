@@ -23,10 +23,13 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
     
     <!-- Search & Filter -->
-    <form method="GET" class="mb-6">
+    <form method="GET" action="phieubangiao.php" class="mb-6" id="searchForm">
+        <!-- Hidden submit button để xử lý Enter key -->
+        <button type="submit" class="hidden" tabindex="-1"></button>
+        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-                <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
+                <input type="text" name="search" id="searchInput" value="<?php echo htmlspecialchars($search); ?>" 
                        placeholder="Tìm số phiếu, phiếu YC, mã VT, số máy, người giao/nhận..." 
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
@@ -139,6 +142,32 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <script>
+// Debug form submit
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    
+    console.log('Form loaded:', searchForm);
+    console.log('Input loaded:', searchInput);
+    
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            console.log('Form submit triggered!');
+            // Không chặn, để form submit tự nhiên
+        });
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            console.log('Key pressed:', e.key);
+            if (e.key === 'Enter') {
+                console.log('Enter key detected, submitting form...');
+                searchForm.submit();
+            }
+        });
+    }
+});
+
 function deletePhieu(id, sophieu) {
     if (!confirm('Bạn có chắc muốn xóa phiếu ' + sophieu + ' (ID: ' + id + ')?')) {
         return;
