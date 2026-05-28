@@ -81,6 +81,7 @@ class BangCanhBaoController
     {
         try {
             $mavattu = $_GET['mavattu'] ?? '';
+            $stt = isset($_GET['stt']) ? (int)$_GET['stt'] : 0;
             $ngayhc = $_GET['ngayhc'] ?? '';
             $mode = 'add'; // add hoặc edit
 
@@ -95,9 +96,16 @@ class BangCanhBaoController
             $nhanVienList = $this->resumeModel->getActiveEmployees();
 
             if ($mavattu) {
-                // Lấy thông tin thiết bị
-                $thietBi = $this->thietBiModel->getByMaVatTu($mavattu);
-                
+                // Ưu tiên dùng stt (primary key) để tránh nhầm khi nhiều thiết bị cùng mavattu
+                if ($stt > 0) {
+                    $thietBi = $this->thietBiModel->findById($stt) ?: null;
+                }
+                if (!$thietBi) {
+                    $thietBi = $this->thietBiModel->getByMaVatTu($mavattu);
+                }
+                // Dùng mavattu chính xác từ thietBi (tránh nhầm khi nhiều thiết bị cùng mavattu)
+                $mavattu = $thietBi['mavattu'] ?? $mavattu;
+
                 if ($ngayhc) {
                     // Edit mode - lấy hồ sơ hiện có
                     $hoSo = $this->hoSoModel->getByDeviceAndDate($mavattu, $ngayhc);

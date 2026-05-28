@@ -529,4 +529,25 @@ class HoSoSCBD extends BaseModel
         $stmt->execute([':stt' => $stt]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Lấy danh sách hồ sơ đơn giản để dùng trong dropdown (chọn hồ sơ khi tạo công việc)
+     */
+    public function getListForSelect(int $limit = 200): array
+    {
+        $sql = "SELECT h.stt, h.maql, h.phieu, h.mavt, h.somay,
+                       COALESCE(t.tenvt, h.mavt) as tenvt,
+                       d.tendv
+                FROM {$this->table} h
+                LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+                LEFT JOIN donvi_iso d ON h.madv = d.madv
+                WHERE (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00')
+                ORDER BY h.ngayyc DESC, h.stt DESC
+                LIMIT :limit";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

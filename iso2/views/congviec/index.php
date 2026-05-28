@@ -79,13 +79,6 @@
             </div>
             
             <div class="bg-white rounded-lg shadow-md p-6 text-center">
-                <div class="text-gray-600 mb-2"><i class="fas fa-hourglass-half"></i> Giờ còn lại</div>
-                <div class="gio-display <?= ($viewData['gio_con_lai'] > 0) ? 'text-green-600' : 'text-red-600' ?>">
-                    <?= number_format($viewData['gio_con_lai'], 2) ?>h
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow-md p-6 text-center">
                 <div class="text-gray-600 mb-2"><i class="fas fa-tasks"></i> Số công việc</div>
                 <div class="gio-display text-gray-700"><?= count($viewData['congviecs']) ?></div>
             </div>
@@ -117,43 +110,76 @@
                 <input type="hidden" name="nhanvien_stt" value="<?= $nhanvienStt ?>">
                 <input type="hidden" name="ngay_lam" value="<?= $ngayLam ?>">
                 
+                <!-- Danh sách hồ sơ nhúng vào JS -->
+                <script>
+                window.hosoList = <?= json_encode(array_map(function($hs) {
+                    return [
+                        'stt'   => (int)$hs['stt'],
+                        'maql'  => $hs['maql'] ?? $hs['phieu'] ?? '',
+                        'phieu' => $hs['phieu'] ?? '',
+                        'mavt'  => $hs['mavt'] ?? '',
+                        'somay' => $hs['somay'] ?? '',
+                        'tenvt' => $hs['tenvt'] ?? '',
+                    ];
+                }, $formData['hososcbds']), JSON_UNESCAPED_UNICODE) ?>;
+                </script>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Mã thiết bị -->
-                    <div>
+                    <!-- Hồ sơ SC/BĐ -->
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium mb-2">
-                            Mã thiết bị <span class="text-red-500">*</span>
+                            Hồ sơ SC/BĐ <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="mavt" required 
-                               class="w-full border rounded px-3 py-2" 
-                               placeholder="Nhập mã vật tư">
-                    </div>
+                        <input type="hidden" name="hososcbd_stt" id="selectedHosoStt" required>
 
-                    <!-- Serial -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">
-                            Serial / Số máy <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="somay" required 
-                               class="w-full border rounded px-3 py-2" 
-                               placeholder="Nhập số máy">
-                    </div>
+                        <!-- Hiển thị hồ sơ đã chọn + nút mở search -->
+                        <div class="flex gap-2 items-center">
+                            <div id="hosoDisplay"
+                                 class="flex-1 border rounded px-3 py-2 bg-gray-50 text-gray-500 min-h-[38px] cursor-pointer"
+                                 onclick="openHosoSearch()">
+                                -- Chưa chọn hồ sơ --
+                            </div>
+                            <button type="button" onclick="openHosoSearch()"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold flex items-center gap-1 whitespace-nowrap">
+                                <i class="fas fa-search"></i> Chọn hồ sơ
+                            </button>
+                        </div>
 
-                    <!-- Cấp độ BD -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">
-                            Cấp độ bảo dưỡng <span class="text-red-500">*</span>
-                        </label>
-                        <select name="capdo_stt" required class="w-full border rounded px-3 py-2">
-                            <option value="">-- Chọn cấp độ --</option>
-                            <?php foreach ($formData['capdos'] as $cd): ?>
-                                <option value="<?= $cd['stt'] ?>" 
-                                        data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
-                                        data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
-                                    <?= htmlspecialchars($cd['ten_capdo']) ?> 
-                                    (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <!-- Quick Search Panel -->
+                        <div id="hosoSearchPanel" class="hidden mt-2 border-2 border-yellow-400 rounded-lg p-4 bg-yellow-50 shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-yellow-700"><i class="fas fa-search mr-1"></i>Tìm hồ sơ SC/BĐ</span>
+                                <span id="hosoResultCount" class="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border border-yellow-300">
+                                    <?= count($formData['hososcbds']) ?> hồ sơ
+                                </span>
+                            </div>
+                            <div class="relative mb-2">
+                                <input type="text" id="hosoSearchInput"
+                                       placeholder="🔍 Gõ số phiếu, mã QL, mã vật tư, số máy..."
+                                       class="w-full px-4 py-2 pl-10 pr-10 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:border-yellow-600"
+                                       autocomplete="off"
+                                       oninput="filterHosoResults(this.value)">
+                                <i class="fas fa-search absolute left-3 top-3 text-yellow-500"></i>
+                                <button type="button" onclick="closeHosoSearch()"
+                                        class="absolute right-2 top-2 text-gray-500 hover:text-gray-700 bg-white px-2 py-1 rounded">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div id="hosoSearchResults" class="max-h-72 overflow-y-auto space-y-1">
+                                <!-- populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- KPI hồ sơ (hiện sau khi chọn) -->
+                        <div id="hosoKpiInfo" class="hidden mt-2 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                            <i class="fas fa-clock text-blue-500 text-lg"></i>
+                            <div>
+                                <span class="text-xs text-gray-500 uppercase tracking-wide">KPI giờ chuẩn</span><br>
+                                <span class="font-bold text-blue-700 text-lg" id="hosoKpiGio">6</span>
+                                <span class="text-blue-600 text-sm">giờ</span>
+                            </div>
+                            <div class="ml-4 text-xs text-gray-400 italic">*(demo – sẽ cập nhật số liệu thật)</div>
+                        </div>
                     </div>
 
                     <!-- Số giờ làm -->
@@ -213,6 +239,33 @@
         </div>
 
         <!-- Danh sách công việc -->
+        <?php
+        $kpiGioChuan = 6; // demo – sẽ cập nhật số liệu thật
+        function hieuSuatBadge(float $soGio, float $kpi): string {
+            if ($kpi <= 0 || $soGio <= 0) return '<span class="text-gray-400">–</span>';
+            // Hiệu suất = KPI / thực tế × 100%
+            // VD: KPI=6h, làm 3h → 200% (vượt kế hoạch)
+            $pct = round($kpi / $soGio * 100);
+            if ($pct >= 100) {
+                $cls = 'bg-green-100 text-green-700 border-green-300';
+                $icon = '✔';
+                $label = $pct > 100 ? "Vượt ({$pct}%)" : "Đạt ({$pct}%)";
+            } elseif ($pct >= 80) {
+                $cls = 'bg-blue-100 text-blue-700 border-blue-300';
+                $icon = '↗';
+                $label = "Gần đạt ({$pct}%)";
+            } elseif ($pct >= 50) {
+                $cls = 'bg-yellow-100 text-yellow-700 border-yellow-300';
+                $icon = '↘';
+                $label = "Chưa đạt ({$pct}%)";
+            } else {
+                $cls = 'bg-red-100 text-red-700 border-red-300';
+                $icon = '✖';
+                $label = "Kém ({$pct}%)";
+            }
+            return "<span class=\"inline-block border rounded-full px-2 py-0.5 text-xs font-bold {$cls}\">{$icon} {$label}</span>";
+        }
+        ?>
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-bold mb-4">
                 <i class="fas fa-list"></i> Danh Sách Công Việc Trong Ngày
@@ -229,12 +282,10 @@
                         <thead class="bg-gray-200">
                             <tr>
                                 <th class="border px-4 py-2">STT</th>
-                                <th class="border px-4 py-2">Thiết bị</th>
-                                <th class="border px-4 py-2">Cấp độ</th>
+                                <th class="border px-4 py-2">Hồ sơ</th>
                                 <th class="border px-4 py-2">Nội dung</th>
                                 <th class="border px-4 py-2">Số giờ</th>
-                                <th class="border px-4 py-2">KPI</th>
-                                <th class="border px-4 py-2">Hiệu suất</th>
+                                <th class="border px-4 py-2">Hiệu suất<br><span class="text-xs font-normal text-gray-500">KPI <?= $kpiGioChuan ?>h*</span></th>
                                 <th class="border px-4 py-2">Thao tác</th>
                             </tr>
                         </thead>
@@ -242,19 +293,17 @@
                             <?php 
                             $stt = 1;
                             foreach ($viewData['congviecs'] as $cv): 
-                                $hieuSuat = ($cv['kpi_gio_chuan'] / $cv['so_gio_lam']) * 100;
-                                $hieuSuatClass = $hieuSuat >= 100 ? 'text-green-600' : ($hieuSuat >= 80 ? 'text-orange-600' : 'text-red-600');
                             ?>
                             <tr>
                                 <td class="border px-4 py-2 text-center"><?= $stt++ ?></td>
-                                <td class="border px-4 py-2">
-                                    <strong><?= htmlspecialchars($cv['mavt']) ?></strong><br>
-                                    <small class="text-gray-600">SN: <?= htmlspecialchars($cv['somay']) ?></small>
-                                </td>
-                                <td class="border px-4 py-2">
-                                    <span class="badge-<?= $cv['capdo_stt'] == 1 ? 'green' : ($cv['capdo_stt'] == 2 ? 'orange' : 'red') ?>">
-                                        <?= htmlspecialchars($cv['capdo_ten']) ?>
-                                    </span>
+                                <?php
+                                    $cvMaqlParts = explode('-', $cv['maql'] ?? $cv['phieu'] ?? '');
+                                    $cvMaqlNum   = end($cvMaqlParts);
+                                ?>
+                                <td class="border px-4 py-2 whitespace-nowrap">
+                                    <span class="font-semibold"><?= htmlspecialchars($cvMaqlNum) ?></span>
+                                    <?= htmlspecialchars($cv['mavt'] ?? '') ?>/ <?= htmlspecialchars($cv['somay'] ?? '') ?>
+                                    – <span class="text-blue-600 text-xs">KPI <?= $kpiGioChuan ?>h</span>
                                 </td>
                                 <td class="border px-4 py-2">
                                     <?= nl2br(htmlspecialchars(substr($cv['noi_dung'], 0, 100))) ?>
@@ -264,12 +313,7 @@
                                     <strong><?= number_format($cv['so_gio_lam'], 2) ?>h</strong>
                                 </td>
                                 <td class="border px-4 py-2 text-center">
-                                    <?= number_format($cv['kpi_gio_chuan'], 2) ?>h
-                                </td>
-                                <td class="border px-4 py-2 text-center">
-                                    <span class="<?= $hieuSuatClass ?> font-bold">
-                                        <?= number_format($hieuSuat, 1) ?>%
-                                    </span>
+                                    <?= hieuSuatBadge((float)$cv['so_gio_lam'], $kpiGioChuan) ?>
                                 </td>
                                 <td class="border px-4 py-2 text-center">
                                     <button onclick="deleteCongViec(<?= $cv['stt'] ?>)" 
@@ -285,6 +329,90 @@
             <?php endif; ?>
         </div>
 
+        <?php endif; ?>
+
+        <!-- Danh sách công việc trong tháng -->
+        <?php if ($nhanvienStt): ?>
+        <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold">
+                    <i class="fas fa-calendar-alt"></i>
+                    Danh Sách Công Việc Trong Tháng
+                    <?= date_format(date_create($ngayLam) ?: date_create(), 'n/Y') ?>
+                </h3>
+                <?php if (!empty($thangData)): ?>
+                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    Tổng: <?= number_format($tongGioThang, 2) ?>h /
+                    <?= count($thangData) ?> công việc
+                </span>
+                <?php endif; ?>
+            </div>
+
+            <?php if (empty($thangData)): ?>
+                <p class="text-gray-500 text-center py-8">
+                    <i class="fas fa-inbox text-4xl mb-2"></i><br>
+                    Chưa có công việc nào trong tháng này
+                </p>
+            <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="border px-3 py-2 text-left w-10">STT</th>
+                                <th class="border px-3 py-2 text-left">Ngày</th>
+                                <th class="border px-3 py-2 text-left">Hồ sơ</th>
+                                <th class="border px-3 py-2 text-left">Nội dung</th>
+                                <th class="border px-3 py-2 text-center">Số giờ</th>
+                                <th class="border px-3 py-2 text-center">Hiệu suất<br><span class="text-xs font-normal text-gray-500">KPI <?= $kpiGioChuan ?>h*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $sttThang = 1;
+                            $prevNgay = '';
+                            foreach ($thangData as $cv):
+                                $isToday = ($cv['ngay_lam'] === $ngayLam);
+                                $rowClass = $isToday ? 'bg-blue-50' : '';
+                                $maqlRaw  = $cv['maql'] ?? $cv['phieu'] ?? '';
+                                $maqlParts = explode('-', $maqlRaw);
+                                $maqlNum  = end($maqlParts);
+                            ?>
+                            <tr class="<?= $rowClass ?> hover:bg-gray-50">
+                                <td class="border px-3 py-1.5 text-center text-gray-500"><?= $sttThang++ ?></td>
+                                <td class="border px-3 py-1.5 whitespace-nowrap font-medium <?= $isToday ? 'text-blue-700' : '' ?>">
+                                    <?= date('d/m', strtotime($cv['ngay_lam'])) ?>
+                                    <?php if ($isToday): ?><span class="text-xs text-blue-500">(hôm nay)</span><?php endif; ?>
+                                </td>
+                                <td class="border px-3 py-1.5 whitespace-nowrap">
+                                    <span class="font-semibold"><?= htmlspecialchars($maqlNum) ?></span>
+                                    <?= htmlspecialchars($cv['mavt'] ?? '') ?>/ <?= htmlspecialchars($cv['somay'] ?? '') ?>
+                                    – <span class="text-blue-600 text-xs">KPI <?= $kpiGioChuan ?>h</span>
+                                </td>
+                                <td class="border px-3 py-1.5">
+                                    <?= nl2br(htmlspecialchars(mb_substr($cv['noi_dung'], 0, 120))) ?>
+                                    <?= mb_strlen($cv['noi_dung']) > 120 ? '…' : '' ?>
+                                </td>
+                                <td class="border px-3 py-1.5 text-center font-semibold">
+                                    <?= number_format($cv['so_gio_lam'], 2) ?>h
+                                </td>
+                                <td class="border px-3 py-1.5 text-center">
+                                    <?= hieuSuatBadge((float)$cv['so_gio_lam'], $kpiGioChuan) ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot class="bg-gray-100 font-bold">
+                            <tr>
+                                <td colspan="5" class="border px-3 py-2 text-right">Tổng giờ trong tháng:</td>
+                                <td class="border px-3 py-2 text-center text-blue-700">
+                                    <?= number_format($tongGioThang, 2) ?>h
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
         <?php endif; ?>
 
         <!-- Link đến báo cáo -->
@@ -303,6 +431,13 @@
         function hideAddForm() {
             document.getElementById('addFormContainer').style.display = 'none';
             document.getElementById('formAddCongViec').reset();
+            document.getElementById('selectedHosoStt').value = '';
+            const display = document.getElementById('hosoDisplay');
+            display.textContent = '-- Chưa chọn hồ sơ --';
+            display.classList.add('text-gray-500');
+            display.classList.remove('text-gray-800', 'font-medium');
+            document.getElementById('hosoKpiInfo').classList.add('hidden');
+            closeHosoSearch();
         }
 
         function submitAddForm(e) {
@@ -350,6 +485,104 @@
                 }
             });
         }
+
+        // ===== Hồ sơ Quick Search =====
+        function escapeHosoHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = String(text);
+            return d.innerHTML;
+        }
+
+        // "20260527-KTKT-2054" → "2054 - KTKT"
+        function formatMaql(maql) {
+            if (!maql) return '';
+            const parts = maql.split('-');
+            if (parts.length >= 3) {
+                return parts[parts.length - 1] + ' - ' + parts[parts.length - 2];
+            }
+            return maql;
+        }
+
+        function highlightHoso(text, q) {
+            if (!q) return escapeHosoHtml(text);
+            const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return escapeHosoHtml(text).replace(re, '<mark class="bg-yellow-300 font-semibold">$1</mark>');
+        }
+
+        function openHosoSearch() {
+            const panel = document.getElementById('hosoSearchPanel');
+            panel.classList.remove('hidden');
+            const input = document.getElementById('hosoSearchInput');
+            input.value = '';
+            filterHosoResults('');
+            setTimeout(() => input.focus(), 80);
+        }
+
+        function closeHosoSearch() {
+            document.getElementById('hosoSearchPanel').classList.add('hidden');
+        }
+
+        function filterHosoResults(q) {
+            const list = window.hosoList || [];
+            const lower = q.toLowerCase().trim();
+            const filtered = lower
+                ? list.filter(h =>
+                    String(h.stt).includes(lower) ||
+                    h.maql.toLowerCase().includes(lower) ||
+                    h.phieu.toLowerCase().includes(lower) ||
+                    h.mavt.toLowerCase().includes(lower) ||
+                    h.somay.toLowerCase().includes(lower) ||
+                    h.tenvt.toLowerCase().includes(lower)
+                  )
+                : list;
+
+            document.getElementById('hosoResultCount').textContent = filtered.length + ' hồ sơ';
+
+            const container = document.getElementById('hosoSearchResults');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center py-6 text-gray-500"><i class="fas fa-inbox text-3xl mb-2"></i><br>Không tìm thấy hồ sơ nào</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(h => `
+                <div class="bg-white border-2 border-gray-200 hover:border-green-500 hover:shadow-md rounded-lg px-3 py-2 cursor-pointer transition-all group"
+                     onclick="selectHoso(${h.stt}, '${escapeHosoHtml(h.maql || h.phieu)}', '${escapeHosoHtml(h.mavt)}', '${escapeHosoHtml(h.somay)}', '${escapeHosoHtml(h.tenvt)}')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-semibold text-green-700">${highlightHoso(formatMaql(h.maql || h.phieu), q)}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 group-hover:text-green-500 transition-colors"></i>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-0.5">
+                        ${highlightHoso(h.mavt, q)}
+                        ${h.somay ? ' / SN: ' + highlightHoso(h.somay, q) : ''}
+                        ${h.tenvt ? ' &nbsp;·&nbsp; ' + highlightHoso(h.tenvt, q) : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectHoso(stt, maql, mavt, somay, tenvt) {
+            document.getElementById('selectedHosoStt').value = stt;
+            const label = formatMaql(maql) + (mavt ? ` | ${mavt}` : '') + (somay ? ` / SN:${somay}` : '') + (tenvt ? ` (${tenvt})` : '');
+            const display = document.getElementById('hosoDisplay');
+            display.textContent = label;
+            display.classList.remove('text-gray-500');
+            display.classList.add('text-gray-800', 'font-medium');
+            // Hiện KPI (demo 6h)
+            document.getElementById('hosoKpiInfo').classList.remove('hidden');
+            closeHosoSearch();
+        }
+
+        // Đóng search panel khi click ngoài
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('hosoSearchPanel');
+            const btn = e.target.closest('[onclick="openHosoSearch()"]');
+            const display = document.getElementById('hosoDisplay');
+            if (panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && e.target !== display && !btn) {
+                closeHosoSearch();
+            }
+        });
     </script>
 </body>
 </html>

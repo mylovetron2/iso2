@@ -52,7 +52,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                             data-somay="<?php echo htmlspecialchars($item['somay']); ?>"
                                             data-bophansh="<?php echo htmlspecialchars($item['bophansh']); ?>"
                                             data-chusohuu="<?php echo htmlspecialchars($item['chusohuu'] ?? ''); ?>"
-                                            <?php echo (isset($thietBi) && $thietBi['mavattu'] === $item['mavattu']) ? 'selected' : ''; ?>>
+                                            <?php echo (isset($thietBi) && $thietBi['mavattu'] === $item['mavattu'] && $thietBi['somay'] === $item['somay']) ? 'selected' : ''; ?>>
                                         [<?php echo htmlspecialchars($item['somay']); ?>] <?php echo htmlspecialchars($item['tenviettat']); ?> - <?php echo htmlspecialchars($item['bophansh'] ?? ''); ?>
                                     </option>
                                 <?php endforeach; ?>

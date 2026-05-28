@@ -22,9 +22,10 @@ class CongViecSuaChua extends BaseModel
      */
     public function getByNhanVienNgay(int $nhanvienStt, string $ngayLam): array
     {
-        $sql = "SELECT cv.*, c.mau_sac as capdo_mau
+        $sql = "SELECT cv.*,
+                       h.maql, h.phieu, h.mavt, h.somay
                 FROM {$this->table} cv
-                LEFT JOIN capdo_baocuong_iso c ON cv.capdo_stt = c.stt
+                LEFT JOIN hososcbd_iso h ON cv.hososcbd_stt = h.stt
                 WHERE cv.nhanvien_stt = :nhanvien_stt AND cv.ngay_lam = :ngay_lam
                 ORDER BY cv.created_at DESC";
         
@@ -91,8 +92,8 @@ class CongViecSuaChua extends BaseModel
         ];
 
         // Validate required fields
-        $requiredFields = ['nhanvien_stt', 'nhanvien_ten', 'ngay_lam', 'mavt', 'somay', 
-                          'capdo_stt', 'capdo_ten', 'kpi_gio_chuan', 'noi_dung', 'so_gio_lam'];
+        $requiredFields = ['nhanvien_stt', 'nhanvien_ten', 'ngay_lam', 'hososcbd_stt',
+                          'noi_dung', 'so_gio_lam'];
         
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
@@ -193,14 +194,36 @@ class CongViecSuaChua extends BaseModel
     }
 
     /**
-     * Lấy lịch sử sửa chữa của thiết bị
+     * Lấy danh sách công việc theo hồ sơ SC/BĐ
+     */
+    public function getByHoSo(int $hososcbdStt, int $limit = 50): array
+    {
+        $sql = "SELECT cv.*,
+                       h.maql, h.phieu, h.mavt, h.somay
+                FROM {$this->table} cv
+                LEFT JOIN hososcbd_iso h ON cv.hososcbd_stt = h.stt
+                WHERE cv.hososcbd_stt = :hososcbd_stt
+                ORDER BY cv.ngay_lam DESC, cv.created_at DESC
+                LIMIT :limit";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':hososcbd_stt', $hososcbdStt, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * @deprecated Dùng getByHoSo() thay thế
      */
     public function getLichSuThietBi(string $mavt, string $somay, int $limit = 10): array
     {
-        $sql = "SELECT cv.*, c.mau_sac as capdo_mau
+        $sql = "SELECT cv.*,
+                       h.maql, h.phieu, h.mavt AS h_mavt, h.somay AS h_somay
                 FROM {$this->table} cv
-                LEFT JOIN capdo_baocuong_iso c ON cv.capdo_stt = c.stt
-                WHERE cv.mavt = :mavt AND cv.somay = :somay
+                LEFT JOIN hososcbd_iso h ON cv.hososcbd_stt = h.stt
+                WHERE h.mavt = :mavt AND h.somay = :somay
                 ORDER BY cv.ngay_lam DESC, cv.created_at DESC
                 LIMIT :limit";
         
@@ -239,15 +262,17 @@ class CongViecSuaChua extends BaseModel
     }
 
     /**
-     * Thống kê KPI theo thiết bị
+     * Thống kê KPI theo hồ sơ
      */
-    public function getKPIThietBi(string $mavt, string $somay): array
+    public function getKPIHoSo(int $hososcbdStt): array
     {
-        $sql = "SELECT * FROM view_kpi_thietbi_thongke 
-                WHERE mavt = :mavt AND somay = :somay";
+        $sql = "SELECT cv.*, h.mavt, h.somay, h.maql, h.phieu
+                FROM {$this->table} cv
+                INNER JOIN hososcbd_iso h ON cv.hososcbd_stt = h.stt
+                WHERE cv.hososcbd_stt = :hososcbd_stt";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':mavt' => $mavt, ':somay' => $somay]);
+        $stmt->execute([':hososcbd_stt' => $hososcbdStt]);
         return $stmt->fetchAll();
     }
 
@@ -263,7 +288,7 @@ class CongViecSuaChua extends BaseModel
                     SUM(so_gio_lam) as tong_gio,
                     ROUND(AVG(so_gio_lam), 2) as gio_trung_binh,
                     COUNT(DISTINCT ngay_lam) as so_ngay_lam,
-                    COUNT(DISTINCT CONCAT(mavt, '-', somay)) as so_thietbi_sua
+                    COUNT(DISTINCT hososcbd_stt) as so_hoso_sua
                 FROM {$this->table}
                 WHERE ngay_lam BETWEEN :from AND :to
                 GROUP BY nhanvien_stt, nhanvien_ten
@@ -271,6 +296,31 @@ class CongViecSuaChua extends BaseModel
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':from' => $from, ':to' => $to]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Lấy tất cả công việc của nhân viên trong tháng
+     */
+    public function getByNhanVienThang(int $nhanvienStt, int $thang, int $nam): array
+    {
+        $from = sprintf('%04d-%02d-01', $nam, $thang);
+        $to   = date('Y-m-t', mktime(0, 0, 0, $thang, 1, $nam));
+
+        $sql = "SELECT cv.*,
+                       h.maql, h.phieu, h.mavt, h.somay
+                FROM {$this->table} cv
+                LEFT JOIN hososcbd_iso h ON cv.hososcbd_stt = h.stt
+                WHERE cv.nhanvien_stt = :nhanvien_stt
+                  AND cv.ngay_lam BETWEEN :from AND :to
+                ORDER BY cv.ngay_lam ASC, cv.created_at ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':nhanvien_stt' => $nhanvienStt,
+            ':from' => $from,
+            ':to'   => $to,
+        ]);
         return $stmt->fetchAll();
     }
 

@@ -184,6 +184,17 @@ try {
         $ngayLam = $_GET['ngay_lam'] ?? date('Y-m-d');
         
         $viewData = $controller->index();
+
+        // Danh sách công việc trong tháng
+        $thangData = [];
+        $tongGioThang = 0;
+        if ($nhanvienStt) {
+            $ngayObj  = date_create($ngayLam) ?: date_create();
+            $thang    = (int)date_format($ngayObj, 'n');
+            $nam      = (int)date_format($ngayObj, 'Y');
+            $thangData    = $controller->congviecModel()->getByNhanVienThang($nhanvienStt, $thang, $nam);
+            $tongGioThang = array_sum(array_column($thangData, 'so_gio_lam'));
+        }
         
         require_once __DIR__ . '/views/congviec/index.php';
         break;

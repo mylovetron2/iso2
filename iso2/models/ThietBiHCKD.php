@@ -184,14 +184,12 @@ class ThietBiHCKD extends BaseModel
                                ELSE NULL
                            END as days_to_expire
                     FROM {$this->table} t
-                    LEFT JOIN (
-                        SELECT tenmay, 
-                               MAX(stt) as max_stt
-                        FROM hosohckd_iso
-                        WHERE ngayhc IS NOT NULL
-                        GROUP BY tenmay
-                    ) latest ON t.mavattu = latest.tenmay
-                    LEFT JOIN hosohckd_iso h ON h.stt = latest.max_stt";
+                    LEFT JOIN hosohckd_iso h ON h.stt = (
+                        SELECT stt FROM hosohckd_iso
+                        WHERE tenmay = t.mavattu AND ngayhc IS NOT NULL
+                        ORDER BY ngayhc DESC, stt DESC
+                        LIMIT 1
+                    )";
             
             if ($where) {
                 // Replace table references in WHERE clause, but NOT parameter names (those with : prefix)
@@ -237,14 +235,12 @@ class ThietBiHCKD extends BaseModel
                            END as days_to_expire
                     FROM {$this->table} t
                     LEFT JOIN donvi_iso dv ON t.bophansh = dv.madv
-                    LEFT JOIN (
-                        SELECT tenmay, 
-                               MAX(stt) as max_stt
-                        FROM hosohckd_iso
-                        WHERE ngayhc IS NOT NULL
-                        GROUP BY tenmay
-                    ) latest ON t.mavattu = latest.tenmay
-                    LEFT JOIN hosohckd_iso h ON h.stt = latest.max_stt";
+                    LEFT JOIN hosohckd_iso h ON h.stt = (
+                        SELECT stt FROM hosohckd_iso
+                        WHERE tenmay = t.mavattu AND ngayhc IS NOT NULL
+                        ORDER BY ngayhc DESC, stt DESC
+                        LIMIT 1
+                    )";
             
             if ($where) {
                 // Replace table references in WHERE clause, but NOT parameter names (those with : prefix)

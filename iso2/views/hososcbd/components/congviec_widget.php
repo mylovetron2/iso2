@@ -45,13 +45,8 @@ echo "<!-- DEBUG: DB connected -->\n";
 // Lấy danh sách công việc liên quan
 try {
     $stmtCongViec = $db->prepare("
-        SELECT 
-            cv.*,
-            cd.ma_capdo,
-            cd.ten_capdo,
-            cd.mau_sac
+        SELECT cv.*
         FROM congviec_suachua_iso cv
-        LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
         WHERE cv.hososcbd_stt = :hososcbd_stt
         ORDER BY cv.ngay_lam DESC, cv.created_at DESC
     ");
@@ -65,7 +60,7 @@ try {
     $congviecs = [];
 }
 
-// Tính tổng số giờ và lấy KPI thiết bị
+// Tính tổng số giờ
 try {
     $stmtTongGio = $db->prepare("
         SELECT 
@@ -76,21 +71,7 @@ try {
     ");
     $stmtTongGio->execute([':hososcbd_stt' => $stt]);
     $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
-    
-    // Lấy KPI thiết bị
-    $stmtKPI = $db->prepare("
-        SELECT 
-            SUM(tk.kpi_gio_du_kien) as tong_kpi,
-            COUNT(*) as so_capdo
-        FROM thietbi_capdo_kpi_iso tk
-        WHERE tk.mavt = :mavt AND tk.somay = :somay
-    ");
-    $stmtKPI->execute([
-        ':mavt' => $item['mavt'] ?? '',
-        ':somay' => $item['somay'] ?? ''
-    ]);
-    $kpiData = $stmtKPI->fetch(PDO::FETCH_ASSOC);
-    $thongke['kpi_thietbi'] = $kpiData['tong_kpi'] ?? 0;
+    $thongke['kpi_thietbi'] = 0;
     
     echo "<!-- DEBUG: Thongke loaded -->\n";
 } catch (Exception $e) {
@@ -110,18 +91,6 @@ try {
     echo '<strong>❌ Lỗi load nhân viên:</strong> ' . htmlspecialchars($e->getMessage());
     echo '</div>';
     $nhanviens = [];
-}
-
-// Lấy danh sách cấp độ
-try {
-    $stmtCD = $db->query("SELECT * FROM capdo_baocuong_iso WHERE trang_thai = 1 ORDER BY thu_tu ASC");
-    $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
-    echo "<!-- DEBUG: Loaded " . count($capdos) . " capdo -->\n";
-} catch (Exception $e) {
-    echo '<div class="bg-red-100 border border-red-400 p-4 rounded">';
-    echo '<strong>❌ Lỗi load cấp độ:</strong> ' . htmlspecialchars($e->getMessage());
-    echo '</div>';
-    $capdos = [];
 }
 
 echo "<!-- DEBUG: Starting HTML output -->\n";
@@ -173,18 +142,8 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                     <tr>
                         <th class="px-3 py-2 border-b text-left">Ngày làm</th>
                         <th class="px-3 py-2 border-b text-left">Nhân viên</th>
-                        <th class="px-3 py-2 border-b text-left">Cấp độ</th>
                         <th class="px-3 py-2 border-b text-left">Nội dung</th>
                         <th class="px-3 py-2 border-b text-center">Số giờ</th>
-                        <?php /* Ẩn cột KPI chuẩn
-                        <th class="px-3 py-2 border-b text-center">KPI chuẩn</th>
-                        */ ?>
-                        <?php /* Ẩn cột Đánh giá
-                        <th class="px-3 py-2 border-b text-center">Đánh giá</th>
-                        */ ?>
-                        <?php /* Ẩn cột Trạng thái
-                        <th class="px-3 py-2 border-b text-center">Trạng thái</th>
-                        */ ?>
                         <th class="px-3 py-2 border-b text-center">Thao tác</th>
                     </tr>
                 </thead>
@@ -198,12 +157,6 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                                 <strong><?= htmlspecialchars($cv['nhanvien_ten']) ?></strong>
                             </td>
                             <td class="px-3 py-2 border-b">
-                                <span class="inline-block px-2 py-1 rounded text-xs text-white" 
-                                      style="background-color: <?= htmlspecialchars($cv['mau_sac'] ?? '#666') ?>">
-                                    <?= htmlspecialchars($cv['ten_capdo']) ?>
-                                </span>
-                            </td>
-                            <td class="px-3 py-2 border-b">
                                 <div class="whitespace-normal">
                                     <?= htmlspecialchars($cv['noi_dung']) ?>
                                 </div>
@@ -211,22 +164,6 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                             <td class="px-3 py-2 border-b text-center">
                                 <strong class="text-blue-600"><?= number_format($cv['so_gio_lam'], 2) ?>h</strong>
                             </td>
-                            <?php /* Ẩn cột KPI chuẩn
-                            <td class="px-3 py-2 border-b text-center text-gray-600">
-                                <?= number_format($cv['kpi_gio_chuan'], 2) ?>h
-                            </td>
-                            */ ?>
-                            <?php /* Ẩn cột Đánh giá
-                            <td class="px-3 py-2 border-b text-center">
-                                <?php if ($cv['so_gio_lam'] <= $cv['kpi_gio_chuan']): ?>
-                                    <i class="fas fa-check-circle text-green-500 text-lg" title="Đạt KPI"></i>
-                                <?php elseif ($cv['so_gio_lam'] <= $cv['kpi_gio_chuan'] * 1.2): ?>
-                                    <i class="fas fa-exclamation-circle text-orange-500 text-lg" title="Gần đạt KPI"></i>
-                                <?php else: ?>
-                                    <i class="fas fa-times-circle text-red-500 text-lg" title="Chưa đạt KPI"></i>
-                                <?php endif; ?>
-                            </td>
-                            */ ?>
                             <?php /* Ẩn cột Trạng thái
                             <td class="px-3 py-2 border-b text-center">
                                 <?php
@@ -268,11 +205,11 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                 </tbody>
                 <tfoot class="bg-gray-50 font-bold">
                     <tr>
-                        <td colspan="4" class="px-3 py-2 border-t text-right">TỔNG CỘNG:</td>
+                        <td colspan="3" class="px-3 py-2 border-t text-right">TỔNG CỘNG:</td>
                         <td class="px-3 py-2 border-t text-center text-blue-700">
                             <?= number_format($thongke['tong_gio'], 2) ?>h
                         </td>
-                        <td colspan="1" class="px-3 py-2 border-t"></td>
+                        <td class="px-3 py-2 border-t"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -294,8 +231,6 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
         
         <form id="formAddCongViec" class="p-6 space-y-4">
             <input type="hidden" name="hososcbd_stt" value="<?= $stt ?>">
-            <input type="hidden" name="mavt" value="<?= htmlspecialchars($item['mavt'] ?? '') ?>">
-            <input type="hidden" name="somay" value="<?= htmlspecialchars($item['somay'] ?? '') ?>">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -320,24 +255,6 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">
-                        Cấp độ bảo dưỡng <span class="text-red-500">*</span>
-                    </label>
-                    <select name="capdo_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500" 
-                            onchange="updateKpiDisplay(this)">
-                        <option value="">-- Chọn cấp độ --</option>
-                        <?php foreach ($capdos as $cd): ?>
-                            <option value="<?= $cd['stt'] ?>" 
-                                    data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
-                                    data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
-                                <?= htmlspecialchars($cd['ten_capdo']) ?> (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div id="kpiDisplay" class="text-sm text-gray-600 mt-1"></div>
-                </div>
-                
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">
                         Số giờ làm <span class="text-red-500">*</span>
@@ -442,24 +359,6 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-gray-700 font-semibold mb-2">
-                        Cấp độ bảo dưỡng <span class="text-red-500">*</span>
-                    </label>
-                    <select name="capdo_stt" id="edit_capdo_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-green-500" 
-                            onchange="updateEditKpiDisplay(this)">
-                        <option value="">-- Chọn cấp độ --</option>
-                        <?php foreach ($capdos as $cd): ?>
-                            <option value="<?= $cd['stt'] ?>" 
-                                    data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
-                                    data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
-                                <?= htmlspecialchars($cd['ten_capdo']) ?> (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div id="editKpiDisplay" class="text-sm text-gray-600 mt-1"></div>
-                </div>
-                
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">
                         Số giờ làm <span class="text-red-500">*</span>
@@ -576,18 +475,7 @@ function closeAddCongViecModal() {
     }
 }
 
-function updateKpiDisplay(select) {
-    const option = select.options[select.selectedIndex];
-    const kpi = option.dataset.kpi;
-    const ten = option.dataset.ten;
-    const display = document.getElementById('kpiDisplay');
-    
-    if (kpi && ten) {
-        display.innerHTML = `<i class="fas fa-info-circle"></i> ${ten}: KPI chuẩn là <strong>${kpi} giờ</strong>`;
-    } else {
-        display.innerHTML = '';
-    }
-}
+function updateKpiDisplay(select) { /* deprecated - no-op */ }
 
 document.getElementById('formAddCongViec').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -668,18 +556,7 @@ function viewCongViecDetail(stt) {
     window.open('/iso2/congviec_suachua.php?stt=' + stt, '_blank');
 }
 
-function updateEditKpiDisplay(select) {
-    const option = select.options[select.selectedIndex];
-    const kpi = option.dataset.kpi;
-    const ten = option.dataset.ten;
-    const display = document.getElementById('editKpiDisplay');
-    
-    if (kpi && ten) {
-        display.innerHTML = `<i class="fas fa-info-circle"></i> ${ten}: KPI chuẩn là <strong>${kpi} giờ</strong>`;
-    } else {
-        display.innerHTML = '';
-    }
-}
+function updateEditKpiDisplay(select) { /* deprecated - no-op */ }
 
 async function openEditCongViecModal(stt) {
     try {
@@ -715,17 +592,11 @@ async function openEditCongViecModal(stt) {
         document.getElementById('edit_hososcbd_stt').value = cv.hososcbd_stt || '<?= $stt ?>';
         document.getElementById('edit_nhanvien_stt').value = cv.nhanvien_stt;
         document.getElementById('edit_ngay_lam').value = cv.ngay_lam;
-        document.getElementById('edit_capdo_stt').value = cv.capdo_stt;
         document.getElementById('edit_so_gio_lam').value = cv.so_gio_lam;
         document.getElementById('edit_gio_bat_dau').value = cv.gio_bat_dau || '';
         document.getElementById('edit_gio_ket_thuc').value = cv.gio_ket_thuc || '';
         document.getElementById('edit_noi_dung').value = cv.noi_dung;
-        document.getElementById('edit_trang_thai').value = cv.trang_thai;
         document.getElementById('edit_ghi_chu').value = cv.ghi_chu || '';
-        
-        // Update KPI display
-        const capdoSelect = document.getElementById('edit_capdo_stt');
-        updateEditKpiDisplay(capdoSelect);
         
         // Initialize Choices.js for edit employee select if not already initialized
         if (!editNhanVienChoices) {

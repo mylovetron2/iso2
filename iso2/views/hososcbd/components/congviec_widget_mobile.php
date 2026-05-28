@@ -25,13 +25,8 @@ $db = getDBConnection();
 // Lấy danh sách công việc liên quan
 try {
     $stmtCongViec = $db->prepare("
-        SELECT 
-            cv.*,
-            cd.ma_capdo,
-            cd.ten_capdo,
-            cd.mau_sac
+        SELECT cv.*
         FROM congviec_suachua_iso cv
-        LEFT JOIN capdo_baocuong_iso cd ON cv.capdo_stt = cd.stt
         WHERE cv.hososcbd_stt = :hososcbd_stt
         ORDER BY cv.ngay_lam DESC, cv.created_at DESC
     ");
@@ -44,7 +39,7 @@ try {
     $congviecs = [];
 }
 
-// Tính tổng số giờ và lấy KPI thiết bị
+// Tính tổng số giờ
 try {
     $stmtTongGio = $db->prepare("
         SELECT 
@@ -55,21 +50,7 @@ try {
     ");
     $stmtTongGio->execute([':hososcbd_stt' => $stt]);
     $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
-    
-    // Lấy KPI thiết bị
-    $stmtKPI = $db->prepare("
-        SELECT 
-            SUM(tk.kpi_gio_du_kien) as tong_kpi,
-            COUNT(*) as so_capdo
-        FROM thietbi_capdo_kpi_iso tk
-        WHERE tk.mavt = :mavt AND tk.somay = :somay
-    ");
-    $stmtKPI->execute([
-        ':mavt' => $item['mavt'] ?? '',
-        ':somay' => $item['somay'] ?? ''
-    ]);
-    $kpiData = $stmtKPI->fetch(PDO::FETCH_ASSOC);
-    $thongke['kpi_thietbi'] = $kpiData['tong_kpi'] ?? 0;
+    $thongke['kpi_thietbi'] = 0;
 } catch (Exception $e) {
     $thongke = ['so_congviec' => 0, 'tong_gio' => 0, 'kpi_thietbi' => 0];
 }
@@ -80,14 +61,6 @@ try {
     $nhanviens = $stmtNV->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $nhanviens = [];
-}
-
-// Lấy danh sách cấp độ
-try {
-    $stmtCD = $db->query("SELECT * FROM capdo_baocuong_iso WHERE trang_thai = 1 ORDER BY thu_tu ASC");
-    $capdos = $stmtCD->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    $capdos = [];
 }
 ?>
 
@@ -343,9 +316,6 @@ try {
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="mobile-work-badge" style="background-color: <?= htmlspecialchars($cv['mau_sac'] ?? '#666') ?>">
-                            <?= htmlspecialchars($cv['ten_capdo']) ?>
-                        </span>
                         <div class="text-lg font-bold text-blue-600 mt-1">
                             <?= number_format($cv['so_gio_lam'], 1) ?>h
                         </div>
@@ -399,8 +369,6 @@ try {
         
         <form id="formAddCongViecMobile" class="mobile-modal-body">
             <input type="hidden" name="hososcbd_stt" value="<?= $stt ?>">
-            <input type="hidden" name="mavt" value="<?= htmlspecialchars($item['mavt'] ?? '') ?>">
-            <input type="hidden" name="somay" value="<?= htmlspecialchars($item['somay'] ?? '') ?>">
             
             <div class="mobile-form-group">
                 <label class="mobile-form-label">
@@ -419,23 +387,6 @@ try {
                     Ngày làm <span class="text-red-500">*</span>
                 </label>
                 <input type="date" name="ngay_lam" value="<?= date('Y-m-d') ?>" required class="mobile-form-input">
-            </div>
-            
-            <div class="mobile-form-group">
-                <label class="mobile-form-label">
-                    Cấp độ bảo dưỡng <span class="text-red-500">*</span>
-                </label>
-                <select name="capdo_stt" required class="mobile-form-select" onchange="updateKpiDisplayMobile(this)">
-                    <option value="">-- Chọn cấp độ --</option>
-                    <?php foreach ($capdos as $cd): ?>
-                        <option value="<?= $cd['stt'] ?>" 
-                                data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
-                                data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
-                            <?= htmlspecialchars($cd['ten_capdo']) ?> (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div id="kpiDisplayMobile" class="text-sm text-gray-600 mt-1"></div>
             </div>
             
             <div class="mobile-form-group">
@@ -520,21 +471,6 @@ try {
             <div class="mobile-form-group">
                 <label class="mobile-form-label">Ngày làm <span class="text-red-500">*</span></label>
                 <input type="date" id="edit_ngay_lam_mobile" name="ngay_lam" required class="mobile-form-input">
-            </div>
-            
-            <div class="mobile-form-group">
-                <label class="mobile-form-label">Cấp độ <span class="text-red-500">*</span></label>
-                <select id="edit_capdo_stt_mobile" name="capdo_stt" required class="mobile-form-select" 
-                        onchange="updateEditKpiDisplayMobile(this)">
-                    <?php foreach ($capdos as $cd): ?>
-                        <option value="<?= $cd['stt'] ?>" 
-                                data-kpi="<?= $cd['kpi_gio_chuan'] ?>"
-                                data-ten="<?= htmlspecialchars($cd['ten_capdo']) ?>">
-                            <?= htmlspecialchars($cd['ten_capdo']) ?> (KPI: <?= $cd['kpi_gio_chuan'] ?>h)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div id="editKpiDisplayMobile" class="text-sm text-gray-600 mt-1"></div>
             </div>
             
             <div class="mobile-form-group">
@@ -631,18 +567,7 @@ function closeAddCongViecMobileModal() {
     document.body.style.overflow = '';
 }
 
-function updateKpiDisplayMobile(select) {
-    const option = select.options[select.selectedIndex];
-    const kpi = option.dataset.kpi;
-    const ten = option.dataset.ten;
-    const display = document.getElementById('kpiDisplayMobile');
-    
-    if (kpi && ten) {
-        display.innerHTML = `<i class="fas fa-info-circle"></i> ${ten}: KPI chuẩn là <strong>${kpi} giờ</strong>`;
-    } else {
-        display.innerHTML = '';
-    }
-}
+function updateKpiDisplayMobile(select) { /* deprecated - no-op */ }
 
 // Add Form Submit
 document.getElementById('formAddCongViecMobile').addEventListener('submit', async function(e) {
@@ -719,15 +644,11 @@ async function openEditCongViecMobileModal(stt) {
         document.getElementById('edit_hososcbd_stt_mobile').value = cv.hososcbd_stt || '<?= $stt ?>';
         document.getElementById('edit_nhanvien_stt_mobile').value = cv.nhanvien_stt;
         document.getElementById('edit_ngay_lam_mobile').value = cv.ngay_lam;
-        document.getElementById('edit_capdo_stt_mobile').value = cv.capdo_stt;
         document.getElementById('edit_so_gio_lam_mobile').value = cv.so_gio_lam;
         document.getElementById('edit_gio_bat_dau_mobile').value = cv.gio_bat_dau || '';
         document.getElementById('edit_gio_ket_thuc_mobile').value = cv.gio_ket_thuc || '';
         document.getElementById('edit_noi_dung_mobile').value = cv.noi_dung;
-        document.getElementById('edit_trang_thai_mobile').value = cv.trang_thai;
         document.getElementById('edit_ghi_chu_mobile').value = cv.ghi_chu || '';
-        
-        updateEditKpiDisplayMobile(document.getElementById('edit_capdo_stt_mobile'));
         
         // Initialize Choices.js for edit employee select
         if (!editNhanVienChoices) {
@@ -769,18 +690,7 @@ function closeEditCongViecMobileModal() {
     document.body.style.overflow = '';
 }
 
-function updateEditKpiDisplayMobile(select) {
-    const option = select.options[select.selectedIndex];
-    const kpi = option.dataset.kpi;
-    const ten = option.dataset.ten;
-    const display = document.getElementById('editKpiDisplayMobile');
-    
-    if (kpi && ten) {
-        display.innerHTML = `<i class="fas fa-info-circle"></i> ${ten}: KPI chuẩn là <strong>${kpi} giờ</strong>`;
-    } else {
-        display.innerHTML = '';
-    }
-}
+function updateEditKpiDisplayMobile(select) { /* deprecated - no-op */ }
 
 // Edit Form Submit
 document.getElementById('formEditCongViecMobile').addEventListener('submit', async function(e) {

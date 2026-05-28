@@ -136,7 +136,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Hãng SX</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Bộ phận</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden xl:table-cell">Thời hạn</th>
-                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">Ngày HC</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden lg:table-cell">Ngày HC</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Trạng thái</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Nhập HS</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>
@@ -195,7 +195,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden xl:table-cell">
                         <?php echo $item['thoihankd'] ? $item['thoihankd'] . ' tháng' : '-'; ?>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">
+                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden lg:table-cell">
                         <?php 
                         $ngayHC = $item['ngayhc_latest'] ?? null;
                         if ($ngayHC) {
@@ -216,7 +216,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 py-2 border text-center">
                         <?php if (hasPermission('hieuchuan.create') || hasPermission('hieuchuan.edit')): ?>
-                        <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($item['mavattu']); ?>" 
+                        <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($item['mavattu']); ?>&stt=<?php echo (int)$item['stt']; ?>" 
                            class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs" 
                            title="Nhập hồ sơ HC/KĐ cho thiết bị này">
                             <i class="fas fa-file-medical mr-1"></i> Nhập HS
