@@ -147,7 +147,7 @@ class ThietBiHCKD extends BaseModel
     public function getAllGrouped(): array
     {
         try {
-            $sql = "SELECT mavattu, tenthietbi, tenviettat, somay, bophansh 
+            $sql = "SELECT stt, mavattu, tenthietbi, tenviettat, somay, bophansh 
                     FROM {$this->table} 
                     ORDER BY tenthietbi, somay";
             $stmt = $this->db->query($sql);
@@ -186,8 +186,10 @@ class ThietBiHCKD extends BaseModel
                     FROM {$this->table} t
                     LEFT JOIN hosohckd_iso h ON h.stt = (
                         SELECT stt FROM hosohckd_iso
-                        WHERE tenmay = t.mavattu AND ngayhc IS NOT NULL
-                        ORDER BY ngayhc DESC, stt DESC
+                        WHERE (thietbi_stt = t.stt
+                               OR (thietbi_stt IS NULL AND tenmay = t.mavattu))
+                          AND ngayhc IS NOT NULL
+                        ORDER BY thietbi_stt DESC, ngayhc DESC, stt DESC
                         LIMIT 1
                     )";
             
@@ -237,8 +239,10 @@ class ThietBiHCKD extends BaseModel
                     LEFT JOIN donvi_iso dv ON t.bophansh = dv.madv
                     LEFT JOIN hosohckd_iso h ON h.stt = (
                         SELECT stt FROM hosohckd_iso
-                        WHERE tenmay = t.mavattu AND ngayhc IS NOT NULL
-                        ORDER BY ngayhc DESC, stt DESC
+                        WHERE (thietbi_stt = t.stt
+                               OR (thietbi_stt IS NULL AND tenmay = t.mavattu))
+                          AND ngayhc IS NOT NULL
+                        ORDER BY thietbi_stt DESC, ngayhc DESC, stt DESC
                         LIMIT 1
                     )";
             

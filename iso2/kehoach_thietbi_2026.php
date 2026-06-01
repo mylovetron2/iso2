@@ -368,7 +368,8 @@ $sql = "SELECT t.*,
         COUNT(DISTINCT h.stt) as inspection_count
         FROM thietbihckd_iso t
         LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
-        LEFT JOIN hosohckd_iso h ON (t.mavattu = h.tenmay OR t.somay = h.tenmay) 
+        LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
+            OR (h.thietbi_stt IS NULL AND h.tenmay = t.mavattu))
             AND YEAR(h.ngayhc) = 2026
         WHERE $whereClause
         GROUP BY t.stt
@@ -717,9 +718,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div style="margin-top: 20px; padding: 15px; text-align: center;">
             <div style="display: inline-flex; gap: 5px; align-items: center;">
                 <?php if ($page > 1): ?>
-                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?>" 
+                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">« Đầu</a>
-                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?>" 
+                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">‹ Trước</a>
                 <?php endif; ?>
                 
@@ -728,9 +729,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                 </span>
                 
                 <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?>" 
+                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Sau ›</a>
-                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?>" 
+                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Cuối »</a>
                 <?php endif; ?>
             </div>

@@ -18,8 +18,9 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <form method="post" action="bangcanhbao.php?action=savehoso" class="space-y-4">
-        <!-- Hidden field to store return URL -->
+        <!-- Hidden fields -->
         <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>">
+        <input type="hidden" name="thietbi_stt" id="thietbi_stt" value="<?php echo (int)($thietBi['stt'] ?? 0); ?>">
         
         <!-- Số Hồ Sơ -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -49,6 +50,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <optgroup label="<?php echo htmlspecialchars($group); ?>">
                                 <?php foreach ($items as $item): ?>
                                     <option value="<?php echo htmlspecialchars($item['mavattu']); ?>"
+                                            data-stt="<?php echo (int)$item['stt']; ?>"
                                             data-somay="<?php echo htmlspecialchars($item['somay']); ?>"
                                             data-bophansh="<?php echo htmlspecialchars($item['bophansh']); ?>"
                                             data-chusohuu="<?php echo htmlspecialchars($item['chusohuu'] ?? ''); ?>"

@@ -142,6 +142,7 @@ class BangCanhBaoController
 
             // Lấy dữ liệu từ form
             $mavattu = $_POST['tenmay'] ?? '';
+            $thietbiStt = isset($_POST['thietbi_stt']) ? (int)$_POST['thietbi_stt'] : null;
             $sohs = $_POST['sohs'] ?? '';
             $ngayhc = $_POST['ngayhc'] ?? '';
             $ngayhctt = $_POST['ngayhctt'] ?? '';
@@ -169,8 +170,12 @@ class BangCanhBaoController
             $thietbidc4 = $_POST['thietbidc4'] ?? '';
             $thietbidc5 = $_POST['thietbidc5'] ?? '';
 
-            // Xác định công việc (HC hoặc CM)
-            $thietBi = $this->thietBiModel->getByMaVatTu($mavattu);
+            // Xác định công việc (HC hoặc CM) — dùng thietbi_stt để tra chính xác
+            if ($thietbiStt > 0) {
+                $thietBi = $this->thietBiModel->findById($thietbiStt) ?: null;
+            } else {
+                $thietBi = $this->thietBiModel->getByMaVatTu($mavattu);
+            }
             $congviec = 'HC';
             if ($thietBi) {
                 $tenviettat = $thietBi['tenviettat'] ?? '';
@@ -194,9 +199,10 @@ class BangCanhBaoController
 
             // Chuẩn bị dữ liệu
             $data = [
-                'sohs' => $sohs,
-                'tenmay' => $mavattu,
-                'congviec' => $congviec,
+                'sohs'       => $sohs,
+                'tenmay'     => $mavattu,
+                'thietbi_stt' => $thietbiStt > 0 ? $thietbiStt : null,
+                'congviec'   => $congviec,
                 'ngayhc' => $ngayhc,
                 'ngayhctt' => $ngayhctt,
                 'nhanvien' => $nhanvien,

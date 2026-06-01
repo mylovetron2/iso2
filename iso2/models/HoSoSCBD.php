@@ -93,6 +93,7 @@ class HoSoSCBD extends BaseModel
         // Nếu không, query đơn giản không có is_tamdung
         if ($hasTamDungTable) {
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
+                           MAX(thckd.stt) as thckd_stt, MAX(thckd.mavattu) as thckd_mavattu,
                            COUNT(DISTINCT k.id) as bddk_count,
                            GROUP_CONCAT(DISTINCT 
                                CONCAT(
@@ -116,7 +117,9 @@ class HoSoSCBD extends BaseModel
                     )
                     LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
                     LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
-                    LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
+                    LEFT JOIN hosohckd_iso hc ON (hc.thietbi_stt = thckd.stt
+                        OR (hc.thietbi_stt IS NULL AND hc.tenmay = thckd.mavattu))
+                        AND YEAR(hc.ngayhc) = 2026
                     LEFT JOIN (
                         SELECT hoso, trangthai
                         FROM hososcbd_tamdung td1
@@ -134,6 +137,7 @@ class HoSoSCBD extends BaseModel
         } else {
             // Fallback: Query đơn giản khi bảng hososcbd_tamdung chưa tồn tại
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
+                           MAX(thckd.stt) as thckd_stt, MAX(thckd.mavattu) as thckd_mavattu,
                            COUNT(DISTINCT k.id) as bddk_count,
                            GROUP_CONCAT(DISTINCT 
                                CONCAT(
@@ -156,7 +160,9 @@ class HoSoSCBD extends BaseModel
                     )
                     LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
                     LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
-                    LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
+                    LEFT JOIN hosohckd_iso hc ON (hc.thietbi_stt = thckd.stt
+                        OR (hc.thietbi_stt IS NULL AND hc.tenmay = thckd.mavattu))
+                        AND YEAR(hc.ngayhc) = 2026
                     WHERE $whereClause
                     GROUP BY h.stt
                     ORDER BY h.ngayyc DESC, h.phieu DESC

@@ -24,7 +24,13 @@ function initThietBiAutoFill() {
     selectTenmay.addEventListener('change', async function() {
         const mavattu = this.value;
         if (!mavattu) return;
-        
+
+        // Cập nhật thietbi_stt từ data-stt của option được chọn
+        const selectedOption = this.options[this.selectedIndex];
+        const stt = selectedOption ? (selectedOption.getAttribute('data-stt') || 0) : 0;
+        const hiddenStt = document.getElementById('thietbi_stt');
+        if (hiddenStt) hiddenStt.value = stt;
+
         try {
             // Lấy thông tin thiết bị
             const data = await fetchAPI(`api/bangcanhbao.php?action=get_thietbi_info&mavattu=${encodeURIComponent(mavattu)}`);

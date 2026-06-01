@@ -291,9 +291,19 @@ require_once __DIR__ . '/../layouts/header.php';
                                 }
                             }
                         }
+
+                        // Tạo link đến bangcanhbao.php để nhập liệu HC/KĐ
+                        $hckdLinkParams = '';
+                        if (!empty($item['thckd_stt'])) {
+                            $hckdLinkParams = 'mavattu=' . urlencode($item['thckd_mavattu'] ?? '') . '&stt=' . (int)$item['thckd_stt'];
+                        } elseif (!empty($item['mavt'])) {
+                            $hckdLinkParams = 'mavattu=' . urlencode($item['mavt']);
+                        }
+                        $hckdLink = $hckdLinkParams ? '/iso2/bangcanhbao.php?action=formhoso&' . $hckdLinkParams : '';
                         
                         // Hiển thị dạng badge giống BDDK
-                        if (!empty($kehoachParts) || !empty($thuchienParts)):
+                        if (!empty($kehoachParts) || !empty($thuchienParts)) {
+                            if ($hckdLink) echo '<a href="' . htmlspecialchars($hckdLink) . '" title="Nhập hồ sơ HC/KĐ" class="block">';
                             echo '<div class="inline-flex flex-wrap gap-1">';
                             
                             // Lấy tất cả tháng unique
@@ -318,9 +328,16 @@ require_once __DIR__ . '/../layouts/header.php';
                             }
                             
                             echo '</div>';
-                        else:
-                            echo '<span class="text-gray-400">-</span>';
-                        endif;
+                            if ($hckdLink) { echo '</a>'; }
+                        } else {
+                            if ($hckdLink) {
+                                echo '<a href="' . htmlspecialchars($hckdLink) . '" title="Nhập hồ sơ HC/KĐ" class="text-blue-500 hover:text-blue-700 text-xs">';
+                                echo '<i class="fas fa-plus-circle mr-1"></i>Nhập HC/KĐ';
+                                echo '</a>';
+                            } else {
+                                echo '<span class="text-gray-400">-</span>';
+                            }
+                        }
                         ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">

@@ -39,7 +39,8 @@ try {
             COUNT(DISTINCT h.stt) as inspection_count
             FROM thietbihckd_iso t
             LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
-            LEFT JOIN hosohckd_iso h ON (t.mavattu = h.tenmay OR t.somay = h.tenmay) 
+            LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
+                OR (h.thietbi_stt IS NULL AND h.tenmay = t.mavattu))
                 AND YEAR(h.ngayhc) = 2026
             WHERE 1=1";
     
@@ -117,15 +118,6 @@ try {
             
             $monthsInQuarter = getMonthsInQuarter((int)$quy);
             
-            // Kiểm tra đã kiểm định trong quý này chưa
-            $hasInspectedInQuarter = false;
-            foreach ($monthsInQuarter as $m) {
-                if (in_array((string)$m, $inspectedMonths)) {
-                    $hasInspectedInQuarter = true;
-                    break;
-                }
-            }
-            
             // Kiểm tra có kế hoạch trong quý này không
             $hasPlannedInQuarter = false;
             foreach ($monthsInQuarter as $m) {
@@ -134,59 +126,54 @@ try {
                     break;
                 }
             }
-            
+
+            if (!$hasPlannedInQuarter) {
+                continue; // Không liên quan đến quý này
+            }
+
+            // Thiết bị có kế hoạch trong quý này → luôn tính vào mẫu
+            $totalEquipmentInQuarter++;
+
+            // Kiểm tra đã kiểm định trong quý này chưa
+            $hasInspectedInQuarter = false;
+            foreach ($monthsInQuarter as $m) {
+                if (in_array((string)$m, $inspectedMonths)) {
+                    $hasInspectedInQuarter = true;
+                    break;
+                }
+            }
+
             if ($hasInspectedInQuarter) {
-                // Đã kiểm định trong quý này
-                $totalEquipmentInQuarter++;
-                
-                if ($hasPlannedInQuarter) {
-                    // Có kế hoạch trong quý này → Đúng hạn
-                    $statistics['da_hoan_thanh'][] = $equipment;
-                } else {
-                    // Không có kế hoạch trong quý này (kế hoạch ở quý sau) → Trước hạn
-                    $statistics['truoc_han'][] = $equipment;
-                }
+                // Kiểm định đúng trong quý kế hoạch → Đúng hạn
+                $statistics['da_hoan_thanh'][] = $equipment;
             } else {
-                // Chưa kiểm định trong quý này
-                if ($hasPlannedInQuarter) {
-                    // Có kế hoạch trong quý này nhưng chưa kiểm định
-                    $totalEquipmentInQuarter++;
-                    
-                    // Kiểm tra đã kiểm định ở quý sau chưa
-                    $hasCompletedAfter = false;
-                    foreach ($inspectedMonths as $inspMonth) {
-                        $inspMonthInt = (int)$inspMonth;
-                        if ($inspMonthInt > $monthsInQuarter[2]) {
-                            $hasCompletedAfter = true;
-                            break;
-                        }
-                    }
-                    
-                    if ($hasCompletedAfter) {
-                        $statistics['sau_han'][] = $equipment;
-                    } else {
-                        $statistics['chua_hoan_thanh'][] = $equipment;
-                    }
+                // Chưa kiểm định trong quý kế hoạch
+                // Kiểm tra có đã KĐ ở quý TRƯỚC không (trước hạn)
+                $lastMonthOfQuarter = $monthsInQuarter[2]; // tháng cuối quý
+                $firstMonthOfQuarter = $monthsInQuarter[0]; // tháng đầu quý
+                $hasInspectedBefore = false;
+                $hasInspectedAfter  = false;
+                foreach ($inspectedMonths as $inspMonth) {
+                    $inspMonthInt = (int)$inspMonth;
+                    if ($inspMonthInt < $firstMonthOfQuarter) $hasInspectedBefore = true;
+                    if ($inspMonthInt > $lastMonthOfQuarter)  $hasInspectedAfter  = true;
                 }
-                // Nếu không có kế hoạch trong quý này → bỏ qua (không liên quan)
+
+                if ($hasInspectedBefore) {
+                    $statistics['truoc_han'][] = $equipment;
+                } elseif ($hasInspectedAfter) {
+                    $statistics['sau_han'][] = $equipment;
+                } else {
+                    $statistics['chua_hoan_thanh'][] = $equipment;
+                }
             }
         } else {
             // Không filter theo quý - thống kê tổng quan
-            // Đếm thiết bị đã kiểm định (CHỈ thiết bị có kế hoạch)
-            if (!empty($inspectedMonths)) {
-                // Chỉ đếm nếu có kế hoạch
-                if (!empty($plannedMonths)) {
+            // da_hoan_thanh = có KH và có ít nhất 1 lần KĐ trong năm 2026
+            if (!empty($plannedMonths)) {
+                if (!empty($inspectedMonths)) {
                     $statistics['da_hoan_thanh'][] = $equipment;
-                    // Đếm số tháng đã hoàn thành
-                    foreach ($plannedMonths as $month) {
-                        if (in_array($month, $inspectedMonths)) {
-                            $completedMonths++;
-                        }
-                    }
-                }
-            } else {
-                // Chưa kiểm định: chỉ đếm nếu có kế hoạch
-                if (!empty($plannedMonths)) {
+                } else {
                     $statistics['chua_hoan_thanh'][] = $equipment;
                 }
             }
@@ -198,15 +185,17 @@ try {
         }
     }
     
-    // Tính tỷ lệ hoàn thành
+    // Tính tỷ lệ hoàn thành (device-based — nhất quán với số liệu trên card)
     $tyLeHoanThanh = 0;
     if (!empty($quy)) {
-        // Khi chọn quý: tỷ lệ = (đã hoàn thành) / tổng số
+        // Khi chọn quý: (đúng hạn + trước hạn + sau hạn) / tổng có KH trong quý
         $completed = count($statistics['da_hoan_thanh']) + count($statistics['truoc_han']) + count($statistics['sau_han']);
         $tyLeHoanThanh = $totalEquipmentInQuarter > 0 ? round(($completed / $totalEquipmentInQuarter) * 100, 2) : 0;
     } else {
-        // Khi không chọn quý: tỷ lệ theo tháng kế hoạch
-        $tyLeHoanThanh = $totalMonths > 0 ? round(($completedMonths / $totalMonths) * 100, 2) : 0;
+        // Khi không chọn quý: đã KĐ / tổng có KH
+        $tyLeHoanThanh = $totalEquipmentWithPlan > 0
+            ? round((count($statistics['da_hoan_thanh']) / $totalEquipmentWithPlan) * 100, 2)
+            : 0;
     }
     
     // Summary

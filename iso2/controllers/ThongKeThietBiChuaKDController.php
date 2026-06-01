@@ -38,7 +38,8 @@ class ThongKeThietBiChuaKDController {
                 FROM donvi_iso d
                 INNER JOIN thietbihckd_iso th ON d.madv = th.bophansh
                 INNER JOIN kehoach_iso k ON th.mavattu = k.mahieu AND k.namkh = {$year}
-                LEFT JOIN hosohckd_iso h ON th.mavattu = h.tenmay
+                LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = th.stt
+                    OR (h.thietbi_stt IS NULL AND h.tenmay = th.mavattu))
                     AND h.namkh = {$year}
                 WHERE th.mavattu IS NOT NULL 
                     AND th.mavattu != '' 

@@ -79,7 +79,8 @@ $sql = "SELECT t.*,
         COUNT(DISTINCT h.stt) as inspection_count
         FROM thietbihckd_iso t
         INNER JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
-        LEFT JOIN hosohckd_iso h ON (t.mavattu = h.tenmay OR t.somay = h.tenmay) 
+        LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
+            OR (h.thietbi_stt IS NULL AND h.tenmay = t.mavattu))
             AND YEAR(h.ngayhc) = 2026
         WHERE $whereClause
         GROUP BY t.stt
