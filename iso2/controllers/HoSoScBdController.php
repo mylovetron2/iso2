@@ -30,7 +30,7 @@ class HoSoScBdController
         $madv = $_GET['madv'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
         $trangthai = $_GET['trangthai'] ?? '';
-        $fromDate = $_GET['from_date'] ?? '';
+        $fromDate = ($_GET['from_date'] ?? '') ?: '2026-01-01';
         $toDate = $_GET['to_date'] ?? '';
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $limit = 20;
@@ -44,6 +44,58 @@ class HoSoScBdController
         $donViList = $this->donViModel->getAllSimple();
 
         require_once __DIR__ . '/../views/hososcbd/index.php';
+    }
+
+    /**
+     * AJAX endpoint: trả về số liệu thống kê (lazy-load để không block page load).
+     * GET ?action=ajax_stats&nhomsc=...
+     */
+    public function ajaxStats(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        $nhomsc = $_GET['nhomsc'] ?? '';
+        $data = $this->model->getStats($nhomsc);
+        echo json_encode($data ?: (object)[]);
+        exit;
+    }
+
+    /**
+     * AJAX endpoint: trả về dữ liệu BDDK & HC/KĐ cho trang danh sách (lazy-load).
+     * Nhận POST JSON: { items: [{stt, thietbi_stt, ngayyc}, ...] }
+     * Trả về JSON keyed by stt.
+     */
+    public function ajaxBddkHckd(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true);
+
+        if (!is_array($input) || empty($input['items']) || !is_array($input['items'])) {
+            echo json_encode((object)[]);
+            exit;
+        }
+
+        // Sanitize — chỉ cho phép integer ID và chuỗi ngày đơn giản
+        $items = [];
+        foreach ($input['items'] as $item) {
+            $stt = (int)($item['stt'] ?? 0);
+            if ($stt <= 0) continue;
+            $items[] = [
+                'stt'         => $stt,
+                'thietbi_stt' => (int)($item['thietbi_stt'] ?? 0),
+                'ngayyc'      => preg_replace('/[^0-9\-]/', '', (string)($item['ngayyc'] ?? '')),
+            ];
+        }
+
+        if (empty($items)) {
+            echo json_encode((object)[]);
+            exit;
+        }
+
+        $data = $this->model->getBddkHckdBatch($items);
+        echo json_encode($data);
+        exit;
     }
 
     public function create(): void

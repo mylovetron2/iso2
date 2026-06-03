@@ -52,11 +52,15 @@ class GiaoNhanThietBiController
             $params = [];
             
             if ($search) {
-                $sql .= " AND (ct.ten_thietbi LIKE :search 
-                          OR ct.ky_ma_hieu LIKE :search 
-                          OR gn.nguoi_giao LIKE :search 
-                          OR gn.nguoi_nhan LIKE :search)";
-                $params[':search'] = '%' . $search . '%';
+                $sql .= " AND (ct.ten_thietbi LIKE :search1 
+                          OR ct.ky_ma_hieu LIKE :search2 
+                          OR gn.nguoi_giao LIKE :search3 
+                          OR gn.nguoi_nhan LIKE :search4)";
+                $searchVal = '%' . $search . '%';
+                $params[':search1'] = $searchVal;
+                $params[':search2'] = $searchVal;
+                $params[':search3'] = $searchVal;
+                $params[':search4'] = $searchVal;
             }
             
             if ($trangthai) {
@@ -65,8 +69,9 @@ class GiaoNhanThietBiController
             }
             
             if ($donvi) {
-                $sql .= " AND (gn.donvi_giao = :donvi OR gn.donvi_nhan = :donvi)";
-                $params[':donvi'] = $donvi;
+                $sql .= " AND (gn.donvi_giao = :donvi1 OR gn.donvi_nhan = :donvi2)";
+                $params[':donvi1'] = $donvi;
+                $params[':donvi2'] = $donvi;
             }
             
             if ($tu_ngay) {

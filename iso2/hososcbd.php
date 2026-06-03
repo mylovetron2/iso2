@@ -150,6 +150,26 @@ switch ($action) {
         $controller->exportListPdf();
         break;
 
+    case 'ajax_stats':
+        if (!hasPermission('hososcbd.view')) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        $controller->ajaxStats();
+        break;
+
+    case 'ajax_bddk_hckd':
+        if (!hasPermission('hososcbd.view')) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode([]);
+            exit;
+        }
+        $controller->ajaxBddkHckd();
+        break;
+
     default:
         $controller->index();
         break;

@@ -12,23 +12,23 @@ require_once __DIR__ . '/../layouts/header.php';
     <!-- Thống kê -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
         <div class="bg-blue-100 rounded p-3 md:p-4 text-center" style="display: none;">
-            <div class="text-xl md:text-2xl font-bold text-blue-700"><?php echo $stats['total']; ?></div>
+            <div class="text-xl md:text-2xl font-bold text-blue-700" id="stat-total">-</div>
             <div class="text-xs md:text-sm text-gray-600">Tổng số</div>
         </div>
         <div class="bg-yellow-100 rounded p-3 md:p-4 text-center">
-            <div class="text-xl md:text-2xl font-bold text-yellow-700"><?php echo $stats['chuath']; ?></div>
+            <div class="text-xl md:text-2xl font-bold text-yellow-700" id="stat-chuath">-</div>
             <div class="text-xs md:text-sm text-gray-600">Chưa thực hiện</div>
         </div>
         <div class="bg-orange-100 rounded p-3 md:p-4 text-center">
-            <div class="text-xl md:text-2xl font-bold text-orange-700"><?php echo $stats['danglam']; ?></div>
+            <div class="text-xl md:text-2xl font-bold text-orange-700" id="stat-danglam">-</div>
             <div class="text-xs md:text-sm text-gray-600">Đang làm</div>
         </div>
         <div class="bg-purple-100 rounded p-3 md:p-4 text-center">
-            <div class="text-xl md:text-2xl font-bold text-purple-700"><?php echo $stats['chuabg']; ?></div>
+            <div class="text-xl md:text-2xl font-bold text-purple-700" id="stat-chuabg">-</div>
             <div class="text-xs md:text-sm text-gray-600">Chưa bàn giao</div>
         </div>
         <div class="bg-green-100 rounded p-3 md:p-4 text-center" style="display: none;">
-            <div class="text-xl md:text-2xl font-bold text-green-700"><?php echo $stats['dabg']; ?></div>
+            <div class="text-xl md:text-2xl font-bold text-green-700" id="stat-dabg">-</div>
             <div class="text-xs md:text-sm text-gray-600">Đã bàn giao</div>
         </div>
     </div>
@@ -86,7 +86,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="CNC" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'CNC') ? 'selected' : ''; ?>>CNC</option>
             </select>
             
-            <input type="date" name="from_date" value="<?php echo $_GET['from_date'] ?? ''; ?>" 
+            <input type="date" name="from_date" value="<?php echo htmlspecialchars(($_GET['from_date'] ?? '') ?: '2026-01-01'); ?>" 
                    placeholder="Từ ngày" 
                    class="border rounded px-3 py-2 text-sm md:text-base">
             
@@ -146,7 +146,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </tr>
                 <?php else: ?>
                 <?php foreach ($items as $item): ?>
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50" data-stt="<?php echo $item['stt']; ?>">
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <a href="/iso2/phieuyeucau.php?action=view&phieu=<?php echo urlencode($item['phieu']); ?>" 
                            class="text-blue-600 hover:text-blue-800 hover:underline font-bold"
@@ -227,118 +227,11 @@ require_once __DIR__ . '/../layouts/header.php';
                         echo '<span class="inline-block ' . $cvColor . ' text-xs font-bold px-2 py-1 rounded">' . htmlspecialchars($cvDisplay) . '</span>';
                         ?>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-center">
-                        <?php if (!empty($item['thietbi_stt']) && !empty($item['bddk_quarters'])): ?>
-                            <a href="/iso2/kehoachbaoduongdinhky.php?thietbi_id=<?php echo $item['thietbi_stt']; ?>" 
-                               class="inline-flex flex-wrap gap-1"
-                               title="Xem kế hoạch bảo dưỡng định kỳ">
-                                <?php 
-                                foreach ($item['bddk_quarters'] as $qData) {
-                                    $quarterName = str_replace('Q', 'Quý ', $qData['quarter']);
-                                    $isCompleted = $qData['completed'];
-                                    
-                                    if ($isCompleted) {
-                                        // Đã hoàn thành: màu xanh đậm + dấu tích
-                                        echo '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">';
-                                        echo '<i class="fas fa-check mr-1"></i>' . htmlspecialchars($quarterName);
-                                        echo '</span>';
-                                    } else {
-                                        // Chưa hoàn thành: màu xám
-                                        echo '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">';
-                                        echo htmlspecialchars($quarterName);
-                                        echo '</span>';
-                                    }
-                                }
-                                ?>
-                            </a>
-                        <?php else: ?>
-                            <span class="text-gray-400 text-xs">-</span>
-                        <?php endif; ?>
+                    <td class="px-2 md:px-4 py-2 border text-center" id="bddk-<?php echo $item['stt']; ?>">
+                        <span class="text-gray-300 text-xs"><i class="fas fa-circle-notch fa-spin"></i></span>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-center hidden xl:table-cell">
-                        <?php
-                        // Xử lý HC/KĐ (Kế hoạch kiểm định)
-                        // Kế hoạch (lấy từ planned_months CSV)
-                        $kehoachParts = [];
-                        if (!empty($item['planned_months'])) {
-                            $plannedMonths = explode(',', $item['planned_months']);
-                            foreach ($plannedMonths as $month) {
-                                $month = trim($month);
-                                if ($month !== '') {
-                                    $kehoachParts[] = (int)$month;
-                                }
-                            }
-                        }
-                        // Bổ sung đợt 2 nếu có
-                        if (!empty($item['planned_months_dot2'])) {
-                            $plannedMonthsDot2 = explode(',', $item['planned_months_dot2']);
-                            foreach ($plannedMonthsDot2 as $month) {
-                                $month = trim($month);
-                                if ($month !== '' && !in_array((int)$month, $kehoachParts)) {
-                                    $kehoachParts[] = (int)$month;
-                                }
-                            }
-                        }
-                        
-                        // Thực hiện
-                        $thuchienParts = [];
-                        if (!empty($item['inspected_months'])) {
-                            $inspectedMonths = explode(',', $item['inspected_months']);
-                            foreach ($inspectedMonths as $month) {
-                                $month = trim($month);
-                                if ($month !== '') {
-                                    $thuchienParts[] = (int)$month;
-                                }
-                            }
-                        }
-
-                        // Tạo link đến bangcanhbao.php để nhập liệu HC/KĐ
-                        $hckdLinkParams = '';
-                        if (!empty($item['thckd_stt'])) {
-                            $hckdLinkParams = 'mavattu=' . urlencode($item['thckd_mavattu'] ?? '') . '&stt=' . (int)$item['thckd_stt'];
-                        } elseif (!empty($item['mavt'])) {
-                            $hckdLinkParams = 'mavattu=' . urlencode($item['mavt']);
-                        }
-                        $hckdLink = $hckdLinkParams ? '/iso2/bangcanhbao.php?action=formhoso&' . $hckdLinkParams : '';
-                        
-                        // Hiển thị dạng badge giống BDDK
-                        if (!empty($kehoachParts) || !empty($thuchienParts)) {
-                            if ($hckdLink) echo '<a href="' . htmlspecialchars($hckdLink) . '" title="Nhập hồ sơ HC/KĐ" class="block">';
-                            echo '<div class="inline-flex flex-wrap gap-1">';
-                            
-                            // Lấy tất cả tháng unique
-                            $allMonths = array_unique(array_merge($kehoachParts, $thuchienParts));
-                            sort($allMonths);
-                            
-                            foreach ($allMonths as $month) {
-                                $monthName = 'T' . $month;
-                                $isCompleted = in_array($month, $thuchienParts);
-                                
-                                if ($isCompleted) {
-                                    // Đã thực hiện: màu xanh đậm + dấu tích
-                                    echo '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">';
-                                    echo '<i class="fas fa-check mr-1"></i>' . htmlspecialchars($monthName);
-                                    echo '</span>';
-                                } else {
-                                    // Chỉ kế hoạch: màu xám
-                                    echo '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">';
-                                    echo htmlspecialchars($monthName);
-                                    echo '</span>';
-                                }
-                            }
-                            
-                            echo '</div>';
-                            if ($hckdLink) { echo '</a>'; }
-                        } else {
-                            if ($hckdLink) {
-                                echo '<a href="' . htmlspecialchars($hckdLink) . '" title="Nhập hồ sơ HC/KĐ" class="text-blue-500 hover:text-blue-700 text-xs">';
-                                echo '<i class="fas fa-plus-circle mr-1"></i>Nhập HC/KĐ';
-                                echo '</a>';
-                            } else {
-                                echo '<span class="text-gray-400">-</span>';
-                            }
-                        }
-                        ?>
+                    <td class="px-2 md:px-4 py-2 border text-center hidden xl:table-cell" id="hckd-<?php echo $item['stt']; ?>">
+                        <span class="text-gray-300 text-xs"><i class="fas fa-circle-notch fa-spin"></i></span>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
                         <?php 
@@ -510,5 +403,139 @@ require_once __DIR__ . '/../layouts/header.php';
 // Include modals for pause/resume functionality
 require_once __DIR__ . '/partials/tamdung_modals.php'; 
 ?>
+
+<?php
+// Dữ liệu cho AJAX lazy-load cột BDDK & HC/KĐ
+$_bddkMeta = [];
+foreach ($items as $_item) {
+    $_bddkMeta[(int)$_item['stt']] = [
+        'thietbi_stt' => (int)($_item['thietbi_stt'] ?? 0),
+        'mavt'        => $_item['mavt'] ?? '',
+        'ngayyc'      => $_item['ngayyc'] ?? '',
+    ];
+}
+?>
+<script>
+(function () {
+    const metaMap = <?php echo json_encode($_bddkMeta, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+
+    if (!Object.keys(metaMap).length) return;
+
+    const items = Object.entries(metaMap).map(([stt, d]) => ({
+        stt:         parseInt(stt),
+        thietbi_stt: d.thietbi_stt,
+        ngayyc:      d.ngayyc,
+    }));
+
+    function renderBddk(stt, data, meta) {
+        const cell = document.getElementById('bddk-' + stt);
+        if (!cell) return;
+        const quarters = data.bddk_quarters || [];
+        if (!meta.thietbi_stt || !quarters.length) {
+            cell.innerHTML = '<span class="text-gray-400 text-xs">-</span>';
+            return;
+        }
+        let html = '<a href="/iso2/kehoachbaoduongdinhky.php?thietbi_id=' + meta.thietbi_stt
+                 + '" class="inline-flex flex-wrap gap-1" title="Xem kế hoạch bảo dưỡng định kỳ">';
+        for (const q of quarters) {
+            const name = q.quarter.replace('Q', 'Quý ');
+            if (q.completed) {
+                html += '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">'
+                      + '<i class="fas fa-check mr-1"></i>' + name + '</span>';
+            } else {
+                html += '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">'
+                      + name + '</span>';
+            }
+        }
+        html += '</a>';
+        cell.innerHTML = html;
+    }
+
+    function renderHckd(stt, data, meta) {
+        const cell = document.getElementById('hckd-' + stt);
+        if (!cell) return;
+        const planned   = data.planned_months      ? data.planned_months.split(',').map(m => parseInt(m)).filter(Boolean) : [];
+        const dot2      = data.planned_months_dot2 ? data.planned_months_dot2.split(',').map(m => parseInt(m)).filter(Boolean) : [];
+        const inspected = data.inspected_months    ? data.inspected_months.split(',').map(m => parseInt(m)).filter(Boolean) : [];
+        const kehoach   = [...new Set([...planned, ...dot2.filter(m => !planned.includes(m))])];
+
+        let hckdLink = '';
+        if (data.thckd_stt) {
+            hckdLink = '/iso2/bangcanhbao.php?action=formhoso&mavattu='
+                     + encodeURIComponent(data.thckd_mavattu || '') + '&stt=' + data.thckd_stt;
+        } else if (meta.mavt) {
+            hckdLink = '/iso2/bangcanhbao.php?action=formhoso&mavattu=' + encodeURIComponent(meta.mavt);
+        }
+
+        if (!kehoach.length && !inspected.length) {
+            cell.innerHTML = '<span class="text-gray-400">-</span>';
+            return;
+        }
+
+        const all = [...new Set([...kehoach, ...inspected])].sort((a, b) => a - b);
+        let badges = '<div class="inline-flex flex-wrap gap-1">';
+        for (const m of all) {
+            if (inspected.includes(m)) {
+                badges += '<span class="inline-flex items-center bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">'
+                        + '<i class="fas fa-check mr-1"></i>T' + m + '</span>';
+            } else {
+                badges += '<span class="inline-flex items-center bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded">T' + m + '</span>';
+            }
+        }
+        badges += '</div>';
+        cell.innerHTML = hckdLink
+            ? '<a href="' + hckdLink + '" title="Nhập hồ sơ HC/KĐ" class="block">' + badges + '</a>'
+            : badges;
+    }
+
+    function showError() {
+        for (const stt of Object.keys(metaMap)) {
+            const bc = document.getElementById('bddk-' + stt);
+            const hc = document.getElementById('hckd-' + stt);
+            if (bc) bc.innerHTML = '<span class="text-gray-400 text-xs">-</span>';
+            if (hc) hc.innerHTML = '<span class="text-gray-400 text-xs">-</span>';
+        }
+    }
+
+    fetch('/iso2/hososcbd.php?action=ajax_bddk_hckd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items })
+    })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data) {
+        for (const [stt, d] of Object.entries(data)) {
+            const meta = metaMap[stt] || {};
+            renderBddk(stt, d, meta);
+            renderHckd(stt, d, meta);
+        }
+        // Các stt không có dữ liệu vẫn cần xóa spinner
+        for (const stt of Object.keys(metaMap)) {
+            if (!data[stt]) {
+                renderBddk(stt, {bddk_quarters: []}, metaMap[stt]);
+                renderHckd(stt, {}, metaMap[stt]);
+            }
+        }
+    })
+    .catch(showError);
+
+    // --- Thống kê (AJAX lazy-load) ---
+    const nhomscParam = <?php echo json_encode($_GET['nhomsc'] ?? ''); ?>;
+    fetch('/iso2/hososcbd.php?action=ajax_stats' + (nhomscParam ? '&nhomsc=' + encodeURIComponent(nhomscParam) : ''))
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(s) {
+        ['total','chuath','danglam','chuabg','dabg'].forEach(function(k) {
+            const el = document.getElementById('stat-' + k);
+            if (el && s[k] !== undefined) el.textContent = s[k];
+        });
+    })
+    .catch(function() {
+        ['total','chuath','danglam','chuabg','dabg'].forEach(function(k) {
+            const el = document.getElementById('stat-' + k);
+            if (el) el.textContent = '?';
+        });
+    });
+}());
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

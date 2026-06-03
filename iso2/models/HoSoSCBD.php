@@ -14,6 +14,24 @@ class HoSoSCBD extends BaseModel
         parent::__construct('hososcbd_iso');
         $this->primaryKey = 'stt';
     }
+
+    /**
+     * Kiểm tra bảng hososcbd_tamdung có tồn tại không.
+     * Dùng static cache để tránh query SHOW TABLES lặp lại mỗi request.
+     */
+    private function hasTamDungTable(): bool
+    {
+        static $result = null;
+        if ($result === null) {
+            try {
+                $check = $this->db->query("SHOW TABLES LIKE 'hososcbd_tamdung'");
+                $result = $check->rowCount() > 0;
+            } catch (PDOException $e) {
+                $result = false;
+            }
+        }
+        return $result;
+    }
     
     /**
      * Lấy danh sách hồ sơ với filter và pagination
@@ -25,7 +43,7 @@ class HoSoSCBD extends BaseModel
         string $madv = '',
         int $offset = 0,
         int $limit = 15,
-        string $fromDate = '',
+        string $fromDate = '2026-01-01',
         string $toDate = ''
     ): array {
         $where = ["1=1"];
@@ -62,7 +80,7 @@ class HoSoSCBD extends BaseModel
         
         // Lọc theo trạng thái
         if ($trangthai === 'chuath') { // Chưa thực hiện
-            $where[] = "h.ngayth IS NULL OR h.ngayth = '0000-00-00'";
+            $where[] = "(h.ngayth IS NULL OR h.ngayth = '0000-00-00')";
         } elseif ($trangthai === 'danglam') { // Đang làm
             $where[] = "h.ngayth IS NOT NULL AND h.ngayth != '0000-00-00' AND (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00')";
         } elseif ($trangthai === 'hoanthanh') { // Hoàn thành
@@ -80,91 +98,32 @@ class HoSoSCBD extends BaseModel
         
         $whereClause = implode(' AND ', $where);
         
-        // Kiểm tra bảng hososcbd_tamdung có tồn tại không
-        $hasTamDungTable = false;
-        try {
-            $checkTable = $this->db->query("SHOW TABLES LIKE 'hososcbd_tamdung'");
-            $hasTamDungTable = $checkTable->rowCount() > 0;
-        } catch (PDOException $e) {
-            $hasTamDungTable = false;
-        }
-        
         // Nếu bảng hososcbd_tamdung tồn tại, JOIN để lấy trạng thái tạm dừng
         // Nếu không, query đơn giản không có is_tamdung
-        if ($hasTamDungTable) {
+        if ($this->hasTamDungTable()) {
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
-                           MAX(thckd.stt) as thckd_stt, MAX(thckd.mavattu) as thckd_mavattu,
-                           COUNT(DISTINCT k.id) as bddk_count,
-                           GROUP_CONCAT(DISTINCT 
-                               CONCAT(
-                                   IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
-                                   IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
-                                   IF((k.qui_3 IS NOT NULL AND k.qui_3 != '') OR k.qui_3_hoantat = 1, CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
-                                   IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
-                               )
-                           ) as bddk_quarters_raw,
-                           GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
-                           GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
-                           GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
                            COALESCE(td_latest.trangthai, 'none') as tamdung_status,
                            IF(td_latest.trangthai = 'dang_tam_dung', 1, 0) as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
-                    LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
-                    LEFT JOIN thietbihckd_iso thckd ON (
-                        (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
-                        OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
-                    )
-                    LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
-                    LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
-                    LEFT JOIN hosohckd_iso hc ON (hc.thietbi_stt = thckd.stt
-                        OR (hc.thietbi_stt IS NULL AND hc.tenmay = thckd.mavattu))
-                        AND YEAR(hc.ngayhc) = 2026
+                    LEFT JOIN (SELECT MIN(stt) as stt, mavt, somay FROM thietbi_iso GROUP BY mavt, somay) t ON h.mavt = t.mavt AND h.somay = t.somay
                     LEFT JOIN (
-                        SELECT hoso, trangthai
+                        SELECT td1.hoso, td1.trangthai
                         FROM hososcbd_tamdung td1
-                        WHERE id = (
-                            SELECT MAX(id) 
-                            FROM hososcbd_tamdung td2 
-                            WHERE td2.hoso = td1.hoso
-                        )
-                        GROUP BY hoso
+                        INNER JOIN (SELECT hoso, MAX(id) as max_id FROM hososcbd_tamdung GROUP BY hoso) td_agg
+                            ON td1.hoso = td_agg.hoso AND td1.id = td_agg.max_id
                     ) td_latest ON h.hoso = td_latest.hoso
                     WHERE $whereClause
-                    GROUP BY h.stt
                     ORDER BY h.ngayyc DESC, h.phieu DESC
                     LIMIT $limit OFFSET $offset";
         } else {
             // Fallback: Query đơn giản khi bảng hososcbd_tamdung chưa tồn tại
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
-                           MAX(thckd.stt) as thckd_stt, MAX(thckd.mavattu) as thckd_mavattu,
-                           COUNT(DISTINCT k.id) as bddk_count,
-                           GROUP_CONCAT(DISTINCT 
-                               CONCAT(
-                                   IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
-                                   IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
-                                   IF((k.qui_3 IS NOT NULL AND k.qui_3 != '') OR k.qui_3_hoantat = 1, CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
-                                   IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
-                               )
-                           ) as bddk_quarters_raw,
-                           GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
-                           GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
-                           GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
                            0 as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
-                    LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
-                    LEFT JOIN thietbihckd_iso thckd ON (
-                        (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
-                        OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
-                    )
-                    LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
-                    LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
-                    LEFT JOIN hosohckd_iso hc ON (hc.thietbi_stt = thckd.stt
-                        OR (hc.thietbi_stt IS NULL AND hc.tenmay = thckd.mavattu))
-                        AND YEAR(hc.ngayhc) = 2026
+                    LEFT JOIN (SELECT MIN(stt) as stt, mavt, somay FROM thietbi_iso GROUP BY mavt, somay) t ON h.mavt = t.mavt AND h.somay = t.somay
                     WHERE $whereClause
-                    GROUP BY h.stt
                     ORDER BY h.ngayyc DESC, h.phieu DESC
                     LIMIT $limit OFFSET $offset";
         }
@@ -172,30 +131,147 @@ class HoSoSCBD extends BaseModel
         $stmt = $this->query($sql);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Process quarters with completion status
-        foreach ($results as &$row) {
-            
-            if (!empty($row['bddk_quarters_raw'])) {
-                $quarters = array_unique(explode(',', trim($row['bddk_quarters_raw'], ',')));
-                $quarters = array_filter($quarters);
-                sort($quarters);
-                
-                $quarterData = [];
-                foreach ($quarters as $q) {
-                    if (strpos($q, ':') !== false) {
-                        list($quarter, $status) = explode(':', $q);
-                        $quarterData[] = ['quarter' => $quarter, 'completed' => (int)$status === 1];
-                    }
-                }
-                $row['bddk_quarters'] = $quarterData;
-            } else {
-                $row['bddk_quarters'] = [];
-            }
-        }
-        
         return $results;
     }
-    
+
+    /**
+     * Lấy dữ liệu BDDK và HC/KĐ theo batch (dùng cho AJAX lazy-load trang danh sách).
+     * Thay vì JOIN nặng trong getList(), gọi 3 query nhỏ với danh sách ID trang hiện tại.
+     *
+     * @param array $items Mảng các row từ getList() (chứa stt, thietbi_stt, thckd_stt, ngayyc)
+     * @return array Keyed by stt => [bddk_quarters, planned_months, planned_months_dot2, inspected_months]
+     */
+    public function getBddkHckdBatch(array $items): array
+    {
+        if (empty($items)) return [];
+
+        $result        = [];
+        $thietbiStts   = [];
+        $thietbiToStts = [];
+        $sttYears      = [];
+
+        foreach ($items as $item) {
+            $stt = (int)$item['stt'];
+            $result[$stt] = [
+                'bddk_quarters'       => [],
+                'planned_months'      => '',
+                'planned_months_dot2' => '',
+                'inspected_months'    => '',
+                'thckd_stt'           => 0,
+                'thckd_mavattu'       => '',
+            ];
+
+            if (!empty($item['thietbi_stt'])) {
+                $tstt = (int)$item['thietbi_stt'];
+                $thietbiToStts[$tstt][] = $stt;
+                $thietbiStts[] = $tstt;
+                $ngayyc = $item['ngayyc'] ?? '';
+                $sttYears[$stt] = ($ngayyc && $ngayyc !== '0000-00-00')
+                    ? (int)date('Y', strtotime($ngayyc))
+                    : (int)date('Y');
+            }
+        }
+
+        if (empty($thietbiStts)) return $result;
+
+        $inClause = implode(',', array_unique($thietbiStts));
+
+        // --- Query 0: Lookup thckd_stt và thckd_mavattu từ thietbihckd_iso (chỉ chạy 1 lần batch) ---
+        // Query này chạy với tối đa 20 thietbi_stt, không còn chạy per-row như trong getList()
+        $thckdToStts = [];
+        $thckdStts   = [];
+        $sql = "SELECT thckd.stt as thckd_stt, thckd.mavattu as thckd_mavattu, t.stt as thietbi_stt
+                FROM thietbi_iso t
+                LEFT JOIN thietbihckd_iso thckd ON (
+                    (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+                    OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu)
+                )
+                WHERE t.stt IN ($inClause)";
+        foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $tstt = (int)$row['thietbi_stt'];
+            foreach ($thietbiToStts[$tstt] ?? [] as $stt) {
+                $cstt = (int)($row['thckd_stt'] ?? 0);
+                $result[$stt]['thckd_stt']     = $cstt;
+                $result[$stt]['thckd_mavattu'] = $row['thckd_mavattu'] ?? '';
+                if ($cstt > 0) {
+                    $thckdToStts[$cstt][] = $stt;
+                    $thckdStts[] = $cstt;
+                }
+            }
+        }
+
+        // --- Query 1: BDDK quarters ---
+        $sql = "SELECT k.thietbi_id, k.nam,
+                       GROUP_CONCAT(DISTINCT CONCAT(
+                           IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
+                           IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
+                           IF((k.qui_3 IS NOT NULL AND k.qui_3 != '') OR k.qui_3_hoantat = 1, CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
+                           IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
+                       )) as bddk_quarters_raw
+                FROM ke_hoach_bao_duong_dinh_ky_iso k
+                WHERE k.thietbi_id IN ($inClause)
+                GROUP BY k.thietbi_id, k.nam";
+
+        $bddkMap = [];
+        foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $bddkMap[$row['thietbi_id'] . '_' . $row['nam']] = $row['bddk_quarters_raw'];
+        }
+        foreach ($items as $item) {
+            $stt = (int)$item['stt'];
+            if (empty($item['thietbi_stt'])) continue;
+            $tstt = (int)$item['thietbi_stt'];
+            $year = $sttYears[$stt] ?? (int)date('Y');
+            $raw  = $bddkMap[$tstt . '_' . $year] ?? '';
+            if (!$raw) continue;
+            $quarters = array_filter(array_unique(explode(',', trim($raw, ','))));
+            sort($quarters);
+            $quarterData = [];
+            foreach ($quarters as $q) {
+                if (str_contains($q, ':')) {
+                    [$quarter, $status] = explode(':', $q, 2);
+                    $quarterData[] = ['quarter' => $quarter, 'completed' => (int)$status === 1];
+                }
+            }
+            $result[$stt]['bddk_quarters'] = $quarterData;
+        }
+
+        // --- Query 2: Planned months (kehoach_kiemdinh_2026_iso) ---
+        if (!empty($thckdStts)) {
+            $thckdIn = implode(',', array_unique($thckdStts));
+            $sql = "SELECT kd.stt,
+                           GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
+                           GROUP_CONCAT(DISTINCT kd.thang_dot2     ORDER BY kd.thang_dot2)     as planned_months_dot2
+                    FROM kehoach_kiemdinh_2026_iso kd
+                    WHERE kd.stt IN ($thckdIn) AND kd.nam_kehoach = 2026
+                    GROUP BY kd.stt";
+            foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $cstt = (int)$row['stt'];
+                foreach ($thckdToStts[$cstt] ?? [] as $stt) {
+                    $result[$stt]['planned_months']      = $row['planned_months']      ?? '';
+                    $result[$stt]['planned_months_dot2'] = $row['planned_months_dot2'] ?? '';
+                }
+            }
+        }
+
+        // --- Query 3: Inspected months (hosohckd_iso) ---
+        if (!empty($thckdStts)) {
+            $thckdIn = implode(',', array_unique($thckdStts));
+            $sql = "SELECT hc.thietbi_stt,
+                           GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months
+                    FROM hosohckd_iso hc
+                    WHERE hc.thietbi_stt IN ($thckdIn) AND YEAR(hc.ngayhc) = 2026
+                    GROUP BY hc.thietbi_stt";
+            foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $cstt = (int)$row['thietbi_stt'];
+                foreach ($thckdToStts[$cstt] ?? [] as $stt) {
+                    $result[$stt]['inspected_months'] = $row['inspected_months'] ?? '';
+                }
+            }
+        }
+
+        return $result;
+    }
+
     /**
      * Đếm tổng số hồ sơ
      */
@@ -204,7 +280,7 @@ class HoSoSCBD extends BaseModel
         string $nhomsc = '',
         string $trangthai = '',
         string $madv = '',
-        string $fromDate = '',
+        string $fromDate = '2026-01-01',
         string $toDate = ''
     ): int {
         $where = ["1=1"];
@@ -240,7 +316,7 @@ class HoSoSCBD extends BaseModel
         }
         
         if ($trangthai === 'chuath') {
-            $where[] = "h.ngayth IS NULL OR h.ngayth = '0000-00-00'";
+            $where[] = "(h.ngayth IS NULL OR h.ngayth = '0000-00-00')";
         } elseif ($trangthai === 'danglam') {
             $where[] = "h.ngayth IS NOT NULL AND h.ngayth != '0000-00-00' AND (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00')";
         } elseif ($trangthai === 'hoanthanh') {
@@ -340,7 +416,7 @@ class HoSoSCBD extends BaseModel
         
         $sql = "SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN ngayth IS NULL OR ngayth = '0000-00-00' THEN 1 ELSE 0 END) as chuath,
+                    SUM(CASE WHEN (ngayth IS NULL OR ngayth = '0000-00-00') AND ngayyc >= '2026-01-01' THEN 1 ELSE 0 END) as chuath,
                     SUM(CASE WHEN ngayth IS NOT NULL AND ngayth != '0000-00-00' AND (ngaykt IS NULL OR ngaykt = '0000-00-00') THEN 1 ELSE 0 END) as danglam,
                     SUM(CASE WHEN ngaykt IS NOT NULL AND ngaykt != '0000-00-00' AND bg = 0 THEN 1 ELSE 0 END) as chuabg,
                     SUM(CASE WHEN bg = 1 THEN 1 ELSE 0 END) as dabg
@@ -418,16 +494,7 @@ class HoSoSCBD extends BaseModel
     {
         $phieuEscaped = $this->db->quote($phieu);
         
-        // Kiểm tra bảng hososcbd_tamdung có tồn tại không
-        $hasTamDungTable = false;
-        try {
-            $checkTable = $this->db->query("SHOW TABLES LIKE 'hososcbd_tamdung'");
-            $hasTamDungTable = $checkTable->rowCount() > 0;
-        } catch (PDOException $e) {
-            $hasTamDungTable = false;
-        }
-        
-        if ($hasTamDungTable) {
+        if ($this->hasTamDungTable()) {
             $sql = "SELECT h.*, 
                            COALESCE(t.tenvt, h.mavt) as tenvt,
                            d.tendv,
@@ -491,16 +558,7 @@ class HoSoSCBD extends BaseModel
      */
     public function getDeviceWithDetails(int $stt): array|false
     {
-        // Kiểm tra bảng hososcbd_tamdung có tồn tại không
-        $hasTamDungTable = false;
-        try {
-            $checkTable = $this->db->query("SHOW TABLES LIKE 'hososcbd_tamdung'");
-            $hasTamDungTable = $checkTable->rowCount() > 0;
-        } catch (PDOException $e) {
-            $hasTamDungTable = false;
-        }
-        
-        if ($hasTamDungTable) {
+        if ($this->hasTamDungTable()) {
             $sql = "SELECT h.*, 
                            COALESCE(t.tenvt, h.mavt) as tenvt,
                            d.tendv,
