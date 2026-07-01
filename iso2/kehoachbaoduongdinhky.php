@@ -107,6 +107,24 @@ switch ($action) {
         }
         $controller->updateDonViFields();
         break;
+
+    case 'getThietbiIsoList':
+        // Kiểm tra quyền xem
+        if (!hasPermission('kehoachbaoduong.view')) {
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền xem']);
+            exit;
+        }
+        $controller->getThietbiIsoList();
+        break;
+
+    case 'addThietbiToKeHoach':
+        // Kiểm tra quyền tạo
+        if (!hasPermission('kehoachbaoduong.create')) {
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền thêm thiết bị']);
+            exit;
+        }
+        $controller->addThietbiToKeHoach();
+        break;
         
     case 'thongke':
         // Kiểm tra quyền xem

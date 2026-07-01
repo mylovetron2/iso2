@@ -80,7 +80,7 @@ $sql = "SELECT
             h.slbg as so_lan_bg
         FROM hososcbd_iso h
         LEFT JOIN donvi_iso d ON h.madv = d.madv
-        LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+        LEFT JOIN (SELECT mavt, somay, MAX(tenvt) as tenvt FROM thietbi_iso GROUP BY mavt, somay) t ON h.mavt = t.mavt AND h.somay = t.somay
         WHERE $whereClause
         ORDER BY h.ngaykt DESC, h.phieu DESC, h.mavt ASC
         LIMIT 100";

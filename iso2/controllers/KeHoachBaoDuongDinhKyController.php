@@ -24,7 +24,7 @@ class KeHoachBaoDuongDinhKyController
     {
         try {
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
-            $search = $_GET['search'] ?? '';
+            $search = trim($_GET['search'] ?? '');
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
             $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', ''
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
@@ -530,9 +530,18 @@ class KeHoachBaoDuongDinhKyController
         }
 
         if (!empty($search)) {
-            $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2)";
-            $params[':search1'] = '%' . $search . '%';
-            $params[':search2'] = '%' . $search . '%';
+            $search = trim($search);
+            if (ctype_digit($search)) {
+                $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2 OR CAST(id AS CHAR) LIKE :search3 OR CAST(thietbi_id AS CHAR) LIKE :search4)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+                $params[':search3'] = '%' . $search . '%';
+                $params[':search4'] = '%' . $search . '%';
+            } else {
+                $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+            }
         }
 
         // Lọc theo quý
@@ -598,6 +607,132 @@ class KeHoachBaoDuongDinhKyController
     }
 
     /**
+     * API: Lấy danh sách thiết bị từ thietbi_iso để thêm vào kế hoạch
+     */
+    public function getThietbiIsoList(): void
+    {
+        try {
+            header('Content-Type: application/json; charset=UTF-8');
+
+            $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
+            $search = trim($_GET['search'] ?? '');
+
+            // Lấy danh sách stt đã có trong kế hoạch
+            $existingSql = "SELECT thietbi_id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam AND thietbi_id IS NOT NULL AND thietbi_id > 0";
+            $existingStmt = $this->db->prepare($existingSql);
+            $existingStmt->execute([':nam' => $nam]);
+            $existingIds = $existingStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            $sql = "SELECT t.stt, t.mavt, t.tenvt, t.somay, t.model, t.madv FROM thietbi_iso t WHERE 1=1";
+            $params = [];
+
+            if (!empty($search)) {
+                $sql .= " AND (t.tenvt LIKE :s1 OR t.mavt LIKE :s2 OR t.somay LIKE :s3 OR t.model LIKE :s4)";
+                $params[':s1'] = '%' . $search . '%';
+                $params[':s2'] = '%' . $search . '%';
+                $params[':s3'] = '%' . $search . '%';
+                $params[':s4'] = '%' . $search . '%';
+            }
+
+            $sql .= " ORDER BY t.tenvt ASC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Đánh dấu thiết bị đã có trong kế hoạch
+            foreach ($devices as &$device) {
+                $device['in_kehoach'] = in_array((int)$device['stt'], array_map('intval', $existingIds));
+            }
+
+            echo json_encode(['success' => true, 'data' => $devices]);
+        } catch (Exception $e) {
+            error_log("Error in getThietbiIsoList: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
+     * Thêm thiết bị từ thietbi_iso vào kế hoạch bảo dưỡng
+     */
+    public function addThietbiToKeHoach(): void
+    {
+        try {
+            header('Content-Type: application/json; charset=UTF-8');
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $nam = isset($input['nam']) ? (int)$input['nam'] : 0;
+            $thietbiIds = isset($input['thietbi_ids']) && is_array($input['thietbi_ids']) ? $input['thietbi_ids'] : [];
+            $nhomsc = trim($input['nhomsc'] ?? '');
+
+            if ($nam <= 0 || empty($thietbiIds)) {
+                echo json_encode(['success' => false, 'message' => 'Tham số không hợp lệ']);
+                exit;
+            }
+
+            // Lấy thông tin thiết bị từ thietbi_iso
+            $placeholders = implode(',', array_fill(0, count($thietbiIds), '?'));
+            $sql = "SELECT stt, tenvt, somay FROM thietbi_iso WHERE stt IN ($placeholders)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_map('intval', $thietbiIds));
+            $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($devices)) {
+                echo json_encode(['success' => false, 'message' => 'Không tìm thấy thiết bị']);
+                exit;
+            }
+
+            // Kiểm tra thiết bị nào đã có trong kế hoạch năm này
+            $existingSql = "SELECT thietbi_id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = ? AND thietbi_id IN ($placeholders)";
+            $existingStmt = $this->db->prepare($existingSql);
+            $existingStmt->execute(array_merge([$nam], array_map('intval', $thietbiIds)));
+            $alreadyInPlan = array_map('intval', $existingStmt->fetchAll(PDO::FETCH_COLUMN));
+
+            $insertSql = "INSERT INTO ke_hoach_bao_duong_dinh_ky_iso 
+                          (thietbi_id, nam, ten_thietbi, so_serial, nhomsc, qui_1, qui_2, qui_3, qui_4, donvi_lam_chinh, donvi_lam_phu, ghi_chu, created_by)
+                          VALUES (:thietbi_id, :nam, :ten_thietbi, :so_serial, :nhomsc, '', '', '', '', '', '', '', :created_by)";
+            $insertStmt = $this->db->prepare($insertSql);
+
+            $added = 0;
+            $skipped = 0;
+
+            $this->db->beginTransaction();
+            foreach ($devices as $device) {
+                $stt = (int)$device['stt'];
+                if (in_array($stt, $alreadyInPlan)) {
+                    $skipped++;
+                    continue;
+                }
+                $insertStmt->execute([
+                    ':thietbi_id' => $stt,
+                    ':nam' => $nam,
+                    ':ten_thietbi' => $device['tenvt'],
+                    ':so_serial' => $device['somay'] ?? '',
+                    ':nhomsc' => $nhomsc,
+                    ':created_by' => $_SESSION['user']['username'] ?? 'system'
+                ]);
+                $added++;
+            }
+            $this->db->commit();
+
+            $message = "Đã thêm $added thiết bị vào kế hoạch năm $nam.";
+            if ($skipped > 0) {
+                $message .= " Bỏ qua $skipped thiết bị đã có trong kế hoạch.";
+            }
+
+            echo json_encode(['success' => true, 'message' => $message, 'added' => $added, 'skipped' => $skipped]);
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("Error in addThietbiToKeHoach: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    /**
      * Lấy danh sách các năm có dữ liệu
      */
     private function getAvailableYears(): array
@@ -645,75 +780,73 @@ class KeHoachBaoDuongDinhKyController
         
         // Logic khác nhau khi có chọn quý cụ thể
         if (!empty($qui) && in_array($qui, ['1', '2', '3', '4'])) {
-            // LOGIC MỚI: Thống kê theo quý được chọn
-            $quarterField = 'qui_' . $qui;
-            
-            // Lọc các thiết bị có kế hoạch ở quý được chọn
-            $plans = array_filter($plans, function($plan) use ($quarterField) {
-                return !empty($plan[$quarterField]) && trim($plan[$quarterField]) !== '';
-            });
-            
-            $statistics = [
-                'da_hoan_thanh' => [],      // Hoàn thành đúng quý
-                'truoc_han' => [],          // Hoàn thành trước hạn
-                'sau_han' => [],            // Hoàn thành sau hạn
-                'chua_hoan_thanh' => []     // Chưa hoàn thành
-            ];
-            
+            // LOGIC CỘNG DỒN: Q2 = 6 tháng đầu (Q1+Q2), Q3 = 9 tháng đầu (Q1+Q2+Q3), Q4 = cả năm
             $quiInt = (int)$qui;
+            // Danh sách các quý trong phạm vi thống kê (cộng dồn từ Q1 đến quý được chọn)
+            $quiRange = range(1, $quiInt);
+
+            // Lọc các thiết bị có kế hoạch trong bất kỳ quý nào thuộc phạm vi
+            $plans = array_filter($plans, function($plan) use ($quiRange) {
+                foreach ($quiRange as $q) {
+                    if (!empty($plan['qui_' . $q]) && trim($plan['qui_' . $q]) !== '') {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            $statistics = [
+                'da_hoan_thanh' => [],      // Hoàn thành trong phạm vi quý
+                'truoc_han' => [],          // (không dùng trong logic cộng dồn)
+                'sau_han' => [],            // Hoàn thành sau phạm vi quý
+                'chua_hoan_thanh' => []     // Chưa hoàn thành trong phạm vi
+            ];
+
             $completedCount = 0;
-            
+
             // Đếm riêng cho tính % (chỉ CNM và RDNGA)
             $totalForPercent = 0;
             $completedForPercent = 0;
-            
+
             foreach ($plans as $plan) {
-                $completedField = 'qui_' . $qui . '_hoantat';
-                $hasCompletedBefore = false;
+                // Hoàn thành nếu có bất kỳ quý nào trong phạm vi đã được đánh dấu hoantat
+                $isCompletedInRange = false;
+                foreach ($quiRange as $q) {
+                    if (!empty($plan['qui_' . $q . '_hoantat'])) {
+                        $isCompletedInRange = true;
+                        break;
+                    }
+                }
+
+                // Kiểm tra hoàn thành sau phạm vi (quý > quý được chọn)
                 $hasCompletedAfter = false;
-                
-                // Kiểm tra hoàn thành trước hạn (quý < quý được chọn)
-                for ($q = 1; $q < $quiInt; $q++) {
-                    if (!empty($plan['qui_' . $q . '_hoantat'])) {
-                        $hasCompletedBefore = true;
-                        break;
+                if (!$isCompletedInRange) {
+                    for ($q = $quiInt + 1; $q <= 4; $q++) {
+                        if (!empty($plan['qui_' . $q . '_hoantat'])) {
+                            $hasCompletedAfter = true;
+                            break;
+                        }
                     }
                 }
-                
-                // Kiểm tra hoàn thành sau hạn (quý > quý được chọn)
-                for ($q = $quiInt + 1; $q <= 4; $q++) {
-                    if (!empty($plan['qui_' . $q . '_hoantat'])) {
-                        $hasCompletedAfter = true;
-                        break;
-                    }
-                }
-                
+
                 // Kiểm tra đơn vị làm chính cho tính %
                 $donviLamChinh = $plan['donvi_lam_chinh'] ?? '';
                 $isValidForPercent = in_array($donviLamChinh, ['CNM', 'RDNGA']);
-                
+
                 // Phân loại
                 $isCompleted = false;
-                if (!empty($plan[$completedField])) {
-                    // Hoàn thành đúng quý
+                if ($isCompletedInRange) {
                     $statistics['da_hoan_thanh'][] = $plan;
                     $completedCount++;
                     $isCompleted = true;
-                } elseif ($hasCompletedBefore) {
-                    // Hoàn thành trước hạn
-                    $statistics['truoc_han'][] = $plan;
-                    $completedCount++;
-                    $isCompleted = true;
                 } elseif ($hasCompletedAfter) {
-                    // Hoàn thành sau hạn
                     $statistics['sau_han'][] = $plan;
                     $completedCount++;
                     $isCompleted = true;
                 } else {
-                    // Chưa hoàn thành
                     $statistics['chua_hoan_thanh'][] = $plan;
                 }
-                
+
                 // Đếm cho tính % (chỉ CNM và RDNGA)
                 if ($isValidForPercent) {
                     $totalForPercent++;
@@ -730,8 +863,8 @@ class KeHoachBaoDuongDinhKyController
                 'truoc_han' => count($statistics['truoc_han']),
                 'sau_han' => count($statistics['sau_han']),
                 'chua_hoan_thanh' => count($statistics['chua_hoan_thanh']),
-                'tyle_hoan_thanh' => $totalForPercent > 0 
-                    ? round(($completedForPercent / $totalForPercent) * 100, 2)
+                'tyle_hoan_thanh' => $total > 0
+                    ? round(($completedCount / $total) * 100, 2)
                     : 0,
                 'selected_qui' => $qui
             ];

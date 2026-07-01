@@ -86,6 +86,13 @@ class BaseModel {
     public function findById(int $id): array|false {
         return $this->find($id);
     }
+
+    /**
+     * Trả về PDO connection để dùng transaction ở controller
+     */
+    public function getDb(): PDO {
+        return $this->db;
+    }
     
     public function create(array $data): string {
         $columns = implode(', ', array_keys($data));

@@ -472,6 +472,29 @@ class HoSoSCBD extends BaseModel
     /**
      * Cập nhật trạng thái bàn giao
      */
+    /**
+     * Lấy nhiều hồ sơ theo danh sách stt (tránh N+1 query)
+     */
+    public function findByIds(array $ids): array
+    {
+        if (empty($ids)) return [];
+        $placeholders = implode(',', array_map('intval', $ids));
+        $sql = "SELECT * FROM {$this->table} WHERE stt IN ($placeholders)";
+        return $this->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Batch update bg=1, slbg cho nhiều thiết bị cùng lúc (1 query)
+     */
+    public function updateBatchBanGiao(array $ids, int $newSlbg): bool
+    {
+        if (empty($ids)) return true;
+        $placeholders = implode(',', array_map('intval', $ids));
+        $sql = "UPDATE {$this->table} SET bg = 1, slbg = :slbg WHERE stt IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':slbg' => $newSlbg]);
+    }
+
     public function updateBanGiao(int $stt): bool
     {
         $data = [

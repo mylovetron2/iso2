@@ -51,25 +51,24 @@ class PhieuBanGiaoThietBi extends BaseModel
      */
     public function createMultiple(string $sophieu, array $devices): bool
     {
-        $this->db->beginTransaction();
-        
+        if (empty($devices)) return true;
+
         try {
+            $values = [];
             foreach ($devices as $device) {
-                $data = [
-                    'sophieu' => $sophieu,
-                    'hososcbd_stt' => $device['hososcbd_stt'],
-                    'tinhtrang' => $device['tinhtrang'] ?? '',
-                    'ghichu' => $device['ghichu'] ?? ''
-                ];
-                $this->create($data);
+                $s = $this->db->quote($sophieu);
+                $h = (int)$device['hososcbd_stt'];
+                $t = $this->db->quote($device['tinhtrang'] ?? '');
+                $g = $this->db->quote($device['ghichu'] ?? '');
+                $values[] = "($s, $h, $t, $g)";
             }
-            
-            $this->db->commit();
+            $sql = "INSERT INTO {$this->table} (sophieu, hososcbd_stt, tinhtrang, ghichu) VALUES "
+                 . implode(',', $values);
+            $this->query($sql);
             return true;
         } catch (Exception $e) {
-            $this->db->rollBack();
             error_log("Error creating multiple devices: " . $e->getMessage());
-            return false;
+            throw $e; // Re-throw để transaction bên ngoài rollback
         }
     }
 }

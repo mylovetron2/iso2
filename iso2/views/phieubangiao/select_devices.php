@@ -324,6 +324,28 @@ document.getElementById('deviceForm').addEventListener('submit', function(e) {
         alert('Vui lòng chọn ít nhất 1 thiết bị');
         return false;
     }
+
+    // Thêm hidden inputs cho các thiết bị đã chọn nhưng không còn trong DOM (do filter lại)
+    const form = this;
+    // Xóa hidden inputs cũ (tránh duplicate)
+    form.querySelectorAll('input[type="hidden"][name="selected_devices[]"]').forEach(el => el.remove());
+
+    // Lấy các checkbox đang có trong DOM
+    const renderedIds = new Set();
+    form.querySelectorAll('input[type="checkbox"][name="selected_devices[]"]').forEach(cb => {
+        renderedIds.add(parseInt(cb.value));
+    });
+
+    // Với mỗi stt đã chọn mà không có checkbox trong DOM, thêm hidden input
+    selectedDevices.forEach(stt => {
+        if (!renderedIds.has(stt)) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'selected_devices[]';
+            hidden.value = stt;
+            form.appendChild(hidden);
+        }
+    });
 });
 </script>
 

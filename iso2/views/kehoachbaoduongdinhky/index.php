@@ -23,6 +23,12 @@ require_once __DIR__ . '/../layouts/header.php';
             </a>
             <?php endif; ?>
             
+            <?php if (hasPermission('kehoachbaoduong.create')): ?>
+            <button type="button" onclick="openAddThietbiModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-plus mr-1"></i> Thêm từ danh sách thiết bị
+            </button>
+            <?php endif; ?>
+            
             <?php if (!empty($items)): ?>
             <?php 
             $exportUrl = "kehoachbaoduongdinhky.php?action=exportExcel&nam=" . $nam;
@@ -216,11 +222,36 @@ require_once __DIR__ . '/../layouts/header.php';
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <?php if (!empty($item['thietbi_id'])): ?>
-                                    <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_id']; ?>" 
-                                       class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-150"
-                                       title="Xem chi tiết thiết bị">
-                                        <?php echo htmlspecialchars($item['thietbi_id']); ?>
-                                    </a>
+                                    <div class="flex items-center gap-1">
+                                        <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_id']; ?>" 
+                                           class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-150"
+                                           title="Xem chi tiết thiết bị">
+                                            <?php echo htmlspecialchars($item['thietbi_id']); ?>
+                                        </a>
+                                        <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+                                            <button type="button" onclick="toggleEditThietbiId(this, <?php echo $item['id']; ?>, <?php echo $item['thietbi_id']; ?>)"
+                                                    class="text-gray-400 hover:text-blue-600" title="Sửa ID thiết bị">
+                                                <i class="fas fa-pencil-alt text-xs"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+                                        <div class="edit-thietbi-id-form mt-1" id="edit-form-<?php echo $item['id']; ?>" style="display:none; gap:4px; align-items:center;">
+                                            <input type="number" 
+                                                   class="thietbi-id-input w-20 border border-blue-400 rounded px-2 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                   data-kehoach-id="<?php echo $item['id']; ?>"
+                                                   value="<?php echo $item['thietbi_id']; ?>"
+                                                   placeholder="Nhập ID">
+                                            <button type="button" onclick="saveThietbiId(this.previousElementSibling)"
+                                                    class="text-white bg-blue-500 hover:bg-blue-600 rounded px-2 py-1 text-xs" title="Lưu">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" onclick="cancelEditThietbiId(<?php echo $item['id']; ?>)"
+                                                    class="text-gray-400 hover:text-red-500 text-xs" title="Hủy">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                         <input type="number" 
@@ -387,6 +418,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                                         $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                                                     } elseif ($donviPhu === 'RDNGA') {
                                                         $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                                    } elseif ($donviPhu === 'TV') {
+                                                        $colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                                                     }
                                                     echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviPhu) . '</span>';
                                                 } else {
@@ -406,6 +439,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                                 <option value="ĐVLTH" class="bg-green-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'ĐVLTH' ? 'selected' : ''; ?>>⬢ ĐVLTH</option>
                                                 <option value="CNM" class="bg-orange-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'CNM' ? 'selected' : ''; ?>>⬢ CNM</option>
                                                 <option value="RDNGA" class="bg-purple-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>⬢ RDNGA</option>
+                                                <option value="TV" class="bg-yellow-50" <?php echo ($item['donvi_lam_phu'] ?? '') === 'TV' ? 'selected' : ''; ?>>⬢ TV</option>
                                             </select>
                                         </div>
                                     </div>
@@ -422,6 +456,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                             $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                                         } elseif ($donviPhu === 'RDNGA') {
                                             $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                        } elseif ($donviPhu === 'TV') {
+                                            $colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                                         }
                                         echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviPhu) . '</span>';
                                     }
@@ -512,6 +548,66 @@ function confirmDelete(nam) {
     }
 }
 
+function saveThietbiId(inputElement) {
+    const kehoachId = inputElement.dataset.kehoachId;
+    const thietbiId = inputElement.value.trim();
+
+    if (!thietbiId) {
+        return;
+    }
+
+    if (!/^\d+$/.test(thietbiId)) {
+        alert('ID thiết bị phải là số nguyên');
+        inputElement.value = '';
+        return;
+    }
+
+    inputElement.disabled = true;
+    const originalBg = inputElement.style.backgroundColor;
+    inputElement.style.backgroundColor = '#fef3c7';
+
+    fetch('kehoachbaoduongdinhky.php?action=updateThietbiId', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kehoach_id: parseInt(kehoachId), thietbi_id: parseInt(thietbiId) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Lỗi: ' + data.message);
+            inputElement.value = '';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi cập nhật ID thiết bị');
+        inputElement.value = '';
+    })
+    .finally(() => {
+        inputElement.disabled = false;
+        inputElement.style.backgroundColor = originalBg;
+    });
+}
+
+function toggleEditThietbiId(btn, kehoachId, currentId) {
+    const form = document.getElementById('edit-form-' + kehoachId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'flex';
+        form.style.gap = '4px';
+        form.style.alignItems = 'center';
+        form.querySelector('input').focus();
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function cancelEditThietbiId(kehoachId) {
+    const form = document.getElementById('edit-form-' + kehoachId);
+    form.style.display = 'none';
+}
+
 // Xử lý dropdown hoàn thành (chọn 1 quý hoặc không có quý nào)
 document.addEventListener('DOMContentLoaded', function() {
     const selects = document.querySelectorAll('.hoantat-select');
@@ -569,10 +665,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const thietbiInputs = document.querySelectorAll('.thietbi-id-input');
     
     thietbiInputs.forEach(input => {
-        // Lưu khi người dùng nhấn Enter hoặc blur (rời khỏi input)
-        input.addEventListener('blur', function() {
-            saveThietbiId(this);
-        });
+        const isInEditForm = input.closest('.edit-thietbi-id-form') !== null;
+
+        if (!isInEditForm) {
+            // Input trống (chưa có thietbi_id): lưu khi blur hoặc Enter
+            input.addEventListener('blur', function() {
+                saveThietbiId(this);
+            });
+        }
         
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -582,58 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    function saveThietbiId(inputElement) {
-        const kehoachId = inputElement.dataset.kehoachId;
-        const thietbiId = inputElement.value.trim();
-        
-        // Nếu rỗng thì không làm gì
-        if (!thietbiId) {
-            return;
-        }
-        
-        // Validate là số
-        if (!/^\d+$/.test(thietbiId)) {
-            alert('ID thiết bị phải là số nguyên');
-            inputElement.value = '';
-            return;
-        }
-        
-        // Disable input và hiển thị loading
-        inputElement.disabled = true;
-        const originalBg = inputElement.style.backgroundColor;
-        inputElement.style.backgroundColor = '#fef3c7';
-        
-        // Gửi AJAX request
-        fetch('kehoachbaoduongdinhky.php?action=updateThietbiId', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                kehoach_id: parseInt(kehoachId),
-                thietbi_id: parseInt(thietbiId)
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Reload trang để hiển thị link thiết bị
-                location.reload();
-            } else {
-                alert('Lỗi: ' + data.message);
-                inputElement.value = '';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi cập nhật ID thiết bị');
-            inputElement.value = '';
-        })
-        .finally(() => {
-            inputElement.disabled = false;
-            inputElement.style.backgroundColor = originalBg;
-        });
-    }
+
     
     // Xử lý nút sửa Đơn vị làm chính
     document.querySelectorAll('.donvi-chinh-edit-btn').forEach(btn => {
@@ -819,6 +868,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                         } else if (donviLamPhu === 'RDNGA') {
                             colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                        } else if (donviLamPhu === 'TV') {
+                            colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                         }
                         htmlContent = '<span class="' + colorClass + '">' + donviLamPhu + '</span>';
                     } else {
@@ -857,6 +908,275 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- Modal Thêm Thiết Bị từ thietbi_iso -->
+<div id="addThietbiModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeAddThietbiModal()"></div>
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-screen flex flex-col" style="max-height:90vh">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-lg font-bold text-gray-900">
+                    <i class="fas fa-plus-circle mr-2 text-emerald-600"></i>
+                    Thêm thiết bị vào kế hoạch bảo dưỡng năm <span id="modalNam"><?php echo $nam; ?></span>
+                </h2>
+                <button type="button" onclick="closeAddThietbiModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Filter trong modal -->
+            <div class="p-4 border-b bg-gray-50">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2">
+                        <input type="text" id="modalSearchInput" 
+                               placeholder="Tìm theo tên, mã vật tư, số máy, model..."
+                               class="w-full border rounded px-3 py-2 text-sm"
+                               oninput="debounceSearchThietbi(this.value)">
+                    </div>
+                    <div>
+                        <select id="modalNhomscSelect" class="w-full border rounded px-3 py-2 text-sm">
+                            <option value="">-- Nhóm SC (để trống) --</option>
+                            <option value="RDNGA">RDNGA</option>
+                            <option value="CNC">CNC</option>
+                            <option value="KTKT">KTKT</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                        <input type="checkbox" id="hideInPlan" onchange="filterModalList()" class="rounded">
+                        Ẩn thiết bị đã có trong kế hoạch
+                    </label>
+                    <span id="modalSelectedCount" class="text-sm font-semibold text-emerald-700 hidden">
+                        Đã chọn: <span id="selectedCountNum">0</span> thiết bị
+                    </span>
+                </div>
+            </div>
+
+            <!-- Table danh sách thiết bị -->
+            <div class="flex-1 overflow-auto p-4">
+                <div id="modalLoading" class="text-center py-8 text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Đang tải danh sách thiết bị...</p>
+                </div>
+                <table id="modalThietbiTable" class="min-w-full divide-y divide-gray-200 hidden">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2 text-left">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded">
+                            </th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mã VT</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tên thiết bị</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Số máy / S/N</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Model</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Trong KH</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalThietbiBody" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+                <div id="modalEmpty" class="text-center py-8 text-gray-400 hidden">
+                    <i class="fas fa-search text-2xl mb-2"></i>
+                    <p>Không tìm thấy thiết bị nào</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t bg-gray-50 flex items-center justify-between">
+                <div class="text-sm text-gray-500" id="modalTotalInfo"></div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAddThietbiModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm">
+                        Hủy
+                    </button>
+                    <button type="button" onclick="addSelectedToKeHoach()" 
+                            id="addSelectedBtn"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50" disabled>
+                        <i class="fas fa-plus mr-1"></i> Thêm thiết bị đã chọn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== MODAL THÊM THIẾT BỊ =====
+let allThietbiData = [];
+let debounceTimer = null;
+const CURRENT_NAM = <?php echo $nam; ?>;
+
+function openAddThietbiModal() {
+    document.getElementById('addThietbiModal').classList.remove('hidden');
+    document.getElementById('modalSearchInput').value = '';
+    document.getElementById('modalNhomscSelect').value = '';
+    document.getElementById('hideInPlan').checked = false;
+    loadThietbiList('');
+}
+
+function closeAddThietbiModal() {
+    document.getElementById('addThietbiModal').classList.add('hidden');
+    allThietbiData = [];
+}
+
+function debounceSearchThietbi(value) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => loadThietbiList(value), 350);
+}
+
+function loadThietbiList(search) {
+    const table = document.getElementById('modalThietbiTable');
+    const loading = document.getElementById('modalLoading');
+    const empty = document.getElementById('modalEmpty');
+
+    table.classList.add('hidden');
+    empty.classList.add('hidden');
+    loading.classList.remove('hidden');
+
+    fetch(`kehoachbaoduongdinhky.php?action=getThietbiIsoList&nam=${CURRENT_NAM}&search=${encodeURIComponent(search)}`)
+        .then(r => r.json())
+        .then(data => {
+            loading.classList.add('hidden');
+            if (!data.success) {
+                alert('Lỗi: ' + data.message);
+                return;
+            }
+            allThietbiData = data.data;
+            filterModalList();
+        })
+        .catch(err => {
+            loading.classList.add('hidden');
+            console.error(err);
+            alert('Có lỗi khi tải danh sách thiết bị');
+        });
+}
+
+function filterModalList() {
+    const hideInPlan = document.getElementById('hideInPlan').checked;
+    const filtered = hideInPlan ? allThietbiData.filter(d => !d.in_kehoach) : allThietbiData;
+    renderModalTable(filtered);
+}
+
+function renderModalTable(devices) {
+    const tbody = document.getElementById('modalThietbiBody');
+    const table = document.getElementById('modalThietbiTable');
+    const empty = document.getElementById('modalEmpty');
+    const totalInfo = document.getElementById('modalTotalInfo');
+
+    tbody.innerHTML = '';
+
+    if (devices.length === 0) {
+        table.classList.add('hidden');
+        empty.classList.remove('hidden');
+        totalInfo.textContent = '';
+        updateSelectedCount();
+        return;
+    }
+
+    table.classList.remove('hidden');
+    empty.classList.add('hidden');
+    totalInfo.textContent = `Hiển thị ${devices.length} thiết bị`;
+
+    devices.forEach(device => {
+        const tr = document.createElement('tr');
+        tr.className = device.in_kehoach ? 'bg-green-50 opacity-75' : 'hover:bg-gray-50';
+        tr.dataset.stt = device.stt;
+        tr.dataset.inKehoach = device.in_kehoach ? '1' : '0';
+
+        tr.innerHTML = `
+            <td class="px-3 py-2">
+                <input type="checkbox" class="thietbi-checkbox rounded" 
+                       value="${device.stt}" 
+                       onchange="updateSelectedCount()"
+                       ${device.in_kehoach ? 'disabled title="Đã có trong kế hoạch"' : ''}>
+            </td>
+            <td class="px-3 py-2 text-sm font-mono text-gray-600">${device.stt}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">${escHtml(device.mavt || '')}</td>
+            <td class="px-3 py-2 text-sm font-medium text-gray-900">${escHtml(device.tenvt || '')}</td>
+            <td class="px-3 py-2 text-sm font-mono text-blue-700">${escHtml(device.somay || '')}</td>
+            <td class="px-3 py-2 text-sm text-gray-600">${escHtml(device.model || '')}</td>
+            <td class="px-3 py-2 text-center">
+                ${device.in_kehoach
+                    ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"><i class="fas fa-check mr-1"></i>Đã có</span>'
+                    : '<span class="text-gray-300 text-xs">-</span>'}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Reset select all
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateSelectedCount();
+}
+
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.thietbi-checkbox:not(:disabled)');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.thietbi-checkbox:checked');
+    const countEl = document.getElementById('selectedCountNum');
+    const countContainer = document.getElementById('modalSelectedCount');
+    const addBtn = document.getElementById('addSelectedBtn');
+
+    countEl.textContent = selected.length;
+    if (selected.length > 0) {
+        countContainer.classList.remove('hidden');
+        addBtn.disabled = false;
+    } else {
+        countContainer.classList.add('hidden');
+        addBtn.disabled = true;
+    }
+}
+
+function addSelectedToKeHoach() {
+    const selected = document.querySelectorAll('.thietbi-checkbox:checked');
+    const ids = Array.from(selected).map(cb => parseInt(cb.value));
+
+    if (ids.length === 0) {
+        alert('Vui lòng chọn ít nhất một thiết bị');
+        return;
+    }
+
+    const nhomsc = document.getElementById('modalNhomscSelect').value;
+
+    const addBtn = document.getElementById('addSelectedBtn');
+    addBtn.disabled = true;
+    addBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang thêm...';
+
+    fetch('kehoachbaoduongdinhky.php?action=addThietbiToKeHoach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nam: CURRENT_NAM, thietbi_ids: ids, nhomsc: nhomsc })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeAddThietbiModal();
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Lỗi: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Có lỗi khi thêm thiết bị');
+    })
+    .finally(() => {
+        addBtn.disabled = false;
+        addBtn.innerHTML = '<i class="fas fa-plus mr-1"></i> Thêm thiết bị đã chọn';
+    });
+}
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

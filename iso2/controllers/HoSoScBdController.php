@@ -614,6 +614,7 @@ class HoSoScBdController
         $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, 0, 1000, $fromDate, $toDate); // Max 1000 records
         $stats = $this->model->getStats($nhomsc);
         $donViList = $this->donViModel->getAllSimple();
+        $bddkHckdData = $this->model->getBddkHckdBatch($items);
 
         require_once __DIR__ . '/../views/hososcbd/export_list_pdf.php';
     }

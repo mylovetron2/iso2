@@ -59,7 +59,7 @@ require_once __DIR__ . '/../layouts/header.php';
                    placeholder="Tìm phiếu, mã VT, số máy, đơn vị..." 
                    class="border rounded px-3 py-2 text-sm md:text-base">
             
-            <select name="madv" class="border rounded px-3 py-2 text-sm md:text-base">
+            <select name="madv" class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
                 <option value="">Tất cả đơn vị</option>
                 <?php foreach ($donViList as $dv): ?>
                     <option value="<?php echo htmlspecialchars($dv['madv']); ?>" 
@@ -69,7 +69,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php endforeach; ?>
             </select>
             
-            <select name="trangthai" class="border rounded px-3 py-2 text-sm md:text-base">
+            <select name="trangthai" class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
                 <option value="">Tất cả trạng thái</option>
                 <option value="chuath" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'chuath') ? 'selected' : ''; ?>>Chưa thực hiện</option>
                 <option value="danglam" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'danglam') ? 'selected' : ''; ?>>Đang làm</option>
@@ -80,7 +80,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="tamdung" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'tamdung') ? 'selected' : ''; ?>>Tạm dừng</option>
             </select>
             
-            <select name="nhomsc" class="border rounded px-3 py-2 text-sm md:text-base">
+            <select name="nhomsc" class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
                 <option value="">Tất cả nhóm</option>
                 <option value="RDNGA" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'RDNGA') ? 'selected' : ''; ?>>RDNGA</option>
                 <option value="CNC" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'CNC') ? 'selected' : ''; ?>>CNC</option>
@@ -88,11 +88,11 @@ require_once __DIR__ . '/../layouts/header.php';
             
             <input type="date" name="from_date" value="<?php echo htmlspecialchars(($_GET['from_date'] ?? '') ?: '2026-01-01'); ?>" 
                    placeholder="Từ ngày" 
-                   class="border rounded px-3 py-2 text-sm md:text-base">
+                   class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
             
             <input type="date" name="to_date" value="<?php echo $_GET['to_date'] ?? ''; ?>" 
                    placeholder="Đến ngày" 
-                   class="border rounded px-3 py-2 text-sm md:text-base">
+                   class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
         </div>
         
         <div class="flex flex-wrap gap-2">

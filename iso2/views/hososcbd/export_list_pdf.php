@@ -33,11 +33,13 @@ function displayTextPdf($text) {
 }
 
 function getStatusText($item) {
+    $ngaykt = $item['ngaykt'] ?? '';
+    $ngayth = $item['ngayth'] ?? '';
     if ($item['bg'] == 1) {
         return 'Đã BG';
-    } elseif (!empty($item['ngaykt'])) {
+    } elseif (!empty($ngaykt) && $ngaykt !== '0000-00-00') {
         return 'Hoàn thành';
-    } elseif (!empty($item['ngayth'])) {
+    } elseif (!empty($ngayth) && $ngayth !== '0000-00-00') {
         return 'Đang làm';
     } else {
         return 'Chưa TH';
@@ -89,11 +91,11 @@ $pdf->Cell(0, 6, $filterText, 0, 1, 'L');
 $pdf->Ln(3);
 
 // Table header using TCPDF Cell for precise alignment
-$pdf->SetFont('dejavusans', 'B', 12);
+$pdf->SetFont('dejavusans', 'B', 10);
 $pdf->SetFillColor(200, 220, 255);
 
-// Column widths
-$w = array(10, 22, 30, 30, 25, 35, 25, 25, 25, 30);
+// Column widths (total = 277mm = A4 landscape 297 - margins 20)
+$w = array(8, 18, 25, 25, 22, 22, 20, 22, 22, 25, 25, 43);
 
 // Header
 $pdf->Cell($w[0], 7, 'STT', 1, 0, 'C', true);
@@ -105,10 +107,12 @@ $pdf->Cell($w[5], 7, 'Đơn vị', 1, 0, 'C', true);
 $pdf->Cell($w[6], 7, 'Nhóm SC', 1, 0, 'C', true);
 $pdf->Cell($w[7], 7, 'Ngày TH', 1, 0, 'C', true);
 $pdf->Cell($w[8], 7, 'Ngày KT', 1, 0, 'C', true);
-$pdf->Cell($w[9], 7, 'TT', 1, 1, 'C', true);
+$pdf->Cell($w[9], 7, 'TT', 1, 0, 'C', true);
+$pdf->Cell($w[10], 7, 'BDDK', 1, 0, 'C', true);
+$pdf->Cell($w[11], 7, 'HC/KĐ', 1, 1, 'C', true);
 
 // Data rows
-$pdf->SetFont('dejavusans', '', 11);
+$pdf->SetFont('dejavusans', '', 10);
 if (empty($items)) {
     $pdf->Cell(array_sum($w), 10, 'Không có dữ liệu', 1, 1, 'C');
 } else {
@@ -127,6 +131,35 @@ if (empty($items)) {
             $fillColor = array(248, 215, 218);
         }
         
+        $rowStt = (int)$item['stt'];
+        $bddkInfo = $bddkHckdData[$rowStt] ?? [];
+
+        // Build BDDK text
+        $bddkParts = [];
+        foreach (($bddkInfo['bddk_quarters'] ?? []) as $qData) {
+            $label = $qData['quarter'];
+            $bddkParts[] = $qData['completed'] ? $label . '✓' : $label;
+        }
+        $bddkText = $bddkParts ? implode(' ', $bddkParts) : '-';
+
+        // Build HC/KĐ text
+        $planned   = $bddkInfo['planned_months']      ? array_map('intval', explode(',', $bddkInfo['planned_months']))      : [];
+        $dot2      = $bddkInfo['planned_months_dot2'] ? array_map('intval', explode(',', $bddkInfo['planned_months_dot2'])) : [];
+        $inspected = $bddkInfo['inspected_months']    ? array_map('intval', explode(',', $bddkInfo['inspected_months']))    : [];
+        $kehoach   = array_values(array_unique(array_merge($planned, array_diff($dot2, $planned))));
+        $allMonths = array_values(array_unique(array_merge($kehoach, $inspected)));
+        sort($allMonths);
+        $hckdParts = [];
+        foreach ($allMonths as $m) {
+            $tag = 'T' . $m;
+            if (in_array($m, $inspected)) {
+                $hckdParts[] = $tag . '✓';
+            } else {
+                $hckdParts[] = $tag;
+            }
+        }
+        $hckdText = $hckdParts ? implode(' ', $hckdParts) : '-';
+
         $pdf->Cell($w[0], 6, $stt++, 1, 0, 'C');
         $pdf->Cell($w[1], 6, displayTextPdf($item['phieu']), 1, 0, 'L');
         $pdf->Cell($w[2], 6, displayTextPdf($item['mavt']), 1, 0, 'L');
@@ -138,8 +171,10 @@ if (empty($items)) {
         $pdf->Cell($w[8], 6, $item['ngaykt'] ? date('d/m/Y', strtotime($item['ngaykt'])) : '-', 1, 0, 'C');
         
         $pdf->SetFillColor($fillColor[0], $fillColor[1], $fillColor[2]);
-        $pdf->Cell($w[9], 6, $status, 1, 1, 'C', true);
+        $pdf->Cell($w[9], 6, $status, 1, 0, 'C', true);
         $pdf->SetFillColor(255, 255, 255);
+        $pdf->Cell($w[10], 6, $bddkText, 1, 0, 'C');
+        $pdf->Cell($w[11], 6, $hckdText, 1, 1, 'C');
     }
 }
 

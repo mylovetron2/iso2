@@ -273,7 +273,7 @@ try {
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-calendar-alt text-blue-600"></i> Quý
                 </label>
-                <select name="quy" class="border rounded px-3 py-2 w-full">
+                <select name="quy" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">-- Tất cả --</option>
                     <option value="1" <?php echo $quy == '1' ? 'selected' : ''; ?>>Quý 1 (Tháng 1-3)</option>
                     <option value="2" <?php echo $quy == '2' ? 'selected' : ''; ?>>Quý 2 (Tháng 4-6)</option>
@@ -286,7 +286,7 @@ try {
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-cogs text-blue-600"></i> Loại thiết bị
                 </label>
-                <select name="loaitb" class="border rounded px-3 py-2 w-full">
+                <select name="loaitb" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">-- Tất cả --</option>
                     <?php foreach ($loaiTBList as $loai): ?>
                         <option value="<?php echo htmlspecialchars($loai); ?>" <?php echo $loaitb === $loai ? 'selected' : ''; ?>>
@@ -300,7 +300,7 @@ try {
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-building text-blue-600"></i> Bộ phận
                 </label>
-                <select name="bophan" class="border rounded px-3 py-2 w-full">
+                <select name="bophan" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">-- Tất cả --</option>
                     <?php foreach ($boPhanList as $bp): ?>
                         <option value="<?php echo htmlspecialchars($bp); ?>" <?php echo $bophan === $bp ? 'selected' : ''; ?>>

@@ -46,6 +46,7 @@ $db = getDBConnection();
 $search = $_GET['search'] ?? '';
 $loaitb = $_GET['loaitb'] ?? '';
 $bophansh = $_GET['bophansh'] ?? '';
+$kehoachFilter = $_GET['kehoach'] ?? '';
 
 $where = ['1=1'];
 $params = [];
@@ -62,12 +63,20 @@ if ($loaitb) {
     $params[':loaitb'] = $loaitb;
 }
 
-if ($bophansh) {
+if ($bophansh === '__dvl_tonghop__') {
+    $where[] = "t.bophansh IN ('CNC', 'TH', 'DVLTH')";
+} elseif ($bophansh) {
     $where[] = "t.bophansh = :bophansh";
     $params[':bophansh'] = $bophansh;
 }
 
 $whereClause = implode(' AND ', $where);
+
+// Filter theo tình trạng kế hoạch
+$havingClause = '';
+if ($kehoachFilter === 'co_chua_th') {
+    $havingClause = 'HAVING inspection_count = 0';
+}
 
 // Lấy toàn bộ thiết bị với GROUP_CONCAT để gộp các tháng - chỉ lấy thiết bị có kế hoạch
 $sql = "SELECT t.*, 
@@ -84,6 +93,7 @@ $sql = "SELECT t.*,
             AND YEAR(h.ngayhc) = 2026
         WHERE $whereClause
         GROUP BY t.stt
+        $havingClause
         ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
 
 $stmt = $db->prepare($sql);

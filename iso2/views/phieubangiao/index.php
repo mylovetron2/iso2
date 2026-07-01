@@ -34,7 +34,7 @@ require_once __DIR__ . '/../layouts/header.php';
                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
             </div>
             <div>
-                <select name="donvi" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+                <select name="donvi" onchange="this.form.submit()" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                     <option value="">-- Đơn vị --</option>
                     <?php foreach ($donViList as $dv): ?>
                         <option value="<?php echo htmlspecialchars($dv['madv']); ?>" <?php echo $donvi === $dv['madv'] ? 'selected' : ''; ?>>

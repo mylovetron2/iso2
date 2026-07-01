@@ -60,14 +60,9 @@ class PhieuBanGiaoController
                 exit;
             }
 
-            // Load thiết bị đã chọn
-            $devices = [];
-            foreach ($selectedIds as $id) {
-                $device = $this->hosoModel->findById((int)$id);
-                if ($device && $device['bg'] == 0) { // Chỉ lấy thiết bị chưa BG
-                    $devices[] = $device;
-                }
-            }
+            // Batch load tất cả thiết bị trong 1 query thay vì N queries
+            $allDevices = $this->hosoModel->findByIds(array_map('intval', $selectedIds));
+            $devices = array_filter($allDevices, fn($d) => $d['bg'] == 0);
 
             // Nhóm thiết bị theo phiếu YC
             $groupedByPhieu = [];
@@ -111,6 +106,9 @@ class PhieuBanGiaoController
             $errors = [];
             $createdCount = 0;
 
+            $db = $this->model->getDb();
+            $db->beginTransaction();
+
             try {
                 foreach ($groupedByPhieu as $phieuyc => $devices) {
                     // Tạo số phiếu bàn giao: {phieu}-{slbg} dựa trên phiếu đã có
@@ -138,24 +136,24 @@ class PhieuBanGiaoController
                     if ($phieuId) {
                         // Thêm thiết bị vào phiếu BG
                         $thietBiList = [];
+                        $deviceIds = [];
                         foreach ($devices as $device) {
                             $thietBiList[] = [
                                 'hososcbd_stt' => $device['stt'],
                                 'tinhtrang' => $_POST['tinhtrang_' . $device['stt']] ?? 'Hoạt động tốt',
                                 'ghichu' => $_POST['ghichu_tb_' . $device['stt']] ?? ''
                             ];
-
-                            // Cập nhật trạng thái bg=1 và slbg mới trong hososcbd
-                            $this->hosoModel->update($device['stt'], [
-                                'bg' => 1,
-                                'slbg' => $newSlbg
-                            ]);
+                            $deviceIds[] = $device['stt'];
                         }
 
+                        // Bulk insert thiết bị + bulk update bg=1 (thay vì N queries)
                         $this->thietBiModel->createMultiple($sophieu, $thietBiList);
+                        $this->hosoModel->updateBatchBanGiao($deviceIds, $newSlbg);
                         $createdCount++;
                     }
                 }
+
+                $db->commit();
 
                 // Clear session
                 unset($_SESSION['pbg_temp_devices']);
@@ -168,6 +166,7 @@ class PhieuBanGiaoController
 
                 $errors[] = 'Không thể tạo phiếu bàn giao';
             } catch (Exception $e) {
+                $db->rollBack();
                 error_log("Error creating phieu ban giao: " . $e->getMessage());
                 $errors[] = 'Có lỗi xảy ra: ' . $e->getMessage();
             }

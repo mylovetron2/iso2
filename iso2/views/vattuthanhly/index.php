@@ -373,7 +373,7 @@ button.text-red-600:hover {
                    placeholder="Tìm kiếm mã VT, tên, người quản lý..." 
                    class="flex-1 border rounded px-3 py-2">
             
-            <select name="phanloai_id" class="border rounded px-3 py-2" style="min-width: 180px;">
+            <select name="phanloai_id" class="border rounded px-3 py-2" style="min-width: 180px;" onchange="this.form.submit()">
                 <option value="">-- Tất cả phân loại --</option>
                 <?php foreach ($phanLoaiList ?? [] as $pl): ?>
                     <option value="<?php echo $pl['id']; ?>" 

@@ -329,7 +329,9 @@ if ($loaitb) {
     $params[':loaitb'] = $loaitb;
 }
 
-if ($bophansh) {
+if ($bophansh === '__dvl_tonghop__') {
+    $where[] = "bophansh IN ('CNC', 'TH', 'DVLTH')";
+} elseif ($bophansh) {
     $where[] = "bophansh = :bophansh";
     $params[':bophansh'] = $bophansh;
 }
@@ -342,6 +344,8 @@ if ($kehoachFilter === 'co') {
     $havingClause = 'HAVING planned_months IS NOT NULL';
 } elseif ($kehoachFilter === 'chua') {
     $havingClause = 'HAVING planned_months IS NULL';
+} elseif ($kehoachFilter === 'co_chua_th') {
+    $havingClause = 'HAVING planned_months IS NOT NULL AND inspection_count = 0';
 }
 
 // Đếm tổng số thiết bị
@@ -498,7 +502,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         <form method="GET" class="filters">
             <input type="text" name="search" placeholder="Tìm kiếm thiết bị, số máy, chủ sở hữu..." value="<?= htmlspecialchars($search) ?>">
             
-            <select name="loaitb">
+            <select name="loaitb" onchange="this.form.submit()">
                 <option value="">-- Tất cả loại TB --</option>
                 <?php foreach ($loaiTBList as $loai): ?>
                     <option value="<?= htmlspecialchars($loai) ?>" <?= $loaitb === $loai ? 'selected' : '' ?>>
@@ -507,8 +511,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endforeach; ?>
             </select>
             
-            <select name="bophansh">
+            <select name="bophansh" onchange="this.form.submit()">
                 <option value="">-- Tất cả bộ phận --</option>
+                <option value="__dvl_tonghop__" <?= $bophansh === '__dvl_tonghop__' ? 'selected' : '' ?>>Đội DVL Tổng hợp (CNC+TH+DVLTH)</option>
                 <?php foreach ($boPhanList as $bp): ?>
                     <option value="<?= htmlspecialchars($bp) ?>" <?= $bophansh === $bp ? 'selected' : '' ?>>
                         <?= htmlspecialchars($bp) ?>
@@ -516,13 +521,14 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endforeach; ?>
             </select>
             
-            <select name="kehoach">
+            <select name="kehoach" onchange="this.form.submit()">
                 <option value="">-- Tình trạng kế hoạch --</option>
                 <option value="co" <?= $kehoachFilter === 'co' ? 'selected' : '' ?>>Đã có kế hoạch</option>
                 <option value="chua" <?= $kehoachFilter === 'chua' ? 'selected' : '' ?>>Chưa có kế hoạch</option>
+                <option value="co_chua_th" <?= $kehoachFilter === 'co_chua_th' ? 'selected' : '' ?>>Đã có kế hoạch và chưa thực hiện</option>
             </select>
             
-            <select name="sort">
+            <select name="sort" onchange="this.form.submit()">
                 <option value="default" <?= $sortOrder === 'default' ? 'selected' : '' ?>>Sắp xếp: Mặc định</option>
                 <option value="doith" <?= $sortOrder === 'doith' ? 'selected' : '' ?>>Sắp xếp: Đội TH</option>
             </select>
@@ -633,7 +639,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                                            onchange="updateBulkDeleteButton()">
                                 </td>
                                 <td><?= $displaySTT++ ?></td>
-                                <td><?= htmlspecialchars($tb['tenthietbi']) ?></td>
+                                <td><a href="/iso2/bangcanhbao.php?action=formhoso&mavattu=<?= urlencode($tb['mavattu'] ?? '') ?>&stt=<?= (int)$tb['stt'] ?>" target="_blank" style="color:#1565c0;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($tb['tenthietbi']) ?></a></td>
                                 <td><?= htmlspecialchars($tb['tenviettat'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($tb['somay'] ?? '') ?></td>
                                 <td><?= htmlspecialchars($tb['hangsx'] ?? '') ?></td>

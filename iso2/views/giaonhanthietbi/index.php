@@ -89,7 +89,7 @@ $statusInfo = [
             <!-- Trạng thái -->
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Trạng thái</label>
-                <select name="trangthai" 
+                <select name="trangthai" onchange="this.form.submit()"
                         class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">-- Tất cả --</option>
                     <option value="da_nhan" <?= ($_GET['trangthai'] ?? '') === 'da_nhan' ? 'selected' : '' ?>>Đã Nhận</option>
@@ -101,7 +101,7 @@ $statusInfo = [
             <!-- Đơn vị -->
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Đơn vị</label>
-                <select name="donvi" 
+                <select name="donvi" onchange="this.form.submit()"
                         class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">-- Tất cả --</option>
                     <?php foreach ($donviList as $dv): ?>
