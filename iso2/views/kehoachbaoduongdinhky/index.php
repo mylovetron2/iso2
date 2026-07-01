@@ -151,10 +151,10 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
         
         <?php
-        $qui1Count = count(array_filter($items, fn($i) => !empty($i['qui_1'])));
-        $qui2Count = count(array_filter($items, fn($i) => !empty($i['qui_2'])));
-        $qui3Count = count(array_filter($items, fn($i) => !empty($i['qui_3'])));
-        $qui4Count = count(array_filter($items, fn($i) => !empty($i['qui_4'])));
+        $qui1Count = $quiStats['qui_1'];
+        $qui2Count = $quiStats['qui_2'];
+        $qui3Count = $quiStats['qui_3'];
+        $qui4Count = $quiStats['qui_4'];
         ?>
         
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -214,7 +214,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <?php if (!empty($items)): ?>
                         <?php foreach ($items as $index => $item): ?>
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm"><?php echo $index + 1; ?></td>
+                            <td class="px-4 py-3 text-sm"><?php echo $offset + $index + 1; ?></td>
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
                                     <?php echo htmlspecialchars($item['id']); ?>
@@ -530,6 +530,92 @@ require_once __DIR__ . '/../layouts/header.php';
             </table>
         </div>
     </div>
+
+    <!-- Phân trang -->
+    <?php if ($totalPages > 1 || $total > 0): ?>
+    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <!-- Thông tin trang -->
+        <div class="text-sm text-gray-600">
+            <?php
+            $from = $total > 0 ? $offset + 1 : 0;
+            $to   = min($offset + $perpage, $total);
+            echo "Hiển thị $from–$to / $total bản ghi";
+            ?>
+        </div>
+
+        <!-- Chọn số bản ghi mỗi trang -->
+        <div class="flex items-center gap-2 text-sm">
+            <label class="text-gray-600">Mỗi trang:</label>
+            <?php
+            $perpageUrl = http_build_query(array_merge($_GET, ['page' => 1, 'perpage' => '__PP__']));
+            ?>
+            <select onchange="window.location.href='?<?php echo addslashes($perpageUrl); ?>'.replace('__PP__', this.value)"
+                    class="border rounded px-2 py-1 text-sm">
+                <?php foreach ([25, 50, 100, 200] as $pp): ?>
+                    <option value="<?php echo $pp; ?>" <?php echo $perpage == $pp ? 'selected' : ''; ?>><?php echo $pp; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <!-- Nút trang -->
+        <?php if ($totalPages > 1): ?>
+        <nav class="flex items-center gap-1">
+            <?php
+            // Xây dựng URL cơ sở giữ nguyên các filter
+            $baseParams = $_GET;
+            unset($baseParams['page']);
+            $baseQuery = http_build_query($baseParams);
+
+            $makeUrl = function(int $p) use ($baseQuery): string {
+                return '?' . $baseQuery . '&page=' . $p;
+            };
+            ?>
+            <!-- Prev -->
+            <?php if ($page > 1): ?>
+                <a href="<?php echo $makeUrl($page - 1); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm">&laquo;</a>
+            <?php else: ?>
+                <span class="px-3 py-1 rounded border border-gray-200 bg-gray-50 text-gray-400 text-sm">&laquo;</span>
+            <?php endif; ?>
+
+            <?php
+            // Tính dải trang hiển thị
+            $windowSize = 5;
+            $half = (int)floor($windowSize / 2);
+            $startPage = max(1, $page - $half);
+            $endPage   = min($totalPages, $startPage + $windowSize - 1);
+            if ($endPage - $startPage + 1 < $windowSize) {
+                $startPage = max(1, $endPage - $windowSize + 1);
+            }
+            ?>
+
+            <?php if ($startPage > 1): ?>
+                <a href="<?php echo $makeUrl(1); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm">1</a>
+                <?php if ($startPage > 2): ?><span class="px-2 text-gray-400 text-sm">…</span><?php endif; ?>
+            <?php endif; ?>
+
+            <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
+                <?php if ($p === $page): ?>
+                    <span class="px-3 py-1 rounded border border-blue-500 bg-blue-600 text-white text-sm font-semibold"><?php echo $p; ?></span>
+                <?php else: ?>
+                    <a href="<?php echo $makeUrl($p); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm"><?php echo $p; ?></a>
+                <?php endif; ?>
+            <?php endfor; ?>
+
+            <?php if ($endPage < $totalPages): ?>
+                <?php if ($endPage < $totalPages - 1): ?><span class="px-2 text-gray-400 text-sm">…</span><?php endif; ?>
+                <a href="<?php echo $makeUrl($totalPages); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm"><?php echo $totalPages; ?></a>
+            <?php endif; ?>
+
+            <!-- Next -->
+            <?php if ($page < $totalPages): ?>
+                <a href="<?php echo $makeUrl($page + 1); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm">&raquo;</a>
+            <?php else: ?>
+                <span class="px-3 py-1 rounded border border-gray-200 bg-gray-50 text-gray-400 text-sm">&raquo;</span>
+            <?php endif; ?>
+        </nav>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <!-- Delete button -->
     <?php if (!empty($items) && hasPermission('kehoachbaoduong.delete') && $nam != 2026): ?>

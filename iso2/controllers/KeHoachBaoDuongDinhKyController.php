@@ -32,9 +32,19 @@ class KeHoachBaoDuongDinhKyController
             $thietbi_id = isset($_GET['thietbi_id']) ? (int)$_GET['thietbi_id'] : 0;
             $thietbi_id_filter = $_GET['thietbi_id_filter'] ?? ''; // '', 'null', 'notnull'
             
-            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id, $thietbi_id_filter);
-            $total = count($items);
-            
+            // Phân trang
+            $perpage = isset($_GET['perpage']) ? max(10, min(200, (int)$_GET['perpage'])) : 50;
+            $totalRecords = $this->countAll($nam, $search, $qui, $nhomsc, $trangthai, $thietbi_id, $thietbi_id_filter);
+            $totalPages = (int)ceil($totalRecords / $perpage);
+            $page = isset($_GET['page']) ? max(1, min($totalPages ?: 1, (int)$_GET['page'])) : 1;
+            $offset = ($page - 1) * $perpage;
+
+            $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id, $thietbi_id_filter, $perpage, $offset);
+            $total = $totalRecords;
+
+            // Đếm số thiết bị theo quý cho thống kê (toàn bộ kết quả lọc, không phân trang)
+            $quiStats = $this->getQuiStats($nam, $search, $qui, $nhomsc, $trangthai, $thietbi_id, $thietbi_id_filter);
+
             // Lấy danh sách các năm có dữ liệu
             $years = $this->getAvailableYears();
             
@@ -511,7 +521,7 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Lấy danh sách kế hoạch
      */
-    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = '', int $thietbi_id = 0, string $thietbi_id_filter = ''): array
+    private function getAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', string $sapxep = '', int $thietbi_id = 0, string $thietbi_id_filter = '', int $limit = 0, int $offset = 0): array
     {
         $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
@@ -600,10 +610,160 @@ class KeHoachBaoDuongDinhKyController
             $sql .= " ORDER BY id ASC";
         }
 
+        if ($limit > 0) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+            $params[':limit'] = $limit;
+            $params[':offset'] = $offset;
+        }
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        if ($limit > 0) {
+            // Bind integer params explicitly để tránh PDO truyền string
+            foreach ($params as $key => $value) {
+                if ($key === ':limit' || $key === ':offset') {
+                    $stmt->bindValue($key, $value, PDO::PARAM_INT);
+                } else {
+                    $stmt->bindValue($key, $value);
+                }
+            }
+            $stmt->execute();
+        } else {
+            $stmt->execute($params);
+        }
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Đếm tổng số bản ghi theo điều kiện lọc (dùng cho phân trang)
+     */
+    private function countAll(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', int $thietbi_id = 0, string $thietbi_id_filter = ''): int
+    {
+        $sql = "SELECT COUNT(*) FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
+        $params = [':nam' => $nam];
+
+        if ($thietbi_id > 0) {
+            $sql .= " AND thietbi_id = :thietbi_id";
+            $params[':thietbi_id'] = $thietbi_id;
+        }
+        if ($thietbi_id_filter === 'null') {
+            $sql .= " AND (thietbi_id IS NULL OR thietbi_id = 0)";
+        } elseif ($thietbi_id_filter === 'notnull') {
+            $sql .= " AND thietbi_id IS NOT NULL AND thietbi_id > 0";
+        }
+        if (!empty($search)) {
+            $search = trim($search);
+            if (ctype_digit($search)) {
+                $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2 OR CAST(id AS CHAR) LIKE :search3 OR CAST(thietbi_id AS CHAR) LIKE :search4)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+                $params[':search3'] = '%' . $search . '%';
+                $params[':search4'] = '%' . $search . '%';
+            } else {
+                $sql .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+            }
+        }
+        if ($qui > 0 && $qui <= 4) {
+            $quiColumn = 'qui_' . $qui;
+            $sql .= " AND $quiColumn IS NOT NULL AND $quiColumn != ''";
+        }
+        if (!empty($nhomsc)) {
+            if ($nhomsc === 'CNC+RDNGA') {
+                $sql .= " AND nhomsc IN ('CNC', 'RDNGA')";
+            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
+                $sql .= " AND nhomsc = :nhomsc";
+                $params[':nhomsc'] = $nhomsc;
+            }
+        }
+        if (!empty($trangthai)) {
+            if ($trangthai === 'hoantat') {
+                $sql .= " AND (qui_1_hoantat = 1 OR qui_2_hoantat = 1 OR qui_3_hoantat = 1 OR qui_4_hoantat = 1)";
+            } elseif ($trangthai === 'chuahoantat') {
+                $sql .= " AND (qui_1_hoantat = 0 OR qui_1_hoantat IS NULL)";
+                $sql .= " AND (qui_2_hoantat = 0 OR qui_2_hoantat IS NULL)";
+                $sql .= " AND (qui_3_hoantat = 0 OR qui_3_hoantat IS NULL)";
+                $sql .= " AND (qui_4_hoantat = 0 OR qui_4_hoantat IS NULL)";
+            }
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Đếm số thiết bị theo từng quý cho thống kê tổng quan
+     */
+    private function getQuiStats(int $nam, string $search = '', int $qui = 0, string $nhomsc = '', string $trangthai = '', int $thietbi_id = 0, string $thietbi_id_filter = ''): array
+    {
+        // Dùng lại bộ lọc của countAll nhưng đếm theo từng quý
+        $baseWhere = "WHERE nam = :nam";
+        $params = [':nam' => $nam];
+
+        if ($thietbi_id > 0) {
+            $baseWhere .= " AND thietbi_id = :thietbi_id";
+            $params[':thietbi_id'] = $thietbi_id;
+        }
+        if ($thietbi_id_filter === 'null') {
+            $baseWhere .= " AND (thietbi_id IS NULL OR thietbi_id = 0)";
+        } elseif ($thietbi_id_filter === 'notnull') {
+            $baseWhere .= " AND thietbi_id IS NOT NULL AND thietbi_id > 0";
+        }
+        if (!empty($search)) {
+            $search = trim($search);
+            if (ctype_digit($search)) {
+                $baseWhere .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2 OR CAST(id AS CHAR) LIKE :search3 OR CAST(thietbi_id AS CHAR) LIKE :search4)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+                $params[':search3'] = '%' . $search . '%';
+                $params[':search4'] = '%' . $search . '%';
+            } else {
+                $baseWhere .= " AND (ten_thietbi LIKE :search1 OR so_serial LIKE :search2)";
+                $params[':search1'] = '%' . $search . '%';
+                $params[':search2'] = '%' . $search . '%';
+            }
+        }
+        if ($qui > 0 && $qui <= 4) {
+            $quiColumn = 'qui_' . $qui;
+            $baseWhere .= " AND $quiColumn IS NOT NULL AND $quiColumn != ''";
+        }
+        if (!empty($nhomsc)) {
+            if ($nhomsc === 'CNC+RDNGA') {
+                $baseWhere .= " AND nhomsc IN ('CNC', 'RDNGA')";
+            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
+                $baseWhere .= " AND nhomsc = :nhomsc";
+                $params[':nhomsc'] = $nhomsc;
+            }
+        }
+        if (!empty($trangthai)) {
+            if ($trangthai === 'hoantat') {
+                $baseWhere .= " AND (qui_1_hoantat = 1 OR qui_2_hoantat = 1 OR qui_3_hoantat = 1 OR qui_4_hoantat = 1)";
+            } elseif ($trangthai === 'chuahoantat') {
+                $baseWhere .= " AND (qui_1_hoantat = 0 OR qui_1_hoantat IS NULL)";
+                $baseWhere .= " AND (qui_2_hoantat = 0 OR qui_2_hoantat IS NULL)";
+                $baseWhere .= " AND (qui_3_hoantat = 0 OR qui_3_hoantat IS NULL)";
+                $baseWhere .= " AND (qui_4_hoantat = 0 OR qui_4_hoantat IS NULL)";
+            }
+        }
+
+        $sql = "SELECT 
+            SUM(CASE WHEN qui_1 IS NOT NULL AND qui_1 != '' THEN 1 ELSE 0 END) AS qui_1,
+            SUM(CASE WHEN qui_2 IS NOT NULL AND qui_2 != '' THEN 1 ELSE 0 END) AS qui_2,
+            SUM(CASE WHEN qui_3 IS NOT NULL AND qui_3 != '' THEN 1 ELSE 0 END) AS qui_3,
+            SUM(CASE WHEN qui_4 IS NOT NULL AND qui_4 != '' THEN 1 ELSE 0 END) AS qui_4
+            FROM ke_hoach_bao_duong_dinh_ky_iso $baseWhere";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return [
+            'qui_1' => (int)($row['qui_1'] ?? 0),
+            'qui_2' => (int)($row['qui_2'] ?? 0),
+            'qui_3' => (int)($row['qui_3'] ?? 0),
+            'qui_4' => (int)($row['qui_4'] ?? 0),
+        ];
     }
 
     /**
