@@ -26,7 +26,7 @@ class KeHoachBaoDuongDinhKyController
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = trim($_GET['search'] ?? '');
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
-            $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', ''
+            $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', 'KTKT', 'TV', 'CNC+RDNGA', ''
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
             $sapxep = $_GET['sapxep'] ?? ''; // '', 'qui_1', 'qui_2', 'qui_3', 'qui_4'
             $thietbi_id = isset($_GET['thietbi_id']) ? (int)$_GET['thietbi_id'] : 0;
@@ -564,7 +564,7 @@ class KeHoachBaoDuongDinhKyController
         if (!empty($nhomsc)) {
             if ($nhomsc === 'CNC+RDNGA') {
                 $sql .= " AND nhomsc IN ('CNC', 'RDNGA')";
-            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
+            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT', 'TV'])) {
                 $sql .= " AND nhomsc = :nhomsc";
                 $params[':nhomsc'] = $nhomsc;
             }
@@ -672,7 +672,7 @@ class KeHoachBaoDuongDinhKyController
         if (!empty($nhomsc)) {
             if ($nhomsc === 'CNC+RDNGA') {
                 $sql .= " AND nhomsc IN ('CNC', 'RDNGA')";
-            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
+            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT', 'TV'])) {
                 $sql .= " AND nhomsc = :nhomsc";
                 $params[':nhomsc'] = $nhomsc;
             }
@@ -732,7 +732,7 @@ class KeHoachBaoDuongDinhKyController
         if (!empty($nhomsc)) {
             if ($nhomsc === 'CNC+RDNGA') {
                 $baseWhere .= " AND nhomsc IN ('CNC', 'RDNGA')";
-            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT'])) {
+            } elseif (in_array($nhomsc, ['RDNGA', 'CNC', 'KTKT', 'TV'])) {
                 $baseWhere .= " AND nhomsc = :nhomsc";
                 $params[':nhomsc'] = $nhomsc;
             }
@@ -1146,11 +1146,22 @@ class KeHoachBaoDuongDinhKyController
         // Set font
         $pdf->SetFont('dejavusans', '', 10);
         
+        // Xác định tên đội dựa theo nhóm máy
+        $doiName = '';
+        if (!empty($nhomsc)) {
+            $nhomscUpper = strtoupper(trim($nhomsc));
+            if ($nhomscUpper === 'KTKT') {
+                $doiName = 'ĐỘI KTKT';
+            } elseif (in_array($nhomscUpper, ['CNM', 'CNC', 'RDNGA', 'CNC+RDNGA'])) {
+                $doiName = 'ĐỘI ĐỊA VẬT LÝ TỔNG HỢP';
+            }
+        }
+
         // Output header and summary HTML
         ob_start();
         ?>
         <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; margin: 0;">BÁO CÁO THỐNG KÊ BẢO DƯỠNG ĐỊNH KỲ</h2>
+            <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; margin: 0;">BÁO CÁO THỐNG KÊ BẢO DƯỠNG ĐỊNH KỲ<?php if (!empty($doiName)): ?><br/><?php echo strtoupper($doiName); ?><?php endif; ?></h2>
             <p style="font-size: 12pt; font-style: italic; margin: 10px 0;">Năm <?php echo $nam; ?></p>
             <?php if (!empty($qui)): ?>
                 <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Quý <?php echo $qui; ?></p>

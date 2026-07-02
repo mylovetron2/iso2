@@ -12,6 +12,15 @@ require_once __DIR__ . '/../layouts/header.php';
             <i class="fas fa-tools mr-2 text-blue-600"></i> Kế hoạch Bảo dưỡng thiết bị định kỳ
         </h1>
         <div class="flex gap-2">
+            <!-- Nút Khóa / Mở khóa chỉnh sửa -->
+            <?php if (hasPermission('kehoachbaoduong.edit')): ?>
+            <button type="button" id="editLockBtn" onclick="toggleEditLock()"
+                    class="flex items-center gap-1 px-4 py-2 rounded text-sm font-semibold transition-colors duration-150"
+                    title="Khóa/Mở khóa chỉnh sửa ID TB, ĐV Chính, ĐV Phụ">
+                <i id="editLockIcon" class="fas fa-lock"></i>
+                <span id="editLockLabel">Mở khóa sửa</span>
+            </button>
+            <?php endif; ?>
             <a href="kehoachbaoduongdinhky.php?action=thongke&nam=<?php echo $nam; ?>" 
                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-chart-bar mr-1"></i> Thống kê
@@ -92,6 +101,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="RDNGA" <?php echo isset($nhomsc) && $nhomsc == 'RDNGA' ? 'selected' : ''; ?>>RDNGA</option>
                     <option value="CNC" <?php echo isset($nhomsc) && $nhomsc == 'CNC' ? 'selected' : ''; ?>>CNC</option>
                     <option value="KTKT" <?php echo isset($nhomsc) && $nhomsc == 'KTKT' ? 'selected' : ''; ?>>KTKT</option>
+                    <option value="TV" <?php echo isset($nhomsc) && $nhomsc == 'TV' ? 'selected' : ''; ?>>TV</option>
                 </select>
             </div>
             
@@ -100,7 +110,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <select name="trangthai" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
                     <option value="" <?php echo !isset($trangthai) || $trangthai == '' ? 'selected' : ''; ?>>Tất cả</option>
                     <option value="hoantat" <?php echo isset($trangthai) && $trangthai == 'hoantat' ? 'selected' : ''; ?>>Đã hoàn thành</option>
-                    <option value="chuahoantat" <?php echo isset($trangthai) && $trangthai == 'chuahoantat' ? 'selected' : ''; ?>>Chưa hoàn thành</option>
+                    <option value="chuahoantat" <?php echo isset($trangthai) && $trangthai == 'chuahoantat' ? 'selected' : ''; ?>>Chưa TH</option>
                 </select>
             </div>
             
@@ -190,37 +200,49 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Table -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+        <style>
+            #kehoach-table td, #kehoach-table th {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #kehoach-table td.qui-cell {
+                overflow: visible;
+                text-overflow: clip;
+                white-space: normal;
+            }
+        </style>
+        <div>
+            <table id="kehoach-table" class="w-full divide-y divide-gray-200" style="table-layout:fixed;">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID Thiết bị</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên thiết bị</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Số S/N</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nhóm SC</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Quí 1</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 2</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 3</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Quí 4</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Đơn vị làm chính</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Đơn vị làm phụ</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ghi chú</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50">Trạng thái hoàn thành</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">STT</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%">ID</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">ID TB</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:16%">Tên thiết bị</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Số S/N</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:6%">Nhóm SC</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300" style="width:5%">Q1</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q2</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q3</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q4</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300" style="width:10%">ĐV Chính</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:9%">ĐV Phụ</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">Ghi chú</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50" style="width:10%">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php if (!empty($items)): ?>
                         <?php foreach ($items as $index => $item): ?>
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm"><?php echo $offset + $index + 1; ?></td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-2 py-1 text-xs" style="display:none"><?php echo $offset + $index + 1; ?></td>
+                            <td class="px-2 py-1 text-xs">
                                 <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
                                     <?php echo htmlspecialchars($item['id']); ?>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-sm">
+                            <td class="px-2 py-1 text-xs">
                                 <?php if (!empty($item['thietbi_id'])): ?>
                                     <div class="flex items-center gap-1">
                                         <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_id']; ?>" 
@@ -230,7 +252,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                         </a>
                                         <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                             <button type="button" onclick="toggleEditThietbiId(this, <?php echo $item['id']; ?>, <?php echo $item['thietbi_id']; ?>)"
-                                                    class="text-gray-400 hover:text-blue-600" title="Sửa ID thiết bị">
+                                                    class="thietbi-id-edit-toggle text-gray-400 hover:text-blue-600" title="Sửa ID thiết bị" style="display:none">
                                                 <i class="fas fa-pencil-alt text-xs"></i>
                                             </button>
                                         <?php endif; ?>
@@ -255,16 +277,17 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php else: ?>
                                     <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                         <input type="number" 
-                                               class="thietbi-id-input w-20 border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                                               class="thietbi-id-input thietbi-id-empty-input w-20 border border-gray-300 rounded px-2 py-1 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
                                                data-kehoach-id="<?php echo $item['id']; ?>"
                                                placeholder="Nhập ID"
-                                               title="Nhập ID thiết bị">
+                                               title="Nhập ID thiết bị"
+                                               style="display:none">
                                     <?php else: ?>
                                         <span class="text-gray-400">-</span>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-2 py-1 text-xs" title="<?php echo htmlspecialchars($item['ten_thietbi']); ?>">
                                 <span class="font-medium text-gray-900">
                                     <?php echo htmlspecialchars($item['ten_thietbi']); ?>
                                 </span>
@@ -274,10 +297,10 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <?php echo htmlspecialchars($item['so_serial']); ?>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600">
+                            <td class="px-2 py-1 text-xs text-gray-600">
                                 <?php echo htmlspecialchars($item['nhomsc'] ?? ''); ?>
                             </td>
-                            <td class="px-4 py-3 text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell px-2 py-1 text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_1_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_1'])): ?>
@@ -293,7 +316,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_2_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_2'])): ?>
@@ -309,7 +332,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_3_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_3'])): ?>
@@ -325,7 +348,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_4_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_4'])): ?>
@@ -341,7 +364,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 border-l border-r border-gray-300">
+                            <td class="px-2 py-1 text-xs text-gray-600 border-l border-r border-gray-300">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                     <div class="donvi-chinh-container" data-kehoach-id="<?php echo $item['id']; ?>">
                                         <!-- Chế độ xem (mặc định) -->
@@ -366,7 +389,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                                 }
                                                 ?>
                                             </span>
-                                            <button type="button" class="donvi-chinh-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa">
+                                            <button type="button" class="donvi-chinh-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa" style="display:none">
                                                 <i class="fas fa-edit text-sm"></i>
                                             </button>
                                         </div>
@@ -400,7 +423,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 border-r border-gray-300">
+                            <td class="px-2 py-1 text-xs text-gray-600 border-r border-gray-300">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                     <div class="donvi-phu-container" data-kehoach-id="<?php echo $item['id']; ?>">
                                         <!-- Chế độ xem (mặc định) -->
@@ -427,7 +450,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                                 }
                                                 ?>
                                             </span>
-                                            <button type="button" class="donvi-phu-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa">
+                                            <button type="button" class="donvi-phu-edit-btn ml-2 text-blue-600 hover:text-blue-800" title="Sửa" style="display:none">
                                                 <i class="fas fa-edit text-sm"></i>
                                             </button>
                                         </div>
@@ -464,7 +487,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600">
+                            <td class="px-2 py-1 text-xs text-gray-600" title="<?php echo htmlspecialchars($item['ghi_chu']); ?>">
                                 <?php echo htmlspecialchars($item['ghi_chu']); ?>
                             </td>
                             <td class="px-4 py-3 text-center bg-blue-50">
@@ -484,7 +507,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     ?>
                                     <select class="hoantat-select border border-gray-300 rounded px-2 py-1 text-sm" 
                                             data-id="<?php echo $item['id']; ?>">
-                                        <option value="0" <?php echo $selectedQui === '0' ? 'selected' : ''; ?>>Chưa hoàn thành</option>
+                                        <option value="0" <?php echo $selectedQui === '0' ? 'selected' : ''; ?>>Chưa TH</option>
                                         <option value="1" <?php echo $selectedQui === '1' ? 'selected' : ''; ?>>Quý 1</option>
                                         <option value="2" <?php echo $selectedQui === '2' ? 'selected' : ''; ?>>Quý 2</option>
                                         <option value="3" <?php echo $selectedQui === '3' ? 'selected' : ''; ?>>Quý 3</option>
@@ -505,7 +528,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                             <?php echo implode(', ', $completed); ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="text-gray-400 text-xs">Chưa hoàn thành</span>
+                                        <span class="text-gray-400 text-xs">Chưa TH</span>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </td>
@@ -561,16 +584,13 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php if ($totalPages > 1): ?>
         <nav class="flex items-center gap-1">
             <?php
-            // Xây dựng URL cơ sở giữ nguyên các filter
             $baseParams = $_GET;
             unset($baseParams['page']);
             $baseQuery = http_build_query($baseParams);
-
             $makeUrl = function(int $p) use ($baseQuery): string {
                 return '?' . $baseQuery . '&page=' . $p;
             };
             ?>
-            <!-- Prev -->
             <?php if ($page > 1): ?>
                 <a href="<?php echo $makeUrl($page - 1); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm">&laquo;</a>
             <?php else: ?>
@@ -578,7 +598,6 @@ require_once __DIR__ . '/../layouts/header.php';
             <?php endif; ?>
 
             <?php
-            // Tính dải trang hiển thị
             $windowSize = 5;
             $half = (int)floor($windowSize / 2);
             $startPage = max(1, $page - $half);
@@ -606,7 +625,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <a href="<?php echo $makeUrl($totalPages); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm"><?php echo $totalPages; ?></a>
             <?php endif; ?>
 
-            <!-- Next -->
             <?php if ($page < $totalPages): ?>
                 <a href="<?php echo $makeUrl($page + 1); ?>" class="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm">&raquo;</a>
             <?php else: ?>
@@ -696,6 +714,9 @@ function cancelEditThietbiId(kehoachId) {
 
 // Xử lý dropdown hoàn thành (chọn 1 quý hoặc không có quý nào)
 document.addEventListener('DOMContentLoaded', function() {
+    // Lấy trạng thái khóa từ server khi trang load
+    fetchLockState();
+
     const selects = document.querySelectorAll('.hoantat-select');
     
     selects.forEach(select => {
@@ -996,6 +1017,39 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Modal Khóa / Mở khóa chỉnh sửa -->
+<div id="editLockModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeEditLockModal()"></div>
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-gray-900" id="lockModalTitle">
+                    <i class="fas fa-lock mr-2 text-red-500"></i> Nhập mật khẩu để mở khóa
+                </h2>
+                <button type="button" onclick="closeEditLockModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu:</label>
+                <input type="password" id="lockPasswordInput"
+                       class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                       placeholder="Nhập mật khẩu..."
+                       onkeydown="if(event.key==='Enter') confirmEditLockPassword()">
+                <p id="lockPasswordError" class="text-red-500 text-xs mt-1 hidden">Mật khẩu không đúng!</p>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeEditLockModal()"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm">Hủy</button>
+                <button type="button" onclick="confirmEditLockPassword()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                    <i class="fas fa-unlock mr-1"></i> Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Thêm Thiết Bị từ thietbi_iso -->
 <div id="addThietbiModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeAddThietbiModal()"></div>
@@ -1088,6 +1142,132 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
+// ===== KHÓA / MỞ KHÓA CHỈNH SỬA (toàn server) =====
+const LOCK_API_URL = '/iso2/api/edit_lock.php';
+
+let _currentLockState = true; // mặc định: đang khóa
+
+function applyLockState(locked) {
+    _currentLockState = locked;
+    const btn = document.getElementById('editLockBtn');
+    const icon = document.getElementById('editLockIcon');
+    const label = document.getElementById('editLockLabel');
+    if (!btn) return;
+
+    if (!locked) {
+        btn.className = 'flex items-center gap-1 px-4 py-2 rounded text-sm font-semibold transition-colors duration-150 bg-green-100 text-green-800 border border-green-300 hover:bg-green-200';
+        icon.className = 'fas fa-lock-open';
+        label.textContent = 'Đang mở khóa';
+    } else {
+        btn.className = 'flex items-center gap-1 px-4 py-2 rounded text-sm font-semibold transition-colors duration-150 bg-red-100 text-red-700 border border-red-300 hover:bg-red-200';
+        icon.className = 'fas fa-lock';
+        label.textContent = 'Mở khóa sửa';
+    }
+
+    const unlocked = !locked;
+
+    // Ẩn/hiện nút sửa ID thiết bị
+    document.querySelectorAll('.thietbi-id-edit-toggle').forEach(el => {
+        el.style.display = unlocked ? '' : 'none';
+    });
+    if (!unlocked) {
+        document.querySelectorAll('.edit-thietbi-id-form').forEach(el => {
+            el.style.display = 'none';
+        });
+        document.querySelectorAll('.thietbi-id-empty-input').forEach(el => {
+            el.style.display = 'none';
+        });
+    } else {
+        document.querySelectorAll('.thietbi-id-empty-input').forEach(el => {
+            el.style.display = '';
+        });
+    }
+    // Ẩn/hiện nút sửa ĐV Chính và ĐV Phụ
+    document.querySelectorAll('.donvi-chinh-edit-btn, .donvi-phu-edit-btn').forEach(el => {
+        el.style.display = unlocked ? '' : 'none';
+    });
+    // Đóng các dropdown đang mở khi khóa
+    if (!unlocked) {
+        document.querySelectorAll('.donvi-chinh-edit:not(.hidden), .donvi-phu-edit:not(.hidden)').forEach(editDiv => {
+            const container = editDiv.closest('.donvi-chinh-container, .donvi-phu-container');
+            if (container) {
+                const type = container.classList.contains('donvi-chinh-container') ? 'chinh' : 'phu';
+                const viewDiv = container.querySelector(`.donvi-${type}-view`);
+                if (viewDiv) viewDiv.classList.remove('hidden');
+                editDiv.classList.add('hidden');
+            }
+        });
+    }
+}
+
+function fetchLockState() {
+    fetch(LOCK_API_URL)
+        .then(r => r.json())
+        .then(data => { if (data.success) applyLockState(data.locked); })
+        .catch(() => {});
+}
+
+function toggleEditLock() {
+    if (!_currentLockState) {
+        // Đang mở → khóa lại không cần password
+        fetch(LOCK_API_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'lock'})
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) applyLockState(data.locked); })
+        .catch(() => alert('Có lỗi khi khóa'));
+    } else {
+        // Đang khóa → mở modal nhập password
+        openEditLockModal();
+    }
+}
+
+function openEditLockModal() {
+    const modal = document.getElementById('editLockModal');
+    const input = document.getElementById('lockPasswordInput');
+    const error = document.getElementById('lockPasswordError');
+    modal.classList.remove('hidden');
+    input.value = '';
+    error.classList.add('hidden');
+    setTimeout(() => input.focus(), 100);
+}
+
+function closeEditLockModal() {
+    document.getElementById('editLockModal').classList.add('hidden');
+}
+
+function confirmEditLockPassword() {
+    const input = document.getElementById('lockPasswordInput');
+    const error = document.getElementById('lockPasswordError');
+    const password = input.value;
+    if (!password) return;
+
+    const confirmBtn = document.querySelector('#editLockModal button[onclick="confirmEditLockPassword()"]');
+    if (confirmBtn) confirmBtn.disabled = true;
+
+    fetch(LOCK_API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'unlock', password: password})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeEditLockModal();
+            applyLockState(data.locked);
+        } else {
+            error.textContent = data.message || 'Mật khẩu không đúng!';
+            error.classList.remove('hidden');
+            input.value = '';
+            input.focus();
+        }
+    })
+    .catch(() => alert('Có lỗi kết nối'))
+    .finally(() => { if (confirmBtn) confirmBtn.disabled = false; });
+}
+
 // ===== MODAL THÊM THIẾT BỊ =====
 let allThietbiData = [];
 let debounceTimer = null;

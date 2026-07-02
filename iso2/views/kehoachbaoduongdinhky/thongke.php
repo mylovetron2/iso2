@@ -82,6 +82,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="CNC" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC' ? 'selected' : ''; ?>>CNM</option>
                     <option value="CNC+RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC+RDNGA' ? 'selected' : ''; ?>>CNM + RDNGA</option>
                     <option value="KTKT" <?php echo ($_GET['nhomsc'] ?? '') === 'KTKT' ? 'selected' : ''; ?>>KTKT</option>
+                    <option value="TV" <?php echo ($_GET['nhomsc'] ?? '') === 'TV' ? 'selected' : ''; ?>>TV</option>
                 </select>
             </div>
             
@@ -345,14 +346,15 @@ require_once __DIR__ . '/../layouts/header.php';
                                     $quiHoanTat = 'qui_' . $q . '_hoantat';
                                     $hasValue = !empty($item[$quiField]) && trim($item[$quiField]) !== '';
                                     $isCompleted = !empty($item[$quiHoanTat]);
+                                    $isTO = $hasValue && strtoupper(trim($item[$quiField])) === 'TO';
                                 ?>
-                                <td class="px-4 py-2 border text-center">
-                                    <?php if ($hasValue): ?>
-                                        <?php if ($isCompleted): ?>
-                                            <span class="text-green-600 font-bold text-lg">✓</span>
-                                        <?php else: ?>
-                                            <span class="text-gray-400">○</span>
-                                        <?php endif; ?>
+                                <td class="px-4 py-2 border text-center <?php echo $isTO ? 'bg-green-50' : ''; ?>">
+                                    <?php if ($isCompleted): ?>
+                                        <span class="text-green-600 font-bold text-lg">✓</span>
+                                    <?php elseif ($isTO): ?>
+                                        <!-- TO: nền xanh, chưa thực hiện, không hiển thị nội dung -->
+                                    <?php elseif ($hasValue): ?>
+                                        <span class="text-gray-400">○</span>
                                     <?php else: ?>
                                         <span class="text-gray-300">-</span>
                                     <?php endif; ?>

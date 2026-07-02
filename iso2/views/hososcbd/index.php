@@ -187,6 +187,9 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php 
                         if ($item['ngayyc'] && $item['ngayyc'] != '0000-00-00') {
                             echo '<div class="text-gray-700">' . date('d/m/Y', strtotime($item['ngayyc'])) . '</div>';
+                            if ($item['ngayth'] && $item['ngayth'] != '0000-00-00') {
+                                echo '<div class="text-orange-500 font-semibold mt-1"><i class="fas fa-play text-xs"></i> ' . date('d/m/Y', strtotime($item['ngayth'])) . '</div>';
+                            }
                             if ($item['ngaykt'] && $item['ngaykt'] != '0000-00-00') {
                                 echo '<div class="text-green-600 font-semibold mt-1"><i class="fas fa-arrow-right text-xs"></i> ' . date('d/m/Y', strtotime($item['ngaykt'])) . '</div>';
                             }

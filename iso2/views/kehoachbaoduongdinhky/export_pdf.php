@@ -76,15 +76,14 @@
                     $quiHoanTat = 'qui_' . $q . '_hoantat';
                     $hasContent = !empty($plan[$quiField]) && trim($plan[$quiField]) !== '';
                     $isCompleted = !empty($plan[$quiHoanTat]);
+                    $isTO = $hasContent && strtoupper(trim($plan[$quiField])) === 'TO';
                     
-                    if (!$hasContent):
+                    if (!$hasContent && !$isCompleted):
                         echo '<td width="9%" style="text-align: center; background-color: #f3f4f6;">-</td>';
                     else:
-                        if ($isCompleted):
-                            echo '<td width="9%" style="text-align: center; background-color: #d1fae5; color: #16a34a;"><b>&#10003;</b></td>';
-                        else:
-                            echo '<td width="9%" style="text-align: center; background-color: #fee2e2; color: #dc2626;"><b>&#10007;</b></td>';
-                        endif;
+                        $bgColor = $isTO ? '#d1fae5' : '#f9fafb';
+                        $content = $isCompleted ? '<b style="color:#16a34a;">&#10003;</b>' : ($isTO ? '' : '<span style="color:#6b7280;">' . htmlspecialchars($plan[$quiField]) . '</span>');
+                        echo '<td width="9%" style="text-align: center; background-color: ' . $bgColor . ';">' . $content . '</td>';
                     endif;
                 endfor;
                 ?>
