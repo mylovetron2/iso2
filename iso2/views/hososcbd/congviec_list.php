@@ -99,8 +99,4 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
 </div>
 
-<!-- Choices.js for searchable select -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
-<script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
-
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

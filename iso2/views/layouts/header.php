@@ -54,6 +54,9 @@ if (file_exists($dbSelectionFile)) {
             }
         }
     </style>
+    <!-- Choices.js for searchable select -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
 </head>
 
 <body class="bg-gray-100">
@@ -94,6 +97,26 @@ if (file_exists($dbSelectionFile)) {
                 <li>
                     <a href="/iso2/hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBD
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <!-- 1.1. Duyệt yêu cầu sửa hồ sơ (chỉ admin) -->
+                <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)):
+                    // Đếm pending
+                    try {
+                        $dbNav = getDBConnection();
+                        $cntStmt = $dbNav->prepare("SELECT COUNT(*) FROM hososcbd_pending_edits WHERE status='pending'");
+                        $cntStmt->execute();
+                        $navPendingCount = (int)$cntStmt->fetchColumn();
+                    } catch (Exception $e) { $navPendingCount = 0; }
+                ?>
+                <li>
+                    <a href="/iso2/hososcbd_pending_review.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-clipboard-check mr-2"></i> Duyệt sửa SCBD
+                        <?php if ($navPendingCount > 0): ?>
+                        <span class="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"><?= $navPendingCount ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <?php endif; ?>

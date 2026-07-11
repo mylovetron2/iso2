@@ -5,6 +5,8 @@ require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/models/HoSoScBdTamDung.php';
+require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/includes/permissions.php';
 
 requireAuth();
 
@@ -193,6 +195,34 @@ try {
     $danhSachTamDung = [];
 }
 
+// ============================================
+// PENDING EDITS - CHỈ LOAD CHO ADMIN
+// ============================================
+$pendingEdits = [];
+$pendingEditsCount = 0;
+if (hasRole(ROLE_ADMIN)) {
+    try {
+        $stmtPe = $db->prepare(
+            "SELECT pe.id, pe.hososcbd_stt, pe.username, pe.created_at,
+                    h.phieu, h.mavt, h.somay
+             FROM hososcbd_pending_edits pe
+             LEFT JOIN hososcbd_iso h ON h.stt = pe.hososcbd_stt
+             WHERE pe.status = 'pending'
+             ORDER BY pe.created_at ASC
+             LIMIT 10"
+        );
+        $stmtPe->execute();
+        $pendingEdits = $stmtPe->fetchAll(PDO::FETCH_ASSOC);
+        $pendingEditsCount = count($pendingEdits);
+        // Lấy tổng số thực tế
+        $cntPe = $db->query("SELECT COUNT(*) FROM hososcbd_pending_edits WHERE status='pending'");
+        $pendingEditsCount = (int)$cntPe->fetchColumn();
+    } catch (Exception $e) {
+        $pendingEdits = [];
+        $pendingEditsCount = 0;
+    }
+}
+
 require_once __DIR__ . '/views/layouts/header.php';
 ?>
 
@@ -202,6 +232,49 @@ require_once __DIR__ . '/views/layouts/header.php';
         <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <p class="text-sm text-gray-500 mt-1">Tổng quan quản lý thiết bị và hồ sơ</p>
     </div>
+
+    <!-- PENDING EDITS WIDGET (chỉ admin) -->
+    <?php if (hasRole(ROLE_ADMIN) && $pendingEditsCount > 0): ?>
+    <div class="bg-white rounded-lg border-2 border-yellow-400 mb-5 overflow-hidden shadow-sm">
+        <div class="px-4 py-3 bg-yellow-400 flex items-center justify-between">
+            <h2 class="text-base font-bold text-yellow-900 flex items-center">
+                <i class="fas fa-clipboard-check mr-2"></i>
+                Yêu cầu sửa hồ sơ SCBD chờ duyệt
+            </h2>
+            <span class="bg-red-600 text-white text-sm font-bold px-2.5 py-0.5 rounded-full"><?= $pendingEditsCount ?></span>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <?php foreach ($pendingEdits as $pe): ?>
+            <div class="flex items-center justify-between px-4 py-2.5 hover:bg-yellow-50">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-file-alt text-blue-400 text-sm"></i>
+                    <div>
+                        <span class="font-semibold text-gray-800 text-sm"><?= htmlspecialchars($pe['phieu'] ?? 'N/A') ?></span>
+                        <span class="text-gray-500 text-xs ml-2"><?= htmlspecialchars($pe['mavt'] ?? '') ?> – <?= htmlspecialchars($pe['somay'] ?? '') ?></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 text-right">
+                    <div class="text-xs text-gray-500">
+                        <div><?= htmlspecialchars($pe['username']) ?></div>
+                        <div><?= date('d/m H:i', strtotime($pe['created_at'])) ?></div>
+                    </div>
+                    <a href="/iso2/hososcbd_pending_review.php"
+                       class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-3 py-1 rounded font-semibold whitespace-nowrap">
+                        Duyệt ngay
+                    </a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if ($pendingEditsCount > count($pendingEdits)): ?>
+            <div class="px-4 py-2 text-center">
+                <a href="/iso2/hososcbd_pending_review.php" class="text-sm text-yellow-700 hover:underline font-semibold">
+                    Xem thêm <?= $pendingEditsCount - count($pendingEdits) ?> yêu cầu khác →
+                </a>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Statistics Grid -->
     <!-- Row 1: Hồ Sơ SCBĐ - RDNGA + CNC -->

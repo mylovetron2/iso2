@@ -19,6 +19,32 @@ $logger = new ActivityLogger($db);
 $success = '';
 $error = '';
 
+// === LOCK STATE ===
+$lockFile = __DIR__ . '/kehoach_2026_lock.flag';
+$isLocked = file_exists($lockFile);
+
+// Xử lý AJAX toggle lock
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_toggle_lock'])) {
+    ob_clean();
+    header('Content-Type: application/json');
+    $password = $_POST['password'] ?? '';
+    $action = $_POST['lock_action'] ?? '';
+    if ($action === 'lock') {
+        file_put_contents($lockFile, date('Y-m-d H:i:s') . ' by ' . ($_SESSION['username'] ?? 'unknown'));
+        echo json_encode(['success' => true, 'locked' => true]);
+    } elseif ($action === 'unlock') {
+        if ($password === 'iso2@lock') {
+            if (file_exists($lockFile)) unlink($lockFile);
+            echo json_encode(['success' => true, 'locked' => false]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Sai mật khẩu!']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Hành động không hợp lệ']);
+    }
+    exit;
+}
+
 // Xử lý AJAX - Lưu từng thiết bị
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
     ob_clean();
@@ -348,10 +374,26 @@ if ($kehoachFilter === 'co') {
     $havingClause = 'HAVING planned_months IS NOT NULL AND inspection_count = 0';
 }
 
-// Đếm tổng số thiết bị
-$countSql = "SELECT COUNT(DISTINCT t.stt) as total
-             FROM thietbihckd_iso t
-             WHERE $whereClause";
+// Đếm tổng số thiết bị (có join kehoach để HAVING hoạt động đúng)
+if ($havingClause) {
+    $countSql = "SELECT COUNT(*) as total FROM (
+        SELECT t.stt,
+            GROUP_CONCAT(DISTINCT k.thang_thuchien ORDER BY k.thang_thuchien) as planned_months,
+            COUNT(DISTINCT h.stt) as inspection_count
+        FROM thietbihckd_iso t
+        LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
+        LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
+            OR (h.thietbi_stt IS NULL AND h.tenmay = t.mavattu))
+            AND YEAR(h.ngayhc) = 2026
+        WHERE $whereClause
+        GROUP BY t.stt
+        $havingClause
+    ) sub";
+} else {
+    $countSql = "SELECT COUNT(DISTINCT t.stt) as total
+                 FROM thietbihckd_iso t
+                 WHERE $whereClause";
+}
 $countStmt = $db->prepare($countSql);
 $countStmt->execute($params);
 $totalRecords = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -488,7 +530,19 @@ require_once __DIR__ . '/views/layouts/header.php';
         </a>
     </div>
     
-    <h1 class="text-2xl font-bold mb-4">📅 Kế hoạch Kiểm định Thiết bị Năm 2026</h1>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <h1 class="text-2xl font-bold" style="margin:0;">📅 Kế hoạch Kiểm định Thiết bị Năm 2026</h1>
+        <button id="lockBtn" onclick="handleLockToggle()"
+            style="padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:bold;
+            background:<?= $isLocked ? '#dc3545' : '#28a745' ?>; color:white;">
+            <?= $isLocked ? '🔒 Đang khóa — Nhấn để mở khóa' : '🔓 Đang mở — Nhấn để khóa' ?>
+        </button>
+    </div>
+    <?php if ($isLocked): ?>
+    <div style="background:#fff3cd; border:1px solid #ffc107; padding:8px 14px; border-radius:6px; margin-bottom:12px; color:#856404; font-weight:bold;">
+        🔒 Trang đang bị khóa. Không thể chỉnh sửa kế hoạch.
+    </div>
+    <?php endif; ?>
         
         <?php if ($success): ?>
             <div class="alert alert-success">✓ <?= htmlspecialchars($success) ?></div>
@@ -565,7 +619,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         </div>
         
         <!-- Bulk action button -->
-        <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px;">
+        <div id="bulkActionBar" style="margin: 15px 0; display: <?= $isLocked ? 'none' : 'flex' ?>; align-items: center; gap: 10px;">
             <button type="button" 
                     id="bulkDeleteBtn" 
                     onclick="bulkDeleteEquipmentPlans()" 
@@ -590,7 +644,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 2%;">
+                            <th rowspan="2" style="width: 2%; <?= $isLocked ? 'display:none;' : '' ?>" id="thCheckboxCol">
                                 <input type="checkbox" 
                                        id="selectAllCheckbox" 
                                        onchange="toggleSelectAll(this)"
@@ -606,7 +660,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             <th rowspan="2" style="width: 6%;">Chủ sở hữu</th>
                             <th rowspan="2" style="width: 5%;">Đã KĐ</th>
                             <th rowspan="2" style="width: 5%; display: none;">Lưu</th>
-                            <th rowspan="2" style="width: 4%;">Xóa</th>
+                            <th rowspan="2" style="width: 4%; <?= $isLocked ? 'display:none;' : '' ?>" id="thDeleteCol">Xóa</th>
                         </tr>
                         <tr>
                             <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -631,7 +685,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                                 $hasInspection = (int)($tb['inspection_count'] ?? 0) > 0;
                             ?>
                             <tr>
-                                <td style="text-align: center;">
+                                <td style="text-align: center; <?= $isLocked ? 'display:none;' : '' ?>" class="td-checkbox-col">
                                     <input type="checkbox" 
                                            class="row-checkbox" 
                                            data-stt="<?= (int)$tb['stt'] ?>"
@@ -659,7 +713,8 @@ require_once __DIR__ . '/views/layouts/header.php';
                                                name="thietbi[<?= (int)$tb['stt'] ?>][]" 
                                                value="<?= $month ?>"
                                                data-row="<?= (int)$tb['stt'] ?>"
-                                               <?= in_array((string)$month, $plannedMonths) || in_array((string)$month, $plannedMonthsDot2) ? 'checked' : '' ?>>
+                                               <?= in_array((string)$month, $plannedMonths) || in_array((string)$month, $plannedMonthsDot2) ? 'checked' : '' ?>
+                                               <?= $isLocked ? 'disabled' : '' ?>>
                                         <?= $isInspected ? '<span class="check-mark">✓</span>' : '' ?>
                                     </td>
                                 <?php endfor; ?>
@@ -688,7 +743,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                                         💾
                                     </button>
                                 </td>
-                                <td style="text-align: center;">
+                                <td style="text-align: center; <?= $isLocked ? 'display:none;' : '' ?>" class="td-delete-col">
                                     <button type="button" 
                                             class="btn-delete" 
                                             data-stt="<?= (int)$tb['stt'] ?>"
@@ -706,7 +761,7 @@ require_once __DIR__ . '/views/layouts/header.php';
             </div>
             
             <div class="action-buttons">
-                <button type="submit" name="save_plan" class="btn-save">💾 Lưu</button>
+                <button type="submit" name="save_plan" class="btn-save" id="btnSavePlan" <?= $isLocked ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : '' ?>>💾 Lưu</button>
                 <a href="/iso2/thietbihckd.php" style="padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">Hủy</a>
             </div>
         </form>
@@ -724,9 +779,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div style="margin-top: 20px; padding: 15px; text-align: center;">
             <div style="display: inline-flex; gap: 5px; align-items: center;">
                 <?php if ($page > 1): ?>
-                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
+                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">« Đầu</a>
-                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
+                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">‹ Trước</a>
                 <?php endif; ?>
                 
@@ -735,9 +790,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                 </span>
                 
                 <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
+                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Sau ›</a>
-                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?>" 
+                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Cuối »</a>
                 <?php endif; ?>
             </div>
@@ -1175,6 +1230,69 @@ require_once __DIR__ . '/views/layouts/header.php';
                 checkbox.dispatchEvent(new Event('change'));
             });
         });
+    </script>
+
+    <!-- Lock/Unlock Modal -->
+    <div id="unlockModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:28px; border-radius:10px; min-width:320px; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+            <h3 style="margin:0 0 16px 0; color:#333;">🔓 Mở khóa trang</h3>
+            <p style="margin:0 0 12px 0; color:#666; font-size:14px;">Nhập mật khẩu để mở khóa chỉnh sửa:</p>
+            <input type="password" id="unlockPasswordInput" placeholder="Mật khẩu..."
+                style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:5px; font-size:14px; box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter') submitUnlock()">
+            <div id="unlockError" style="color:#dc3545; font-size:13px; margin-top:6px; display:none;"></div>
+            <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+                <button onclick="closeUnlockModal()" style="padding:7px 16px; background:#6c757d; color:white; border:none; border-radius:5px; cursor:pointer;">Hủy</button>
+                <button onclick="submitUnlock()" style="padding:7px 16px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Mở khóa</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const PAGE_IS_LOCKED = <?= $isLocked ? 'true' : 'false' ?>;
+
+    function handleLockToggle() {
+        if (PAGE_IS_LOCKED) {
+            // Mở modal nhập password
+            document.getElementById('unlockModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('unlockPasswordInput').focus(), 50);
+        } else {
+            // Khóa ngay không cần password
+            if (!confirm('Bạn có chắc muốn khóa trang này? Người dùng sẽ không thể chỉnh sửa kế hoạch.')) return;
+            toggleLock('lock', '');
+        }
+    }
+
+    function closeUnlockModal() {
+        document.getElementById('unlockModal').style.display = 'none';
+        document.getElementById('unlockPasswordInput').value = '';
+        document.getElementById('unlockError').style.display = 'none';
+    }
+
+    function submitUnlock() {
+        const pw = document.getElementById('unlockPasswordInput').value;
+        toggleLock('unlock', pw);
+    }
+
+    function toggleLock(action, password) {
+        const fd = new FormData();
+        fd.append('ajax_toggle_lock', '1');
+        fd.append('lock_action', action);
+        fd.append('password', password);
+
+        fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    const errEl = document.getElementById('unlockError');
+                    errEl.textContent = data.message || 'Lỗi không xác định';
+                    errEl.style.display = 'block';
+                }
+            })
+            .catch(() => alert('Lỗi kết nối!'));
+    }
     </script>
 </div>
 

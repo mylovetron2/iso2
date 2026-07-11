@@ -71,7 +71,7 @@ try {
     ");
     $stmtTongGio->execute([':hososcbd_stt' => $stt]);
     $thongke = $stmtTongGio->fetch(PDO::FETCH_ASSOC);
-    $thongke['kpi_thietbi'] = 0;
+    $thongke['kpi_thietbi'] = (float)($item['kpi_thietbi'] ?? 0);
     
     echo "<!-- DEBUG: Thongke loaded -->\n";
 } catch (Exception $e) {
@@ -83,7 +83,15 @@ try {
 
 // Lấy danh sách nhân viên để tạo công việc mới
 try {
-    $stmtNV = $db->query("SELECT stt, hoten FROM resume ORDER BY hoten ASC LIMIT 100");
+    $stmtNV = $db->prepare("
+        SELECT stt, hoten FROM resume 
+        WHERE hoten IS NOT NULL 
+          AND hoten != '' 
+          AND nghiviec != 'yes'
+          AND donvi LIKE :donvi
+        ORDER BY hoten ASC
+    ");
+    $stmtNV->execute([':donvi' => '%chuẩn chỉnh máy địa vật lý%']);
     $nhanviens = $stmtNV->fetchAll(PDO::FETCH_ASSOC);
     echo "<!-- DEBUG: Loaded " . count($nhanviens) . " nhanvien -->\n";
 } catch (Exception $e) {
@@ -111,6 +119,13 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
     </div>
 
     <!-- Thống kê tổng quan -->
+    <?php
+        $tongGio   = (float)$thongke['tong_gio'];
+        $kpiTarget = (float)$thongke['kpi_thietbi'];
+        $pct       = ($kpiTarget > 0) ? min(100, round($tongGio / $kpiTarget * 100, 1)) : 0;
+        $barColor  = $pct >= 100 ? 'bg-green-500' : ($pct >= 60 ? 'bg-blue-500' : 'bg-amber-500');
+        $textColor = $pct >= 100 ? 'text-green-700' : ($pct >= 60 ? 'text-blue-700' : 'text-amber-700');
+    ?>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <?php /* Ẩn Số công việc
         <div class="bg-blue-50 border border-blue-200 rounded p-3">
@@ -120,11 +135,48 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
         */ ?>
         <div class="bg-green-50 border border-green-200 rounded p-3">
             <div class="text-sm text-green-600">Tổng số giờ</div>
-            <div class="text-2xl font-bold text-green-700"><?= number_format($thongke['tong_gio'], 2) ?>h</div>
+            <div class="text-2xl font-bold text-green-700"><?= number_format($tongGio, 2) ?>h</div>
         </div>
         <div class="bg-amber-50 border border-amber-200 rounded p-3">
-            <div class="text-sm text-amber-600">KPI thiết bị</div>
-            <div class="text-2xl font-bold text-amber-700"><?= number_format($thongke['kpi_thietbi'], 2) ?>h</div>
+            <div class="text-sm text-amber-600 mb-1">KPI thiết bị</div>
+            <div class="flex items-center space-x-2">
+                <input type="number" id="kpiThietBiInput" step="0.5" min="0"
+                       value="<?= number_format($kpiTarget, 2, '.', '') ?>"
+                       onchange="updateKpiProgress()"
+                       class="w-24 text-xl font-bold text-amber-700 bg-transparent border-b-2 border-amber-300 focus:border-amber-600 focus:outline-none text-center">
+                <span class="text-amber-700 font-bold">h</span>
+                <button type="button" onclick="saveKpiThietBi(<?= $stt ?>)"
+                        id="btnSaveKpi"
+                        title="Lưu KPI"
+                        class="text-amber-600 hover:text-amber-800">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh tiến trình KPI -->
+    <div class="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-semibold text-gray-600">Tiến trình thực hiện KPI</span>
+            <span id="kpiPctLabel" class="text-sm font-bold <?= $textColor ?>">
+                <?= number_format($tongGio, 2) ?>h / <?= number_format($kpiTarget, 2) ?>h
+                (<?= $pct ?>%)
+            </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div id="kpiProgressBar"
+                 class="h-4 rounded-full transition-all duration-500 <?= $barColor ?>"
+                 style="width: <?= $pct ?>%"></div>
+        </div>
+        <div id="kpiProgressNote" class="mt-1 text-xs">
+            <?php if ($kpiTarget > 0 && $tongGio >= $kpiTarget): ?>
+                <span class="text-green-600 font-semibold"><i class="fas fa-check-circle mr-1"></i>Đã hoàn thành KPI</span>
+            <?php elseif ($kpiTarget > 0): ?>
+                <span class="text-gray-500">Còn thiếu: <strong><?= number_format($kpiTarget - $tongGio, 2) ?>h</strong></span>
+            <?php else: ?>
+                <span class="text-gray-400">Chưa đặt KPI</span>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -236,9 +288,9 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">
                         Nhân viên <span class="text-red-500">*</span>
+                        <span class="text-sm font-normal text-gray-500 ml-1">(có thể chọn nhiều)</span>
                     </label>
-                    <select id="nhanvien_stt" name="nhanvien_stt" required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
-                        <option value="">-- Chọn nhân viên --</option>
+                    <select id="nhanvien_stt" name="nhanvien_stt[]" multiple required class="w-full px-3 py-2 border rounded focus:ring focus:border-purple-500">
                         <?php foreach ($nhanviens as $nv): ?>
                             <option value="<?= $nv['stt'] ?>"><?= htmlspecialchars($nv['hoten']) ?></option>
                         <?php endforeach; ?>
@@ -311,7 +363,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                     Hủy
                 </button>
-                <button type="submit" 
+                <button type="submit" id="btnAddCongViec"
                         class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
                     <i class="fas fa-save mr-2"></i>Lưu công việc
                 </button>
@@ -415,7 +467,7 @@ echo "<!-- DEBUG: Starting HTML output -->\n";
                         class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                     Hủy
                 </button>
-                <button type="submit" 
+                <button type="submit" id="btnEditCongViec"
                         class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
                     <i class="fas fa-save mr-2"></i>Cập nhật
                 </button>
@@ -447,20 +499,26 @@ function openAddCongViecModal() {
     if (!addNhanVienChoices) {
         const nhanVienSelect = document.getElementById('nhanvien_stt');
         if (nhanVienSelect) {
-            addNhanVienChoices = new Choices(nhanVienSelect, {
-                searchEnabled: true,
-                searchPlaceholderValue: 'Tìm kiếm nhân viên...',
-                itemSelectText: 'Nhấn để chọn',
-                noResultsText: 'Không tìm thấy nhân viên',
-                noChoicesText: 'Không có nhân viên nào',
-                position: 'bottom',
-                shouldSort: false,
-                searchResultLimit: 50,
-                fuseOptions: {
-                    threshold: 0.4,
-                    distance: 500
-                }
-            });
+            try {
+                addNhanVienChoices = new Choices(nhanVienSelect, {
+                    searchEnabled: true,
+                    searchPlaceholderValue: 'Tìm kiếm nhân viên...',
+                    itemSelectText: 'Nhấn để chọn',
+                    removeItemButton: true,
+                    noResultsText: 'Không tìm thấy nhân viên',
+                    noChoicesText: 'Không có nhân viên nào',
+                    position: 'bottom',
+                    shouldSort: false,
+                    searchResultLimit: 50,
+                    fuseOptions: {
+                        threshold: 0.4,
+                        distance: 500
+                    }
+                });
+            } catch (err) {
+                console.warn('Choices.js init failed, using native select:', err);
+                addNhanVienChoices = null;
+            }
         }
     }
 }
@@ -471,7 +529,7 @@ function closeAddCongViecModal() {
     
     // Reset Choices.js selection
     if (addNhanVienChoices) {
-        addNhanVienChoices.setChoiceByValue('');
+        addNhanVienChoices.removeActiveItems();
     }
 }
 
@@ -480,6 +538,24 @@ function updateKpiDisplay(select) { /* deprecated - no-op */ }
 document.getElementById('formAddCongViec').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Validate: phải chọn ít nhất 1 nhân viên
+    let selectedValues = [];
+    if (addNhanVienChoices) {
+        selectedValues = addNhanVienChoices.getValue(true); // trả về mảng giá trị
+    } else {
+        // fallback: native select
+        const sel = document.getElementById('nhanvien_stt');
+        selectedValues = Array.from(sel.selectedOptions).map(o => o.value);
+    }
+    if (!selectedValues || selectedValues.length === 0) {
+        alert('Vui lòng chọn ít nhất một nhân viên');
+        return;
+    }
+
+    const btnAdd = document.getElementById('btnAddCongViec');
+    btnAdd.disabled = true;
+    btnAdd.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+
     const formData = new FormData(this);
     formData.append('action', 'save');
     
@@ -515,10 +591,14 @@ document.getElementById('formAddCongViec').addEventListener('submit', async func
             location.reload();
         } else {
             alert('✗ ' + result.message + (result.debug ? '\n\nDebug:\n' + JSON.stringify(result.debug, null, 2) : ''));
+            btnAdd.disabled = false;
+            btnAdd.innerHTML = '<i class="fas fa-save mr-2"></i>Lưu công việc';
         }
     } catch (error) {
         console.error('Full error:', error);
         alert('Lỗi kết nối: ' + error.message);
+        btnAdd.disabled = false;
+        btnAdd.innerHTML = '<i class="fas fa-save mr-2"></i>Lưu công việc';
     }
 });
 
@@ -639,6 +719,10 @@ function closeEditCongViecModal() {
 
 document.getElementById('formEditCongViec').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    const btnEdit = document.getElementById('btnEditCongViec');
+    btnEdit.disabled = true;
+    btnEdit.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
     
     const formData = new FormData(this);
     formData.append('action', 'update');
@@ -671,10 +755,73 @@ document.getElementById('formEditCongViec').addEventListener('submit', async fun
             location.reload();
         } else {
             alert('✗ ' + result.message + (result.debug ? '\n\nDebug:\n' + JSON.stringify(result.debug, null, 2) : ''));
+            btnEdit.disabled = false;
+            btnEdit.innerHTML = '<i class="fas fa-save mr-2"></i>Cập nhật';
         }
     } catch (error) {
         console.error('Full error:', error);
         alert('Lỗi kết nối: ' + error.message);
+        btnEdit.disabled = false;
+        btnEdit.innerHTML = '<i class="fas fa-save mr-2"></i>Cập nhật';
     }
-});
+const _tongGioKpi = <?= $tongGio ?? 0 ?>;
+
+function updateKpiProgress() {
+    const kpi = parseFloat(document.getElementById('kpiThietBiInput').value) || 0;
+    const pct = kpi > 0 ? Math.min(100, Math.round(_tongGioKpi / kpi * 1000) / 10) : 0;
+    const bar = document.getElementById('kpiProgressBar');
+    const label = document.getElementById('kpiPctLabel');
+    const note = document.getElementById('kpiProgressNote');
+
+    bar.style.width = pct + '%';
+    bar.className = 'h-4 rounded-full transition-all duration-500 ' +
+        (pct >= 100 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-amber-500');
+
+    label.textContent = _tongGioKpi.toFixed(2) + 'h / ' + kpi.toFixed(2) + 'h (' + pct + '%)';
+    label.className = 'text-sm font-bold ' +
+        (pct >= 100 ? 'text-green-700' : pct >= 60 ? 'text-blue-700' : 'text-amber-700');
+
+    if (kpi <= 0) {
+        note.innerHTML = '<span class="text-gray-400">Chưa đặt KPI</span>';
+    } else if (_tongGioKpi >= kpi) {
+        note.innerHTML = '<span class="text-green-600 font-semibold"><i class="fas fa-check-circle mr-1"></i>Đã hoàn thành KPI</span>';
+    } else {
+        note.innerHTML = '<span class="text-gray-500">Còn thiếu: <strong>' + (kpi - _tongGioKpi).toFixed(2) + 'h</strong></span>';
+    }
+}
+
+async function saveKpiThietBi(stt) {
+    const input = document.getElementById('kpiThietBiInput');
+    const btn = document.getElementById('btnSaveKpi');
+    const kpi = parseFloat(input.value);
+
+    if (isNaN(kpi) || kpi < 0) {
+        alert('Giá trị KPI không hợp lệ');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('/iso2/api/hososcbd_kpi.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stt: stt, kpi_thietbi: kpi })
+        });
+        const result = await response.json();
+        if (result.success) {
+            btn.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-save"></i>'; btn.disabled = false; }, 1500);
+        } else {
+            alert('Lỗi: ' + result.message);
+            btn.innerHTML = '<i class="fas fa-save"></i>';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert('Lỗi kết nối: ' + e.message);
+        btn.innerHTML = '<i class="fas fa-save"></i>';
+        btn.disabled = false;
+    }
+}
 </script>

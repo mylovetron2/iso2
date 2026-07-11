@@ -110,6 +110,12 @@ try {
     error_log("Error fetching nguoi thuc hien autocomplete from resume: " . $e->getMessage());
 }
 
+// Kiểm tra quyền sửa: hồ sơ đã có ngày kết thúc thì chỉ admin mới lưu thẳng
+require_once __DIR__ . '/../../config/constants.php';
+$isAdmin = hasRole(ROLE_ADMIN);
+$hasNgaykt = !empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00';
+$needsApproval = $hasNgaykt && !$isAdmin;
+
 // Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -138,157 +144,197 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'tbdosc4' => trim($_POST['tbdosc4'] ?? ''),
             'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? '')
         ];
-        
-        $success = $model->update($stt, $data);
-        if ($success !== false) {
-            // Xử lý cập nhật BDDK nếu checkbox được chọn
-            if (isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1') {
-                $ngayth = $data['ngayth'];
-                if ($ngayth !== '0000-00-00' && $thietbi && !empty($thietbi['thietbi_id'])) {
-                    try {
-                        // Tính quý từ tháng
-                        $month = (int)date('n', strtotime($ngayth));
-                        $quarter = ceil($month / 3); // 1-3 => 1, 4-6 => 2, 7-9 => 3, 10-12 => 4
-                        
-                        // Lấy năm hiện tại
-                        $nam = (int)date('Y', strtotime($ngayth));
-                        
-                        // Update bảng BDDK
-                        $db = getDBConnection();
-                        $hoantat_field = "qui_{$quarter}_hoantat";
-                        
-                        $sqlUpdate = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
-                                      SET $hoantat_field = 1
-                                      WHERE thietbi_id = :thietbi_id 
-                                        AND nam = :nam";
-                        $stmtUpdate = $db->prepare($sqlUpdate);
-                        $stmtUpdate->execute([
-                            ':thietbi_id' => $thietbi['thietbi_id'],
-                            ':nam' => $nam
-                        ]);
-                        
-                        error_log("BDDK Updated: thietbi_id={$thietbi['thietbi_id']}, nam=$nam, quy=$quarter, ngayth=$ngayth");
-                    } catch (Exception $e) {
-                        error_log("Error updating BDDK: " . $e->getMessage());
+
+        // --- Nếu là user thường và hồ sơ đã có ngày kết thúc: lưu vào bảng pending ---
+        if ($needsApproval) {
+            $nguoiThucHienPost = [];
+            if (isset($_POST['nguoi_hoten'])) {
+                $hoten_arr = $_POST['nguoi_hoten'] ?? [];
+                $gio_arr   = $_POST['nguoi_gio'] ?? [];
+                foreach ($hoten_arr as $i => $ht) {
+                    if (trim($ht) !== '') {
+                        $nguoiThucHienPost[] = [
+                            'hoten' => trim($ht),
+                            'giolv' => floatval($gio_arr[$i] ?? 0)
+                        ];
                     }
                 }
             }
-            
-            // Xử lý lưu người thực hiện
-            if (!empty($item['hoso']) && isset($_POST['nguoi_hoten'])) {
-                try {
-                    $db = getDBConnection();
-                    $mahoso = $item['hoso'];
-                    $mavt = $item['mavt'];
-                    $somay = $item['somay'];
+
+            $db = getDBConnection();
+            $userInfo = $_SESSION['user_id'] ?? 0;
+            $username = $_SESSION['username'] ?? '';
+
+            // Xóa pending cũ của cùng user+hồ sơ nếu còn pending
+            $db->prepare("DELETE FROM hososcbd_pending_edits WHERE hososcbd_stt = :stt AND user_id = :uid AND status = 'pending'")
+               ->execute([':stt' => $stt, ':uid' => $userInfo]);
+
+            $stmt = $db->prepare("INSERT INTO hososcbd_pending_edits
+                (hososcbd_stt, user_id, username, data_json, nguoi_thuchien_json, bddk_hoantat, status)
+                VALUES (:stt, :uid, :uname, :data, :nguoi, :bddk, 'pending')");
+            $stmt->execute([
+                ':stt'   => $stt,
+                ':uid'   => $userInfo,
+                ':uname' => $username,
+                ':data'  => json_encode($data, JSON_UNESCAPED_UNICODE),
+                ':nguoi' => json_encode($nguoiThucHienPost, JSON_UNESCAPED_UNICODE),
+                ':bddk'  => (isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1') ? 1 : 0,
+            ]);
+
+            $pendingMessage = 'Hồ sơ đã có ngày kết thúc. Yêu cầu sửa đổi của bạn đã được gửi đến admin để duyệt.';
+        } else {
+            // --- Lưu thẳng vào DB (admin hoặc hồ sơ chưa có ngày kết thúc) ---
+            $success = $model->update($stt, $data);
+            if ($success !== false) {
+                // Xử lý cập nhật BDDK nếu checkbox được chọn
+                if (isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1') {
                     $ngayth = $data['ngayth'];
-                    $ngaykt = $data['ngaykt'];
-                    $currentMonth = (int)date('n'); // Tháng hiện tại (1-12)
-                    $giolv_field = "giolv{$currentMonth}";
-                    
-                    $hoten_array = $_POST['nguoi_hoten'] ?? [];
-                    $gio_array = $_POST['nguoi_gio'] ?? [];
-                    
-                    // Lấy danh sách người thực hiện hiện có
-                    $stmtExisting = $db->prepare("SELECT stt FROM ngthuchien_iso WHERE mahoso = :mahoso ORDER BY stt ASC");
-                    $stmtExisting->execute([':mahoso' => $mahoso]);
-                    $existingList = $stmtExisting->fetchAll(PDO::FETCH_COLUMN);
-                    
-                    // Xác định STT mới cho người mới thêm vào
-                    $stmtMaxStt = $db->prepare("SELECT COALESCE(MAX(stt), 0) as max_stt FROM ngthuchien_iso");
-                    $stmtMaxStt->execute();
-                    $maxStt = (int)$stmtMaxStt->fetch(PDO::FETCH_ASSOC)['max_stt'];
-                    $nextStt = $maxStt + 1;
-                    
-                    $processedIndices = [];
-                    
-                    // Bước 1: Cập nhật hoặc xóa các bản ghi hiện có
-                    foreach ($existingList as $idx => $existingStt) {
-                        $formIndex = $idx; // Index trong form tương ứng với vị trí trong DB
-                        
-                        if (isset($hoten_array[$formIndex]) && trim($hoten_array[$formIndex]) !== '') {
-                            // Cập nhật bản ghi
-                            $hoten = trim($hoten_array[$formIndex]);
-                            $gio = floatval($gio_array[$formIndex] ?? 0);
+                    if ($ngayth !== '0000-00-00' && $thietbi && !empty($thietbi['thietbi_id'])) {
+                        try {
+                            // Tính quý từ tháng
+                            $month = (int)date('n', strtotime($ngayth));
+                            $quarter = ceil($month / 3); // 1-3 => 1, 4-6 => 2, 7-9 => 3, 10-12 => 4
                             
-                            $sqlUpdate = "UPDATE ngthuchien_iso SET 
-                                hoten = :hoten,
-                                giolv = :giolv,
-                                mamay = :mamay,
-                                somay = :somay,
-                                ngayth = :ngayth,
-                                ngaykt = :ngaykt,
-                                {$giolv_field} = :giolv_month
-                                WHERE stt = :stt";
+                            // Lấy năm hiện tại
+                            $nam = (int)date('Y', strtotime($ngayth));
+                            
+                            // Update bảng BDDK
+                            $db = getDBConnection();
+                            $hoantat_field = "qui_{$quarter}_hoantat";
+                            
+                            $sqlUpdate = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
+                                          SET $hoantat_field = 1
+                                          WHERE thietbi_id = :thietbi_id 
+                                            AND nam = :nam";
                             $stmtUpdate = $db->prepare($sqlUpdate);
                             $stmtUpdate->execute([
-                                ':hoten' => $hoten,
-                                ':giolv' => $gio,
-                                ':mamay' => $mavt,
-                                ':somay' => $somay,
-                                ':ngayth' => $ngayth,
-                                ':ngaykt' => $ngaykt,
-                                ':giolv_month' => $gio,
-                                ':stt' => $existingStt
+                                ':thietbi_id' => $thietbi['thietbi_id'],
+                                ':nam' => $nam
                             ]);
-                            $processedIndices[] = $formIndex;
-                        } else {
-                            // Xóa bản ghi nếu tên bị xóa
-                            $sqlDelete = "DELETE FROM ngthuchien_iso WHERE stt = :stt";
-                            $stmtDelete = $db->prepare($sqlDelete);
-                            $stmtDelete->execute([':stt' => $existingStt]);
-                        }
-                    }
-                    
-                    // Bước 2: Thêm người mới (từ index sau số lượng bản ghi cũ)
-                    for ($i = count($existingList); $i < 8; $i++) {
-                        if (isset($hoten_array[$i]) && trim($hoten_array[$i]) !== '') {
-                            $hoten = trim($hoten_array[$i]);
-                            $gio = floatval($gio_array[$i] ?? 0);
                             
-                            $sqlInsert = "INSERT INTO ngthuchien_iso (
-                                stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field}
-                            ) VALUES (
-                                :stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :giolv_month
-                            )";
-                            $stmtInsert = $db->prepare($sqlInsert);
-                            $stmtInsert->execute([
-                                ':stt' => $nextStt,
-                                ':mahoso' => $mahoso,
-                                ':mamay' => $mavt,
-                                ':somay' => $somay,
-                                ':hoten' => $hoten,
-                                ':giolv' => $gio,
-                                ':ngayth' => $ngayth,
-                                ':ngaykt' => $ngaykt,
-                                ':giolv_month' => $gio
-                            ]);
-                            $nextStt++;
+                            error_log("BDDK Updated: thietbi_id={$thietbi['thietbi_id']}, nam=$nam, quy=$quarter, ngayth=$ngayth");
+                        } catch (Exception $e) {
+                            error_log("Error updating BDDK: " . $e->getMessage());
                         }
                     }
-                    
-                } catch (Exception $e) {
-                    error_log("Error saving nguoi thuc hien: " . $e->getMessage());
                 }
-            }
-            
-            // Build redirect URL with preserved filters
-            $redirectUrl = '/iso2/hososcbd.php';
-            // Get filter params from POST (hidden inputs) or from initial GET
-            $postFilters = [];
-            foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
-                if (isset($_POST['filter_' . $key]) && $_POST['filter_' . $key] !== '') {
-                    $postFilters[$key] = $_POST['filter_' . $key];
+                
+                // Xử lý lưu người thực hiện
+                if (!empty($item['hoso']) && isset($_POST['nguoi_hoten'])) {
+                    try {
+                        $db = getDBConnection();
+                        $mahoso = $item['hoso'];
+                        $mavt = $item['mavt'];
+                        $somay = $item['somay'];
+                        $ngayth = $data['ngayth'];
+                        $ngaykt = $data['ngaykt'];
+                        $currentMonth = (int)date('n'); // Tháng hiện tại (1-12)
+                        $giolv_field = "giolv{$currentMonth}";
+                        
+                        $hoten_array = $_POST['nguoi_hoten'] ?? [];
+                        $gio_array = $_POST['nguoi_gio'] ?? [];
+                        
+                        // Lấy danh sách người thực hiện hiện có
+                        $stmtExisting = $db->prepare("SELECT stt FROM ngthuchien_iso WHERE mahoso = :mahoso ORDER BY stt ASC");
+                        $stmtExisting->execute([':mahoso' => $mahoso]);
+                        $existingList = $stmtExisting->fetchAll(PDO::FETCH_COLUMN);
+                        
+                        // Xác định STT mới cho người mới thêm vào
+                        $stmtMaxStt = $db->prepare("SELECT COALESCE(MAX(stt), 0) as max_stt FROM ngthuchien_iso");
+                        $stmtMaxStt->execute();
+                        $maxStt = (int)$stmtMaxStt->fetch(PDO::FETCH_ASSOC)['max_stt'];
+                        $nextStt = $maxStt + 1;
+                        
+                        $processedIndices = [];
+                        
+                        // Bước 1: Cập nhật hoặc xóa các bản ghi hiện có
+                        foreach ($existingList as $idx => $existingStt) {
+                            $formIndex = $idx; // Index trong form tương ứng với vị trí trong DB
+                            
+                            if (isset($hoten_array[$formIndex]) && trim($hoten_array[$formIndex]) !== '') {
+                                // Cập nhật bản ghi
+                                $hoten = trim($hoten_array[$formIndex]);
+                                $gio = floatval($gio_array[$formIndex] ?? 0);
+                                
+                                $sqlUpdate = "UPDATE ngthuchien_iso SET 
+                                    hoten = :hoten,
+                                    giolv = :giolv,
+                                    mamay = :mamay,
+                                    somay = :somay,
+                                    ngayth = :ngayth,
+                                    ngaykt = :ngaykt,
+                                    {$giolv_field} = :giolv_month
+                                    WHERE stt = :stt";
+                                $stmtUpdate = $db->prepare($sqlUpdate);
+                                $stmtUpdate->execute([
+                                    ':hoten' => $hoten,
+                                    ':giolv' => $gio,
+                                    ':mamay' => $mavt,
+                                    ':somay' => $somay,
+                                    ':ngayth' => $ngayth,
+                                    ':ngaykt' => $ngaykt,
+                                    ':giolv_month' => $gio,
+                                    ':stt' => $existingStt
+                                ]);
+                                $processedIndices[] = $formIndex;
+                            } else {
+                                // Xóa bản ghi nếu tên bị xóa
+                                $sqlDelete = "DELETE FROM ngthuchien_iso WHERE stt = :stt";
+                                $stmtDelete = $db->prepare($sqlDelete);
+                                $stmtDelete->execute([':stt' => $existingStt]);
+                            }
+                        }
+                        
+                        // Bước 2: Thêm người mới (từ index sau số lượng bản ghi cũ)
+                        for ($i = count($existingList); $i < 8; $i++) {
+                            if (isset($hoten_array[$i]) && trim($hoten_array[$i]) !== '') {
+                                $hoten = trim($hoten_array[$i]);
+                                $gio = floatval($gio_array[$i] ?? 0);
+                                
+                                $sqlInsert = "INSERT INTO ngthuchien_iso (
+                                    stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field}
+                                ) VALUES (
+                                    :stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :giolv_month
+                                )";
+                                $stmtInsert = $db->prepare($sqlInsert);
+                                $stmtInsert->execute([
+                                    ':stt' => $nextStt,
+                                    ':mahoso' => $mahoso,
+                                    ':mamay' => $mavt,
+                                    ':somay' => $somay,
+                                    ':hoten' => $hoten,
+                                    ':giolv' => $gio,
+                                    ':ngayth' => $ngayth,
+                                    ':ngaykt' => $ngaykt,
+                                    ':giolv_month' => $gio
+                                ]);
+                                $nextStt++;
+                            }
+                        }
+                        
+                    } catch (Exception $e) {
+                        error_log("Error saving nguoi thuc hien: " . $e->getMessage());
+                    }
                 }
+                
+                // Build redirect URL with preserved filters
+                $redirectUrl = '/iso2/hososcbd.php';
+                // Get filter params from POST (hidden inputs) or from initial GET
+                $postFilters = [];
+                foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
+                    if (isset($_POST['filter_' . $key]) && $_POST['filter_' . $key] !== '') {
+                        $postFilters[$key] = $_POST['filter_' . $key];
+                    }
+                }
+                $params = !empty($postFilters) ? $postFilters : $filterParams;
+                if (!empty($params)) {
+                    $redirectUrl .= '?' . http_build_query($params);
+                }
+                header("Location: $redirectUrl");
+                exit;
+            } else {
+                $errorMessage = 'Có lỗi xảy ra khi cập nhật';
             }
-            $params = !empty($postFilters) ? $postFilters : $filterParams;
-            if (!empty($params)) {
-                $redirectUrl .= '?' . http_build_query($params);
-            }
-            header("Location: $redirectUrl");
-            exit;
-        } else {
-            $errorMessage = 'Có lỗi xảy ra khi cập nhật';
         }
     } catch (Exception $e) {
         error_log("Error updating repair details: " . $e->getMessage());
@@ -352,6 +398,19 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php if (isset($errorMessage)): ?>
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
         <i class="fas fa-times-circle mr-2"></i><?php echo $errorMessage; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (isset($pendingMessage)): ?>
+    <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-4">
+        <i class="fas fa-clock mr-2"></i><?php echo htmlspecialchars($pendingMessage); ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($needsApproval): ?>
+    <div class="bg-orange-50 border-l-4 border-orange-400 text-orange-800 px-4 py-3 rounded mb-4">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <strong>Lưu ý:</strong> Hồ sơ này đã có ngày kết thúc. Thay đổi của bạn sẽ được gửi cho admin duyệt trước khi cập nhật vào hệ thống.
     </div>
     <?php endif; ?>
 
@@ -906,8 +965,12 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Buttons -->
         <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
-                <i class="fas fa-save mr-2"></i> Lưu thông tin
+            <button type="submit" class="<?php echo $needsApproval ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'; ?> text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
+                <?php if ($needsApproval): ?>
+                    <i class="fas fa-paper-plane mr-2"></i> Gửi yêu cầu sửa (chờ admin duyệt)
+                <?php else: ?>
+                    <i class="fas fa-save mr-2"></i> Lưu thông tin
+                <?php endif; ?>
             </button>
             <a href="<?php echo htmlspecialchars($backUrl); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded text-base font-semibold text-center w-full md:w-auto">
                 <i class="fas fa-arrow-left mr-2"></i> Quay lại danh sách

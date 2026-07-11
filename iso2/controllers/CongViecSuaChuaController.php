@@ -76,8 +76,13 @@ class CongViecSuaChuaController
             return ['success' => false, 'message' => 'Invalid request method'];
         }
 
-        // Lấy dữ liệu từ POST
-        $nhanvienStt = (int)($_POST['nhanvien_stt'] ?? 0);
+        // Hỗ trợ cả array (nhiều NV) và scalar (1 NV)
+        $rawNV = $_POST['nhanvien_stt'] ?? [];
+        if (!is_array($rawNV)) {
+            $rawNV = [$rawNV];
+        }
+        $nhanvienStts = array_values(array_filter(array_map('intval', $rawNV)));
+
         $ngayLam = $_POST['ngay_lam'] ?? date('Y-m-d');
         $hososcbdStt = isset($_POST['hososcbd_stt']) ? (int)$_POST['hososcbd_stt'] : 0;
         $noiDung = trim($_POST['noi_dung'] ?? '');
@@ -86,10 +91,10 @@ class CongViecSuaChuaController
         $gioKetThuc = $_POST['gio_ket_thuc'] ?? null;
         $ghiChu = trim($_POST['ghi_chu'] ?? '');
         
-        error_log("POST data extracted - nhanvien: $nhanvienStt, hososcbd: $hososcbdStt");
+        error_log("POST data extracted - nhanviens: " . implode(',', $nhanvienStts) . ", hososcbd: $hososcbdStt");
         
         // Validate required fields
-        if ($nhanvienStt <= 0) {
+        if (empty($nhanvienStts)) {
             error_log("Validation failed: nhanvien_stt missing or invalid");
             return ['success' => false, 'message' => 'Vui lòng chọn nhân viên'];
         }
@@ -109,13 +114,6 @@ class CongViecSuaChuaController
             return ['success' => false, 'message' => 'Số giờ làm phải lớn hơn 0'];
         }
 
-        // Lấy thông tin nhân viên
-        $nhanvien = $this->resumeModel->find($nhanvienStt);
-        if (!$nhanvien || $nhanvien === false) {
-            error_log("Không tìm thấy nhân viên với stt: $nhanvienStt");
-            return ['success' => false, 'message' => 'Không tìm thấy nhân viên'];
-        }
-
         // Lấy thông tin hồ sơ SC/BĐ
         $hososcbd = $this->hososcbdModel->find($hososcbdStt);
         if (!$hososcbd) {
@@ -123,22 +121,47 @@ class CongViecSuaChuaController
             return ['success' => false, 'message' => 'Không tìm thấy hồ sơ SC/BĐ'];
         }
 
-        // Chuẩn bị dữ liệu
-        $data = [
-            'nhanvien_stt' => $nhanvienStt,
-            'nhanvien_ten' => $nhanvien['hoten'],
-            'ngay_lam' => $ngayLam,
-            'hososcbd_stt' => $hososcbdStt,
-            'noi_dung' => $noiDung,
-            'so_gio_lam' => $soGioLam,
-            'gio_bat_dau' => $gioBatDau,
-            'gio_ket_thuc' => $gioKetThuc,
-            'ghi_chu' => $ghiChu,
-            'trang_thai' => 'Đang thực hiện'
-        ];
+        // Tạo bản ghi cho từng nhân viên
+        $created = 0;
+        $errors = [];
+        foreach ($nhanvienStts as $nhanvienStt) {
+            $nhanvien = $this->resumeModel->find($nhanvienStt);
+            if (!$nhanvien || $nhanvien === false) {
+                error_log("Không tìm thấy nhân viên với stt: $nhanvienStt");
+                $errors[] = "Không tìm thấy nhân viên #$nhanvienStt";
+                continue;
+            }
 
-        // Tạo công việc với validation
-        return $this->congviecModel->createWithValidation($data);
+            $data = [
+                'nhanvien_stt' => $nhanvienStt,
+                'nhanvien_ten' => $nhanvien['hoten'],
+                'ngay_lam' => $ngayLam,
+                'hososcbd_stt' => $hososcbdStt,
+                'noi_dung' => $noiDung,
+                'so_gio_lam' => $soGioLam,
+                'gio_bat_dau' => $gioBatDau,
+                'gio_ket_thuc' => $gioKetThuc,
+                'ghi_chu' => $ghiChu,
+                'trang_thai' => 'Đang thực hiện'
+            ];
+
+            $result = $this->congviecModel->createWithValidation($data);
+            if ($result['success']) {
+                $created++;
+            } else {
+                $errors[] = $nhanvien['hoten'] . ': ' . ($result['message'] ?? 'Lỗi không xác định');
+            }
+        }
+
+        if ($created === 0) {
+            return ['success' => false, 'message' => 'Không tạo được công việc nào. ' . implode('; ', $errors)];
+        }
+
+        $msg = "Đã thêm $created công việc thành công";
+        if (!empty($errors)) {
+            $msg .= '. Lỗi: ' . implode('; ', $errors);
+        }
+        return ['success' => true, 'message' => $msg];
     }
 
     /**

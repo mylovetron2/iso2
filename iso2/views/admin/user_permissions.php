@@ -16,15 +16,33 @@ $roleModel = new BaseModel('roles');
 $allUsers = $userModel->all();
 $roles = $roleModel->all();
 
+$donViList = [];
+try {
+    $db = getDBConnection();
+    $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
+    $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $donViList = [];
+}
+
 // Tìm kiếm username
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-if ($search !== '') {
-    $users = array_filter($allUsers, function($u) use ($search) {
-        return stripos($u['username'], $search) !== false;
-    });
-} else {
-    $users = $allUsers;
-}
+$selectedMadv = isset($_GET['madv']) ? trim($_GET['madv']) : '';
+
+$users = array_filter($allUsers, function($u) use ($search, $selectedMadv) {
+    $matchedSearch = true;
+    $matchedDonVi = true;
+
+    if ($search !== '') {
+        $matchedSearch = stripos($u['username'], $search) !== false;
+    }
+
+    if ($selectedMadv !== '') {
+        $matchedDonVi = isset($u['madv']) && trim((string)$u['madv']) === $selectedMadv;
+    }
+
+    return $matchedSearch && $matchedDonVi;
+});
 
 // Phân trang
 $perPage = 10;
@@ -107,14 +125,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role_id']) && !isset($_POST['action'])) {
     $userId = (int)$_POST['user_id'];
     $roleId = (int)$_POST['role_id'];
+    $returnSearch = trim($_POST['return_search'] ?? '');
+    $returnMadv = trim($_POST['return_madv'] ?? '');
+    $returnPage = max(1, (int)($_POST['return_page'] ?? 1));
+    $returnOpenUser = max(0, (int)($_POST['return_open_user'] ?? $userId));
+
     $db = getDBConnection();
     // Xóa role cũ
     $db->prepare('DELETE FROM role_user WHERE user_id = ?')->execute([$userId]);
     // Gán role mới
     $db->prepare('INSERT INTO role_user (user_id, role_id) VALUES (?, ?)')->execute([$userId, $roleId]);
-    header('Location: /iso2/admin_user_permissions.php?success=1');
+
+    $redirectParams = [
+        'success' => 1,
+        'page' => $returnPage,
+        'open_user' => $returnOpenUser
+    ];
+    if ($returnSearch !== '') {
+        $redirectParams['search'] = $returnSearch;
+    }
+    if ($returnMadv !== '') {
+        $redirectParams['madv'] = $returnMadv;
+    }
+
+    header('Location: /iso2/admin_user_permissions.php?' . http_build_query($redirectParams));
     exit;
 }
+
+$openUserId = isset($_GET['open_user']) ? max(0, (int)$_GET['open_user']) : 0;
 
 $title = 'Phân quyền User';
 require_once __DIR__ . '/../layouts/header.php';
@@ -228,8 +266,16 @@ require_once __DIR__ . '/../layouts/header.php';
         <h3 class="text-base md:text-lg font-semibold mb-3">Danh sách User & Role</h3>
         <form method="GET" class="mb-4 flex flex-col md:flex-row gap-2">
             <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Tìm username..." class="px-3 py-2 border rounded w-full md:w-64 text-sm md:text-base">
+            <select name="madv" class="px-3 py-2 border rounded w-full md:w-72 text-sm md:text-base">
+                <option value="">-- Chọn bộ phận --</option>
+                <?php foreach ($donViList as $donVi): ?>
+                    <option value="<?php echo htmlspecialchars($donVi['madv']); ?>" <?php echo $selectedMadv === (string)$donVi['madv'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($donVi['madv'] . ' - ' . $donVi['tendv']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm md:text-base w-full md:w-auto"><i class="fas fa-search mr-2"></i>Tìm kiếm</button>
-            <?php if($search): ?>
+            <?php if($search || $selectedMadv): ?>
             <a href="/iso2/admin_user_permissions.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm md:text-base text-center w-full md:w-auto"><i class="fas fa-times mr-2"></i>Xóa lọc</a>
             <?php endif; ?>
         </form>
@@ -246,13 +292,14 @@ require_once __DIR__ . '/../layouts/header.php';
                 </thead>
                 <tbody>
                     <?php foreach ($usersPage as $user): ?>
+                        <?php $userRoles = $userModel->getRoles($user['stt']); ?>
+                        <?php $currentRoleId = count($userRoles) > 0 ? (int)$userRoles[0]['id'] : 0; ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm font-semibold"><?php echo htmlspecialchars($user['username']); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($user['hoten'] ?? $user['username']); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                                 <?php
-                                $userRoles = $userModel->getRoles($user['stt']);
                                 if (count($userRoles) > 0) {
                                     foreach($userRoles as $r) {
                                         echo '<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-1 mb-1">' . htmlspecialchars($r['name']) . '</span>';
@@ -263,7 +310,39 @@ require_once __DIR__ . '/../layouts/header.php';
                                 ?>
                             </td>
                             <td class="px-2 md:px-4 py-2 border text-center">
-                                <button onclick="editUser(<?php echo $user['stt']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm"><i class="fas fa-edit"></i></button>
+                                <button type="button" onclick="togglePermissionForm(<?php echo (int)$user['stt']; ?>)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm">
+                                    <i class="fas fa-edit mr-1"></i>Phân quyền
+                                </button>
+                            </td>
+                        </tr>
+                        <tr id="permission-row-<?php echo (int)$user['stt']; ?>" class="hidden bg-yellow-50">
+                            <td colspan="5" class="px-2 md:px-4 py-3 border">
+                                <form method="POST" class="js-inline-permission-form flex flex-col md:flex-row md:items-end gap-2 md:gap-3">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$user['stt']; ?>">
+                                    <input type="hidden" name="return_search" value="<?php echo htmlspecialchars($search); ?>">
+                                    <input type="hidden" name="return_madv" value="<?php echo htmlspecialchars($selectedMadv); ?>">
+                                    <input type="hidden" name="return_page" value="<?php echo (int)$page; ?>">
+                                    <input type="hidden" name="return_open_user" value="<?php echo (int)$user['stt']; ?>">
+                                    <div class="w-full md:w-72">
+                                        <label class="block mb-1 font-semibold text-xs md:text-sm">Chọn role cho user: <?php echo htmlspecialchars($user['username']); ?></label>
+                                        <select name="role_id" required class="w-full px-3 py-2 border rounded text-sm">
+                                            <option value="">-- Chọn role --</option>
+                                            <?php foreach ($roles as $role): ?>
+                                                <option value="<?php echo (int)$role['id']; ?>" <?php echo $currentRoleId === (int)$role['id'] ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($role['name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-2 rounded text-sm">
+                                            <i class="fas fa-save mr-1"></i>Lưu quyền
+                                        </button>
+                                        <button type="button" onclick="togglePermissionForm(<?php echo (int)$user['stt']; ?>)" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-3 py-2 rounded text-sm">
+                                            Đóng
+                                        </button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -307,38 +386,43 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php endif; ?>
     </div>
 
-    <div class="border-t pt-6">
-        <h3 class="text-base md:text-lg font-semibold mb-3">Gán quyền nhanh</h3>
-        <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-            <div>
-                <label class="block mb-2 font-semibold text-sm md:text-base">Chọn User</label>
-                <select name="user_id" id="quickUserId" class="w-full px-3 py-2 border rounded text-sm md:text-base">
-                    <option value="">-- Chọn user --</option>
-                    <?php foreach ($users as $user): ?>
-                        <option value="<?php echo $user['stt']; ?>"><?php echo htmlspecialchars($user['username']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label class="block mb-2 font-semibold text-sm md:text-base">Chọn Role</label>
-                <select name="role_id" class="w-full px-3 py-2 border rounded text-sm md:text-base">
-                    <?php foreach ($roles as $role): ?>
-                        <option value="<?php echo $role['id']; ?>"><?php echo htmlspecialchars($role['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="flex items-end">
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded text-sm md:text-base"><i class="fas fa-save mr-2"></i>Cập nhật quyền</button>
-            </div>
-        </form>
-    </div>
 </div>
 
 <script>
-function editUser(userId, username) {
-    document.getElementById('quickUserId').value = userId;
-    window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+function togglePermissionForm(userId) {
+    var row = document.getElementById('permission-row-' + userId);
+    if (!row) return;
+
+    document.querySelectorAll('tr[id^="permission-row-"]').forEach(function(item) {
+        if (item.id !== 'permission-row-' + userId) {
+            item.classList.add('hidden');
+        }
+    });
+
+    row.classList.toggle('hidden');
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var openUserId = <?php echo (int)$openUserId; ?>;
+    if (openUserId > 0) {
+        var openRow = document.getElementById('permission-row-' + openUserId);
+        if (openRow) {
+            openRow.classList.remove('hidden');
+        }
+    }
+
+    var savedScrollY = sessionStorage.getItem('adminUserPermissionsScrollY');
+    if (savedScrollY !== null) {
+        window.scrollTo({ top: parseInt(savedScrollY, 10) || 0, behavior: 'auto' });
+        sessionStorage.removeItem('adminUserPermissionsScrollY');
+    }
+
+    document.querySelectorAll('.js-inline-permission-form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            sessionStorage.setItem('adminUserPermissionsScrollY', String(window.scrollY || 0));
+        });
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
