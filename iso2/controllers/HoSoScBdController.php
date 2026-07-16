@@ -230,10 +230,10 @@ class HoSoScBdController
                 // Auto-generate maql for edit
                 $data['maql'] = $this->generateMaQL($data['madv'], $data['phieu'], $data['ngayyc']);
                 
-                // Giữ nguyên mã hồ sơ cũ khi edit, không tự động sinh lại
-                // để tránh conflict với các hồ sơ khác trong cùng phiếu
-                if (empty($data['hoso'])) {
-                    // Nếu không có hoso (trường hợp hiếm), tạo từ phiếu hiện tại
+                // Giữ nguyên mã hồ sơ hiện có khi edit.
+                // Chỉ sinh lại trong trường hợp dữ liệu cũ bị thiếu hoso.
+                $data['hoso'] = trim((string)($item['hoso'] ?? ''));
+                if ($data['hoso'] === '') {
                     $maxIndex = $this->model->getMaxHosoIndexForPhieu($data['phieu']);
                     $data['hoso'] = $this->generateHoSo($data['phieu'], $maxIndex + 1);
                 }

@@ -347,6 +347,11 @@ if (file_exists($dbSelectionFile)) {
                             </a>
                         </li>
                         <li>
+                            <a href="/iso2/baocaothang01_print.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-print mr-2"></i> In báo cáo SC/BD/CC thiết bị
+                            </a>
+                        </li>
+                        <li>
                             <a href="/iso2/thongke_hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-exclamation-triangle mr-2"></i> Hồ sơ SCBD quá 30 ngày
                             </a>
