@@ -11,7 +11,9 @@ class HoSoSCBD extends BaseModel
 {
     public function __construct()
     {
-        parent::__construct('hososcbd_iso');
+        // Tắt ActivityLogger tự động để tránh thêm một lần INSERT log cho mỗi hồ sơ.
+        // Controller đã log theo nghiệp vụ ở mức batch sau khi tạo xong.
+        parent::__construct('hososcbd_iso', false);
         $this->primaryKey = 'stt';
     }
 

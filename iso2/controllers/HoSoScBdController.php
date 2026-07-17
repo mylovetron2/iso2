@@ -136,8 +136,11 @@ class HoSoScBdController
                 // Insert each device
                 $successCount = 0;
                 $createdDevices = []; // Store created devices info for batch logging
+                $db = $this->model->getDb();
                 
                 try {
+                    $db->beginTransaction();
+
                     foreach ($devicesData as $device) {
                         $data = array_merge($commonData, $device);
                         
@@ -149,12 +152,12 @@ class HoSoScBdController
                         $data['hoso'] = $this->generateHoSo($data['phieu'], $hosoCounter);
                         
                         $id = $this->model->create($data);
-                        if ($id) {
+                        if ($id !== '') {
                             $successCount++;
                             
                             // Store device info for batch logging later
                             $createdDevices[] = [
-                                'id' => $id,
+                                'id' => (int)$id,
                                 'maql' => $data['maql'],
                                 'mavt' => $data['mavt'],
                                 'somay' => $data['somay'],
@@ -162,6 +165,8 @@ class HoSoScBdController
                             ];
                         }
                     }
+
+                    $db->commit();
                     
                     // Batch log after all devices created (much faster than logging each device)
                     if ($successCount > 0) {
@@ -182,6 +187,9 @@ class HoSoScBdController
                     }
                     $errors[] = 'Có lỗi xảy ra khi tạo hồ sơ';
                 } catch (PDOException $e) {
+                    if ($db->inTransaction()) {
+                        $db->rollBack();
+                    }
                     error_log("HoSoScBd create error: " . $e->getMessage());
                     error_log("Data: " . print_r($data ?? [], true));
                     $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
