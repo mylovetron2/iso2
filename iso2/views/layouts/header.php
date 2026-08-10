@@ -53,6 +53,18 @@ if (file_exists($dbSelectionFile)) {
                 -webkit-overflow-scrolling: touch;
             }
         }
+        @media print {
+            #sidebarToggle, #sidebar, #sidebarOverlay {
+                display: none !important;
+            }
+            #mainContent {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
     <!-- Choices.js for searchable select -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
@@ -289,6 +301,20 @@ if (file_exists($dbSelectionFile)) {
                 <li>
                     <a href="/iso2/kehoachbaoduongdinhky.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tools mr-2"></i> Bảo dưỡng định kỳ
+                    </a>
+                </li>
+                <?php endif; ?>
+                <?php if (isLoggedIn() && (hasPermission('kpi_baoduong.view') || hasPermission('kehoachbaoduong.view') || hasPermission('kehoachbaoduong.create'))): ?>
+                <li>
+                    <a href="/iso2/kpi_baoduong_thietbi_list.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-ruler-combined mr-2"></i> Định mức KPI
+                    </a>
+                </li>
+                <?php endif; ?>
+                <?php if (isLoggedIn() && (hasPermission('kpi_baoduong.view') || hasPermission('thietbi.view'))): ?>
+                <li>
+                    <a href="/iso2/thietbi_kpi_baoduong_link.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-link mr-2"></i> Gán KPI thiết bị
                     </a>
                 </li>
                 <?php endif; ?>

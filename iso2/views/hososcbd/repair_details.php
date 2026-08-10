@@ -116,8 +116,80 @@ $isAdmin = hasRole(ROLE_ADMIN);
 $hasNgaykt = !empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00';
 $needsApproval = $hasNgaykt && !$isAdmin;
 
+// Định mức KPI (kiểm tra/BD cấp 1-2-3/hiệu chuẩn) gắn cho hồ sơ này
+$canViewDinhMuc = hasPermission('hososcbd_dinhmuc.view') || hasPermission('hososcbd.view');
+$canEditDinhMuc = hasPermission('hososcbd_dinhmuc.edit');
+require_once __DIR__ . '/../../models/HoSoSCBDDinhMuc.php';
+$dinhMucModel = new HoSoSCBDDinhMuc();
+$dinhMucInfo = $canViewDinhMuc ? $dinhMucModel->layTheoHoSo($stt) : false;
+$deviceKpiLink = null;
+$deviceKpiLabel = '';
+$deviceKpiDetails = null;
+$kpiThietBiList = [];
+if ($canEditDinhMuc) {
+    try {
+        $dinhMucDb = getDBConnection();
+        $kpiThietBiList = $dinhMucDb->query(
+            "SELECT id, ten_thiet_bi, kiem_tra_so_gio, bd_cap_1_so_gio, bd_cap_2_so_gio, bd_cap_3_so_gio, hieu_chuan_so_gio
+             FROM kpi_baoduong_thietbi_iso
+             ORDER BY ten_thiet_bi ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($thietbi && !empty($thietbi['thietbi_id'])) {
+            $deviceKpiStmt = $dinhMucDb->prepare(
+                "SELECT l.kpi_baoduong_stt, k.ten_thiet_bi, k.kiem_tra_so_gio, k.bd_cap_1_so_gio, k.bd_cap_2_so_gio, k.bd_cap_3_so_gio, k.hieu_chuan_so_gio
+                 FROM thietbi_kpi_baoduong_iso l
+                 LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = l.kpi_baoduong_stt
+                 WHERE l.thietbi_stt = :thietbi_stt
+                 LIMIT 1"
+            );
+            $deviceKpiStmt->execute([':thietbi_stt' => (int)$thietbi['thietbi_id']]);
+            $deviceKpiLink = $deviceKpiStmt->fetch(PDO::FETCH_ASSOC);
+            $deviceKpiLabel = (string)($deviceKpiLink['ten_thiet_bi'] ?? '');
+            $deviceKpiDetails = $deviceKpiLink;
+        }
+    } catch (PDOException $e) {
+        error_log('Error loading kpi_baoduong_thietbi_iso list: ' . $e->getMessage());
+    }
+}
+$dinhMucError = '';
+$dinhMucSuccess = '';
+$kpiHourPreviewMap = [];
+if (!empty($kpiThietBiList)) {
+    foreach ($kpiThietBiList as $kpiRow) {
+        $kpiHourPreviewMap[(int)$kpiRow['id']] = [
+            'kiem_tra' => $kpiRow['kiem_tra_so_gio'] !== null ? (float)$kpiRow['kiem_tra_so_gio'] : null,
+            'bd_cap_1' => $kpiRow['bd_cap_1_so_gio'] !== null ? (float)$kpiRow['bd_cap_1_so_gio'] : null,
+            'bd_cap_2' => $kpiRow['bd_cap_2_so_gio'] !== null ? (float)$kpiRow['bd_cap_2_so_gio'] : null,
+            'bd_cap_3' => $kpiRow['bd_cap_3_so_gio'] !== null ? (float)$kpiRow['bd_cap_3_so_gio'] : null,
+            'hieu_chuan' => $kpiRow['hieu_chuan_so_gio'] !== null ? (float)$kpiRow['hieu_chuan_so_gio'] : null,
+        ];
+    }
+}
+
+// Xử lý lưu định mức KPI (form riêng, tách khỏi form sửa hồ sơ chính)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dinhmuc_action'])) {
+    if (!$canEditDinhMuc) {
+        http_response_code(403);
+        die('Không có quyền gán định mức KPI');
+    }
+    $kpiBaoDuongStt = (int)($_POST['kpi_baoduong_stt'] ?? 0);
+    $loaiCongViec = trim((string)($_POST['loai_congviec'] ?? ''));
+    if ($kpiBaoDuongStt <= 0 || $loaiCongViec === '') {
+        $dinhMucError = 'Vui lòng chọn đầy đủ thiết bị KPI và loại công việc';
+    } else {
+        $createdBy = $_SESSION['username'] ?? null;
+        if ($dinhMucModel->luuDinhMuc($stt, $kpiBaoDuongStt, $loaiCongViec, $createdBy)) {
+            header("Location: hososcbd_repair_details.php?id={$stt}");
+            exit;
+        }
+        $dinhMucError = 'Có lỗi xảy ra khi lưu định mức KPI';
+    }
+    $dinhMucInfo = $dinhMucModel->layTheoHoSo($stt);
+}
+
 // Handle form submission BEFORE any output
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
     try {
         $data = [
             'cv' => trim($_POST['cv'] ?? 'SC'),
@@ -517,6 +589,178 @@ require_once __DIR__ . '/../layouts/header.php';
         </label>
     </div>
     <?php endif; ?>
+
+    <!-- Định mức KPI & Kết luận Đạt/Không đạt -->
+    <?php if ($canViewDinhMuc): ?>
+    <?php
+        $loaiCongViecLabels = [
+            'kiem_tra'   => 'Kiểm tra',
+            'bd_cap_1'   => 'BD cấp 1',
+            'bd_cap_2'   => 'BD cấp 2',
+            'bd_cap_3'   => 'BD cấp 3',
+            'hieu_chuan' => 'Hiệu chuẩn',
+        ];
+    ?>
+    <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-bold text-teal-700 mb-3">
+            <i class="fas fa-bullseye mr-2"></i>Định mức KPI
+        </h2>
+
+        <?php if ($dinhMucError): ?>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
+            <?php echo htmlspecialchars($dinhMucError); ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($deviceKpiLink): ?>
+            <?php
+                $selectedLoaiCongViec = '';
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['loai_congviec'])) {
+                    $selectedLoaiCongViec = trim((string)$_POST['loai_congviec']);
+                }
+                if ($selectedLoaiCongViec === '' && $dinhMucInfo) {
+                    $selectedLoaiCongViec = (string)($dinhMucInfo['loai_congviec'] ?? '');
+                }
+                if ($selectedLoaiCongViec === '') {
+                    $selectedLoaiCongViec = 'kiem_tra';
+                }
+                $hourFieldMap = [
+                    'kiem_tra' => 'kiem_tra_so_gio',
+                    'bd_cap_1' => 'bd_cap_1_so_gio',
+                    'bd_cap_2' => 'bd_cap_2_so_gio',
+                    'bd_cap_3' => 'bd_cap_3_so_gio',
+                    'hieu_chuan' => 'hieu_chuan_so_gio',
+                ];
+                $effectiveKpiHour = null;
+                $effectiveKpiLabel = $deviceKpiLabel !== '' ? $deviceKpiLabel : '—';
+                $hourField = $hourFieldMap[$selectedLoaiCongViec] ?? 'kiem_tra_so_gio';
+                if (isset($deviceKpiDetails[$hourField]) && $deviceKpiDetails[$hourField] !== null) {
+                    $effectiveKpiHour = (float)$deviceKpiDetails[$hourField];
+                }
+                $ketLuan = $dinhMucInfo['ket_luan_kpi'] ?? 'chua_du_du_lieu';
+                $ketLuanBadge = [
+                    'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
+                    'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
+                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'],
+                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'];
+            ?>
+            <div class="bg-white border border-teal-300 rounded px-3 py-2 text-sm text-teal-700 mb-3">
+                <div class="font-semibold mb-1">Thiết bị này đã có định mức KPI gắn sẵn</div>
+                <div><strong>Thiết bị KPI:</strong> <?php echo htmlspecialchars($effectiveKpiLabel); ?></div>
+                <div><strong>Định mức giờ:</strong> <span id="kpi-hour-preview-value"><?php echo $effectiveKpiHour !== null ? htmlspecialchars((string)$effectiveKpiHour) : '—'; ?></span></div>
+                <div class="mt-2">
+                    <span class="px-3 py-1 rounded font-bold <?php echo $ketLuanBadge[0]; ?>"><?php echo $ketLuanBadge[1]; ?></span>
+                </div>
+            </div>
+        <?php elseif ($dinhMucInfo): ?>
+            <?php
+                $ketLuan = $dinhMucInfo['ket_luan_kpi'] ?? 'chua_du_du_lieu';
+                $ketLuanBadge = [
+                    'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
+                    'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
+                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'],
+                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'];
+            ?>
+            <div class="flex flex-wrap items-center gap-3 text-sm mb-3">
+                <span class="font-semibold text-teal-700">Thiết bị:</span>
+                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($dinhMucInfo['ten_thiet_bi'] ?? ''); ?></span>
+                <span class="font-semibold text-teal-700">Loại:</span>
+                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($loaiCongViecLabels[$dinhMucInfo['loai_congviec']] ?? $dinhMucInfo['loai_congviec']); ?></span>
+                <span class="font-semibold text-teal-700">Định mức giờ:</span>
+                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo $dinhMucInfo['dinh_muc_so_gio'] !== null ? htmlspecialchars((string)$dinhMucInfo['dinh_muc_so_gio']) : '—'; ?></span>
+                <span class="font-semibold text-teal-700">Giờ thực tế:</span>
+                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo $dinhMucInfo['gio_thuc_te'] !== null ? htmlspecialchars((string)$dinhMucInfo['gio_thuc_te']) : '—'; ?></span>
+                <span class="px-3 py-1 rounded font-bold <?php echo $ketLuanBadge[0]; ?>"><?php echo $ketLuanBadge[1]; ?></span>
+            </div>
+        <?php else: ?>
+            <p class="text-sm text-teal-700 mb-3">Hồ sơ này chưa được gán định mức KPI.</p>
+        <?php endif; ?>
+
+        <?php if ($canEditDinhMuc): ?>
+        <form method="POST" class="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="dinhmuc_action" value="1">
+            <div>
+                <label class="block text-xs font-semibold text-teal-700 mb-1">Thiết bị KPI</label>
+                <select id="kpi-baoduong-select" name="kpi_baoduong_stt" class="border border-teal-300 rounded px-2 py-1 text-sm">
+                    <option value="">-- Chọn thiết bị --</option>
+                    <?php foreach ($kpiThietBiList as $kpiRow): ?>
+                    <?php
+                        $selectedKpi = false;
+                        $selectedKpiValue = (int)($dinhMucInfo['kpi_baoduong_stt'] ?? 0);
+                        if ($selectedKpiValue > 0 && (int)$kpiRow['id'] === $selectedKpiValue) {
+                            $selectedKpi = true;
+                        } elseif (!$dinhMucInfo && $deviceKpiLink && (int)$deviceKpiLink['kpi_baoduong_stt'] === (int)$kpiRow['id']) {
+                            $selectedKpi = true;
+                        }
+                    ?>
+                    <option value="<?php echo (int)$kpiRow['id']; ?>" <?php echo $selectedKpi ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($kpiRow['ten_thiet_bi']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-teal-700 mb-1">Loại công việc</label>
+                <select id="loai-congviec-select" name="loai_congviec" class="border border-teal-300 rounded px-2 py-1 text-sm">
+                    <?php foreach ($loaiCongViecLabels as $key => $label): ?>
+                    <?php $selectedLoai = ($dinhMucInfo && $dinhMucInfo['loai_congviec'] === $key) || (!$dinhMucInfo && $key === 'kiem_tra'); ?>
+                    <option value="<?php echo $key; ?>" <?php echo $selectedLoai ? 'selected' : ''; ?>>
+                        <?php echo $label; ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="w-full text-sm text-teal-700">
+                <span class="font-semibold">Định mức giờ hiện tại:</span>
+                <span id="kpi-hour-preview-inline"><?php echo $effectiveKpiHour !== null ? htmlspecialchars((string)$effectiveKpiHour) : '—'; ?></span>
+            </div>
+            <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded text-sm">
+                <i class="fas fa-save mr-1"></i><?php echo $dinhMucInfo ? 'Cập nhật định mức' : 'Gán định mức'; ?>
+            </button>
+        </form>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <script>
+    (function () {
+        const hourMap = <?php echo json_encode($kpiHourPreviewMap, JSON_UNESCAPED_UNICODE); ?>;
+        const typeSelect = document.getElementById('loai-congviec-select');
+        const kpiSelect = document.getElementById('kpi-baoduong-select');
+        const hourValue = document.getElementById('kpi-hour-preview-value');
+        const hourInline = document.getElementById('kpi-hour-preview-inline');
+
+        function formatHour(value) {
+            return value === null || value === undefined || value === '' ? '—' : String(value);
+        }
+
+        function updatePreview() {
+            if (!typeSelect || !kpiSelect) {
+                return;
+            }
+            const type = typeSelect.value || 'kiem_tra';
+            const kpiId = parseInt(kpiSelect.value, 10) || 0;
+            const entry = hourMap[kpiId] || {};
+            const value = entry[type];
+            const display = formatHour(value);
+            if (hourValue) {
+                hourValue.textContent = display;
+            }
+            if (hourInline) {
+                hourInline.textContent = display;
+            }
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', updatePreview);
+        }
+        if (kpiSelect) {
+            kpiSelect.addEventListener('change', updatePreview);
+        }
+        document.addEventListener('DOMContentLoaded', updatePreview);
+        updatePreview();
+    })();
+    </script>
 
     <!-- Người thực hiện -->
     <div class="border-l-4 border-indigo-500 pl-4 mb-6">

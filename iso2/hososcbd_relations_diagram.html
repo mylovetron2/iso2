@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Sơ đồ quan hệ - hososcbd_iso</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 24px;
+        color: #1f2937;
+    }
+    h1 {
+        font-size: 22px;
+        margin-bottom: 4px;
+    }
+    p.subtitle {
+        color: #6b7280;
+        margin-top: 0;
+        margin-bottom: 24px;
+    }
+    .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        overflow-x: auto;
+    }
+    .card h2 {
+        font-size: 16px;
+        margin-top: 0;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 8px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+    }
+    th, td {
+        border: 1px solid #e5e7eb;
+        padding: 6px 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background: #f9fafb;
+    }
+    code {
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 12.5px;
+    }
+    .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-left: 6px;
+    }
+    .badge-new {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .badge-loose {
+        background: #fef3c7;
+        color: #92400e;
+    }
+</style>
+</head>
+<body>
+
+<h1>Sơ đồ quan hệ dữ liệu — <code>hososcbd_iso</code></h1>
+<p class="subtitle">Trực quan hóa các bảng liên quan đến hồ sơ sửa chữa/bảo dưỡng, bao gồm bảng KPI định mức và bảng ánh xạ thiết bị ↔ KPI mới thêm.</p>
+
+<div class="card">
+    <h2>1. Sơ đồ ER (Mermaid)</h2>
+    <pre class="mermaid">
+erDiagram
+    donvi_iso ||--o{ hososcbd_iso : "1 don vi - N ho so"
+    hososcbd_iso }o--|| thietbi_iso : "mavt+somay khop voi 1 thiet bi"
+    hososcbd_iso ||--o{ thietbihotro_iso : "tbdosc -> matbht (N-N)"
+    hososcbd_iso ||--o{ ngthuchien_iso : "hoso = mahoso, toi da 8 nguoi"
+    hososcbd_iso ||--o{ phieubangiao_thietbi_iso : "1 ho so - N lan ban giao"
+    hososcbd_iso ||--o{ lichsudn_iso : "record_id + table_name"
+    hososcbd_iso ||--|| hososcbd_dinhmuc_iso : "1-1, hososcbd_stt UNIQUE"
+    thietbi_iso ||--|| thietbi_kpi_baoduong_iso : "1 thiet bi -> 1 link KPI"
+    thietbi_kpi_baoduong_iso }o--|| kpi_baoduong_thietbi_iso : "kpi_baoduong_stt"
+    hososcbd_dinhmuc_iso }o--|| kpi_baoduong_thietbi_iso : "kpi_baoduong_stt"
+
+    donvi_iso {
+        varchar madv PK
+        varchar tendv
+    }
+    hososcbd_iso {
+        int stt PK
+        varchar hoso
+        varchar phieu
+        varchar mavt
+        varchar somay
+        varchar madv FK
+        int bg
+    }
+    thietbi_iso {
+        int stt PK
+        varchar mavt
+        varchar somay
+        varchar tenvt
+        varchar model
+    }
+    thietbi_kpi_baoduong_iso {
+        int id PK
+        int thietbi_stt FK
+        int kpi_baoduong_stt FK
+        varchar mavt
+        varchar somay
+        varchar ten_thiet_bi
+    }
+    thietbihotro_iso {
+        varchar matbht PK
+        varchar ten
+    }
+    ngthuchien_iso {
+        int stt PK
+        varchar mahoso FK
+        varchar hoten
+        decimal giolv
+        decimal giolv1
+        decimal giolv12
+    }
+    phieubangiao_thietbi_iso {
+        int id PK
+        int hososcbd_stt FK
+    }
+    lichsudn_iso {
+        int id PK
+        int record_id
+        varchar table_name
+    }
+    hososcbd_dinhmuc_iso {
+        int id PK
+        int hososcbd_stt FK
+        int kpi_baoduong_stt FK
+        enum loai_congviec
+    }
+    kpi_baoduong_thietbi_iso {
+        int id PK
+        varchar ten_thiet_bi
+        decimal kiem_tra_so_gio
+        decimal bd_cap_1_so_gio
+        decimal bd_cap_2_so_gio
+        decimal bd_cap_3_so_gio
+        decimal hieu_chuan_so_gio
+    }
+    </pre>
+</div>
+
+<div class="card">
+    <h2>2. Bảng tóm tắt khóa liên kết</h2>
+    <table>
+        <tr>
+            <th>Bảng A</th>
+            <th>Bảng B</th>
+            <th>Khóa liên kết</th>
+            <th>Loại quan hệ</th>
+            <th>Ghi chú</th>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>donvi_iso</td>
+            <td><code>madv → madv</code></td>
+            <td>N:1</td>
+            <td>Nhiều hồ sơ / 1 đơn vị</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>thietbi_iso</td>
+            <td><code>mavt+somay = mavt+somay</code></td>
+            <td>N:1</td>
+            <td>
+                Không có FK vật lý qua <code>stt</code>.
+                <span class="badge badge-loose">Khớp text, có thể trùng</span>
+            </td>
+        </tr>
+        <tr>
+            <td>thietbi_iso</td>
+            <td>thietbi_kpi_baoduong_iso</td>
+            <td><code>stt ← thietbi_stt</code></td>
+            <td>1:1</td>
+            <td><span class="badge badge-new">Bảng mới</span> Ánh xạ 1 thiết bị ↔ 1 dòng KPI</td>
+        </tr>
+        <tr>
+            <td>thietbi_kpi_baoduong_iso</td>
+            <td>kpi_baoduong_thietbi_iso</td>
+            <td><code>kpi_baoduong_stt → id</code></td>
+            <td>N:1</td>
+            <td>Link dùng cho gán thủ công/tự động giữa thiết bị và KPI</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>thietbihotro_iso</td>
+            <td><code>tbdosc → matbht</code></td>
+            <td>N:N</td>
+            <td>Thiết bị đo/hỗ trợ (tối đa 5 slot)</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>ngthuchien_iso</td>
+            <td><code>hoso = mahoso</code></td>
+            <td>1:N</td>
+            <td>Tối đa 8 người thực hiện/hồ sơ</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>phieubangiao_thietbi_iso</td>
+            <td><code>stt ← hososcbd_stt</code></td>
+            <td>1:N</td>
+            <td>Nhiều lần bàn giao</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>lichsudn_iso</td>
+            <td><code>stt ← record_id</code> (table_name='hososcbd_iso')</td>
+            <td>1:N</td>
+            <td>Lịch sử thay đổi</td>
+        </tr>
+        <tr>
+            <td>hososcbd_iso</td>
+            <td>hososcbd_dinhmuc_iso</td>
+            <td><code>stt ← hososcbd_stt</code> (UNIQUE)</td>
+            <td>1:1</td>
+            <td><span class="badge badge-new">Bảng mới</span> 1 hồ sơ ↔ 1 định mức KPI</td>
+        </tr>
+        <tr>
+            <td>hososcbd_dinhmuc_iso</td>
+            <td>kpi_baoduong_thietbi_iso</td>
+            <td><code>kpi_baoduong_stt → id</code></td>
+            <td>N:1</td>
+            <td>Định mức chọn theo <code>loai_congviec</code>, JOIN real-time qua <code>view_hososcbd_kpi_dinhmuc</code></td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>3. Luồng tính KPI thực tế (view_hososcbd_kpi_dinhmuc)</h2>
+    <pre class="mermaid">
+flowchart LR
+    A[hososcbd_iso] -->|hososcbd_stt| B[hososcbd_dinhmuc_iso]
+    B -->|kpi_baoduong_stt + loai_congviec| C[kpi_baoduong_thietbi_iso]
+    D[thietbi_iso] -->|stt| E[thietbi_kpi_baoduong_iso]
+    E -->|kpi_baoduong_stt| C
+    A -->|mavt + somay| D
+    A -->|hoso = mahoso| F[ngthuchien_iso]
+    F -->|MAX giolv| G[gio_thuc_te]
+    C -->|dinh muc theo loai_congviec| H[dinh_muc_so_gio]
+    G --> I((view_hososcbd_kpi_dinhmuc))
+    H --> I
+    </pre>
+    <p>Tài liệu chi tiết: <code>HOSOSCBD_ISO_TABLE.md</code>, migration: <code>migrations/20260810_create_hososcbd_dinhmuc_iso.sql</code>.</p>
+</div>
+
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>
+</body>
+</html>

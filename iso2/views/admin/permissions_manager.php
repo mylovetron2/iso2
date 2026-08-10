@@ -48,6 +48,10 @@ $allPermissions = [
     'kehoachbaoduong.create' => 'Tạo/Import kế hoạch bảo dưỡng',
     'kehoachbaoduong.edit' => 'Sửa kế hoạch bảo dưỡng',
     'kehoachbaoduong.delete' => 'Xóa kế hoạch bảo dưỡng',
+
+    'kpi_baoduong.view' => 'Xem định mức KPI bảo dưỡng thiết bị',
+    'kpi_baoduong.import' => 'Import định mức KPI bảo dưỡng thiết bị',
+    'kpi_baoduong.edit' => 'Sửa định mức KPI bảo dưỡng thiết bị',
     
     'giaonhanthietbi.view' => 'Xem giao nhận thiết bị',
     'giaonhanthietbi.create' => 'Tạo phiếu giao nhận',
@@ -68,6 +72,8 @@ $allPermissions = [
     'hososcbd.create' => 'Tạo hồ sơ SCBĐ',
     'hososcbd.edit' => 'Sửa hồ sơ SCBĐ',
     'hososcbd.delete' => 'Xóa hồ sơ SCBĐ',
+    'hososcbd_dinhmuc.view' => 'Xem định mức KPI hồ sơ SCBĐ',
+    'hososcbd_dinhmuc.edit' => 'Gán/Sửa định mức KPI hồ sơ SCBĐ',
     
     'congviec_suachua.view' => 'Xem công việc sửa chữa',
     'congviec_suachua.create' => 'Tạo công việc sửa chữa',
@@ -150,7 +156,7 @@ $permissionGroups = [
     'Phiếu kiểm soát vật tư' => ['phieukiemsoatvattu.view', 'phieukiemsoatvattu.create', 'phieukiemsoatvattu.edit', 'phieukiemsoatvattu.delete'],
     'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
-    'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete'],
+    'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete', 'hososcbd_dinhmuc.view', 'hososcbd_dinhmuc.edit'],
     'Công việc sửa chữa' => ['congviec_suachua.view', 'congviec_suachua.create', 'congviec_suachua.edit', 'congviec_suachua.delete'],
     'Quản lý số phiếu YC' => ['phieuyeucau.view', 'phieuyeucau.create', 'phieuyeucau.edit', 'phieuyeucau.delete'],
     'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],
@@ -159,6 +165,7 @@ $permissionGroups = [
     'Hiệu Chuẩn/Kiểm Định' => ['hieuchuan.view', 'hieuchuan.create', 'hieuchuan.edit', 'hieuchuan.delete'],
     'Kế hoạch Kiểm Định' => ['kehoach_kiemdinh.view', 'kehoach_kiemdinh.edit', 'kehoach_kiemdinh.export'],
     'Bảo dưỡng định kỳ' => ['kehoachbaoduong.view', 'kehoachbaoduong.create', 'kehoachbaoduong.edit', 'kehoachbaoduong.delete'],
+    'KPI bảo dưỡng thiết bị' => ['kpi_baoduong.view', 'kpi_baoduong.import', 'kpi_baoduong.edit'],
     'Giao nhận thiết bị' => ['giaonhanthietbi.view', 'giaonhanthietbi.create', 'giaonhanthietbi.edit', 'giaonhanthietbi.delete'],
     'Giỏ hàng' => ['giohang.view', 'giohang.add', 'giohang.edit', 'giohang.delete'],
     'Phiếu đặt hàng' => ['phieudathang.view', 'phieudathang.create', 'phieudathang.edit', 'phieudathang.delete', 'phieudathang.approve', 'phieudathang.receive', 'phieudathang.stock', 'phieudathang.cancel', 'phieudathang.export'],

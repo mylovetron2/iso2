@@ -10,10 +10,14 @@ require_once __DIR__ . '/../layouts/header.php';
         <h1 class="text-3xl font-bold flex items-center">
             <i class="fas fa-cogs mr-2"></i> Chi tiết Thiết Bị
         </h1>
-        <div class="flex gap-2">
+        <div class="flex gap-2 no-print">
             <a href="thietbi.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-base">
                 <i class="fas fa-arrow-left mr-1"></i> Quay lại
             </a>
+            <button onclick="printLichSuSuaChua()" 
+               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-base">
+                <i class="fas fa-print mr-1"></i> In Lịch sử SC/BD
+            </button>
             <?php if (hasPermission('thietbi.edit')): ?>
             <a href="thietbi.php?action=edit&id=<?php echo $item['stt']; ?>" 
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-base">
@@ -164,7 +168,7 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
 
     <!-- Tab navigation -->
-    <div class="mb-6">
+    <div class="mb-6 no-print">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8">
                 <button onclick="showTab('suachua')" 
@@ -497,6 +501,11 @@ function showTab(tabName) {
     const activeButton = document.getElementById('tab-' + tabName);
     activeButton.classList.remove('border-transparent', 'text-gray-500');
     activeButton.classList.add('border-blue-500', 'text-blue-600');
+}
+
+function printLichSuSuaChua() {
+    showTab('suachua');
+    window.print();
 }
 </script>
 

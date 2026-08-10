@@ -268,28 +268,75 @@ hososcbd_iso.madv → donvi_iso.madv
 
 ### 2. Với Bảng `thietbi_iso` (Thiết bị)
 ```sql
-hososcbd_iso.mavt → thietbi_iso.mavt
+hososcbd_iso.mavt  = thietbi_iso.mavt
+hososcbd_iso.somay = thietbi_iso.somay
 ```
 **Quan hệ:** N:1 (Nhiều hồ sơ cho 1 thiết bị - lịch sử sửa chữa)
 
-### 3. Với Bảng `thietbihotro_iso` (Thiết bị hỗ trợ)
+**⚠️ Lưu ý quan trọng:**
+- `hososcbd_iso` **KHÔNG có cột lưu trực tiếp** `thietbi_iso.stt` (không có FK vật lý kiểu `thietbi_stt`).
+- Giá trị `thietbi_stt` xuất hiện trong kết quả truy vấn (vd. [models/HoSoSCBD.php](../models/HoSoSCBD.php)) chỉ là alias được **tính lúc runtime** qua JOIN, KHÔNG phải cột thật:
+  ```sql
+  LEFT JOIN (SELECT MIN(stt) AS stt, mavt, somay FROM thietbi_iso GROUP BY mavt, somay) t
+      ON h.mavt = t.mavt AND h.somay = t.somay
+  -- t.stt AS thietbi_stt
+  ```
+- Phải JOIN bằng **cả `mavt` VÀ `somay`**, không chỉ `mavt`. Nếu chỉ dùng `mavt`, một hồ sơ có thể match nhiều dòng thiết bị khác `somay`, gây lặp dữ liệu (xem [FIX_DUPLICATE_DEVICES.md](../FIX_DUPLICATE_DEVICES.md)).
+- Vì `thietbi_iso` có thể có nhiều bản ghi trùng `(mavt, somay)`, các query dùng `GROUP BY mavt, somay` + `MIN(stt)` để chọn 1 `stt` đại diện duy nhất, tránh nhân bản kết quả.
+
+### 3. Với Bảng `thietbi_kpi_baoduong_iso` (Ánh xạ thiết bị ↔ KPI)
+```sql
+thietbi_kpi_baoduong_iso.thietbi_stt → thietbi_iso.stt
+thietbi_kpi_baoduong_iso.kpi_baoduong_stt → kpi_baoduong_thietbi_iso.id
+```
+**Quan hệ:** 1:1 theo thiết bị (1 thiết bị trong `thietbi_iso` có đúng 1 bản ghi ánh xạ tới 1 dòng KPI)
+
+**Ghi chú:**
+- Migration: [migrations/20260810_create_thietbi_kpi_baoduong_iso.sql](../migrations/20260810_create_thietbi_kpi_baoduong_iso.sql)
+- Dùng để gán thủ công hoặc tự động giữa `thietbi_iso` và `kpi_baoduong_thietbi_iso`
+- Mỗi thiết bị chỉ có một liên kết KPI duy nhất, tránh trùng lặp và sai lệch trong báo cáo
+
+### 4. Với Bảng `thietbihotro_iso` (Thiết bị hỗ trợ)
 ```sql
 hososcbd_iso.tbdosc → thietbihotro_iso.matbht
 ```
 **Quan hệ:** N:N (Nhiều hồ sơ dùng nhiều thiết bị hỗ trợ)
 
-### 4. Với Bảng `phieubangiao_iso` (Phiếu bàn giao)
+### 5. Với Bảng `ngthuchien_iso` (Người thực hiện)
+```sql
+hososcbd_iso.hoso = ngthuchien_iso.mahoso
+```
+**Quan hệ:** 1:N (1 hồ sơ có nhiều người thực hiện, tối đa 8 người/hồ sơ)
+
+**Ghi chú:**
+- Khóa liên kết là `hoso` (không phải `stt`) — xem [views/hososcbd/repair_details.php](../views/hososcbd/repair_details.php) truy vấn `WHERE mahoso = :mahoso` với `:mahoso = item['hoso']`.
+- Mỗi dòng trong `ngthuchien_iso` lưu tên (`hoten`) và giờ làm việc theo tháng (`giolv1`...`giolv12`) của 1 người cho 1 hồ sơ.
+- Khi xóa/sửa hồ sơ, các bản ghi liên quan trong `ngthuchien_iso` được xóa theo `mahoso` trước khi ghi lại (xem [LOGIC_NGUOI_THUC_HIEN.md](LOGIC_NGUOI_THUC_HIEN.md)).
+
+### 6. Với Bảng `phieubangiao_iso` (Phiếu bàn giao)
 ```sql
 phieubangiao_thietbi_iso.hososcbd_stt → hososcbd_iso.stt
 ```
 **Quan hệ:** 1:N (1 hồ sơ có thể có nhiều lần bàn giao)
 
-### 5. Với Bảng `lichsudn_iso` (Lịch sử thay đổi)
+### 7. Với Bảng `lichsudn_iso` (Lịch sử thay đổi)
 ```sql
 lichsudn_iso.record_id → hososcbd_iso.stt
 lichsudn_iso.table_name = 'hososcbd_iso'
 ```
 **Quan hệ:** 1:N (1 hồ sơ có nhiều thay đổi lịch sử)
+
+### 8. Với Bảng `hososcbd_dinhmuc_iso` (Định mức KPI) — bảng mới
+```sql
+hososcbd_dinhmuc_iso.hososcbd_stt → hososcbd_iso.stt  (UNIQUE)
+hososcbd_dinhmuc_iso.kpi_baoduong_stt → kpi_baoduong_thietbi_iso.id
+```
+**Quan hệ:** 1:1 (1 hồ sơ có đúng 1 định mức KPI, do người dùng chọn `loai_congviec`: `kiem_tra`/`bd_cap_1`/`bd_cap_2`/`bd_cap_3`/`hieu_chuan`)
+
+**Ghi chú:**
+- Migration: [migrations/20260810_create_hososcbd_dinhmuc_iso.sql](../migrations/20260810_create_hososcbd_dinhmuc_iso.sql) — chỉ thêm bảng/view, không sửa bảng cũ.
+- Không lưu snapshot định mức; luôn JOIN real-time sang `kpi_baoduong_thietbi_iso` qua view `view_hososcbd_kpi_dinhmuc`.
+- View tính thêm `gio_thuc_te = MAX(giolv)` trong số người thực hiện của hồ sơ, join theo `ngthuchien_iso.mahoso = hososcbd_iso.hoso`.
 
 ### Sơ Đồ Quan Hệ
 
@@ -302,17 +349,27 @@ lichsudn_iso.table_name = 'hososcbd_iso'
        │ N
 ┌──────▼──────────┐        N    ┌──────────────────┐
 │  hososcbd_iso   ├─────────────>│  thietbi_iso     │
-└────┬─────┬──────┘        1    └──────────────────┘
-     │ 1   │ 1
-     │     │
-     │ N   │ N
-     │     └─────────────> thietbihotro_iso
-     │
-     │ N
-     ▼
-┌──────────────────────────────┐
-│ phieubangiao_thietbi_iso     │
+└─┬───┬────┬───┬──┘        1    └──────────────────┘
+  │1  │1   │1  │1
+  │   │    │   │
+  │N  │N   │N  │1 (qua hososcbd_stt)
+  │   │    ▼   ▼
+  │   │  ┌──────────────────┐   ┌─────────────────────────────────────┐
+  │   │  │  ngthuchien_iso  │◄──┤ hososcbd_dinhmuc_iso                │
+  │   │  └──────────────────┘ N │ (MAX giolv qua hoso)                │
+  │   └─────────────> thietbihotro_iso               │N (kpi_baoduong_stt)                │
+  │                              └────────────┬──────────────┘
+  │ N                                        1▼
+  ▼                                 ┌──────────────────────────┐
+┌──────────────────────────────┐    │ kpi_baoduong_thietbi_iso │
+│ phieubangiao_thietbi_iso     │    └──────────────────────────┘
 └──────────────────────────────┘
+           ▲
+           │ 1
+┌───────────────────────────────────────┐
+│ thietbi_kpi_baoduong_iso             │
+│ (mavt/tenvt -> kpi row)              │
+└───────────────────────────────────────┘
 ```
 
 ---

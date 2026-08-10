@@ -9,9 +9,17 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/permissions.php';
 requireAuth();
 
-if (!hasPermission('kehoachbaoduong.create')) {
+$canImportKpi = hasPermission('kpi_baoduong.import')
+    || hasPermission('kehoachbaoduong.create');
+
+if (!$canImportKpi) {
     http_response_code(403);
     die('Khong co quyen import du lieu bao duong');
+}
+
+if (empty($_SESSION['kpi_baoduong_import_unlocked'])) {
+    http_response_code(403);
+    die('Import du lieu dang bi khoa. Vui long mo khoa tai trang danh sach KPI bao duong thiet bi.');
 }
 
 require_once __DIR__ . '/config/database.php';
@@ -259,9 +267,14 @@ require_once __DIR__ . '/views/layouts/header.php';
             <h1 class="text-2xl font-bold flex items-center">
                 <i class="fas fa-file-import mr-2 text-green-600"></i> Import KPI bao duong thiet bi
             </h1>
-            <a href="dashboard.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
-                <i class="fas fa-arrow-left mr-1"></i> Quay lai
-            </a>
+            <div class="flex gap-2">
+                <a href="kpi_baoduong_thietbi_list.php" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                    <i class="fas fa-list mr-1"></i> Xem danh sách
+                </a>
+                <a href="dashboard.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> Quay lại
+                </a>
+            </div>
         </div>
 
         <?php if ($success !== null): ?>
@@ -297,9 +310,14 @@ require_once __DIR__ . '/views/layouts/header.php';
             <h3 class="font-semibold mb-4">
                 <i class="fas fa-download mr-2 text-purple-600"></i> Tai file mau Excel
             </h3>
-            <a href="download_template_kpi_baoduong_thietbi.php" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded">
-                <i class="fas fa-file-excel mr-2"></i> Tai file mau
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a href="download_template_kpi_baoduong_thietbi.php" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded">
+                    <i class="fas fa-file-excel mr-2"></i> Tải file mẫu
+                </a>
+                <a href="kpi_baoduong_thietbi_list.php" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded">
+                    <i class="fas fa-list mr-2"></i> Xem danh sách
+                </a>
+            </div>
         </div>
 
         <div class="bg-white rounded-lg shadow p-6 mb-6">

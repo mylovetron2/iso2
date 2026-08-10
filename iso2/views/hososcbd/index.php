@@ -86,13 +86,13 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="CNC" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'CNC') ? 'selected' : ''; ?>>CNC</option>
             </select>
             
-            <input type="date" name="from_date" value="<?php echo htmlspecialchars(($_GET['from_date'] ?? '') ?: '2026-01-01'); ?>" 
-                   placeholder="Từ ngày" 
-                   class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
+                 <input type="date" name="from_date" value="<?php echo htmlspecialchars(($_GET['from_date'] ?? '') ?: '2026-01-01'); ?>" 
+                     placeholder="Từ ngày" 
+                     class="border rounded px-3 py-2 text-sm md:text-base">
             
-            <input type="date" name="to_date" value="<?php echo $_GET['to_date'] ?? ''; ?>" 
-                   placeholder="Đến ngày" 
-                   class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
+                 <input type="date" name="to_date" value="<?php echo $_GET['to_date'] ?? ''; ?>" 
+                     placeholder="Đến ngày" 
+                     class="border rounded px-3 py-2 text-sm md:text-base">
         </div>
         
         <div class="flex flex-wrap gap-2">

@@ -36,7 +36,7 @@ Options -Indexes
 </FilesMatch>
 
 # Block access to config and includes directories directly
-RedirectMatch 403 ^/(config|includes|migrations)/.*$
+RedirectMatch 403 ^/(config|includes|migrations|models|controllers)/.*$
 
 # Set default charset
 AddDefaultCharset UTF-8
