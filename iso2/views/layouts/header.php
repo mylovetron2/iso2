@@ -111,6 +111,11 @@ if (file_exists($dbSelectionFile)) {
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBD
                     </a>
                 </li>
+                <li>
+                    <a href="/iso2/thongke_kpi_nhanvien_scbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-chart-line mr-2"></i> KPI Nhân viên
+                    </a>
+                </li>
                 <?php endif; ?>
 
                 <!-- 1.1. Duyệt yêu cầu sửa hồ sơ (chỉ admin) -->

@@ -173,13 +173,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dinhmuc_action'])) {
         http_response_code(403);
         die('Không có quyền gán định mức KPI');
     }
-    $kpiBaoDuongStt = (int)($_POST['kpi_baoduong_stt'] ?? 0);
-    $loaiCongViec = trim((string)($_POST['loai_congviec'] ?? ''));
-    if ($kpiBaoDuongStt <= 0 || $loaiCongViec === '') {
+    $dinhMucGioThuCongRaw = trim((string)($_POST['dinh_muc_gio_thu_cong'] ?? ''));
+    $dinhMucGioThuCong = null;
+    $manualHourMode = $dinhMucGioThuCongRaw !== '';
+    $kpiBaoDuongStt = $manualHourMode ? null : (int)($_POST['kpi_baoduong_stt'] ?? 0);
+    $loaiCongViec = $manualHourMode ? null : trim((string)($_POST['loai_congviec'] ?? ''));
+    if (!$manualHourMode && ($kpiBaoDuongStt <= 0 || $loaiCongViec === '')) {
         $dinhMucError = 'Vui lòng chọn đầy đủ thiết bị KPI và loại công việc';
+    } elseif ($dinhMucGioThuCongRaw !== '' && !is_numeric(str_replace(',', '.', $dinhMucGioThuCongRaw))) {
+        $dinhMucError = 'Định mức giờ nhập tay phải là số thực hợp lệ';
     } else {
+        if ($dinhMucGioThuCongRaw !== '') {
+            $dinhMucGioThuCong = (float)str_replace(',', '.', $dinhMucGioThuCongRaw);
+        }
         $createdBy = $_SESSION['username'] ?? null;
-        if ($dinhMucModel->luuDinhMuc($stt, $kpiBaoDuongStt, $loaiCongViec, $createdBy)) {
+        if ($dinhMucModel->luuDinhMuc($stt, $kpiBaoDuongStt, $loaiCongViec, $createdBy, $dinhMucGioThuCong)) {
             header("Location: hososcbd_repair_details.php?id={$stt}");
             exit;
         }
@@ -641,8 +649,8 @@ require_once __DIR__ . '/../layouts/header.php';
                 $ketLuanBadge = [
                     'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
                     'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
-                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'],
-                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'];
+                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa gán KPI'],
+                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa gán KPI'];
             ?>
             <div class="bg-white border border-teal-300 rounded px-3 py-2 text-sm text-teal-700 mb-3">
                 <div class="font-semibold mb-1">Thiết bị này đã có định mức KPI gắn sẵn</div>
@@ -658,14 +666,17 @@ require_once __DIR__ . '/../layouts/header.php';
                 $ketLuanBadge = [
                     'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
                     'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
-                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'],
-                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa đủ dữ liệu'];
+                    'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa gán KPI'],
+                ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa gán KPI'];
+                $isManualHourOnly = empty($dinhMucInfo['kpi_baoduong_stt']) && ($dinhMucInfo['dinh_muc_gio_thu_cong'] ?? null) !== null;
             ?>
             <div class="flex flex-wrap items-center gap-3 text-sm mb-3">
-                <span class="font-semibold text-teal-700">Thiết bị:</span>
-                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($dinhMucInfo['ten_thiet_bi'] ?? ''); ?></span>
-                <span class="font-semibold text-teal-700">Loại:</span>
-                <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($loaiCongViecLabels[$dinhMucInfo['loai_congviec']] ?? $dinhMucInfo['loai_congviec']); ?></span>
+                <?php if (!$isManualHourOnly): ?>
+                    <span class="font-semibold text-teal-700">Thiết bị:</span>
+                    <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($dinhMucInfo['ten_thiet_bi'] ?? ''); ?></span>
+                    <span class="font-semibold text-teal-700">Loại:</span>
+                    <span class="font-bold bg-white px-2 py-1 rounded"><?php echo htmlspecialchars($loaiCongViecLabels[$dinhMucInfo['loai_congviec']] ?? $dinhMucInfo['loai_congviec']); ?></span>
+                <?php endif; ?>
                 <span class="font-semibold text-teal-700">Định mức giờ:</span>
                 <span class="font-bold bg-white px-2 py-1 rounded"><?php echo $dinhMucInfo['dinh_muc_so_gio'] !== null ? htmlspecialchars((string)$dinhMucInfo['dinh_muc_so_gio']) : '—'; ?></span>
                 <span class="font-semibold text-teal-700">Giờ thực tế:</span>
@@ -677,11 +688,20 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php endif; ?>
 
         <?php if ($canEditDinhMuc): ?>
+        <?php
+            $manualHourValue = '';
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dinhmuc_action'])) {
+                $manualHourValue = trim((string)($_POST['dinh_muc_gio_thu_cong'] ?? ''));
+            } elseif ($dinhMucInfo && ($dinhMucInfo['dinh_muc_gio_thu_cong'] ?? null) !== null) {
+                $manualHourValue = (string)$dinhMucInfo['dinh_muc_gio_thu_cong'];
+            }
+            $manualHourMode = $manualHourValue !== '';
+        ?>
         <form method="POST" class="flex flex-wrap items-end gap-3">
             <input type="hidden" name="dinhmuc_action" value="1">
             <div>
                 <label class="block text-xs font-semibold text-teal-700 mb-1">Thiết bị KPI</label>
-                <select id="kpi-baoduong-select" name="kpi_baoduong_stt" class="border border-teal-300 rounded px-2 py-1 text-sm">
+                <select id="kpi-baoduong-select" name="kpi_baoduong_stt" class="border border-teal-300 rounded px-2 py-1 text-sm" <?php echo $manualHourMode ? 'disabled' : ''; ?>>
                     <option value="">-- Chọn thiết bị --</option>
                     <?php foreach ($kpiThietBiList as $kpiRow): ?>
                     <?php
@@ -701,7 +721,7 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
             <div>
                 <label class="block text-xs font-semibold text-teal-700 mb-1">Loại công việc</label>
-                <select id="loai-congviec-select" name="loai_congviec" class="border border-teal-300 rounded px-2 py-1 text-sm">
+                <select id="loai-congviec-select" name="loai_congviec" class="border border-teal-300 rounded px-2 py-1 text-sm" <?php echo $manualHourMode ? 'disabled' : ''; ?>>
                     <?php foreach ($loaiCongViecLabels as $key => $label): ?>
                     <?php $selectedLoai = ($dinhMucInfo && $dinhMucInfo['loai_congviec'] === $key) || (!$dinhMucInfo && $key === 'kiem_tra'); ?>
                     <option value="<?php echo $key; ?>" <?php echo $selectedLoai ? 'selected' : ''; ?>>
@@ -709,6 +729,13 @@ require_once __DIR__ . '/../layouts/header.php';
                     </option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-teal-700 mb-1">Định mức giờ (nhập tay)</label>
+                <input type="number" id="dinh-muc-thu-cong-input" name="dinh_muc_gio_thu_cong" step="0.01" min="0"
+                       value="<?php echo htmlspecialchars($manualHourValue); ?>"
+                       placeholder="Để trống dùng theo KPI"
+                       class="border border-teal-300 rounded px-2 py-1 text-sm w-40">
             </div>
             <div class="w-full text-sm text-teal-700">
                 <span class="font-semibold">Định mức giờ hiện tại:</span>
@@ -727,6 +754,7 @@ require_once __DIR__ . '/../layouts/header.php';
         const hourMap = <?php echo json_encode($kpiHourPreviewMap, JSON_UNESCAPED_UNICODE); ?>;
         const typeSelect = document.getElementById('loai-congviec-select');
         const kpiSelect = document.getElementById('kpi-baoduong-select');
+        const manualInput = document.getElementById('dinh-muc-thu-cong-input');
         const hourValue = document.getElementById('kpi-hour-preview-value');
         const hourInline = document.getElementById('kpi-hour-preview-inline');
 
@@ -736,6 +764,23 @@ require_once __DIR__ . '/../layouts/header.php';
 
         function updatePreview() {
             if (!typeSelect || !kpiSelect) {
+                return;
+            }
+            const manualRaw = manualInput ? manualInput.value.trim() : '';
+            if (kpiSelect) {
+                kpiSelect.disabled = manualRaw !== '';
+            }
+            if (typeSelect) {
+                typeSelect.disabled = manualRaw !== '';
+            }
+            if (manualRaw !== '' && !isNaN(parseFloat(manualRaw))) {
+                const display = formatHour(parseFloat(manualRaw));
+                if (hourValue) {
+                    hourValue.textContent = display;
+                }
+                if (hourInline) {
+                    hourInline.textContent = display;
+                }
                 return;
             }
             const type = typeSelect.value || 'kiem_tra';
@@ -756,6 +801,9 @@ require_once __DIR__ . '/../layouts/header.php';
         }
         if (kpiSelect) {
             kpiSelect.addEventListener('change', updatePreview);
+        }
+        if (manualInput) {
+            manualInput.addEventListener('input', updatePreview);
         }
         document.addEventListener('DOMContentLoaded', updatePreview);
         updatePreview();
