@@ -224,6 +224,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <a href="/iso2/admin_database_switch.php" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded text-sm">
                     <i class="fas fa-database mr-1"></i> Chuyển DB
                 </a>
+                <a href="/iso2/backup_databases.php" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded text-sm">
+                    <i class="fas fa-server mr-1"></i> Backup 3 DB
+                </a>
                 <a href="/iso2/hososcbd.php" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
                     <i class="fas fa-arrow-left mr-1"></i> Trang chủ
                 </a>

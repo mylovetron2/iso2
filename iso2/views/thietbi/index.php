@@ -134,6 +134,12 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="text-blue-600 hover:text-blue-800 mx-1" title="Xem chi tiết">
                             <i class="fas fa-eye"></i>
                         </a>
+                        <?php if (hasPermission('thietbi.create')): ?>
+                        <a href="thietbi.php?action=create&copy_from=<?php echo (int)$item['stt']; ?>" 
+                           class="text-indigo-600 hover:text-indigo-800 mx-1" title="Copy từ thiết bị này">
+                            <i class="fas fa-copy"></i>
+                        </a>
+                        <?php endif; ?>
                         <?php if (hasPermission('thietbi.edit')): ?>
                         <a href="thietbi.php?action=edit&id=<?php echo $item['stt']; ?>" 
                            class="text-green-600 hover:text-green-800 mx-1" title="Sửa">

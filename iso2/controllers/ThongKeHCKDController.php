@@ -34,10 +34,23 @@ class ThongKeHCKDController
             }
             
             // Get date range from query params
-            $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
-            $denngay = $_GET['denngay'] ?? date('Y-m-d'); // Today
-            $search = $_GET['search'] ?? '';
-            $bophan = $_GET['bophan'] ?? '';
+            $tungay = trim((string)($_GET['tungay'] ?? date('Y-m-01'))); // First day of current month
+            $denngay = trim((string)($_GET['denngay'] ?? date('Y-m-d'))); // Today
+            $search = trim((string)($_GET['search'] ?? ''));
+            $bophan = trim((string)($_GET['bophan'] ?? ''));
+
+            // Normalize invalid date inputs to safe defaults
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tungay)) {
+                $tungay = date('Y-m-01');
+            }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $denngay)) {
+                $denngay = date('Y-m-d');
+            }
+
+            // Ensure from-date is not greater than to-date
+            if ($tungay > $denngay) {
+                [$tungay, $denngay] = [$denngay, $tungay];
+            }
             
             // Get list of departments for filter
             $bophanList = $this->thietBiModel->getAllBoPhanSH();

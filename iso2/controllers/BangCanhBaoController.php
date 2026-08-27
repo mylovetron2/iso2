@@ -87,6 +87,7 @@ class BangCanhBaoController
 
             $thietBi = null;
             $hoSo = null;
+            $hoSoList = [];
             $danhChuanList = [];
 
             // Lấy danh sách thiết bị dẫn chuẩn
@@ -105,14 +106,21 @@ class BangCanhBaoController
                 }
                 // Dùng mavattu chính xác từ thietBi (tránh nhầm khi nhiều thiết bị cùng mavattu)
                 $mavattu = $thietBi['mavattu'] ?? $mavattu;
+                $hoSoList = $this->hoSoModel->getHistoryByDevice($mavattu, $stt);
 
                 if ($ngayhc) {
                     // Edit mode - lấy hồ sơ hiện có
-                    $hoSo = $this->hoSoModel->getByDeviceAndDate($mavattu, $ngayhc);
+                    $hoSo = $this->hoSoModel->getByDeviceAndDate($mavattu, $ngayhc, $stt);
                     $mode = 'edit';
                 } else {
                     // Add mode - lấy thông tin hồ sơ cũ để tham khảo
-                    $hoSo = $this->hoSoModel->getLatestByDevice($mavattu);
+                    $hoSo = $this->hoSoModel->getLatestByDevice($mavattu, $stt);
+                    if ($hoSo) {
+                        $hoSo['stt'] = 0;
+                        $hoSo['sohs'] = '';
+                        $hoSo['ngayhc'] = '';
+                        $hoSo['ngayhctt'] = '';
+                    }
                 }
             }
 
@@ -155,6 +163,18 @@ class BangCanhBaoController
                 throw new Exception("Vui lòng điền đầy đủ thông tin bắt buộc");
             }
 
+            $ngayhcDate = DateTime::createFromFormat('!Y-m-d', $ngayhc);
+            if (!$ngayhcDate || $ngayhcDate->format('Y-m-d') !== $ngayhc) {
+                throw new Exception("Ngày thực hiện không hợp lệ");
+            }
+
+            if ($ngayhctt !== '') {
+                $ngayhcttDate = DateTime::createFromFormat('!Y-m-d', $ngayhctt);
+                if (!$ngayhcttDate || $ngayhcttDate->format('Y-m-d') !== $ngayhctt) {
+                    throw new Exception("Ngày HC tiếp theo không hợp lệ");
+                }
+            }
+
             error_log("Validated required fields");
 
             // Phương pháp chuẩn - convert null to empty string for NOT NULL columns
@@ -187,18 +207,18 @@ class BangCanhBaoController
                 }
             }
 
-            // Xác định năm
-            $namkh = (int)date('Y', strtotime($ngayhc));
+            $namkh = (int)$ngayhcDate->format('Y');
 
             // Tự động tạo số hồ sơ nếu chưa có
             if (empty($sohs)) {
-                $month = (int)date('m', strtotime($ngayhc));
-                $year = (int)date('Y', strtotime($ngayhc));
+                $month = (int)$ngayhcDate->format('m');
+                $year = (int)$ngayhcDate->format('Y');
                 $sohs = $this->hoSoModel->generateSoHS($month, $year);
             }
 
             // Chuẩn bị dữ liệu
             $data = [
+                'hoso_stt'   => isset($_POST['hoso_stt']) ? (int)$_POST['hoso_stt'] : 0,
                 'sohs'       => $sohs,
                 'tenmay'     => $mavattu,
                 'thietbi_stt' => $thietbiStt > 0 ? $thietbiStt : null,
@@ -240,14 +260,22 @@ class BangCanhBaoController
                 }
                 
                 // Fallback: chuyển về trang bảng cảnh báo
-                $month = (int)date('m', strtotime($ngayhc));
-                $year = (int)date('Y', strtotime($ngayhc));
+                $month = (int)$ngayhcDate->format('m');
+                $year = (int)$ngayhcDate->format('Y');
                 error_log("Redirecting to bangcanhbao.php?month=$month&year=$year&success=1");
                 header("Location: bangcanhbao.php?month=$month&year=$year&success=1");
                 exit;
             } else {
                 throw new Exception("Không thể lưu hồ sơ - saveHoSo returned false");
             }
+        } catch (PDOException $e) {
+            error_log("Database error in BangCanhBaoController::saveHoSo: " . $e->getMessage());
+            $mysqlErrorCode = (int)($e->errorInfo[1] ?? 0);
+            $error = $mysqlErrorCode === 1062
+                ? 'Số hồ sơ đã tồn tại. Vui lòng kiểm tra hoặc nhập số khác.'
+                : 'Không thể lưu hồ sơ. Vui lòng thử lại hoặc liên hệ quản trị viên.';
+            header("Location: bangcanhbao.php?action=formhoso&error=" . urlencode($error));
+            exit;
         } catch (Exception $e) {
             error_log("Error in BangCanhBaoController::saveHoSo: " . $e->getMessage());
             $error = htmlspecialchars($e->getMessage());

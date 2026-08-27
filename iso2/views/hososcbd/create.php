@@ -1098,7 +1098,11 @@ function displaySearchResults(devices, query = '') {
         const isAvailable = device.is_available !== false; // Default to true if not specified
         const disabledClass = !isAvailable ? 'opacity-50 cursor-not-allowed' : '';
         const hoverClass = isAvailable ? 'hover:border-green-500 hover:shadow-md cursor-pointer' : '';
-        const onclickAttr = isAvailable ? `onclick="selectDeviceFromSearch('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay || '')}', '${escapeHtml(device.model || '')}', '${escapeHtml(device.tenvt)}', ${isAvailable})"` : '';
+        const safeMavt = JSON.stringify(String(device.mavt || ''));
+        const safeSomay = JSON.stringify(String(device.somay || ''));
+        const safeModel = JSON.stringify(String(device.model || ''));
+        const safeTenvt = JSON.stringify(String(device.tenvt || ''));
+        const onclickAttr = isAvailable ? `onclick='selectDeviceFromSearch(${safeMavt}, ${safeSomay}, ${safeModel}, ${safeTenvt}, ${isAvailable})'` : '';
         const statusBadge = !isAvailable ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Đang sử dụng</span>' : '';
         
         return `

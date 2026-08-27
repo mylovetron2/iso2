@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bang canh bao - So do A4 2 mat</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: #0f172a;
+      background: #f8fafc;
+      line-height: 1.35;
+    }
+
+    .sheet {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    .page {
+      min-height: 273mm;
+      padding: 4mm 2mm;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      page-break-after: always;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 14px;
+      margin: 6px 0 2px;
+      border-left: 4px solid #1d4ed8;
+      padding-left: 8px;
+    }
+
+    p, li {
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    ul {
+      margin: 2px 0 0 16px;
+      padding: 0;
+    }
+
+    .meta {
+      font-size: 11px;
+      color: #334155;
+      padding: 6px 8px;
+      background: #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .diagram {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px;
+      background: #ffffff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 6px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eff6ff;
+      text-align: left;
+    }
+
+    .footer {
+      margin-top: auto;
+      font-size: 10px;
+      color: #475569;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 6px;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+      .sheet {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <section class="page">
+      <h1>Bang canh bao - So do du lieu (Mat 1)</h1>
+      <div class="meta">
+        Ban in A4 2 mat. Khuyen nghi in duplex "flip on long edge", scale 100%.
+      </div>
+
+      <h2>1) ERD giua cac bang</h2>
+      <div class="diagram mermaid">
+        erDiagram
+          thietbihckd_iso {
+            int stt PK
+            varchar mavattu
+            varchar tenviettat
+            varchar somay
+            varchar tenthietbi
+            varchar bophansh
+            varchar chusohuu
+          }
+
+          kehoach_iso {
+            int stt PK
+            varchar thang
+            varchar namkh
+            varchar tenthietbi
+            varchar somay
+          }
+
+          hosohckd_iso {
+            int stt PK
+            int thietbi_stt FK
+            varchar tenmay
+            varchar sohs
+            date ngayhc
+            date ngayhctt
+            varchar nhanvien
+            varchar ttkt
+          }
+
+          donvi_iso {
+            varchar madv PK
+            varchar tendv
+          }
+
+          thietbihckd_iso ||--o{ hosohckd_iso : "stt -> thietbi_stt"
+          thietbihckd_iso ||--o{ kehoach_iso : "tenthietbi + somay"
+          thietbihckd_iso }o--|| donvi_iso : "bophansh -> madv"
+      </div>
+
+      <h2>2) Mo hinh nhan dang khoa</h2>
+      <div class="diagram mermaid">
+        flowchart LR
+          A[mavattu / tenmay] --> B{co the trung}
+          B --> C[khong dung de update]
+          D[thietbihckd_iso.stt] --> E[dinh danh may vat ly]
+          E --> F[dung de xu ly]
+          G[hosohckd_iso.stt] --> H[dinh danh ho so]
+          H --> I[uu tien cao nhat khi update]
+      </div>
+
+      <h2>3) Quy tac chot</h2>
+      <ul>
+        <li>Uu tien 1: hoso_stt.</li>
+        <li>Uu tien 2: thietbi_stt + ngayhc.</li>
+        <li>Khong update theo mavattu/tenmay don le.</li>
+      </ul>
+
+      <div class="footer">Mat 1/2 - Data model + Identity model</div>
+    </section>
+
+    <section class="page">
+      <h1>Bang canh bao - So do xu ly va kiem soat (Mat 2)</h1>
+
+      <h2>4) Mo hinh luong mo/sua/luu</h2>
+      <div class="diagram mermaid">
+        sequenceDiagram
+          participant U as User
+          participant R as bangcanhbao.php
+          participant C as Controller
+          participant T as ThietBiHCKD
+          participant H as HoSoHCKD
+          participant DB as MySQL
+
+          U->>R: formhoso(mavattu, stt)
+          R->>C: formHoSo()
+          C->>T: findById(stt)
+          T->>DB: SELECT thietbi by stt
+          DB-->>T: may vat ly
+          C-->>U: tra form + hidden thietbi_stt/hoso_stt
+
+          U->>R: POST savehoso
+          R->>C: saveHoSo()
+          C->>H: saveHoSo(data)
+          H->>H: co hoso_stt -> update theo ID
+          H->>H: khong co -> tim theo thietbi_stt + ngayhc
+          H->>DB: UPDATE/INSERT hosohckd_iso
+          DB-->>H: ket qua
+      </div>
+
+      <h2>5) Mo hinh loi ghi de da gap</h2>
+      <div class="diagram mermaid">
+        flowchart TD
+          A[Nhap DL/60 may 820] --> B[Luu tenmay=DL/60]
+          B --> C[Nhap DL/60 may khac]
+          C --> D[Tim theo tenmay]
+          D --> E[Cap nhat nham]
+          E --> F[Du lieu may cu bi de]
+      </div>
+
+      <h2>6) Checklist truoc khi van hanh</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Muc kiem</th>
+            <th>Dat</th>
+            <th>Khong dat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Form co thietbi_stt</td>
+            <td>[ ]</td>
+            <td>[ ]</td>
+          </tr>
+          <tr>
+            <td>Form sua co hoso_stt</td>
+            <td>[ ]</td>
+            <td>[ ]</td>
+          </tr>
+          <tr>
+            <td>Khong update theo mavattu don le</td>
+            <td>[ ]</td>
+            <td>[ ]</td>
+          </tr>
+          <tr>
+            <td>Tim trung theo thietbi_stt + ngayhc</td>
+            <td>[ ]</td>
+            <td>[ ]</td>
+          </tr>
+          <tr>
+            <td>Thong bao loi ro nghia</td>
+            <td>[ ]</td>
+            <td>[ ]</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">Mat 2/2 - Process model + Risk control</div>
+    </section>
+  </div>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</body>
+</html>

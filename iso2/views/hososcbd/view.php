@@ -27,7 +27,7 @@ $nguoiThucHienList = [];
 if (!empty($item['hoso'])) {
     try {
         $stmt = $db->prepare("
-            SELECT stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt,
+            SELECT stt, mahoso, mamay, somay, hoten, CAST(giolv AS DECIMAL(10,2)) AS giolv, ngayth, ngaykt,
                    giolv1, giolv2, giolv3, giolv4, giolv5, giolv6,
                    giolv7, giolv8, giolv9, giolv10, giolv11, giolv12
             FROM ngthuchien_iso 
@@ -367,7 +367,7 @@ if (!empty($item['hoso'])) {
                                 </td>
                                 <td class="px-3 py-2 border text-center">
                                     <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold">
-                                        <?php echo number_format($nguoi['giolv']); ?>h
+                                        <?php echo number_format((float)$nguoi['giolv'], 2, '.', ''); ?>h
                                     </span>
                                 </td>
                                 <td class="px-3 py-2 border">
@@ -408,7 +408,7 @@ if (!empty($item['hoso'])) {
                                     <span class="bg-indigo-600 text-white px-3 py-1 rounded-full">
                                         <?php 
                                         $tongGio = array_sum(array_column($nguoiThucHienList, 'giolv'));
-                                        echo number_format($tongGio);
+                                        echo number_format((float)$tongGio, 2, '.', '');
                                         ?>h
                                     </span>
                                 </td>

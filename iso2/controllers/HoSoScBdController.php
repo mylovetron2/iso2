@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../models/HoSoSCBD.php';
+require_once __DIR__ . '/../models/HoSoSCBDDinhMuc.php';
 require_once __DIR__ . '/../models/DonVi.php';
 require_once __DIR__ . '/../models/ThietBi.php';
 require_once __DIR__ . '/../models/LichSuDN.php';
@@ -29,15 +30,48 @@ class HoSoScBdController
         $search = $_GET['search'] ?? '';
         $madv = $_GET['madv'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
+        $cv = $_GET['cv'] ?? '';
         $trangthai = $_GET['trangthai'] ?? '';
-        $fromDate = ($_GET['from_date'] ?? '') ?: '2026-01-01';
-        $toDate = $_GET['to_date'] ?? '';
+
+        $ngayYcFrom = $_GET['ngayyc_from'] ?? '';
+        $ngayYcTo = $_GET['ngayyc_to'] ?? '';
+        $ngayThFrom = $_GET['ngayth_from'] ?? '';
+        $ngayThTo = $_GET['ngayth_to'] ?? '';
+        $ngayKtFrom = $_GET['ngaykt_from'] ?? '';
+        $ngayKtTo = $_GET['ngaykt_to'] ?? '';
+
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, $offset, $limit, $fromDate, $toDate);
-        $total = $this->model->countList($search, $nhomsc, $trangthai, $madv, $fromDate, $toDate);
+        $items = $this->model->getList(
+            $search,
+            $nhomsc,
+            $trangthai,
+            $madv,
+            $cv,
+            $offset,
+            $limit,
+            $ngayYcFrom,
+            $ngayYcTo,
+            $ngayThFrom,
+            $ngayThTo,
+            $ngayKtFrom,
+            $ngayKtTo
+        );
+        $total = $this->model->countList(
+            $search,
+            $nhomsc,
+            $trangthai,
+            $madv,
+            $cv,
+            $ngayYcFrom,
+            $ngayYcTo,
+            $ngayThFrom,
+            $ngayThTo,
+            $ngayKtFrom,
+            $ngayKtTo
+        );
         $totalPages = ceil($total / $limit);
 
         $stats = $this->model->getStats($nhomsc);
@@ -140,6 +174,7 @@ class HoSoScBdController
                 
                 try {
                     $db->beginTransaction();
+                    $dinhMucModel = new HoSoSCBDDinhMuc();
 
                     foreach ($devicesData as $device) {
                         $data = array_merge($commonData, $device);
@@ -154,6 +189,13 @@ class HoSoScBdController
                         $id = $this->model->create($data);
                         if ($id !== '') {
                             $successCount++;
+                            
+                            $dinhMucModel->autoAssignDefaultByDevice(
+                                (int)$id,
+                                (string)$data['mavt'],
+                                (string)$data['somay'],
+                                $_SESSION['username'] ?? null
+                            );
                             
                             // Store device info for batch logging later
                             $createdDevices[] = [
@@ -615,15 +657,119 @@ class HoSoScBdController
         $search = $_GET['search'] ?? '';
         $madv = $_GET['madv'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
+        $cv = $_GET['cv'] ?? '';
         $trangthai = $_GET['trangthai'] ?? '';
-        $fromDate = $_GET['from_date'] ?? '';
-        $toDate = $_GET['to_date'] ?? '';
 
-        $items = $this->model->getList($search, $nhomsc, $trangthai, $madv, 0, 1000, $fromDate, $toDate); // Max 1000 records
+        $ngayYcFrom = $_GET['ngayyc_from'] ?? '';
+        $ngayYcTo = $_GET['ngayyc_to'] ?? '';
+        $ngayThFrom = $_GET['ngayth_from'] ?? '';
+        $ngayThTo = $_GET['ngayth_to'] ?? '';
+        $ngayKtFrom = $_GET['ngaykt_from'] ?? '';
+        $ngayKtTo = $_GET['ngaykt_to'] ?? '';
+
+        $items = $this->model->getList(
+            $search,
+            $nhomsc,
+            $trangthai,
+            $madv,
+            $cv,
+            0,
+            1000,
+            $ngayYcFrom,
+            $ngayYcTo,
+            $ngayThFrom,
+            $ngayThTo,
+            $ngayKtFrom,
+            $ngayKtTo
+        ); // Max 1000 records
         $stats = $this->model->getStats($nhomsc);
         $donViList = $this->donViModel->getAllSimple();
         $bddkHckdData = $this->model->getBddkHckdBatch($items);
 
         require_once __DIR__ . '/../views/hososcbd/export_list_pdf.php';
+    }
+
+    /**
+     * Export list as Excel with filters
+     */
+    public function exportListExcel(): void
+    {
+        $search = $_GET['search'] ?? '';
+        $madv = $_GET['madv'] ?? '';
+        $nhomsc = $_GET['nhomsc'] ?? '';
+        $cv = $_GET['cv'] ?? '';
+        $trangthai = $_GET['trangthai'] ?? '';
+
+        $ngayYcFrom = $_GET['ngayyc_from'] ?? '';
+        $ngayYcTo = $_GET['ngayyc_to'] ?? '';
+        $ngayThFrom = $_GET['ngayth_from'] ?? '';
+        $ngayThTo = $_GET['ngayth_to'] ?? '';
+        $ngayKtFrom = $_GET['ngaykt_from'] ?? '';
+        $ngayKtTo = $_GET['ngaykt_to'] ?? '';
+
+        $items = $this->model->getList(
+            $search,
+            $nhomsc,
+            $trangthai,
+            $madv,
+            $cv,
+            0,
+            1000,
+            $ngayYcFrom,
+            $ngayYcTo,
+            $ngayThFrom,
+            $ngayThTo,
+            $ngayKtFrom,
+            $ngayKtTo
+        );
+
+        $filename = 'HoSoSCBD_DanhSach_' . date('YmdHis') . '.xls';
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        echo "\xEF\xBB\xBF";
+        echo "<html><meta charset='utf-8'><body><table border='1' cellpadding='5' cellspacing='0'>";
+        echo "<tr style='font-weight:bold; background:#dfeaf7;'>";
+        echo "<th>STT</th><th>Phiếu</th><th>Số hồ sơ</th><th>Mã VT</th><th>Số máy</th><th>Ngày YC</th><th>Ngày TH</th><th>Ngày KT</th><th>Đơn vị</th><th>CV</th><th>Nhóm</th><th>Trạng thái</th>";
+        echo "</tr>";
+
+        if (empty($items)) {
+            echo "<tr><td colspan='12' align='center'>Không có dữ liệu</td></tr>";
+        } else {
+            foreach ($items as $index => $item) {
+                $ngayYc = !empty($item['ngayyc']) && $item['ngayyc'] !== '0000-00-00' ? date('d/m/Y', strtotime($item['ngayyc'])) : '-';
+                $ngayTh = !empty($item['ngayth']) && $item['ngayth'] !== '0000-00-00' ? date('d/m/Y', strtotime($item['ngayth'])) : '-';
+                $ngayKt = !empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00' ? date('d/m/Y', strtotime($item['ngaykt'])) : '-';
+
+                if ((int)($item['bg'] ?? 0) === 1) {
+                    $status = 'Đã BG';
+                } elseif (!empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00') {
+                    $status = 'Hoàn thành';
+                } elseif (!empty($item['ngayth']) && $item['ngayth'] !== '0000-00-00') {
+                    $status = 'Đang làm';
+                } else {
+                    $status = 'Chưa TH';
+                }
+
+                echo "<tr>";
+                echo "<td>" . ($index + 1) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['phieu'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['hoso'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['mavt'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['somay'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars($ngayYc) . "</td>";
+                echo "<td>" . htmlspecialchars($ngayTh) . "</td>";
+                echo "<td>" . htmlspecialchars($ngayKt) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['tendv'] ?? $item['madv'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['cv'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars((string)($item['nhomsc'] ?? '')) . "</td>";
+                echo "<td>" . htmlspecialchars($status) . "</td>";
+                echo "</tr>";
+            }
+        }
+
+        echo "</table></body></html>";
+        exit;
     }
 }

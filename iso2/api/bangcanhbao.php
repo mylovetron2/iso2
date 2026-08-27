@@ -59,12 +59,13 @@ try {
         case 'get_hoso_latest':
             // Lấy hồ sơ mới nhất của thiết bị
             $mavattu = $_GET['mavattu'] ?? '';
+            $thietbiStt = isset($_GET['thietbi_stt']) ? (int)$_GET['thietbi_stt'] : null;
             if (empty($mavattu)) {
                 throw new Exception('Mã vật tư không được để trống');
             }
             
             $model = new HoSoHCKD();
-            $hoso = $model->getLatestByDevice($mavattu);
+            $hoso = $model->getLatestByDevice($mavattu, $thietbiStt);
             
             echo json_encode([
                 'success' => true,
@@ -90,13 +91,14 @@ try {
             // Kiểm tra hồ sơ trùng lặp
             $mavattu = $_POST['mavattu'] ?? '';
             $ngayhc = $_POST['ngayhc'] ?? '';
+            $thietbiStt = isset($_POST['thietbi_stt']) ? (int)$_POST['thietbi_stt'] : null;
             
             if (empty($mavattu) || empty($ngayhc)) {
                 throw new Exception('Thiếu thông tin');
             }
             
             $model = new HoSoHCKD();
-            $existing = $model->getByDeviceAndDate($mavattu, $ngayhc);
+            $existing = $model->getByDeviceAndDate($mavattu, $ngayhc, $thietbiStt);
             
             echo json_encode([
                 'success' => true,

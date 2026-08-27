@@ -41,6 +41,31 @@ class HoSoHCKD extends BaseModel {
             return [];
         }
     }
+
+    public function getHistoryByDevice(string $mavattu, ?int $thietbiStt = null): array {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE ";
+            $params = [];
+
+            if ($thietbiStt !== null && $thietbiStt > 0) {
+                $sql .= "(thietbi_stt = :thietbi_stt
+                          OR (thietbi_stt IS NULL AND tenmay = :tenmay))";
+                $params['thietbi_stt'] = $thietbiStt;
+                $params['tenmay'] = $mavattu;
+            } else {
+                $sql .= "tenmay = :tenmay";
+                $params['tenmay'] = $mavattu;
+            }
+
+            $sql .= " ORDER BY ngayhc DESC, stt DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error in HoSoHCKD::getHistoryByDevice: " . $e->getMessage());
+            return [];
+        }
+    }
     
     /**
      * Check if device has inspection record
@@ -62,13 +87,26 @@ class HoSoHCKD extends BaseModel {
     /**
      * Lấy hồ sơ theo thiết bị và ngày HC
      */
-    public function getByDeviceAndDate(string $mavattu, string $ngayhc): ?array {
+    public function getByDeviceAndDate(string $mavattu, string $ngayhc, ?int $thietbiStt = null): ?array {
         try {
             $sql = "SELECT * FROM {$this->table} 
-                    WHERE tenmay = :tenmay AND ngayhc = :ngayhc 
+                    WHERE ngayhc = :ngayhc";
+            $params = ['ngayhc' => $ngayhc];
+
+            if ($thietbiStt !== null && $thietbiStt > 0) {
+                $sql .= " AND (thietbi_stt = :thietbi_stt
+                          OR (thietbi_stt IS NULL AND tenmay = :tenmay))";
+                $params['thietbi_stt'] = $thietbiStt;
+                $params['tenmay'] = $mavattu;
+            } else {
+                $sql .= " AND tenmay = :tenmay";
+                $params['tenmay'] = $mavattu;
+            }
+
+            $sql .= "
                     LIMIT 1";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute(['tenmay' => $mavattu, 'ngayhc' => $ngayhc]);
+            $stmt->execute($params);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result ?: null;
         } catch (PDOException $e) {
@@ -121,8 +159,18 @@ class HoSoHCKD extends BaseModel {
             error_log("=== HoSoHCKD::saveHoSo ===");
             error_log("Input data: " . print_r($data, true));
             
-            // Kiểm tra xem đã tồn tại chưa
-            $existing = $this->getByDeviceAndDate($data['tenmay'], $data['ngayhc']);
+            $hoSoStt = isset($data['hoso_stt']) ? (int)$data['hoso_stt'] : 0;
+            unset($data['hoso_stt']);
+
+            if ($hoSoStt > 0) {
+                $existing = $this->findById($hoSoStt);
+            } else {
+                $existing = $this->getByDeviceAndDate(
+                    $data['tenmay'],
+                    $data['ngayhc'],
+                    isset($data['thietbi_stt']) ? (int)$data['thietbi_stt'] : null
+                );
+            }
             
             error_log("Existing record: " . ($existing ? "Found (stt=" . $existing['stt'] . ")" : "Not found"));
             
@@ -143,25 +191,34 @@ class HoSoHCKD extends BaseModel {
             error_log("Error in HoSoHCKD::saveHoSo: " . $e->getMessage());
             error_log("SQL State: " . $e->getCode());
             error_log("Stack trace: " . $e->getTraceAsString());
-            return false;
+            throw $e;
         } catch (Exception $e) {
             error_log("General error in HoSoHCKD::saveHoSo: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
-            return false;
+            throw $e;
         }
     }
     
     /**
      * Lấy hồ sơ HC mới nhất của thiết bị
      */
-    public function getLatestByDevice(string $mavattu): ?array {
+    public function getLatestByDevice(string $mavattu, ?int $thietbiStt = null): ?array {
         try {
             $sql = "SELECT * FROM {$this->table} 
-                    WHERE tenmay = :tenmay 
-                    ORDER BY ngayhc DESC 
-                    LIMIT 1";
+                    WHERE 1=1";
+            $params = [];
+
+            if ($thietbiStt !== null && $thietbiStt > 0) {
+                $sql .= " AND thietbi_stt = :thietbi_stt";
+                $params['thietbi_stt'] = $thietbiStt;
+            } else {
+                $sql .= " AND tenmay = :tenmay";
+                $params['tenmay'] = $mavattu;
+            }
+
+            $sql .= " ORDER BY ngayhc DESC LIMIT 1";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute(['tenmay' => $mavattu]);
+            $stmt->execute($params);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result ?: null;
         } catch (PDOException $e) {
@@ -176,7 +233,7 @@ class HoSoHCKD extends BaseModel {
     public function getByDateRange(string $tungay, string $denngay, string $search = '', string $bophan = ''): array {
         try {
             $sql = "SELECT h.*, 
-                           t.tenthietbi, t.tenviettat, t.bophansh, t.thoihankd, t.chusohuu,
+                           t.tenthietbi, t.tenviettat, t.somay, t.bophansh, t.thoihankd, t.chusohuu,
                            DATE_ADD(h.ngayhc, INTERVAL CAST(t.thoihankd AS SIGNED) MONTH) as ngayhc_tieptheo,
                            CASE 
                                WHEN h.dinhky = 'on' THEN 'DK'
@@ -184,8 +241,35 @@ class HoSoHCKD extends BaseModel {
                                ELSE ''
                            END as loai_hc
                     FROM {$this->table} h
-                    LEFT JOIN thietbihckd_iso t ON h.tenmay = t.mavattu
-                    WHERE h.ngayhc >= :tungay AND h.ngayhc <= :denngay";
+                    LEFT JOIN thietbihckd_iso t ON t.stt = COALESCE(
+                        NULLIF(h.thietbi_stt, 0),
+                        (
+                            SELECT t2.stt
+                            FROM thietbihckd_iso t2
+                            WHERE t2.mavattu = h.tenmay
+                               OR t2.somay = h.tenmay
+                               OR (
+                                    (
+                                        REPLACE(REPLACE(REPLACE(UPPER(t2.mavattu), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(UPPER(h.tenmay), ' ', ''), '-', ''), '_', '')
+                                        OR REPLACE(REPLACE(REPLACE(UPPER(t2.somay), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(UPPER(h.tenmay), ' ', ''), '-', ''), '_', '')
+                                    )
+                                    AND (
+                                        SELECT COUNT(*)
+                                        FROM thietbihckd_iso tx
+                                        WHERE REPLACE(REPLACE(REPLACE(UPPER(tx.mavattu), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(UPPER(h.tenmay), ' ', ''), '-', ''), '_', '')
+                                           OR REPLACE(REPLACE(REPLACE(UPPER(tx.somay), ' ', ''), '-', ''), '_', '') = REPLACE(REPLACE(REPLACE(UPPER(h.tenmay), ' ', ''), '-', ''), '_', '')
+                                    ) = 1
+                               )
+                            ORDER BY CASE
+                                        WHEN t2.mavattu = h.tenmay THEN 0
+                                        WHEN t2.somay = h.tenmay THEN 1
+                                        ELSE 2
+                                     END,
+                                     t2.stt
+                            LIMIT 1
+                        )
+                    )
+                    WHERE h.ngayhc >= :tungay AND h.ngayhc < DATE_ADD(:denngay, INTERVAL 1 DAY)";
             
             $params = [
                 'tungay' => $tungay,
@@ -193,12 +277,20 @@ class HoSoHCKD extends BaseModel {
             ];
             
             if ($search) {
-                $sql .= " AND (h.tenmay LIKE :search OR h.sohs LIKE :search OR t.tenthietbi LIKE :search OR h.nhanvien LIKE :search)";
+                $sql .= " AND (h.tenmay LIKE :search OR h.sohs LIKE :search OR t.tenthietbi LIKE :search OR t.somay LIKE :search OR h.nhanvien LIKE :search)";
                 $params['search'] = "%$search%";
             }
             
             if ($bophan) {
-                $sql .= " AND t.bophansh = :bophan";
+                $sql .= " AND (
+                            t.bophansh = :bophan
+                            OR t.bophansh = (
+                                SELECT d.tendv
+                                FROM donvi_iso d
+                                WHERE d.madv = :bophan
+                                LIMIT 1
+                            )
+                          )";
                 $params['bophan'] = $bophan;
             }
             

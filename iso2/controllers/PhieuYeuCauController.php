@@ -319,6 +319,9 @@ class PhieuYeuCauController
         $ngay = date('d/m/Y', strtotime($summary['ngayyc']));
         $khachhang = $summary['ngyeucau'];
         $donvi = $summary['tendv'];
+        if ($donvi === 'Đội công nghệ cao') {
+            $donvi = 'Đội Địa vật lý Tổng hợp';
+        }
         $dienthoai = $summary['dienthoai'];
         $nhanvien = $summary['ngnhyeucau'];
         $ycthemkh = $summary['ycthemkh'];

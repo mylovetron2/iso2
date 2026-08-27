@@ -150,6 +150,14 @@ switch ($action) {
         $controller->exportListPdf();
         break;
 
+    case 'exportlistexcel':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportListExcel();
+        break;
+
     case 'ajax_stats':
         if (!hasPermission('hososcbd.view')) {
             http_response_code(403);

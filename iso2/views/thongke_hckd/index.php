@@ -99,6 +99,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-4 py-2 border text-left text-sm">STT</th>
                     <th class="px-4 py-2 border text-left text-sm">Số HS</th>
                     <th class="px-4 py-2 border text-left text-sm">Mã VT</th>
+                    <th class="px-4 py-2 border text-left text-sm">Số máy</th>
                     <th class="px-4 py-2 border text-left text-sm hidden md:table-cell">Tên thiết bị</th>
                     <th class="px-4 py-2 border text-center text-sm">Công việc</th>
                     <th class="px-4 py-2 border text-center text-sm">Loại HC</th>
@@ -112,7 +113,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có dữ liệu trong khoảng thời gian này</p>
                     </td>
@@ -126,6 +127,9 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-4 py-2 border">
                         <span class="font-mono text-sm"><?php echo htmlspecialchars($item['tenmay']); ?></span>
+                    </td>
+                    <td class="px-4 py-2 border">
+                        <span class="font-mono text-sm"><?php echo htmlspecialchars($item['somay'] ?? ''); ?></span>
                     </td>
                     <td class="px-4 py-2 border hidden md:table-cell">
                         <?php echo htmlspecialchars($item['tenthietbi'] ?? ''); ?>

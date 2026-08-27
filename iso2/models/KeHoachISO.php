@@ -18,7 +18,7 @@ class KeHoachISO extends BaseModel
      */
     public function getByMonthYear(int $month, int $year, int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT k.*, t.tenviettat, t.chusohuu, t.mavattu
+        $sql = "SELECT k.*, t.stt AS thietbi_stt, t.tenviettat, t.chusohuu, t.mavattu
                 FROM {$this->table} k
                 LEFT JOIN thietbihckd_iso t ON k.tenthietbi = t.tenthietbi AND k.somay = t.somay
                 WHERE k.thang = :month AND k.namkh = :year
@@ -124,6 +124,7 @@ class KeHoachISO extends BaseModel
                        t.tenviettat, 
                        t.chusohuu, 
                        t.mavattu,
+                       t.stt AS thietbi_stt,
                        t.loaitb,
                        h.ngayhc,
                        h.ttkt,
@@ -134,7 +135,8 @@ class KeHoachISO extends BaseModel
                 LEFT JOIN hosohckd_iso h ON h.stt = (
                     SELECT h2.stt 
                     FROM hosohckd_iso h2 
-                    WHERE h2.tenmay = t.mavattu 
+                          WHERE (h2.thietbi_stt = t.stt
+                              OR (h2.thietbi_stt IS NULL AND h2.tenmay = t.mavattu))
                     AND YEAR(h2.ngayhc) = " . (int)$year . "
                     ORDER BY h2.ngayhc DESC 
                     LIMIT 1

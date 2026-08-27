@@ -107,7 +107,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <?php echo htmlspecialchars($row['ghichu'] ?? ''); ?>
                         </td>
                         <td class="border px-2 py-2 text-center text-xs md:text-sm">
-                            <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($row['mavattu'] ?? ''); ?>&month=<?php echo $month; ?>&year=<?php echo $year; ?>" 
+                            <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($row['mavattu'] ?? ''); ?>&stt=<?php echo (int)($row['thietbi_stt'] ?? 0); ?>&month=<?php echo $month; ?>&year=<?php echo $year; ?>" 
                                class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
                                title="Nhập hồ sơ">
                                 <i class="fas fa-edit mr-1"></i> Nhập

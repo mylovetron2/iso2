@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                     if (trim($ht) !== '') {
                         $nguoiThucHienPost[] = [
                             'hoten' => trim($ht),
-                            'giolv' => floatval($gio_arr[$i] ?? 0)
+                                'giolv' => (float)str_replace(',', '.', trim((string)($gio_arr[$i] ?? 0)))
                         ];
                     }
                 }
@@ -334,7 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                             if (isset($hoten_array[$formIndex]) && trim($hoten_array[$formIndex]) !== '') {
                                 // Cập nhật bản ghi
                                 $hoten = trim($hoten_array[$formIndex]);
-                                $gio = floatval($gio_array[$formIndex] ?? 0);
+                                $gio = (float)str_replace(',', '.', trim((string)($gio_array[$formIndex] ?? 0)));
                                 
                                 $sqlUpdate = "UPDATE ngthuchien_iso SET 
                                     hoten = :hoten,
@@ -369,7 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                         for ($i = count($existingList); $i < 8; $i++) {
                             if (isset($hoten_array[$i]) && trim($hoten_array[$i]) !== '') {
                                 $hoten = trim($hoten_array[$i]);
-                                $gio = floatval($gio_array[$i] ?? 0);
+                                $gio = (float)str_replace(',', '.', trim((string)($gio_array[$i] ?? 0)));
                                 
                                 $sqlInsert = "INSERT INTO ngthuchien_iso (
                                     stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field}
@@ -645,10 +645,15 @@ require_once __DIR__ . '/../layouts/header.php';
                 if (isset($deviceKpiDetails[$hourField]) && $deviceKpiDetails[$hourField] !== null) {
                     $effectiveKpiHour = (float)$deviceKpiDetails[$hourField];
                 }
-                $ketLuan = $dinhMucInfo['ket_luan_kpi'] ?? 'chua_du_du_lieu';
+                $hasAssignedKpi = !empty($dinhMucInfo) || !empty($deviceKpiLink);
+                $ketLuan = isset($dinhMucInfo['ket_luan_kpi']) ? (string)$dinhMucInfo['ket_luan_kpi'] : '';
+                if (($ketLuan === '' || $ketLuan === 'chua_du_du_lieu') && $hasAssignedKpi) {
+                    $ketLuan = 'da_gan';
+                }
                 $ketLuanBadge = [
                     'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
                     'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
+                    'da_gan' => ['bg-blue-500 text-white', 'Đã gán KPI'],
                     'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa gán KPI'],
                 ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa gán KPI'];
             ?>
@@ -662,10 +667,15 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         <?php elseif ($dinhMucInfo): ?>
             <?php
-                $ketLuan = $dinhMucInfo['ket_luan_kpi'] ?? 'chua_du_du_lieu';
+                $hasAssignedKpi = !empty($dinhMucInfo) || !empty($deviceKpiLink);
+                $ketLuan = isset($dinhMucInfo['ket_luan_kpi']) ? (string)$dinhMucInfo['ket_luan_kpi'] : '';
+                if (($ketLuan === '' || $ketLuan === 'chua_du_du_lieu') && $hasAssignedKpi) {
+                    $ketLuan = 'da_gan';
+                }
                 $ketLuanBadge = [
                     'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
                     'khong_dat' => ['bg-red-500 text-white', 'Không đạt KPI'],
+                    'da_gan' => ['bg-blue-500 text-white', 'Đã gán KPI'],
                     'chua_du_du_lieu' => ['bg-gray-300 text-gray-700', 'Chưa gán KPI'],
                 ][$ketLuan] ?? ['bg-gray-300 text-gray-700', 'Chưa gán KPI'];
                 $isManualHourOnly = empty($dinhMucInfo['kpi_baoduong_stt']) && ($dinhMucInfo['dinh_muc_gio_thu_cong'] ?? null) !== null;
@@ -859,9 +869,8 @@ require_once __DIR__ . '/../layouts/header.php';
                     </span>
                 </div>
                 <div class="w-24">
-                    <input type="number" name="nguoi_gio[<?php echo $idx; ?>]" placeholder="Giờ" 
+                      <input type="text" inputmode="decimal" name="nguoi_gio[<?php echo $idx; ?>]" placeholder="Giờ"
                            value="<?php echo htmlspecialchars($person['giolv']); ?>"
-                           step="0.5" min="0"
                            class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
                            form="repair-form">
                 </div>
@@ -976,8 +985,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </span>
             </div>
             <div class="w-24">
-                <input type="number" name="nguoi_gio[${personIndex}]" placeholder="Giờ" 
-                       step="0.5" min="0"
+                                <input type="text" inputmode="decimal" name="nguoi_gio[${personIndex}]" placeholder="Giờ" 
                        class="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring focus:border-indigo-500"
                        form="repair-form">
             </div>
@@ -1007,7 +1015,7 @@ require_once __DIR__ . '/../layouts/header.php';
         } else {
             // Clear inputs and reset state
             const nameInput = row.querySelector('.person-name-input');
-            const gioInput = row.querySelector('input[type="number"]');
+            const gioInput = row.querySelector('input[name^="nguoi_gio"]');
             const warningIcon = row.querySelector('.warning-icon');
             
             if (nameInput) {

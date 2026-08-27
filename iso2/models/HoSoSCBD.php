@@ -43,10 +43,15 @@ class HoSoSCBD extends BaseModel
         string $nhomsc = '',
         string $trangthai = '',
         string $madv = '',
+        string $cv = '',
         int $offset = 0,
         int $limit = 15,
-        string $fromDate = '2026-01-01',
-        string $toDate = ''
+        string $ngayYcFrom = '',
+        string $ngayYcTo = '',
+        string $ngayThFrom = '',
+        string $ngayThTo = '',
+        string $ngayKtFrom = '',
+        string $ngayKtTo = ''
     ): array {
         $where = ["1=1"];
         
@@ -68,16 +73,35 @@ class HoSoSCBD extends BaseModel
             $madvEscaped = $this->db->quote($madv);
             $where[] = "h.madv = $madvEscaped";
         }
-        
-        // Lọc theo ngày yêu cầu
-        if ($fromDate) {
-            $fromDateEscaped = $this->db->quote($fromDate);
-            $where[] = "h.ngayyc >= $fromDateEscaped";
+
+        if ($cv) {
+            $cvEscaped = $this->db->quote($cv);
+            $where[] = "h.cv = $cvEscaped";
         }
-        
-        if ($toDate) {
-            $toDateEscaped = $this->db->quote($toDate);
-            $where[] = "h.ngayyc <= $toDateEscaped";
+
+        if ($ngayYcFrom) {
+            $value = $this->db->quote($ngayYcFrom);
+            $where[] = "h.ngayyc >= $value";
+        }
+        if ($ngayYcTo) {
+            $value = $this->db->quote($ngayYcTo);
+            $where[] = "h.ngayyc <= $value";
+        }
+        if ($ngayThFrom) {
+            $value = $this->db->quote($ngayThFrom);
+            $where[] = "h.ngayth >= $value";
+        }
+        if ($ngayThTo) {
+            $value = $this->db->quote($ngayThTo);
+            $where[] = "h.ngayth <= $value";
+        }
+        if ($ngayKtFrom) {
+            $value = $this->db->quote($ngayKtFrom);
+            $where[] = "h.ngaykt >= $value";
+        }
+        if ($ngayKtTo) {
+            $value = $this->db->quote($ngayKtTo);
+            $where[] = "h.ngaykt <= $value";
         }
         
         // Lọc theo trạng thái
@@ -104,11 +128,22 @@ class HoSoSCBD extends BaseModel
         // Nếu không, query đơn giản không có is_tamdung
         if ($this->hasTamDungTable()) {
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
+                           COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt) AS kpi_baoduong_stt,
+                           vk.dinh_muc_so_gio AS dinh_muc_so_gio,
+                           vk.loai_congviec AS dinh_muc_loai_congviec,
+                           k.kiem_tra_so_gio AS kpi_kiem_tra_so_gio,
+                           k.bd_cap_1_so_gio AS kpi_bd_cap_1_so_gio,
+                           k.bd_cap_2_so_gio AS kpi_bd_cap_2_so_gio,
+                           k.bd_cap_3_so_gio AS kpi_bd_cap_3_so_gio,
+                           k.hieu_chuan_so_gio AS kpi_hieu_chuan_so_gio,
                            COALESCE(td_latest.trangthai, 'none') as tamdung_status,
                            IF(td_latest.trangthai = 'dang_tam_dung', 1, 0) as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
                     LEFT JOIN (SELECT MIN(stt) as stt, mavt, somay FROM thietbi_iso GROUP BY mavt, somay) t ON h.mavt = t.mavt AND h.somay = t.somay
+                    LEFT JOIN view_hososcbd_kpi_ketluan vk ON vk.hososcbd_stt = h.stt
+                    LEFT JOIN thietbi_kpi_baoduong_iso lk ON lk.thietbi_stt = t.stt
+                    LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt)
                     LEFT JOIN (
                         SELECT td1.hoso, td1.trangthai
                         FROM hososcbd_tamdung td1
@@ -121,10 +156,21 @@ class HoSoSCBD extends BaseModel
         } else {
             // Fallback: Query đơn giản khi bảng hososcbd_tamdung chưa tồn tại
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
+                           COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt) AS kpi_baoduong_stt,
+                           vk.dinh_muc_so_gio AS dinh_muc_so_gio,
+                           vk.loai_congviec AS dinh_muc_loai_congviec,
+                           k.kiem_tra_so_gio AS kpi_kiem_tra_so_gio,
+                           k.bd_cap_1_so_gio AS kpi_bd_cap_1_so_gio,
+                           k.bd_cap_2_so_gio AS kpi_bd_cap_2_so_gio,
+                           k.bd_cap_3_so_gio AS kpi_bd_cap_3_so_gio,
+                           k.hieu_chuan_so_gio AS kpi_hieu_chuan_so_gio,
                            0 as is_tamdung
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
                     LEFT JOIN (SELECT MIN(stt) as stt, mavt, somay FROM thietbi_iso GROUP BY mavt, somay) t ON h.mavt = t.mavt AND h.somay = t.somay
+                    LEFT JOIN view_hososcbd_kpi_ketluan vk ON vk.hososcbd_stt = h.stt
+                    LEFT JOIN thietbi_kpi_baoduong_iso lk ON lk.thietbi_stt = t.stt
+                    LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt)
                     WHERE $whereClause
                     ORDER BY h.ngayyc DESC, h.phieu DESC
                     LIMIT $limit OFFSET $offset";
@@ -282,8 +328,13 @@ class HoSoSCBD extends BaseModel
         string $nhomsc = '',
         string $trangthai = '',
         string $madv = '',
-        string $fromDate = '2026-01-01',
-        string $toDate = ''
+        string $cv = '',
+        string $ngayYcFrom = '',
+        string $ngayYcTo = '',
+        string $ngayThFrom = '',
+        string $ngayThTo = '',
+        string $ngayKtFrom = '',
+        string $ngayKtTo = ''
     ): int {
         $where = ["1=1"];
         
@@ -305,16 +356,35 @@ class HoSoSCBD extends BaseModel
             $madvEscaped = $this->db->quote($madv);
             $where[] = "h.madv = $madvEscaped";
         }
-        
-        // Lọc theo ngày yêu cầu
-        if ($fromDate) {
-            $fromDateEscaped = $this->db->quote($fromDate);
-            $where[] = "h.ngayyc >= $fromDateEscaped";
+
+        if ($cv) {
+            $cvEscaped = $this->db->quote($cv);
+            $where[] = "h.cv = $cvEscaped";
         }
-        
-        if ($toDate) {
-            $toDateEscaped = $this->db->quote($toDate);
-            $where[] = "h.ngayyc <= $toDateEscaped";
+
+        if ($ngayYcFrom) {
+            $value = $this->db->quote($ngayYcFrom);
+            $where[] = "h.ngayyc >= $value";
+        }
+        if ($ngayYcTo) {
+            $value = $this->db->quote($ngayYcTo);
+            $where[] = "h.ngayyc <= $value";
+        }
+        if ($ngayThFrom) {
+            $value = $this->db->quote($ngayThFrom);
+            $where[] = "h.ngayth >= $value";
+        }
+        if ($ngayThTo) {
+            $value = $this->db->quote($ngayThTo);
+            $where[] = "h.ngayth <= $value";
+        }
+        if ($ngayKtFrom) {
+            $value = $this->db->quote($ngayKtFrom);
+            $where[] = "h.ngaykt >= $value";
+        }
+        if ($ngayKtTo) {
+            $value = $this->db->quote($ngayKtTo);
+            $where[] = "h.ngaykt <= $value";
         }
         
         if ($trangthai === 'chuath') {

@@ -86,6 +86,53 @@ class ThietBiController
 
     public function create(): void
     {
+        $copyDeviceList = $this->model->getAll('ORDER BY mavt ASC, somay ASC');
+        $copySourceData = [];
+
+        $copyId = 0;
+        if (isset($_GET['copy_from'])) {
+            $copyId = (int)$_GET['copy_from'];
+        } elseif (isset($_GET['create_from'])) {
+            $copyId = (int)$_GET['create_from'];
+        } elseif (isset($_GET['copyfrom'])) {
+            $copyId = (int)$_GET['copyfrom'];
+        } elseif (isset($_SERVER['QUERY_STRING'])) {
+            preg_match('/(?:^|[?&])(?:copy_from|create_from|copyfrom)=(\d+)/i', $_SERVER['QUERY_STRING'], $matches);
+            if (!empty($matches[1])) {
+                $copyId = (int)$matches[1];
+            }
+        }
+
+        if ($copyId <= 0) {
+            $latestDevice = $this->model->getAll('ORDER BY stt DESC LIMIT 1');
+            if (!empty($latestDevice[0]['stt'])) {
+                $copyId = (int)$latestDevice[0]['stt'];
+            }
+        }
+
+        if ($copyId > 0) {
+            $source = $this->model->findById($copyId);
+            if ($source) {
+                $copySourceData = [
+                    'mavt' => trim((string)($source['mavt'] ?? '')),
+                    'tenvt' => trim((string)($source['tenvt'] ?? '')),
+                    'somay' => trim((string)($source['somay'] ?? '')),
+                    'model' => trim((string)($source['model'] ?? '')),
+                    'homay' => trim((string)($source['homay'] ?? '')),
+                    'dienap' => trim((string)($source['dienap'] ?? '')),
+                    'thongtincb' => trim((string)($source['thongtincb'] ?? '')),
+                    'loaidau' => trim((string)($source['loaidau'] ?? '')),
+                    'mucdau' => trim((string)($source['mucdau'] ?? '')),
+                    'madv' => trim((string)($source['madv'] ?? '')),
+                    'bdtime' => (int)($source['bdtime'] ?? 0),
+                    'ngayktsd' => trim((string)($source['ngayktsd'] ?? date('Y-m-d'))),
+                    'tlkt' => trim((string)($source['tlkt'] ?? '')),
+                    'hosomay' => trim((string)($source['hosomay'] ?? '')),
+                    'mamay' => trim((string)($source['mamay'] ?? '')),
+                ];
+            }
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'mavt' => trim($_POST['mavt'] ?? ''),

@@ -111,10 +111,43 @@ if (file_exists($dbSelectionFile)) {
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBD
                     </a>
                 </li>
+                <?php endif; ?>
+
+                <?php if (isLoggedIn() && (
+                    hasPermission('hososcbd.view') ||
+                    hasPermission('kpi_baoduong.view') ||
+                    hasPermission('kehoachbaoduong.view') ||
+                    hasPermission('kehoachbaoduong.create') ||
+                    hasPermission('thietbi.view')
+                )): ?>
                 <li>
-                    <a href="/iso2/thongke_kpi_nhanvien_scbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-chart-line mr-2"></i> KPI Nhân viên
-                    </a>
+                    <div id="kpiMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
+                        <i class="fas fa-bullseye mr-2"></i> KPI
+                        <i id="kpiCaret" class="fas fa-caret-down ml-auto transition-transform"></i>
+                    </div>
+                    <ul id="kpiMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
+                        <?php if (hasPermission('hososcbd.view')): ?>
+                        <li>
+                            <a href="/iso2/thongke_kpi_nhanvien_scbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-chart-line mr-2"></i> KPI Nhân viên
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('kpi_baoduong.view') || hasPermission('kehoachbaoduong.view') || hasPermission('kehoachbaoduong.create')): ?>
+                        <li>
+                            <a href="/iso2/kpi_baoduong_thietbi_list.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-ruler-combined mr-2"></i> Định mức KPI
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('kpi_baoduong.view') || hasPermission('thietbi.view')): ?>
+                        <li>
+                            <a href="/iso2/thietbi_kpi_baoduong_link.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-link mr-2"></i> Gán KPI thiết bị
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
                 </li>
                 <?php endif; ?>
 
@@ -306,20 +339,6 @@ if (file_exists($dbSelectionFile)) {
                 <li>
                     <a href="/iso2/kehoachbaoduongdinhky.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tools mr-2"></i> Bảo dưỡng định kỳ
-                    </a>
-                </li>
-                <?php endif; ?>
-                <?php if (isLoggedIn() && (hasPermission('kpi_baoduong.view') || hasPermission('kehoachbaoduong.view') || hasPermission('kehoachbaoduong.create'))): ?>
-                <li>
-                    <a href="/iso2/kpi_baoduong_thietbi_list.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-ruler-combined mr-2"></i> Định mức KPI
-                    </a>
-                </li>
-                <?php endif; ?>
-                <?php if (isLoggedIn() && (hasPermission('kpi_baoduong.view') || hasPermission('thietbi.view'))): ?>
-                <li>
-                    <a href="/iso2/thietbi_kpi_baoduong_link.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
-                        <i class="fas fa-link mr-2"></i> Gán KPI thiết bị
                     </a>
                 </li>
                 <?php endif; ?>
@@ -607,6 +626,17 @@ if (vattuBtn && vattuMenu && vattuCaret) {
     vattuBtn.addEventListener('click', function() {
         vattuMenu.classList.toggle('hidden');
         vattuCaret.classList.toggle('rotate-180');
+    });
+}
+
+// Expand/collapse menu KPI
+const kpiBtn = document.getElementById('kpiMenuBtn');
+const kpiMenu = document.getElementById('kpiMenu');
+const kpiCaret = document.getElementById('kpiCaret');
+if (kpiBtn && kpiMenu && kpiCaret) {
+    kpiBtn.addEventListener('click', function() {
+        kpiMenu.classList.toggle('hidden');
+        kpiCaret.classList.toggle('rotate-180');
     });
 }
 

@@ -54,7 +54,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
     <!-- Filter & Search -->
     <form method="get" class="mb-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-2">
             <input type="text" name="search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" 
                    placeholder="Tìm phiếu, mã VT, số máy, đơn vị..." 
                    class="border rounded px-3 py-2 text-sm md:text-base">
@@ -79,20 +79,46 @@ require_once __DIR__ . '/../layouts/header.php';
                 <option value="TTKTDB" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'TTKTDB') ? 'selected' : ''; ?>>TTKTDB</option>
                 <option value="tamdung" <?php echo (isset($_GET['trangthai']) && $_GET['trangthai'] === 'tamdung') ? 'selected' : ''; ?>>Tạm dừng</option>
             </select>
-            
+
+            <select name="cv" class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
+                <option value="">Tất cả CV</option>
+                <option value="SC" <?php echo (isset($_GET['cv']) && $_GET['cv'] === 'SC') ? 'selected' : ''; ?>>SC</option>
+                <option value="BD" <?php echo (isset($_GET['cv']) && $_GET['cv'] === 'BD') ? 'selected' : ''; ?>>BD</option>
+                <option value="KT" <?php echo (isset($_GET['cv']) && $_GET['cv'] === 'KT') ? 'selected' : ''; ?>>KT</option>
+                <option value="BDDK" <?php echo (isset($_GET['cv']) && $_GET['cv'] === 'BDDK') ? 'selected' : ''; ?>>BDDK</option>
+            </select>
+
             <select name="nhomsc" class="border rounded px-3 py-2 text-sm md:text-base" onchange="this.form.submit()">
                 <option value="">Tất cả nhóm</option>
                 <option value="RDNGA" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'RDNGA') ? 'selected' : ''; ?>>RDNGA</option>
                 <option value="CNC" <?php echo (isset($_GET['nhomsc']) && $_GET['nhomsc'] === 'CNC') ? 'selected' : ''; ?>>CNC</option>
             </select>
-            
-                 <input type="date" name="from_date" value="<?php echo htmlspecialchars(($_GET['from_date'] ?? '') ?: '2026-01-01'); ?>" 
-                     placeholder="Từ ngày" 
-                     class="border rounded px-3 py-2 text-sm md:text-base">
-            
-                 <input type="date" name="to_date" value="<?php echo $_GET['to_date'] ?? ''; ?>" 
-                     placeholder="Đến ngày" 
-                     class="border rounded px-3 py-2 text-sm md:text-base">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+            <div class="border rounded p-2 bg-gray-50">
+                <div class="text-xs font-semibold text-gray-700 mb-1">Ngày YC</div>
+                <div class="flex gap-2">
+                    <input type="date" name="ngayyc_from" value="<?php echo htmlspecialchars($_GET['ngayyc_from'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Từ ngày">
+                    <input type="date" name="ngayyc_to" value="<?php echo htmlspecialchars($_GET['ngayyc_to'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Đến ngày">
+                </div>
+            </div>
+
+            <div class="border rounded p-2 bg-gray-50">
+                <div class="text-xs font-semibold text-gray-700 mb-1">Ngày TH</div>
+                <div class="flex gap-2">
+                    <input type="date" name="ngayth_from" value="<?php echo htmlspecialchars($_GET['ngayth_from'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Từ ngày">
+                    <input type="date" name="ngayth_to" value="<?php echo htmlspecialchars($_GET['ngayth_to'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Đến ngày">
+                </div>
+            </div>
+
+            <div class="border rounded p-2 bg-gray-50">
+                <div class="text-xs font-semibold text-gray-700 mb-1">Ngày KT</div>
+                <div class="flex gap-2">
+                    <input type="date" name="ngaykt_from" value="<?php echo htmlspecialchars($_GET['ngaykt_from'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Từ ngày">
+                    <input type="date" name="ngaykt_to" value="<?php echo htmlspecialchars($_GET['ngaykt_to'] ?? ''); ?>" class="border rounded px-2 py-2 text-sm w-full" placeholder="Đến ngày">
+                </div>
+            </div>
         </div>
         
         <div class="flex flex-wrap gap-2">
@@ -103,10 +129,40 @@ require_once __DIR__ . '/../layouts/header.php';
                 <i class="fas fa-redo mr-1"></i> Xóa lọc
             </a>
             
-            <a href="hososcbd.php?action=exportlistpdf&<?php echo http_build_query(['search' => $_GET['search'] ?? '', 'madv' => $_GET['madv'] ?? '', 'trangthai' => $_GET['trangthai'] ?? '', 'nhomsc' => $_GET['nhomsc'] ?? '', 'from_date' => $_GET['from_date'] ?? '', 'to_date' => $_GET['to_date'] ?? '']); ?>" 
+            <a href="hososcbd.php?action=exportlistpdf&<?php echo http_build_query([
+                'search' => $_GET['search'] ?? '',
+                'madv' => $_GET['madv'] ?? '',
+                'trangthai' => $_GET['trangthai'] ?? '',
+                'cv' => $_GET['cv'] ?? '',
+                'nhomsc' => $_GET['nhomsc'] ?? '',
+                'ngayyc_from' => $_GET['ngayyc_from'] ?? '',
+                'ngayyc_to' => $_GET['ngayyc_to'] ?? '',
+                'ngayth_from' => $_GET['ngayth_from'] ?? '',
+                'ngayth_to' => $_GET['ngayth_to'] ?? '',
+                'ngaykt_from' => $_GET['ngaykt_from'] ?? '',
+                'ngaykt_to' => $_GET['ngaykt_to'] ?? '',
+            ]); ?>" 
                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm md:text-base text-center"
                target="_blank">
                 <i class="fas fa-file-pdf mr-1"></i> In PDF
+            </a>
+
+            <a href="hososcbd.php?action=exportlistexcel&<?php echo http_build_query([
+                'search' => $_GET['search'] ?? '',
+                'madv' => $_GET['madv'] ?? '',
+                'trangthai' => $_GET['trangthai'] ?? '',
+                'cv' => $_GET['cv'] ?? '',
+                'nhomsc' => $_GET['nhomsc'] ?? '',
+                'ngayyc_from' => $_GET['ngayyc_from'] ?? '',
+                'ngayyc_to' => $_GET['ngayyc_to'] ?? '',
+                'ngayth_from' => $_GET['ngayth_from'] ?? '',
+                'ngayth_to' => $_GET['ngayth_to'] ?? '',
+                'ngaykt_from' => $_GET['ngaykt_from'] ?? '',
+                'ngaykt_to' => $_GET['ngaykt_to'] ?? '',
+            ]); ?>" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm md:text-base text-center"
+               target="_blank">
+                <i class="fas fa-file-excel mr-1"></i> In Excel
             </a>
             
             <?php if (hasPermission('hososcbd.create')): ?>
@@ -129,6 +185,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">CV</th>
+                    <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Định mức</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">BDDK</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm hidden xl:table-cell">HC/KĐ</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Trạng thái</th>
@@ -228,6 +285,43 @@ require_once __DIR__ . '/../layouts/header.php';
                                 $cvDisplay = $cvValue ?: '-';
                         }
                         echo '<span class="inline-block ' . $cvColor . ' text-xs font-bold px-2 py-1 rounded">' . htmlspecialchars($cvDisplay) . '</span>';
+                        ?>
+                    </td>
+                    <?php
+                    $kpiHourMap = [
+                        'kiem_tra' => $item['kpi_kiem_tra_so_gio'] ?? '',
+                        'bd_cap_1' => $item['kpi_bd_cap_1_so_gio'] ?? '',
+                        'bd_cap_2' => $item['kpi_bd_cap_2_so_gio'] ?? '',
+                        'bd_cap_3' => $item['kpi_bd_cap_3_so_gio'] ?? '',
+                        'hieu_chuan' => $item['kpi_hieu_chuan_so_gio'] ?? '',
+                    ];
+                    ?>
+                    <td class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm dinhmuc-cell"
+                        data-hoso-stt="<?php echo (int)($item['stt'] ?? 0); ?>"
+                        data-kpi-stt="<?php echo htmlspecialchars((string)($item['kpi_baoduong_stt'] ?? '')); ?>"
+                        data-loai-congviec="<?php echo htmlspecialchars((string)($item['dinh_muc_loai_congviec'] ?? '')); ?>"
+                        data-dinhmuc-gio="<?php echo htmlspecialchars((string)($item['dinh_muc_so_gio'] ?? '')); ?>"
+                        data-kpi-map='<?php echo json_encode($kpiHourMap, JSON_HEX_TAG | JSON_HEX_AMP); ?>'>
+                        <?php
+                        $dinhMucSoGio = isset($item['dinh_muc_so_gio']) && $item['dinh_muc_so_gio'] !== null && $item['dinh_muc_so_gio'] !== ''
+                            ? (float)$item['dinh_muc_so_gio']
+                            : null;
+                        $dinhMucLoai = $item['dinh_muc_loai_congviec'] ?? '';
+                        if ($dinhMucSoGio !== null) {
+                            $labelMap = [
+                                'kiem_tra' => 'KT',
+                                'bd_cap_1' => 'BD1',
+                                'bd_cap_2' => 'BD2',
+                                'bd_cap_3' => 'BD3',
+                                'hieu_chuan' => 'HC',
+                            ];
+                            echo '<div class="font-semibold text-blue-700">' . number_format($dinhMucSoGio, 2) . 'h</div>';
+                            if ($dinhMucLoai !== '') {
+                                echo '<div class="text-[10px] text-gray-500 mt-1">' . htmlspecialchars($labelMap[$dinhMucLoai] ?? strtoupper($dinhMucLoai)) . '</div>';
+                            }
+                        } else {
+                            echo '<span class="text-gray-400">—</span>';
+                        }
                         ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center" id="bddk-<?php echo $item['stt']; ?>">
@@ -499,6 +593,123 @@ foreach ($items as $_item) {
             if (hc) hc.innerHTML = '<span class="text-gray-400 text-xs">-</span>';
         }
     }
+
+    function getKpiHourMap(cell) {
+        const raw = cell.dataset.kpiMap || '{}';
+        try {
+            return JSON.parse(raw) || {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        const cell = event.target.closest('.dinhmuc-cell');
+        if (!cell) return;
+        if (event.target.closest('button, select, input')) return;
+
+        if (cell.classList.contains('editing')) return;
+
+        const stt = cell.dataset.hosoStt || '';
+        const kpiStt = cell.dataset.kpiStt || '';
+        const loai = cell.dataset.loaiCongviec || 'bd_cap_1';
+        const gio = cell.dataset.dinhmucGio || '';
+        const kpiMap = getKpiHourMap(cell);
+
+        const loaiOptions = [
+            ['kiem_tra', 'KT'],
+            ['bd_cap_1', 'BD cấp 1'],
+            ['bd_cap_2', 'BD cấp 2'],
+            ['bd_cap_3', 'BD cấp 3'],
+            ['hieu_chuan', 'Hiệu chuẩn'],
+        ];
+
+        const selectHtml = loaiOptions.map(([value, label]) => {
+            const selected = value === loai ? 'selected' : '';
+            return '<option value="' + value + '" ' + selected + '>' + label + '</option>';
+        }).join('');
+
+        const defaultHour = (kpiMap[loai] !== undefined && kpiMap[loai] !== null && kpiMap[loai] !== '') ? kpiMap[loai] : gio;
+
+        cell.classList.add('editing');
+        cell.innerHTML = '<div class="space-y-2">'
+            + '<select name="loai_congviec" class="border rounded px-1 py-1 text-[10px] w-full">' + selectHtml + '</select>'
+            + '<input type="number" min="0" step="0.01" name="dinh_muc_gio_thu_cong" value="' + (defaultHour || '') + '" data-auto-sync="1" placeholder="Giờ" class="border rounded px-1 py-1 text-[10px] w-full" />'
+            + '<div class="flex gap-1 justify-center">'
+            + '<button type="button" class="dinhmuc-save-btn bg-blue-600 text-white px-2 py-1 rounded text-[10px]">Lưu</button>'
+            + '<button type="button" class="dinhmuc-cancel-btn bg-gray-300 text-gray-700 px-2 py-1 rounded text-[10px]">Hủy</button>'
+            + '</div>'
+            + '</div>';
+
+        cell.dataset.kpiStt = kpiStt;
+        cell.dataset.hosoStt = stt;
+    });
+
+    document.addEventListener('change', function (event) {
+        const select = event.target.closest('select[name="loai_congviec"]');
+        if (!select) return;
+
+        const cell = select.closest('.dinhmuc-cell');
+        if (!cell) return;
+
+        const kpiMap = getKpiHourMap(cell);
+        const input = cell.querySelector('input[name="dinh_muc_gio_thu_cong"]');
+        if (!input) return;
+
+        const value = kpiMap[select.value];
+        const nextValue = (value !== undefined && value !== null && value !== '') ? value : '';
+        input.value = nextValue;
+        input.dataset.autoSync = '1';
+    });
+
+    document.addEventListener('input', function (event) {
+        const input = event.target.closest('input[name="dinh_muc_gio_thu_cong"]');
+        if (!input) return;
+        input.dataset.autoSync = '0';
+    });
+
+    document.addEventListener('click', function (event) {
+        const btn = event.target.closest('.dinhmuc-save-btn');
+        if (!btn) return;
+
+        const cell = btn.closest('.dinhmuc-cell');
+        if (!cell) return;
+
+        const stt = cell.dataset.hosoStt || '';
+        const select = cell.querySelector('select[name="loai_congviec"]');
+        const input = cell.querySelector('input[name="dinh_muc_gio_thu_cong"]');
+        const form = new URLSearchParams();
+        form.append('id', stt);
+        form.append('dinhmuc_action', '1');
+        form.append('kpi_baoduong_stt', cell.dataset.kpiStt || '');
+        form.append('loai_congviec', select.value);
+
+        const autoSync = input.dataset.autoSync === '1';
+        if (autoSync) {
+            form.append('dinh_muc_gio_thu_cong', '');
+        } else {
+            form.append('dinh_muc_gio_thu_cong', input.value.trim());
+        }
+
+        fetch('hososcbd_repair_details.php?id=' + encodeURIComponent(stt), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: form.toString()
+        }).then(function() {
+            window.location.reload();
+        }).catch(function() {
+            window.location.reload();
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        const btn = event.target.closest('.dinhmuc-cancel-btn');
+        if (!btn) return;
+
+        const cell = btn.closest('.dinhmuc-cell');
+        if (!cell) return;
+        window.location.reload();
+    });
 
     fetch('/iso2/hososcbd.php?action=ajax_bddk_hckd', {
         method: 'POST',

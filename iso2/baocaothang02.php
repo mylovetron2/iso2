@@ -86,8 +86,6 @@ padding-left:8px;
 </script>
 
 ";
-     
-
         $tenvt="";
 	$cv="";
 	$mavattu="";
@@ -108,7 +106,6 @@ padding-left:8px;
 	} catch (\Throwable $e) {
 		$exclude_tamdung_base = "";
 	}
-	 
 
 if ($_GET['s'] && $_GET['f']) {
 
@@ -149,9 +146,9 @@ if ($_GET['s'] && $_GET['f']) {
 			$p++ ;
 			$to = substr($to,$p);
 				}
-			$month_string  = "WHERE (ngaykt BETWEEN '$yfrom-$mfrom-$dfrom 00:00:00' AND '$yto-$mto-$dto 23:59:59' OR ngayth BETWEEN '$yfrom-$mfrom-$dfrom 00:00:00' AND '$yto-$mto-$dto 23:59:59') ";
+			$month_string  = "WHERE ngaykt BETWEEN '$yfrom-$mfrom-$dfrom 00:00:00' AND '$yto-$mto-$dto 00:00:00' ";
 			$exclude_tamdung = $exclude_tamdung_base;
-			$tenfile="BCSX-$mto-$yto-KT";
+			$tenfile="BCSX-$mto-$yto";
 			$ngayt="$dfrom/$mfrom/$yfrom";
 			$ngayd="$dto/$mto/$yto";
 			$ngaytt="$yfrom-$mfrom-$dfrom";
@@ -159,9 +156,9 @@ if ($_GET['s'] && $_GET['f']) {
 		}else{	
 			$m = date('m');
 			$y = date('Y');
-			$month_string = "WHERE (ngaykt BETWEEN '$y-$m-01 00:00:00' AND '$y-$m-31 23:59:59' OR ngayth BETWEEN '$y-$m-01 00:00:00' AND '$y-$m-31 23:59:59')";
-		$exclude_tamdung = $exclude_tamdung_base;
-			$tenfile="BCSX-$m-$y-KT";
+			$month_string = "WHERE ngaykt BETWEEN '$y-$m-01 00:00:00' AND '$y-$m-31 00:00:00'";
+			$exclude_tamdung = $exclude_tamdung_base;
+			$tenfile="BCSX-$m-$y";
 			$ngayt="01/$m/$y";
 			$ngayd="31/$m/$y";
 			$ngaytt="$y-$m-01";
@@ -176,52 +173,174 @@ XN ĐỊA VẬ LÝ GK &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nb
 <br/>
 <table width=\"1100\" height=\"160\" border=\"1\" class=\"table1\">
   <tr>
-	<th width=\"35\" height=\"61\"></th>
-	<th width=\"60\">№ Yêu <br/>cầu DV</th>
-	<th width=\"75\">Số Hồ Sơ</th>
-	<th width=\"185\">Tên TB, công việc</th>
-	<th width=\"83\">Số máy</th>
-	<th width=\"58\">C.Việc</th>
-	<th width=\"88\">Ngày hoàn <br/>thành </th>
-	<th width=\"100\">Nhân viên thực hiện</th>
-	<th width=\"90\">Tình trạng KT <br/>sau khi SC, BD</th>
-	<th width=\"65\">Bên yêu cầu</th>
-	<th width=\"65\">Số giờ</th>
-	<th width=\"100\">Ghi chú</th>
+    <th width=\"35\" height=\"61\"></th>
+    <th width=\"60\">№ Yêu <br/>cầu DV</th>
+    <th width=\"75\">Số Hồ Sơ</th>
+    <th width=\"185\">Tên TB, công việc</th>
+    <th width=\"83\">Số máy</th>
+    <th width=\"58\">C.Việc</th>
+    <th width=\"88\">Ngày bắt đầu</th>
+    <th width=\"88\">Ngày hoàn <br/>thành </th>
+    <th width=\"100\">Nhân viên thực hiện</th>
+    <th width=\"90\">Tình trạng KT <br/>sau khi SC, BD</th>
+    <th width=\"90\">Tình trạng KT trước khi SC, BD</th>
     
   </tr>";
 
 		$donhang=0;
-		$tongmay=0;  
-	
-    $sqlmaql=mysql_query("SELECT DISTINCT maql  FROM hososcbd_iso  $month_string $where_search or ngayth!='0000-00-00' and ngaykt ='0000-00-00' order by nhomsc desc,`hoso` desc");
+		$tongmay=0;
+		$tongmaydat=0;
+		$tongmayhong=0;
+		$tongmayttktdb=0;
+		$tongmayvattu=0;
+		$tongmaydangsc=0;  
+	/*	
+		$sqlmaql=mysql_query("SELECT DISTINCT maql  FROM hososcbd_iso  $month_string $where_search and nhomsc='RDNGA' ");
+$stt=1;		
+    while($row= mysql_fetch_array($sqlmaql))
+	{
+	$maql=$row['maql'];
+echo"   <tr>
+    <td style=\"text-align:center\">$stt</td>
+    <td colspan=\"10\">&nbsp; $maql</td>
+    </tr>";
+    $stt++;
+$sql="SELECT `hoso`,`mavt`,`somay`,`cv`,`model`,`honghoc`,date_format(`ngayth`,'%d-%m-%Y') as ngayth,date_format(`ngaykt`,'%d-%m-%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string and maql='$maql' and ngaykt!='0000-00-00' ORDER by hoso";
+$result = mysql_query($sql);
+$i=1;
+$ghichu="";
+while($row = mysql_fetch_array($result))
+{
+	$hoso=$row['hoso'];
+	$cv=$row['cv'];
+	$honghoc=$row['honghoc'];
+	$mavattu=$row['mavt'];
+	$somay=$row['somay'];
+	$model=$row['model'];
+	$ngayth=$row['ngayth'];
+	$ngaykt=$row['ngaykt'];
+	$ngaysc=$row['ngaysc'];
+	$ttktafter=$row['ttktafter'];
+	if($cv=="SC") $honghoct=$honghoc; else $honghoct="";
+$sql1=mysql_query("SELECT tenvt  FROM thietbi_iso WHERE mavt='$mavattu' and somay='$somay' and model='$model' ");
+    while($row= mysql_fetch_array($sql1))
+	{
+		$tenvt = $row['tenvt'];
+	}
+    $sqlng=mysql_query("SELECT hoten,giolv  FROM ngthuchien_iso WHERE mahoso='$hoso' ");
+    $sh="";
+    $giolv="";
+    $sum=0; 
+    while($row= mysql_fetch_array($sqlng))
+	{
+		$hoten = $row['hoten'];
+		$ar=explode(" ",$hoten);
+		$k=count($ar);
+		if ($hoten=="VŨ ANH ĐỨC") $ar[$k-1]="A.ĐỨC";
+		if ($hoten=="ĐOÀN MINH ĐỨC") $ar[$k-1]="M.ĐỨC";
+		if ($hoten=="Saransev SN") $ar[$k-1]="Saransev";
+		$temp= $ar[$k-1];
+		$temp = mb_strtolower($temp, mb_detect_encoding($temp));
+		$temp=ucfirst($temp);
+		if ($temp=="A.đức") $temp="A.Đức";
+		if ($temp=="M.đức") $temp="M.Đức";
+		if($sh==""){
+			$sh=$temp;
+		}
+		else {
+			$sh=$sh.",".$temp;
+		}
+		$giolv = $row['giolv'];
+		$sum=$sum+$giolv;
+	}
+    //if (($giolv!="")&&($sh!="")) $ht="$sh:$giolv";
+echo"    <tr>
+    	<td colspan=\"2\" style=\"text-align:right\">$i &nbsp;&nbsp;&nbsp;</td>
+    	<td style=\"text-align:center\">$hoso</td>
+    	<td style=\"text-align:left;padding-left:8px\">$mavattu-$tenvt</td>
+	<td style=\"text-align:center\">$somay</td>
+	<td style=\"text-align:center\">$cv</td>
+	<td style=\"text-align:center\">$ngayth</td>
+	<td style=\"text-align:center\">$ngaykt</td>
+	<td style=\"text-align:left;padding-left:8px\">$sh</td>
+	<td style=\"text-align:center\">$ttktafter</td>
+	<td style=\"text-align:left\">$honghoct</td>
+	<td style=\"text-align:center\">$sum</td>
+		 
+	</tr>";
+    $i++;
+}
+    $tongmay=$tongmay +$i-1;
+	}
+    $donhang=$stt-1;
+echo"  <tr>
+    <td height=\"45\" colspan=\"11\">&nbsp;<b> 2. Nhóm công nghệ cao </b></td>
+    
+    </tr>";
+	 
+    $sqlmaql=mysql_query("SELECT DISTINCT maql  FROM hososcbd_iso  $month_string $where_search and nhomsc='CNC' ");
+	 */
+    $sqlmaql=mysql_query("SELECT DISTINCT maql  FROM hososcbd_iso  $month_string $exclude_tamdung $where_search or ngayth!='0000-00-00' and ngaykt ='0000-00-00' $exclude_tamdung order by nhomsc desc,`hoso` desc");
 		$stt=1;	
     while($row= mysql_fetch_array($sqlmaql))
 	{
 	$maql=$row['maql'];
-	/// Tinh tsum
-	 $tsum=0;	
-		$sql="SELECT `maql`,`hoso`,`mavt`,`somay`,`madv`,`cv`,`model`,`honghoc`,`ghichufinal`,date_format(`ngayth`,'%d/%m/%Y') as ngayth,date_format(`ngaykt`,'%d/%m/%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string $exclude_tamdung and ngayth!='0000-00-00' and maql='$maql' $where_search or ngaykt='0000-00-00' and ngayth!='0000-00-00' and maql='$maql' $where_search $exclude_tamdung ORDER by hoso";
+	        $tsum=0;	
+			$sql="SELECT `maql`,`hoso`,`mavt`,`somay`,`madv`,`cv`,`model`,`honghoc`,`ghichufinal`,date_format(`ngayth`,'%d/%m/%Y') as ngayth,date_format(`ngaykt`,'%d/%m/%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string $exclude_tamdung and ngayth!='0000-00-00' and maql='$maql' $where_search or ngaykt='0000-00-00' and ngayth!='0000-00-00' and maql='$maql' $where_search $exclude_tamdung ORDER by hoso";
+//$sql="SELECT `maql`,`hoso`,`mavt`,`somay`,`madv`,`cv`,`model`,`honghoc`,date_format(`ngayth`,'%d/%m/%Y') as ngayth,date_format(`ngaykt`,'%d/%m/%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string and maql='$maql'  $where_search and ngaykt!='0000-00-00' ORDER by hoso";
+//$sql="SELECT `maql`,`hoso`,`mavt`,`somay`,`madv`,`cv`,`model`,`honghoc`,date_format(`ngayth`,'%d/%m/%Y') as ngayth,date_format(`ngaykt`,'%d/%m/%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string and maql='$maql'  $where_search or ngayth!='0000-00-00' and ngaykt ='0000-00-00' ORDER by hoso";
 $result = mysql_query($sql);
 // Kiểm tra xem có hồ sơ nào sau khi lọc tạm dừng không
 if(mysql_num_rows($result) == 0) {
 	continue; // Bỏ qua maql này nếu không có hồ sơ
 }
+echo"   <tr>
+    <td style=\"text-align:center\">&nbsp;$stt </td>
+    <td colspan=\"10\">&nbsp; $maql</td>
+    </tr>";
+    $stt++;
+$i=1;
 $ghichu="";
-$cm = date("m");
 while($row = mysql_fetch_array($result))
 {
 	$hoso=$row['hoso'];
 	$madv=$row['madv'];
+	$cv=$row['cv'];
+	$honghoc=$row['honghoc'];
+	$mavattu=$row['mavt'];
+	$somay=$row['somay'];
+	$model=$row['model'];
+	$ngayth=$row['ngayth'];
+	$ngaykt=$row['ngaykt'];
+	$ngaysc=$row['ngaysc'];
+	$ttktafter=$row['ttktafter'];
+	$ghichufinal=$row['ghichufinal'];
+	if($cv=="SC") $honghoct=$honghoc; else $honghoct="";
+	if ($ttktafter=="") $ttktafter="Đang sửa chữa";
+	if ($ttktafter=="Chưa kết luận") $ttktafter=$ghichufinal;
+	if ($ttktafter=="Tốt") $ttktafter="Đạt";
+	if ($ttktafter=="Hỏng") $ttktafter="Hỏng-Không khắc phục được ";
+    if($ngaykt=="00/00/0000") $ngaykt="Đang TH";
 	
-    $sqlng=mysql_query("SELECT hoten,giolv,giolv1,giolv2,giolv3,giolv4,giolv5,giolv6,giolv7,giolv8,giolv9,giolv10,giolv11,giolv12,ngaykt  FROM ngthuchien_iso WHERE mahoso='$hoso' ");
+	// Đếm số máy đạt, hỏng, TTKTĐB, chờ vật tư, đang sửa chữa
+	if ($ttktafter=="Đạt") $tongmaydat++;
+	if ($ttktafter=="Hỏng-Không khắc phục được ") $tongmayhong++;
+	if ($ttktafter=="TTKTDB") $tongmayttktdb++;
+	if ($ttktafter=="Chờ vật tư thay thế") $tongmayvattu++;
+	if ($ttktafter=="Đang sửa chữa") $tongmaydangsc++;
+		
+$sql1=mysql_query("SELECT tenvt  FROM thietbi_iso WHERE mavt='$mavattu' and somay='$somay' and model='$model' ");
+    while($row= mysql_fetch_array($sql1))
+	{
+		$tenvt = $row['tenvt'];
+	}
+      $sqlng=mysql_query("SELECT hoten,giolv,giolv1,giolv2,giolv3,giolv4,giolv5,giolv6,giolv7,giolv8,giolv9,giolv10,giolv11,giolv12,ngaykt  FROM ngthuchien_iso WHERE mahoso='$hoso' ");
     $sh="";
     $giolv="";
     $sum=0;
     while($row= mysql_fetch_array($sqlng))
 	{
 		$hoten = $row['hoten'];
-		$ngaykt = $row['ngaykt'];
 		$ar=explode(" ",$hoten);
 		$k=count($ar);
 		if ($hoten=="VŨ ANH ĐỨC") $ar[$k-1]="A.ĐỨC";
@@ -325,206 +444,68 @@ while($row = mysql_fetch_array($result))
 				$giolv=$giolv1-($giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2);
 			}
 			if($giolv<0) $giolv=0; 
-
-		$sum=$sum + $giolv;
-
-	}
-    $tsum=$tsum+$sum;
-}
-////////////////////////////////////////////////
-	echo"   <tr>
-    <td style=\"text-align:center\">&nbsp;$stt </td>
-    <td colspan=\"8\">&nbsp; $maql</td>
-	<td style=\"text-align:center\">$madv</td>
-	<td style=\"text-align:center\"><b>$tsum</b></td>
-    </tr>";
-    $stt++;
-
-	        $tsum=0;	
-		$sql="SELECT `maql`,`hoso`,`mavt`,`somay`,`madv`,`cv`,`model`,`honghoc`,`ghichufinal`,date_format(`ngayth`,'%d/%m/%Y') as ngayth,date_format(`ngaykt`,'%d/%m/%Y') as ngaykt,datediff(ngaykt,ngayth) as ngaysc,`ttktafter` FROM `hososcbd_iso` $month_string $exclude_tamdung and ngayth!='0000-00-00' and maql='$maql' $where_search or ngaykt='0000-00-00' and ngayth!='0000-00-00' and maql='$maql' $where_search $exclude_tamdung ORDER by hoso";
-$result = mysql_query($sql);
-$ghichu="";
-$i=1;
-while($row = mysql_fetch_array($result))
-{
-	$hoso=$row['hoso'];
-	$madv=$row['madv'];
-	$cv=$row['cv'];
-	$honghoc=$row['honghoc'];
-	$mavattu=$row['mavt'];
-	$somay=$row['somay'];
-	$model=$row['model'];
-	$ngayth=$row['ngayth'];
-	$ngaykt=$row['ngaykt'];
-	$ngaysc=$row['ngaysc'];
-	$ttktafter=$row['ttktafter'];
-	$ghichufinal=$row['ghichufinal'];
-	if($cv=="SC") $honghoct=$honghoc; else $honghoct="";
-	if ($ttktafter=="") $ttktafter="Đang sửa chữa";
-	if ($ttktafter=="Chưa kết luận") $ttktafter=$ghichufinal;
-	if ($ttktafter=="Hỏng") $ttktafter="Hỏng-Không khắc phục được ";
-    if($ngaykt=="00/00/0000") $ngaykt="Đang TH";
-		
-$sql1=mysql_query("SELECT tenvt  FROM thietbi_iso WHERE mavt='$mavattu' and somay='$somay' and model='$model' ");
-    while($row= mysql_fetch_array($sql1))
-	{
-		$tenvt = $row['tenvt'];
-	}
-    $sqlng=mysql_query("SELECT hoten,giolv,giolv1,giolv2,giolv3,giolv4,giolv5,giolv6,giolv7,giolv8,giolv9,giolv10,giolv11,giolv12  FROM ngthuchien_iso WHERE mahoso='$hoso' ");
-    $sh="";
-    $giolv="";
-    $sum=0;
-    while($row= mysql_fetch_array($sqlng))
-	{
-		$hoten = $row['hoten'];
-		$ar=explode(" ",$hoten);
-		$k=count($ar);
-		if ($hoten=="VŨ ANH ĐỨC") $ar[$k-1]="A.ĐỨC";
-		if ($hoten=="ĐOÀN MINH ĐỨC") $ar[$k-1]="M.ĐỨC";
-		$temp= $ar[$k-1];
-		$temp = mb_strtolower($temp, mb_detect_encoding($temp));
-		$temp=ucfirst($temp);
-		if ($temp=="A.đức") $temp="A.Đức";
-		if ($temp=="M.đức") $temp="M.Đức";
-		if ($temp=="đạt") $temp="Đạt";
-		if($sh==""){
-			$sh=$temp;
-		}
-		else {
-			$sh=$sh.",".$temp;
-		}
-	$giolv1 = $row['giolv1'];
-		$giolv2 = $row['giolv2'];
-		$giolv3 = $row['giolv3'];
-		$giolv4 = $row['giolv4'];
-		$giolv5 = $row['giolv5'];
-		$giolv6 = $row['giolv6'];
-		$giolv7 = $row['giolv7'];
-		$giolv8 = $row['giolv8'];
-		$giolv9 = $row['giolv9'];
-		$giolv10 = $row['giolv10'];
-		$giolv11 = $row['giolv11'];
-		$giolv12 = $row['giolv12'];
-
-			if($mto==12) {
-	                if($giolv12==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv12-($giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1);
-			}
-			if($mto==11) {
-	                if($giolv11==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv11-($giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12);
-			}
-			if($mto==10) {
-	                if($giolv10==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv10-($giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11);
-			}
-			if($mto==9) {
-	                if($giolv9==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv9-($giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10);
-			}
-			if($mto==8) {
-	                if($giolv8==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv8-($giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9);
-			}
-			if($mto==7) {
-	                if($giolv7==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv7-($giolv6+$giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8);
-			}
-			if($mto==6) {
-	                if($giolv6==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv6-($giolv5+$giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7);
-			}
-			if($mto==5) {
-	                if($giolv5==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv5-($giolv4+$giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6);
-			}
-			if($mto==4) {
-	                if($giolv4==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv4-($giolv3+$giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5);
-			}
-			if($mto==3) {
-	                if($giolv3==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv3-($giolv2+$giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4);
-			}
-			if($mto==2) {
-	                if($giolv2==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv2-($giolv1+$giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3);
-			}
-			if($mto==1) {
-	                if($giolv1==0)	
-				$giolv=0;
-			else 
-				$giolv=$giolv1-($giolv12+$giolv11+$giolv10+$giolv9+$giolv8+$giolv7+$giolv6+$giolv5+$giolv4+$giolv3+$giolv2);
-			}
-			if($giolv<0) $giolv=0; 
 		$sum=$sum + $giolv;
 
 	}
     $tsum=$tsum+$sum;
     if (($giolv!="")&&($sh!="")) $ht="$sh:$giolv";
-	$tongmay=$tongmay +$i-1;
-	
-
 echo"    <tr>
-	<td colspan=\"2\" style=\"text-align:right\">$i &nbsp;&nbsp;&nbsp;</td>
-	 	<td style=\"text-align:left;padding-left:8px\">$hoso</td>
-	 	<td style=\"text-align:left;padding-left:8px\">$mavattu-$tenvt</td>
+    <td colspan=\"2\" style=\"text-align:right\">$i &nbsp;&nbsp;&nbsp;</td>
+    	<td style=\"text-align:left;padding-left:8px\">$hoso</td>
+    	<td style=\"text-align:left;padding-left:8px\">$mavattu-$tenvt</td>
 	<td style=\"text-align:left;padding-left:8px\">$somay</td>
 	<td style=\"text-align:left;padding-left:8px\">$cv</td>
+	<td style=\"text-align:left;padding-left:8px\">$ngayth</td>
 	<td style=\"text-align:left;padding-left:8px\">$ngaykt</td>
 	<td style=\"text-align:left;padding-left:8px\">$sh</td>
 	<td style=\"text-align:left;padding-left:8px\">$ttktafter</td>
-	<td style=\"text-align:left;padding-left:8px\">$ghichufinal</td>
-	<td style=\"text-align:center\"></td>
-	<td style=\"text-align:center\">$sum</td>
-	
+	<td style=\"text-align:left\">$honghoct</td>
 	</tr>";
     $i++;
-
-	}
-	
-    $donhang=$donhang+$stt-1;
     
 
 }
 
 $tongmay=$tongmay +$i-1;
 
+	}
     $donhang=$donhang+$stt-1;
-  
+	echo"<tr><td colspan=\"11\">&nbsp;</td></tr>";
+    echo "<tr>
+			
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số đơn hàng : $donhang</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy : $tongmay</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy đạt : $tongmaydat</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy hỏng (Không khắc phục được) : $tongmayhong</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy TTKTĐB : $tongmayttktdb</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy chờ vật tư thay thế : $tongmayvattu</b></td>
+	  </tr>";
+    echo "<tr>
+          <td height=\"25\" colspan=\"11\">&nbsp;<b> Tổng số máy đang sửa chữa : $tongmaydangsc</b></td>
+	  </tr>";
+
+
+	
 echo"</table>
 
  <p>&nbsp;<b> 3. Công tác Hiệu chuẩn/ Kiểm định thiết bị </b></p>
     
  <table width=\"1100\" height=\"160\" border=\"1\" class=\"table1\">
   <tr>
-    <th width=\"10\" border=\"0\"></th>
     <th width=\"60\">STT</th>
     <th width=\"75\">SỐ HỒ S� </th>
     <th width=\"185\">TÊN MÁY </th>
-    <th width=\"120\">SỐ MÁY </th>
+    <th width=\"150\">SỐ MÁY </th>
     <th width=\"83\">C.VIỆC</th>
     <th width=\"58\">Ngày TH</th>
     <th width=\"88\">Nhân viên thực hiện</th>
@@ -532,7 +513,7 @@ echo"</table>
     <th width=\"90\">Bên yêu cầu</th>
     <th width=\"100\">Số giờ</th>
   </tr>";  
-	$j=1;
+	$i=1;
 	$sql1="SELECT `sohs`,`tenmay`,`congviec`,date_format(`ngayhc`,'%d/%m/%Y') as ngayhc,date_format(`ngayhctt`,'%d/%m/%Y') as ngayhctt,`nhanvien`,`noithuchien`,`ttkt` FROM `hosohckd_iso` WHERE ngayhc BETWEEN '$yfrom-$mfrom-$dfrom 00:00:00' AND '$yto-$mto-$dto 00:00:00' AND ttkt ='Tốt' order by `noithuchien` asc,`ttkt` desc,`ngayhc` asc,`sohs` asc";
 	$result = mysql_query($sql1);
 	while($row = mysql_fetch_array($result))
@@ -558,8 +539,8 @@ echo"</table>
 	}
 
 	echo"    <tr>
-        <td style=\"text-align:center\"></td>
-    	<td style=\"text-align:center\">$j</td>
+   
+    	<td style=\"text-align:center\">$i</td>
     	<td style=\"text-align:left;padding-left:8px\">"; if($tinhtrangkt=="Tốt"){ echo $sohs; } echo"</td>
 	<td style=\"text-align:center\">$tenviettat</td>
 	<td style=\"text-align:center\">$somay</td>
@@ -570,7 +551,27 @@ echo"</table>
 	<td style=\"text-align:left\"> "; if($bophansh=="XDT"){ echo $chusohuu; }else{ echo $bophansh; } echo"</td>
 	<td style=\"text-align:center\"> 1";  echo"</td>
 	</tr>";
-	 $j++; } 
+	$i++; }
+       echo"</table>
+
+ <p>&nbsp;<b> 4. Công việc khác</b></p>
+    
+ <table width=\"1100\" height=\"160\" border=\"1\" class=\"table1\">
+  <tr>
+    <th width=\"40\">STT</th>
+    <th width=\"500\">Công việc</th>
+    <th width=\"500\">Tiến độ thực hiện</th>
+    <th width=\"200\">Nhân viên thực hiện</th>
+    </tr>"; 
+for ($j = 1; $j <= 5; $j++) {	
+       echo"    <tr>
+   
+    	<td style=\"text-align:center\">$j</td>
+    	<td style=\"text-align:center\"></td>
+	<td style=\"text-align:center\"></td>
+	<td style=\"text-align:center\"></td>";	
+}	
+ echo"</table>";	
 if ($printMode) {
 	echo "<script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};</script>";
 	echo "</body>";

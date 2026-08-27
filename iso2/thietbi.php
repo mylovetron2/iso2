@@ -16,6 +16,27 @@ if (!hasPermission('thietbi.view')) {
 $controller = new ThietBiController();
 $action = $_GET['action'] ?? 'index';
 
+// Support malformed direct links like action=create%C2%A9_from=... or action=create_from
+if (is_string($action) && preg_match('/create.*from/i', $action) && !in_array($action, ['create', 'copy'], true)) {
+    $action = 'create';
+}
+
+if (is_string($action) && preg_match('/^copy/i', $action)) {
+    $action = 'create';
+}
+
+if (is_string($action) && strpos($action, 'create') !== false && strpos($action, 'from') !== false) {
+    $action = 'create';
+}
+
+if (isset($_GET['copy_from'])) {
+    $_GET['copy_from'] = (string)$_GET['copy_from'];
+}
+
+if (!isset($_GET['copy_from']) && isset($_GET['create_from'])) {
+    $_GET['copy_from'] = $_GET['create_from'];
+}
+
 switch ($action) {
     case 'view':
         $controller->view();

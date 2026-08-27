@@ -69,7 +69,126 @@ class HoSoSCBDDinhMuc extends BaseModel
                 [$hososcbdStt]
             );
             $row = $stmt->fetch();
-            return $row ?: false;
+            if ($row) {
+                return $row;
+            }
+
+            $rawStmt = $this->query(
+                "SELECT
+                    d.id AS dinhmuc_id,
+                    d.hososcbd_stt,
+                    h.hoso,
+                    h.phieu,
+                    h.mavt,
+                    h.somay,
+                    d.loai_congviec,
+                    d.dinh_muc_gio_thu_cong,
+                    d.kpi_baoduong_stt,
+                    k.ten_thiet_bi,
+                    CASE d.loai_congviec
+                        WHEN 'kiem_tra'   THEN k.kiem_tra_nhan_cong
+                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_nhan_cong
+                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_nhan_cong
+                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_nhan_cong
+                        WHEN 'hieu_chuan' THEN k.hieu_chuan_nhan_cong
+                    END AS dinh_muc_nhan_cong,
+                    COALESCE(
+                        d.dinh_muc_gio_thu_cong,
+                        CASE d.loai_congviec
+                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
+                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
+                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
+                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
+                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
+                        END
+                    ) AS dinh_muc_so_gio,
+                    CASE d.loai_congviec
+                        WHEN 'kiem_tra'   THEN k.kiem_tra_nguoi_thuc_hien
+                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_nguoi_thuc_hien
+                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_nguoi_thuc_hien
+                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_nguoi_thuc_hien
+                        WHEN 'hieu_chuan' THEN k.hieu_chuan_nguoi_thuc_hien
+                    END AS dinh_muc_nguoi_thuc_hien,
+                    CASE d.loai_congviec
+                        WHEN 'kiem_tra'   THEN k.kiem_tra_noi_dung
+                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_noi_dung
+                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_noi_dung
+                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_noi_dung
+                        WHEN 'hieu_chuan' THEN k.hieu_chuan_noi_dung
+                    END AS dinh_muc_noi_dung,
+                    CASE d.loai_congviec
+                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_tan_suat_thang
+                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_tan_suat_thang
+                        WHEN 'hieu_chuan' THEN k.hieu_chuan_tan_suat_thang
+                        ELSE NULL
+                    END AS dinh_muc_tan_suat_thang,
+                    (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) AS gio_thuc_te,
+                    CASE
+                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) IS NULL OR COALESCE(d.dinh_muc_gio_thu_cong, CASE d.loai_congviec
+                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
+                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
+                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
+                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
+                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
+                        END) IS NULL THEN 'chua_du_du_lieu'
+                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) <= COALESCE(d.dinh_muc_gio_thu_cong, CASE d.loai_congviec
+                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
+                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
+                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
+                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
+                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
+                        END) THEN 'dat'
+                        ELSE 'khong_dat'
+                    END AS ket_luan_kpi
+                 FROM hososcbd_dinhmuc_iso d
+                 INNER JOIN hososcbd_iso h ON h.stt = d.hososcbd_stt
+                 LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = d.kpi_baoduong_stt
+                 WHERE d.hososcbd_stt = ?
+                 LIMIT 1",
+                [$hososcbdStt]
+            );
+            $rawRow = $rawStmt->fetch();
+            if ($rawRow) {
+                return $rawRow;
+            }
+
+            $fallbackStmt = $this->query(
+                "SELECT
+                    NULL AS dinhmuc_id,
+                    h.stt AS hososcbd_stt,
+                    h.hoso,
+                    h.phieu,
+                    h.mavt,
+                    h.somay,
+                    'bd_cap_1' AS loai_congviec,
+                    NULL AS dinh_muc_gio_thu_cong,
+                    k.id AS kpi_baoduong_stt,
+                    k.ten_thiet_bi,
+                    k.bd_cap_1_nhan_cong AS dinh_muc_nhan_cong,
+                    k.bd_cap_1_so_gio AS dinh_muc_so_gio,
+                    k.bd_cap_1_nguoi_thuc_hien AS dinh_muc_nguoi_thuc_hien,
+                    k.bd_cap_1_noi_dung AS dinh_muc_noi_dung,
+                    NULL AS dinh_muc_tan_suat_thang,
+                    (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) AS gio_thuc_te,
+                    CASE
+                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) IS NULL OR k.bd_cap_1_so_gio IS NULL THEN 'chua_du_du_lieu'
+                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) <= k.bd_cap_1_so_gio THEN 'dat'
+                        ELSE 'khong_dat'
+                    END AS ket_luan_kpi
+                 FROM hososcbd_iso h
+                 LEFT JOIN (
+                    SELECT MIN(stt) AS stt, mavt, somay
+                    FROM thietbi_iso
+                    GROUP BY mavt, somay
+                 ) t ON t.mavt = h.mavt AND t.somay = h.somay
+                 LEFT JOIN thietbi_kpi_baoduong_iso l ON l.thietbi_stt = t.stt
+                 LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = l.kpi_baoduong_stt
+                 WHERE h.stt = ? AND k.id IS NOT NULL
+                 LIMIT 1",
+                [$hososcbdStt]
+            );
+            $fallbackRow = $fallbackStmt->fetch();
+            return $fallbackRow ?: false;
         } catch (PDOException $e) {
             error_log('Error querying view_hososcbd_kpi_ketluan: ' . $e->getMessage());
             return false;
@@ -113,6 +232,49 @@ class HoSoSCBDDinhMuc extends BaseModel
             ]);
         } catch (PDOException $e) {
             error_log('Error saving hososcbd_dinhmuc_iso: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gán định mức mặc định cho hồ sơ theo thiết bị được chọn.
+     * Mặc định: loại công việc = bd_cap_1.
+     */
+    public function autoAssignDefaultByDevice(int $hososcbdStt, string $mavt, string $somay, ?string $createdBy = null): bool
+    {
+        $mavt = trim($mavt);
+        $somay = trim($somay);
+        if ($hososcbdStt <= 0 || $mavt === '' || $somay === '') {
+            return false;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT l.kpi_baoduong_stt
+                 FROM thietbi_iso t
+                 LEFT JOIN thietbi_kpi_baoduong_iso l ON l.thietbi_stt = t.stt
+                 WHERE t.mavt = :mavt AND t.somay = :somay
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':mavt' => $mavt,
+                ':somay' => $somay,
+            ]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row || empty($row['kpi_baoduong_stt'])) {
+                return false;
+            }
+
+            return $this->luuDinhMuc(
+                $hososcbdStt,
+                (int)$row['kpi_baoduong_stt'],
+                'bd_cap_1',
+                $createdBy,
+                null
+            );
+        } catch (PDOException $e) {
+            error_log('Error auto assigning default KPI by device: ' . $e->getMessage());
             return false;
         }
     }

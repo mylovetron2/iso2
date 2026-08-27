@@ -228,12 +228,15 @@ class ThongKeKPINhanVienSCBDController
                     ON h.hoso = nv.mahoso
                 LEFT JOIN view_hososcbd_kpi_ketluan vk
                     ON vk.hososcbd_stt = h.stt
-                WHERE h.ngayyc BETWEEN :from_date AND :to_date
+                                WHERE h.ngayth BETWEEN :from_date_th AND :to_date_th
+                                    AND h.ngaykt BETWEEN :from_date_kt AND :to_date_kt
                   AND h.cv IN ('BD', 'KT')";
 
         $params = [
-            ':from_date' => $fromDate,
-            ':to_date' => $toDate,
+                        ':from_date_th' => $fromDate,
+                        ':to_date_th' => $toDate,
+                        ':from_date_kt' => $fromDate,
+                        ':to_date_kt' => $toDate,
         ];
 
         if ($keyword !== '') {
@@ -280,12 +283,15 @@ class ThongKeKPINhanVienSCBDController
                     ON h.hoso = nv.mahoso
                 LEFT JOIN view_hososcbd_kpi_ketluan vk
                     ON vk.hososcbd_stt = h.stt
-                WHERE h.ngayyc BETWEEN :from_date AND :to_date
+                                WHERE h.ngayth BETWEEN :from_date_th AND :to_date_th
+                                    AND h.ngaykt BETWEEN :from_date_kt AND :to_date_kt
                   AND h.cv IN ('BD', 'KT')";
 
         $params = [
-            ':from_date' => $fromDate,
-            ':to_date' => $toDate,
+                        ':from_date_th' => $fromDate,
+                        ':to_date_th' => $toDate,
+                        ':from_date_kt' => $fromDate,
+                        ':to_date_kt' => $toDate,
         ];
 
         if ($keyword !== '') {

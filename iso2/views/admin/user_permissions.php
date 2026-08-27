@@ -286,6 +286,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <th class="px-2 md:px-4 py-2 border text-xs md:text-sm">Username</th>
                         <th class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell">Tên</th>
                         <th class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">Email</th>
+                        <th class="px-2 md:px-4 py-2 border text-xs md:text-sm">Password</th>
                         <th class="px-2 md:px-4 py-2 border text-xs md:text-sm">Role</th>
                         <th class="px-2 md:px-4 py-2 border text-xs md:text-sm">Thao tác</th>
                     </tr>
@@ -298,6 +299,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm font-semibold"><?php echo htmlspecialchars($user['username']); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($user['hoten'] ?? $user['username']); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
+                            <td class="px-2 md:px-4 py-2 border text-xs md:text-sm font-mono"><?php echo htmlspecialchars($user['password'] ?? ''); ?></td>
                             <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                                 <?php
                                 if (count($userRoles) > 0) {
@@ -316,7 +318,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             </td>
                         </tr>
                         <tr id="permission-row-<?php echo (int)$user['stt']; ?>" class="hidden bg-yellow-50">
-                            <td colspan="5" class="px-2 md:px-4 py-3 border">
+                            <td colspan="6" class="px-2 md:px-4 py-3 border">
                                 <form method="POST" class="js-inline-permission-form flex flex-col md:flex-row md:items-end gap-2 md:gap-3">
                                     <input type="hidden" name="user_id" value="<?php echo (int)$user['stt']; ?>">
                                     <input type="hidden" name="return_search" value="<?php echo htmlspecialchars($search); ?>">

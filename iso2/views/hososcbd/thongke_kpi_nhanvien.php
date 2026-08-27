@@ -13,9 +13,6 @@ require_once __DIR__ . '/../layouts/header.php';
                 <i class="fas fa-user-check mr-2 text-blue-600"></i>
                 Thống kê KPI theo nhân viên
             </h1>
-            <p class="text-sm text-gray-600 mt-2">
-                Tỷ lệ = Số thiết bị hoàn thành đúng tiến độ (chỉ tính BD và KT) / Tổng số thiết bị được giao * 100
-            </p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="hososcbd.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm w-fit">
@@ -179,9 +176,6 @@ require_once __DIR__ . '/../layouts/header.php';
         </table>
     </div>
 
-    <div class="mt-5 text-xs text-gray-500 leading-6">
-        <p><strong>Lưu ý:</strong> Chỉ tính các hồ sơ có loại công việc BD hoặc KT; loại SC và BDDK không được tính vào KPI.</p>
-    </div>
 </div>
 
 <script>

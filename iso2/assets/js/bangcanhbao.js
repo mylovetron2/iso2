@@ -27,9 +27,18 @@ function initThietBiAutoFill() {
 
         // Cập nhật thietbi_stt từ data-stt của option được chọn
         const selectedOption = this.options[this.selectedIndex];
-        const stt = selectedOption ? (selectedOption.getAttribute('data-stt') || 0) : 0;
+        const stt = Number(selectedOption ? (selectedOption.getAttribute('data-stt') || 0) : 0);
         const hiddenStt = document.getElementById('thietbi_stt');
-        if (hiddenStt) hiddenStt.value = stt;
+        if (hiddenStt) {
+            hiddenStt.value = stt;
+            hiddenStt.dataset.currentDeviceStt = String(stt || '');
+        }
+
+        const hosoSttInput = document.getElementById('hoso_stt');
+        const currentDeviceStt = Number(hiddenStt ? (hiddenStt.dataset.currentDeviceStt || hiddenStt.value || 0) : 0);
+        if (hosoSttInput && currentDeviceStt && Number(hosoSttInput.value) > 0 && Number(hosoSttInput.value) !== Number(hosoSttInput.dataset.currentHosoStt || 0)) {
+            hosoSttInput.value = '0';
+        }
 
         try {
             // Lấy thông tin thiết bị
@@ -43,8 +52,8 @@ function initThietBiAutoFill() {
                 document.getElementById('chuphuongtien').value = thietbi.bophansh || '';
             }
             
-            // Lấy hồ sơ cũ để tham khảo
-            const hosoData = await fetchAPI(`api/bangcanhbao.php?action=get_hoso_latest&mavattu=${encodeURIComponent(mavattu)}`);
+            // Lấy hồ sơ cũ để tham khảo theo thiết bị vật lý đang chọn
+            const hosoData = await fetchAPI(`api/bangcanhbao.php?action=get_hoso_latest&mavattu=${encodeURIComponent(mavattu)}&thietbi_stt=${encodeURIComponent(stt)}`);
             
             if (hosoData.success && hosoData.data) {
                 const hoso = hosoData.data;
@@ -161,6 +170,12 @@ function initDuplicateCheck() {
         // Không check duplicate nếu đang edit (có ngayhc trong URL)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('ngayhc')) return;
+
+        const hiddenHosoStt = document.getElementById('hoso_stt');
+        const selectedStt = Number(document.getElementById('thietbi_stt')?.value || 0);
+        if (hiddenHosoStt && selectedStt > 0 && Number(hiddenHosoStt.value) > 0 && hiddenHosoStt.dataset.currentHosoStt && Number(hiddenHosoStt.value) !== Number(hiddenHosoStt.dataset.currentHosoStt)) {
+            hiddenHosoStt.value = '0';
+        }
         
         e.preventDefault();
         
@@ -168,6 +183,7 @@ function initDuplicateCheck() {
             const formData = new FormData();
             formData.append('mavattu', mavattu);
             formData.append('ngayhc', ngayhc);
+            formData.append('thietbi_stt', document.getElementById('thietbi_stt').value);
             
             const response = await fetch('api/bangcanhbao.php?action=check_duplicate', {
                 method: 'POST',
@@ -177,7 +193,7 @@ function initDuplicateCheck() {
             const data = await response.json();
             
             if (data.exists) {
-                if (confirm('Hồ sơ này đã tồn tại. Bạn có muốn cập nhật không?')) {
+                if (confirm('Hồ sơ này đã tồn tại. Chọn OK để cập nhật hồ sơ hiện có hoặc Hủy để quay lại chỉnh sửa.')) {
                     form.submit();
                 }
             } else {

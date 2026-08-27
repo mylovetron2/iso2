@@ -266,6 +266,30 @@ flowchart LR
     <p>Tài liệu chi tiết: <code>HOSOSCBD_ISO_TABLE.md</code>, migration: <code>migrations/20260810_create_hososcbd_dinhmuc_iso.sql</code>.</p>
 </div>
 
+<div class="card">
+    <h2>4. Luồng lưu định mức thật của hồ sơ vào CSDL</h2>
+    <pre class="mermaid">
+flowchart TD
+    A[Người dùng mở hososcbd_repair_details.php] --> B{Đã có bản ghi trong hososcbd_dinhmuc_iso?}
+    B -->|Chưa| C[Hiển thị fallback theo KPI thiết bị<br/>mặc định loai_congviec = bd_cap_1]
+    B -->|Rồi| D[Đọc định mức thật qua view_hososcbd_kpi_ketluan]
+    C --> E[Người dùng chọn KPI + loai_congviec<br/>hoặc nhập dinh_muc_gio_thu_cong]
+    D --> E
+    E --> F[Submit POST dinhmuc_action]
+    F --> G[HoSoSCBDDinhMuc::luuDinhMuc]
+    G --> H{Đã có dòng theo hososcbd_stt?}
+    H -->|Chưa| I[INSERT hososcbd_dinhmuc_iso<br/>hososcbd_stt + kpi_baoduong_stt + loai_congviec<br/>hoặc dinh_muc_gio_thu_cong]
+    H -->|Rồi| J[UPDATE bằng ON DUPLICATE KEY<br/>ghi đè kpi_baoduong_stt / loai_congviec / dinh_muc_gio_thu_cong]
+    I --> K[(hososcbd_dinhmuc_iso)]
+    J --> K
+    K --> L[1 bản ghi thật gắn với hồ sơ]
+    L --> M[Reload repair_details]
+    M --> N[layTheoHoSo ưu tiên đọc bản ghi thật]
+    N --> O[Hiển thị định mức chính thức của hồ sơ]
+    </pre>
+    <p>Ý nghĩa: fallback chỉ để hiển thị mặc định; khi người dùng bấm lưu, dữ liệu chính thức sẽ được ghi vào <code>hososcbd_dinhmuc_iso</code> và từ lần sau trang chi tiết ưu tiên đọc bản ghi thật này.</p>
+</div>
+
 <script>
     mermaid.initialize({ startOnLoad: true, theme: 'default' });
 </script>

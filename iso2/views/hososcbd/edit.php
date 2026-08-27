@@ -595,7 +595,10 @@ function displayDeviceResults(devices, query = '') {
         const isAvailable = device.is_available !== false;
         const disabledClass = !isAvailable ? 'opacity-50 cursor-not-allowed' : '';
         const hoverClass = isAvailable ? 'hover:bg-blue-50 cursor-pointer' : '';
-        const onclickAttr = isAvailable ? `onclick="selectDevice('${escapeHtml(device.mavt)}', '${escapeHtml(device.somay)}', '${escapeHtml(device.model)}', ${isAvailable})"` : '';
+        const safeMavt = JSON.stringify(String(device.mavt || ''));
+        const safeSomay = JSON.stringify(String(device.somay || ''));
+        const safeModel = JSON.stringify(String(device.model || ''));
+        const onclickAttr = isAvailable ? `onclick='selectDevice(${safeMavt}, ${safeSomay}, ${safeModel}, ${isAvailable})'` : '';
         const statusBadge = !isAvailable ? '<span class="inline-block ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>Đang sử dụng</span>' : '';
         const buttonContent = isAvailable ? '<i class="fas fa-check mr-1"></i>Chọn' : '<i class="fas fa-lock mr-1"></i>Không khả dụng';
         const buttonClass = isAvailable ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed';

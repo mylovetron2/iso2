@@ -17,10 +17,56 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     <?php endif; ?>
 
+    <?php if (!empty($thietBi) && !empty($hoSoList)): ?>
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">
+            <i class="fas fa-history mr-2 text-blue-600"></i> Lịch sử HC/KĐ của thiết bị
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full border-collapse border border-gray-300 text-sm">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-gray-300 px-3 py-2 text-left">Số hồ sơ</th>
+                        <th class="border border-gray-300 px-3 py-2 text-left">Ngày thực hiện</th>
+                        <th class="border border-gray-300 px-3 py-2 text-left">Ngày tiếp theo</th>
+                        <th class="border border-gray-300 px-3 py-2 text-left">Người thực hiện</th>
+                        <th class="border border-gray-300 px-3 py-2 text-left">Nơi thực hiện</th>
+                        <th class="border border-gray-300 px-3 py-2 text-left">Kết quả</th>
+                        <th class="border border-gray-300 px-3 py-2 text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($hoSoList as $history): ?>
+                        <tr class="hover:bg-blue-50">
+                            <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['sohs'] ?? ''); ?></td>
+                            <td class="border border-gray-300 px-3 py-2">
+                                <?php echo !empty($history['ngayhc']) ? date('d/m/Y', strtotime($history['ngayhc'])) : ''; ?>
+                            </td>
+                            <td class="border border-gray-300 px-3 py-2">
+                                <?php echo !empty($history['ngayhctt']) ? date('d/m/Y', strtotime($history['ngayhctt'])) : ''; ?>
+                            </td>
+                            <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['nhanvien'] ?? ''); ?></td>
+                            <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['noithuchien'] ?? ''); ?></td>
+                            <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['ttkt'] ?? ''); ?></td>
+                            <td class="border border-gray-300 px-3 py-2 text-center">
+                                <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($mavattu); ?>&stt=<?php echo (int)($thietBi['stt'] ?? 0); ?>&ngayhc=<?php echo urlencode($history['ngayhc'] ?? ''); ?>"
+                                   class="text-blue-600 hover:text-blue-800" title="Sửa hồ sơ">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <form method="post" action="bangcanhbao.php?action=savehoso" class="space-y-4">
         <!-- Hidden fields -->
         <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>">
-        <input type="hidden" name="thietbi_stt" id="thietbi_stt" value="<?php echo (int)($thietBi['stt'] ?? 0); ?>">
+        <input type="hidden" name="thietbi_stt" id="thietbi_stt" value="<?php echo (int)($thietBi['stt'] ?? 0); ?>" data-current-device-stt="<?php echo (int)($thietBi['stt'] ?? 0); ?>">
+        <input type="hidden" name="hoso_stt" id="hoso_stt" value="<?php echo $mode === 'edit' ? (int)($hoSo['stt'] ?? 0) : 0; ?>">
         
         <!-- Số Hồ Sơ -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -68,15 +114,16 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
         </div>
 
-        <!-- Ngày HC & Ngày HC Tiếp Theo -->
+        <!-- Ngày thực hiện & ngày HC tiếp theo -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-base font-bold text-gray-800 mb-2">
-                    <i class="fas fa-calendar-check text-green-600"></i> Ngày Hiệu Chuẩn <span class="text-red-500">*</span>
+                    <i class="fas fa-calendar-check text-green-600"></i> Ngày thực hiện HC/KĐ <span class="text-red-500">*</span>
                 </label>
                 <input type="date" name="ngayhc" id="ngayhc" 
                        value="<?php echo htmlspecialchars($hoSo['ngayhc'] ?? ''); ?>" 
                        class="border rounded px-3 py-2 w-full" required>
+                <small class="text-gray-500 text-xs mt-1 block">Được phép nhập ngày thực hiện bất kỳ, không bắt buộc trùng tháng kế hoạch.</small>
             </div>
 
             <div>
