@@ -20,7 +20,7 @@ if (!defined('DB_HOST')) {
         define('DB_CHARSET', 'latin1');
     } else {
         // Database production (mặc định)
-        define('DB_HOST', 'diavatly.com');
+        define('DB_HOST', '118.69.204.200');
         define('DB_USER', 'diavatly_master');
         define('DB_PASS', '12345678');
         define('DB_NAME', 'diavatly_db');

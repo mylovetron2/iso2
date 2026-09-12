@@ -89,8 +89,11 @@ class HoSoHCKD extends BaseModel {
      */
     public function getByDeviceAndDate(string $mavattu, string $ngayhc, ?int $thietbiStt = null): ?array {
         try {
+            $ngayhcDate = DateTime::createFromFormat('!Y-m-d', substr($ngayhc, 0, 10));
+            $ngayhc = $ngayhcDate ? $ngayhcDate->format('Y-m-d') : $ngayhc;
+
             $sql = "SELECT * FROM {$this->table} 
-                    WHERE ngayhc = :ngayhc";
+                WHERE DATE(ngayhc) = :ngayhc";
             $params = ['ngayhc' => $ngayhc];
 
             if ($thietbiStt !== null && $thietbiStt > 0) {

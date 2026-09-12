@@ -143,12 +143,16 @@ $totalItems = count($items);
 $conhan = 0;
 $saphethan = 0;
 $dahethan = 0;
+$hong = 0;
 $chuahc = 0;
 
 foreach ($items as $item) {
     $ngayHCGanNhat = $item['ngayhc_latest'] ?? $item['ngayktnghiemthu'];
+    $ketQuaGanNhat = trim((string)($item['ttkt_latest'] ?? ''));
     
-    if (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
+    if (mb_strtolower($ketQuaGanNhat, 'UTF-8') === 'hỏng') {
+        $hong++;
+    } elseif (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
         $ngayHC = new DateTime($ngayHCGanNhat);
         $ngayHetHan = clone $ngayHC;
         $ngayHetHan->modify('+' . (int)$item['thoihankd'] . ' months');
@@ -168,11 +172,12 @@ foreach ($items as $item) {
 }
 
 $statsText = sprintf(
-    'Tổng số: %d | Còn hạn: %d | Sắp hết hạn: %d | Đã hết hạn: %d | Chưa HC: %d',
+    'Tổng số: %d | Còn hạn: %d | Sắp hết hạn: %d | Đã hết hạn: %d | Hỏng: %d | Chưa HC: %d',
     $totalItems,
     $conhan,
     $saphethan,
     $dahethan,
+    $hong,
     $chuahc
 );
 $pdf->Cell(0, 6, $statsText, 0, 1, 'L');
@@ -204,8 +209,11 @@ foreach ($items as $item) {
     // Calculate status
     $status = '-';
     $ngayHCGanNhat = $item['ngayhc_latest'] ?? $item['ngayktnghiemthu'];
+    $ketQuaGanNhat = trim((string)($item['ttkt_latest'] ?? ''));
     
-    if (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
+    if (mb_strtolower($ketQuaGanNhat, 'UTF-8') === 'hỏng') {
+        $status = 'Hỏng';
+    } elseif (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
         $ngayHC = new DateTime($ngayHCGanNhat);
         $ngayHetHan = clone $ngayHC;
         $ngayHetHan->modify('+' . (int)$item['thoihankd'] . ' months');

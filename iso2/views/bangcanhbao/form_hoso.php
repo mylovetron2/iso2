@@ -3,6 +3,15 @@ header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 $title = 'Nhập Hồ Sơ HC/KĐ';
 require_once __DIR__ . '/../layouts/header.php'; 
+
+$formatDateInput = static function ($date): string {
+    if (empty($date)) {
+        return '';
+    }
+
+    $timestamp = strtotime((string)$date);
+    return $timestamp ? date('Y-m-d', $timestamp) : '';
+};
 ?>
 
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -49,7 +58,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['noithuchien'] ?? ''); ?></td>
                             <td class="border border-gray-300 px-3 py-2"><?php echo htmlspecialchars($history['ttkt'] ?? ''); ?></td>
                             <td class="border border-gray-300 px-3 py-2 text-center">
-                                <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($mavattu); ?>&stt=<?php echo (int)($thietBi['stt'] ?? 0); ?>&ngayhc=<?php echo urlencode($history['ngayhc'] ?? ''); ?>"
+                                <a href="bangcanhbao.php?action=formhoso&mavattu=<?php echo urlencode($mavattu); ?>&stt=<?php echo (int)($thietBi['stt'] ?? 0); ?>&ngayhc=<?php echo urlencode($formatDateInput($history['ngayhc'] ?? '')); ?>"
                                    class="text-blue-600 hover:text-blue-800" title="Sửa hồ sơ">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -121,7 +130,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-calendar-check text-green-600"></i> Ngày thực hiện HC/KĐ <span class="text-red-500">*</span>
                 </label>
                 <input type="date" name="ngayhc" id="ngayhc" 
-                       value="<?php echo htmlspecialchars($hoSo['ngayhc'] ?? ''); ?>" 
+                      value="<?php echo htmlspecialchars($formatDateInput($hoSo['ngayhc'] ?? '')); ?>" 
                        class="border rounded px-3 py-2 w-full" required>
                 <small class="text-gray-500 text-xs mt-1 block">Được phép nhập ngày thực hiện bất kỳ, không bắt buộc trùng tháng kế hoạch.</small>
             </div>
@@ -131,7 +140,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-calendar-plus text-green-600"></i> Ngày HC Tiếp Theo <span class="text-red-500">*</span>
                 </label>
                 <input type="date" name="ngayhctt" 
-                       value="<?php echo htmlspecialchars($hoSo['ngayhctt'] ?? ''); ?>" 
+                      value="<?php echo htmlspecialchars($formatDateInput($hoSo['ngayhctt'] ?? '')); ?>" 
                        class="border rounded px-3 py-2 w-full" required>
             </div>
         </div>

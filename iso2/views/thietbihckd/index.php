@@ -156,8 +156,12 @@ require_once __DIR__ . '/../layouts/header.php';
                     $status = '';
                     $statusClass = '';
                     $ngayHCGanNhat = $item['ngayhc_latest'] ?? $item['ngayktnghiemthu'];
+                    $ketQuaGanNhat = trim((string)($item['ttkt_latest'] ?? ''));
                     
-                    if (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
+                    if (mb_strtolower($ketQuaGanNhat, 'UTF-8') === 'hỏng') {
+                        $status = 'Hỏng';
+                        $statusClass = 'bg-red-200 text-red-900';
+                    } elseif (!empty($ngayHCGanNhat) && !empty($item['thoihankd'])) {
                         $ngayHC = new DateTime($ngayHCGanNhat);
                         $ngayHetHan = clone $ngayHC;
                         $ngayHetHan->modify('+' . (int)$item['thoihankd'] . ' months');
