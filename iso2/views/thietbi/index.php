@@ -135,7 +135,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <i class="fas fa-eye"></i>
                         </a>
                         <?php if (hasPermission('thietbi.create')): ?>
-                        <a href="thietbi.php?action=create&copy_from=<?php echo (int)$item['stt']; ?>" 
+                        <a href="thietbi.php?action=create&amp;copy_from=<?php echo (int)$item['stt']; ?>" 
                            class="text-indigo-600 hover:text-indigo-800 mx-1" title="Copy từ thiết bị này">
                             <i class="fas fa-copy"></i>
                         </a>

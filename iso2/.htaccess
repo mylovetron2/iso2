@@ -1,5 +1,9 @@
 # Enable Rewrite Engine
 RewriteEngine On
+
+# Production may expose this project at the domain root while older links still use /iso2/.
+RewriteRule ^iso2(?:/(.*))?$ /$1 [R=302,L,NE]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]

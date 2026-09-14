@@ -18,6 +18,9 @@ $action = $_GET['action'] ?? 'index';
 
 // Support malformed direct links like action=create%C2%A9_from=... or action=create_from
 if (is_string($action) && preg_match('/create.*from/i', $action) && !in_array($action, ['create', 'copy'], true)) {
+    if (!isset($_GET['copy_from']) && preg_match('/create.*?from[=:]?([0-9]+)/i', $action, $matches)) {
+        $_GET['copy_from'] = $matches[1];
+    }
     $action = 'create';
 }
 

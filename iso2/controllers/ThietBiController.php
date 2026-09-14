@@ -103,13 +103,6 @@ class ThietBiController
             }
         }
 
-        if ($copyId <= 0) {
-            $latestDevice = $this->model->getAll('ORDER BY stt DESC LIMIT 1');
-            if (!empty($latestDevice[0]['stt'])) {
-                $copyId = (int)$latestDevice[0]['stt'];
-            }
-        }
-
         if ($copyId > 0) {
             $source = $this->model->findById($copyId);
             if ($source) {

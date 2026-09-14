@@ -1,0 +1,4 @@
+RewriteEngine On
+# Chuyển hướng toàn bộ truy cập từ diavatly.cloud/iso2 sang iso2.diavatly.com
+RewriteCond %{HTTP_HOST} ^(www\.)?diavatly\.cloud$ [NC]
+RewriteRule ^(.*)$ https://iso2.diavatly.com/$1 [R=301,L]

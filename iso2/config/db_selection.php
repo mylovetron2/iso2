@@ -5,4 +5,4 @@
  */
 
 // Giá trị mặc định: 'production' hoặc 'localhost'
-return 'localhost';
+return 'production';

@@ -97,7 +97,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- Dashboard -->
                 <?php if (isLoggedIn()): ?>
                 <li>
-                    <a href="/iso2/dashboard.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 bg-gradient-to-r from-blue-600/30 to-transparent border-l-4 border-yellow-400">
+                    <a href="<?php echo appUrl('dashboard.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 bg-gradient-to-r from-blue-600/30 to-transparent border-l-4 border-yellow-400">
                         <i class="fas fa-chart-pie mr-2 text-yellow-300"></i> 
                         <span class="font-semibold">Dashboard</span>
                     </a>
@@ -107,7 +107,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 1. Hồ sơ SCBD -->
                 <?php if (isLoggedIn() && hasPermission('hososcbd.view')): ?>
                 <li>
-                    <a href="/iso2/hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('hososcbd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder-open mr-2"></i> Hồ sơ SCBD
                     </a>
                 </li>
@@ -128,21 +128,21 @@ if (file_exists($dbSelectionFile)) {
                     <ul id="kpiMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <?php if (hasPermission('hososcbd.view')): ?>
                         <li>
-                            <a href="/iso2/thongke_kpi_nhanvien_scbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_kpi_nhanvien_scbd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-chart-line mr-2"></i> KPI Nhân viên
                             </a>
                         </li>
                         <?php endif; ?>
                         <?php if (hasPermission('kpi_baoduong.view') || hasPermission('kehoachbaoduong.view') || hasPermission('kehoachbaoduong.create')): ?>
                         <li>
-                            <a href="/iso2/kpi_baoduong_thietbi_list.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('kpi_baoduong_thietbi_list.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-ruler-combined mr-2"></i> Định mức KPI
                             </a>
                         </li>
                         <?php endif; ?>
                         <?php if (hasPermission('kpi_baoduong.view') || hasPermission('thietbi.view')): ?>
                         <li>
-                            <a href="/iso2/thietbi_kpi_baoduong_link.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thietbi_kpi_baoduong_link.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-link mr-2"></i> Gán KPI thiết bị
                             </a>
                         </li>
@@ -162,7 +162,7 @@ if (file_exists($dbSelectionFile)) {
                     } catch (Exception $e) { $navPendingCount = 0; }
                 ?>
                 <li>
-                    <a href="/iso2/hososcbd_pending_review.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('hososcbd_pending_review.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-clipboard-check mr-2"></i> Duyệt sửa SCBD
                         <?php if ($navPendingCount > 0): ?>
                         <span class="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"><?= $navPendingCount ?></span>
@@ -174,7 +174,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 1.5. Quản lý số phiếu YC -->
                 <?php if (isLoggedIn() && hasPermission('phieuyeucau.view')): ?>
                 <li>
-                    <a href="/iso2/phieuyeucau.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('phieuyeucau.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-file-alt mr-2"></i> Quản lý số phiếu YC
                     </a>
                 </li>
@@ -184,7 +184,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- IMPORTANT: Chạy execute_add_congviec_permissions.php trước khi uncomment -->
                 <?php if (false): // Tạm thời tắt - Chạy migration trước: execute_add_congviec_permissions.php ?>
                 <li>
-                    <a href="/iso2/congviec_suachua.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('congviec_suachua.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tasks mr-2"></i> Công việc sửa chữa
                     </a>
                 </li>
@@ -193,7 +193,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 2. Bàn giao -->
                 <?php if (isLoggedIn() && hasPermission('phieubangiao.view')): ?>
                 <li>
-                    <a href="/iso2/phieubangiao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('phieubangiao.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-clipboard-check mr-2"></i> Bàn giao
                     </a>
                 </li>
@@ -208,17 +208,17 @@ if (file_exists($dbSelectionFile)) {
                     </div>
                     <ul id="thietbiMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
-                            <a href="/iso2/thietbi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thietbi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-cogs mr-2"></i> Thiết bị máy giếng
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/thietbihotro.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thietbihotro.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-tools mr-2"></i> Thiết bị Hỗ trợ
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/thietbihckd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thietbihckd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-certificate mr-2"></i> Thiết bị HC/KĐ
                             </a>
                         </li>
@@ -235,13 +235,13 @@ if (file_exists($dbSelectionFile)) {
                     </div>
                     <ul id="vattuMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
-                            <a href="/iso2/vattuthanhly.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('vattuthanhly.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-boxes mr-2"></i> Vật tư thanh lý
                             </a>
                         </li>
                         <?php if (hasPermission('giohang.view')): ?>
                         <li>
-                            <a href="/iso2/giohang.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80 relative">
+                            <a href="<?php echo appUrl('giohang.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80 relative">
                                 <i class="fas fa-shopping-bag mr-2"></i> Giỏ hàng
                                 <span id="sidebar-cart-badge" class="hidden ml-auto bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"></span>
                             </a>
@@ -249,27 +249,27 @@ if (file_exists($dbSelectionFile)) {
                         <?php endif; ?>
                         <?php if (hasPermission('phieudathang.view')): ?>
                         <li>
-                            <a href="/iso2/phieudathang.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('phieudathang.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-file-invoice mr-2"></i> Phiếu đặt hàng
                             </a>
                         </li>
                         <?php endif; ?>
                         <?php if (hasPermission('phanloai_vattu.view')): ?>
                         <li>
-                            <a href="/iso2/phanloaivattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('phanloaivattu.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-tags mr-2"></i> Phân loại vật tư
                             </a>
                         </li>
                         <?php endif; ?>
                         <?php if (hasPermission('phieukiemsoatvattu.view')): ?>
                         <li>
-                            <a href="/iso2/phieukiemsoatvattu.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('phieukiemsoatvattu.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-clipboard-check mr-2"></i> Phiếu kiểm soát vật tư
                             </a>
                         </li>
                         <?php endif; ?>
                         <li>
-                            <a href="/iso2/thongke_vattu_thanh_ly.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_vattu_thanh_ly.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-chart-bar mr-2"></i> Thống kê vật tư thanh lý
                             </a>
                         </li>
@@ -280,7 +280,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 3.6. Giao Nhận Thiết Bị -->
                 <?php if (isLoggedIn() && hasPermission('giaonhanthietbi.view')): ?>
                 <li>
-                    <a href="/iso2/giaonhanthietbi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('giaonhanthietbi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-exchange-alt mr-2"></i> Giao Nhận Thiết Bị
                     </a>
                 </li>
@@ -295,37 +295,37 @@ if (file_exists($dbSelectionFile)) {
                     </div>
                     <ul id="bangcanhbaoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
-                            <a href="/iso2/bangcanhbao.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('bangcanhbao.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-calendar-check mr-2"></i> Bảng Cảnh Báo
                             </a>
                         </li>
                         <?php /* Ẩn Phiếu Yêu Cầu
                         <li>
-                            <a href="/iso2/bangcanhbao.php?action=phieuyc" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('bangcanhbao.php?action=phieuyc'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-file-alt mr-2"></i> Phiếu Yêu Cầu
                             </a>
                         </li>
                         */ ?>
                         <li>
-                            <a href="/iso2/bangcanhbao.php?action=formhoso" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('bangcanhbao.php?action=formhoso'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-edit mr-2"></i> Nhập Hồ Sơ HC
                             </a>
                         </li>
                         <?php /* Ẩn Phiếu Kiểm Tra
                         <li>
-                            <a href="/iso2/bangcanhbao.php?action=phieukt" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('bangcanhbao.php?action=phieukt'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-clipboard-check mr-2"></i> Phiếu Kiểm Tra
                             </a>
                         </li>
                         */ ?>
                         <li>
-                            <a href="/iso2/thongke_hckd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_hckd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-chart-line mr-2"></i> Thống Kê HC/KĐ
                             </a>
                         </li>
                         <?php if (hasPermission('kehoach_kiemdinh.view')): ?>
                         <li>
-                            <a href="/iso2/kehoach_thietbi_2026.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('kehoach_thietbi_2026.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-calendar-alt mr-2"></i> Kế hoạch KĐ 2026
                             </a>
                         </li>
@@ -337,7 +337,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 4.5. Bảo dưỡng thiết bị -->
                 <?php if (isLoggedIn() && hasPermission('kehoachbaoduong.view')): ?>
                 <li>
-                    <a href="/iso2/kehoachbaoduongdinhky.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('kehoachbaoduongdinhky.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-tools mr-2"></i> Bảo dưỡng định kỳ
                     </a>
                 </li>
@@ -353,14 +353,14 @@ if (file_exists($dbSelectionFile)) {
                     <ul id="loMoMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <?php if (hasPermission('lo.view')): ?>
                         <li>
-                            <a href="/iso2/lo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('lo.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-box mr-2"></i> Quản lý Lô
                             </a>
                         </li>
                         <?php endif; ?>
                         <?php if (hasPermission('mo.view')): ?>
                         <li>
-                            <a href="/iso2/mo.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('mo.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-mountain mr-2"></i> Quản lý Mỏ
                             </a>
                         </li>
@@ -372,7 +372,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- 6. Đơn vị -->
                 <?php if (isLoggedIn() && hasPermission('donvi.view')): ?>
                 <li>
-                    <a href="/iso2/donvi.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="<?php echo appUrl('donvi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-building mr-2"></i> Danh mục Bộ phận
                     </a>
                 </li>
@@ -387,27 +387,27 @@ if (file_exists($dbSelectionFile)) {
                     </div>
                     <ul id="thongkeMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
-                            <a href="/iso2/thongke_kiemdinh.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_kiemdinh.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-clipboard-check mr-2"></i> Thống kê Kiểm định
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/baocao_kiemdinh_thang.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('baocao_kiemdinh_thang.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-calendar-alt mr-2"></i> Báo cáo HC/KĐ theo kế hoạch
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/baocaothang01_print.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('baocaothang01_print.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-print mr-2"></i> In báo cáo SC/BD/CC thiết bị
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/thongke_hososcbd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_hososcbd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-exclamation-triangle mr-2"></i> Hồ sơ SCBD quá 30 ngày
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/thongke_thietbi_chuakd.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('thongke_thietbi_chuakd.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-clipboard-list mr-2"></i> TB chưa Kiểm định
                             </a>
                         </li>
@@ -433,28 +433,28 @@ if (file_exists($dbSelectionFile)) {
                     </div>
                     <ul id="adminMenu" class="ml-6 mt-1 space-y-1 text-sm hidden">
                         <li>
-                            <a href="/iso2/admin_user_permissions.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('admin_user_permissions.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-users-cog mr-2"></i> Phân quyền User
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/views/admin/permissions_manager.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('views/admin/permissions_manager.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-key mr-2"></i> Quản lý quyền
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/views/admin/activity_logs.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('views/admin/activity_logs.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-history mr-2"></i> Nhật ký hoạt động
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/admin_database_switch.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('admin_database_switch.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-database mr-2"></i> Chuyển đổi Database
                             </a>
                         </li>
                         <?php if (hasRole(ROLE_ADMIN) || hasPermission('backup.view')): ?>
                         <li>
-                            <a href="/iso2/admin_backup.php" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('admin_backup.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-download mr-2"></i> Backup Database
                             </a>
                         </li>
@@ -464,12 +464,12 @@ if (file_exists($dbSelectionFile)) {
                             <div class="text-xs text-blue-300 px-3 py-1">Cấu trúc Project</div>
                         </li>
                         <li>
-                            <a href="/iso2/project_structure.html" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('project_structure.html'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-diagram-project mr-2"></i> Tổng quan cấu trúc
                             </a>
                         </li>
                         <li>
-                            <a href="/iso2/project_model_view_structure.html" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                            <a href="<?php echo appUrl('project_model_view_structure.html'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-cubes mr-2"></i> Mô hình Model & View
                             </a>
                         </li>
@@ -485,10 +485,10 @@ if (file_exists($dbSelectionFile)) {
                     <div class="text-sm text-blue-200 mb-1">Xin chào,</div>
                     <div class="font-semibold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
                 </div>
-                <a href="/iso2/profile.php" class="block px-3 py-2 rounded hover:bg-blue-600 mb-2">
+                <a href="<?php echo appUrl('profile.php'); ?>" class="block px-3 py-2 rounded hover:bg-blue-600 mb-2">
                     <i class="fas fa-user-circle mr-2"></i>Thông tin cá nhân
                 </a>
-                <a href="/iso2/logout.php" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
+                <a href="<?php echo appUrl('logout.php'); ?>" class="block px-3 py-2 rounded hover:bg-blue-600"><i class="fas fa-sign-out-alt mr-2"></i>Logout</a>
             <?php else: ?>
                 <a href="login.php" class="block px-3 py-2 rounded hover:bg-blue-600">Login</a>
             <?php endif; ?>
