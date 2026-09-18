@@ -131,6 +131,9 @@ $allPermissions = [
     'backup.create' => 'Tạo backup database',
     'backup.download' => 'Tải xuống backup',
     'backup.view' => 'Xem danh sách backup',
+
+    'bieumau.view' => 'Xem và tải biểu mẫu',
+    'bieumau.manage' => 'Quản lý biểu mẫu và thư mục',
 ];
 
 // Cập nhật quyền cho role
@@ -171,6 +174,7 @@ $permissionGroups = [
     'Phiếu đặt hàng' => ['phieudathang.view', 'phieudathang.create', 'phieudathang.edit', 'phieudathang.delete', 'phieudathang.approve', 'phieudathang.receive', 'phieudathang.stock', 'phieudathang.cancel', 'phieudathang.export'],
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
     'Backup Database' => ['backup.create', 'backup.download', 'backup.view'],
+    'Biểu mẫu' => ['bieumau.view', 'bieumau.manage'],
 ];
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-8 mt-4 md:mt-8">

@@ -209,43 +209,72 @@ class HoSoSCBD extends BaseModel
                 'thckd_mavattu'       => '',
             ];
 
+            $sttYears[$stt] = ($item['ngayyc'] ?? '') && $item['ngayyc'] !== '0000-00-00'
+                ? (int)date('Y', strtotime($item['ngayyc']))
+                : (int)date('Y');
+
             if (!empty($item['thietbi_stt'])) {
                 $tstt = (int)$item['thietbi_stt'];
                 $thietbiToStts[$tstt][] = $stt;
                 $thietbiStts[] = $tstt;
-                $ngayyc = $item['ngayyc'] ?? '';
-                $sttYears[$stt] = ($ngayyc && $ngayyc !== '0000-00-00')
-                    ? (int)date('Y', strtotime($ngayyc))
-                    : (int)date('Y');
             }
         }
-
-        if (empty($thietbiStts)) return $result;
-
-        $inClause = implode(',', array_unique($thietbiStts));
 
         // --- Query 0: Lookup thckd_stt và thckd_mavattu từ thietbihckd_iso (chỉ chạy 1 lần batch) ---
         // Query này chạy với tối đa 20 thietbi_stt, không còn chạy per-row như trong getList()
         $thckdToStts = [];
         $thckdStts   = [];
-        $sql = "SELECT thckd.stt as thckd_stt, thckd.mavattu as thckd_mavattu, t.stt as thietbi_stt
-                FROM thietbi_iso t
-                LEFT JOIN thietbihckd_iso thckd ON (
-                    (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
-                    OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu)
-                )
-                WHERE t.stt IN ($inClause)";
-        foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $tstt = (int)$row['thietbi_stt'];
-            foreach ($thietbiToStts[$tstt] ?? [] as $stt) {
-                $cstt = (int)($row['thckd_stt'] ?? 0);
-                $result[$stt]['thckd_stt']     = $cstt;
-                $result[$stt]['thckd_mavattu'] = $row['thckd_mavattu'] ?? '';
-                if ($cstt > 0) {
-                    $thckdToStts[$cstt][] = $stt;
-                    $thckdStts[] = $cstt;
+        if (!empty($thietbiStts)) {
+            $inClause = implode(',', array_unique($thietbiStts));
+            $sql = "SELECT thckd.stt as thckd_stt, thckd.mavattu as thckd_mavattu, t.stt as thietbi_stt
+                    FROM thietbi_iso t
+                    LEFT JOIN thietbihckd_iso thckd ON (
+                        (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+                        OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu)
+                    )
+                    WHERE t.stt IN ($inClause)";
+            foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $tstt = (int)$row['thietbi_stt'];
+                foreach ($thietbiToStts[$tstt] ?? [] as $stt) {
+                    $cstt = (int)($row['thckd_stt'] ?? 0);
+                    $result[$stt]['thckd_stt']     = $cstt;
+                    $result[$stt]['thckd_mavattu'] = $row['thckd_mavattu'] ?? '';
+                    if ($cstt > 0) {
+                        $thckdToStts[$cstt][] = $stt;
+                        $thckdStts[] = $cstt;
+                    }
                 }
             }
+        }
+
+        // Fallback sau migration: map trực tiếp theo mã vật tư và số máy của hồ sơ.
+        $hckdRows = $this->query("SELECT stt, mavattu, somay FROM thietbihckd_iso")->fetchAll(PDO::FETCH_ASSOC);
+        $hckdByPair = [];
+        $hckdByMavattu = [];
+        foreach ($hckdRows as $row) {
+            $mavattu = trim((string)($row['mavattu'] ?? ''));
+            $somay = trim((string)($row['somay'] ?? ''));
+            $hckdByPair[$mavattu . "\0" . $somay] = $row;
+            $hckdByPair[$mavattu . "\0"] = $row;
+            $hckdByMavattu[$mavattu][] = $row;
+        }
+        foreach ($items as $item) {
+            $stt = (int)$item['stt'];
+            if (($result[$stt]['thckd_stt'] ?? 0) > 0 || empty($item['mavt'])) continue;
+            $mavt = trim((string)$item['mavt']);
+            $somay = trim((string)($item['somay'] ?? ''));
+            $row = $hckdByPair[$mavt . "\0" . $somay]
+                ?? $hckdByPair[$mavt . "-" . $somay . "\0"]
+                ?? null;
+            if ($row === null && count($hckdByMavattu[$mavt] ?? []) === 1) {
+                $row = $hckdByMavattu[$mavt][0];
+            }
+            if ($row === null) continue;
+            $cstt = (int)$row['stt'];
+            $result[$stt]['thckd_stt'] = $cstt;
+            $result[$stt]['thckd_mavattu'] = $row['mavattu'];
+            $thckdToStts[$cstt][] = $stt;
+            $thckdStts[] = $cstt;
         }
 
         // --- Query 1: BDDK quarters ---

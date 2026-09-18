@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ đồ quan hệ các bảng - Phiếu Yêu Cầu (View)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+        });
+    </script>
+    <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-light: #eff6ff;
+            --secondary: #0f766e;
+            --dark: #1e293b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --badge-bg: #e0f2fe;
+            --badge-text: #0369a1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .badge-url {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .diagram-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        code {
+            background: var(--primary-light);
+            color: #1e40af;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            font-family: Consolas, 'Courier New', monospace;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--badge-bg);
+            color: var(--badge-text);
+        }
+
+        .tag-pk {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .tag-fk {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .note-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 16px;
+            font-size: 13.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <h1>Sơ đồ quan hệ dữ liệu & luồng truy vấn</h1>
+        <p>Chi tiết liên kết bảng trong chức năng xem chi tiết phiếu yêu cầu dịch vụ</p>
+        <div class="badge-url">URI: phieuyeucau.php?action=view&phieu=2122</div>
+    </header>
+
+    <!-- Section 1: ERD -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">1. Sơ đồ quan hệ thực thể (ERD)</div>
+            <span class="tag">6 Bảng liên kết</span>
+        </div>
+        <div class="diagram-box">
+            <div class="mermaid">
+erDiagram
+    hososcbd_iso ||--o{ donvi_iso : "h.madv = d.madv"
+    hososcbd_iso ||--o{ thietbi_iso : "h.mavt = t.mavt AND h.somay = t.somay"
+    thietbi_iso ||--o{ ke_hoach_bao_duong_dinh_ky_iso : "t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)"
+    thietbi_iso ||--o{ thietbihckd_iso : "(t.mavt = thckd.mavattu AND t.somay = thckd.somay) OR (CONCAT(t.mavt,'-',t.somay) = thckd.mavattu AND t.somay = thckd.somay)"
+    thietbihckd_iso ||--o{ kehoach_kiemdinh_2026_iso : "thckd.stt = kd.stt AND kd.nam_kehoach = 2026"
+    thietbihckd_iso ||--o{ hosohckd_iso : "(thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026"
+
+    hososcbd_iso {
+        int stt PK "Khóa chính hồ sơ"
+        varchar phieu "Số phiếu (VD: 2122)"
+        date ngayyc "Ngày yêu cầu"
+        varchar madv FK "Mã đơn vị"
+        varchar mavt "Mã vật tư / thiết bị"
+        varchar somay "Số máy / Serial"
+        varchar maql "Mã quản lý"
+        varchar ngyeucau "Người yêu cầu"
+        varchar ngnhyeucau "Người nhận yêu cầu"
+        varchar dienthoai "Số điện thoại"
+        text cv "Nội dung công việc"
+        text ycthemkh "Yêu cầu thêm"
+        varchar nhomsc "Nhóm sửa chữa"
+        date ngayth "Ngày thực hiện"
+        date ngaykt "Ngày kết thúc"
+        int bg "Bàn giao (0=Chưa, 1=Đã BG)"
+    }
+
+    donvi_iso {
+        varchar madv PK "Mã đơn vị"
+        varchar tendv "Tên đầy đủ đơn vị"
+    }
+
+    thietbi_iso {
+        int stt PK "ID định danh thiết bị"
+        varchar mavt "Mã vật tư"
+        varchar somay "Số máy"
+        varchar tenvt "Tên thiết bị"
+        varchar model "Model máy"
+    }
+
+    ke_hoach_bao_duong_dinh_ky_iso {
+        int id PK "Khóa chính"
+        int thietbi_id FK "FK -> thietbi_iso.stt"
+        int nam "Năm bảo dưỡng"
+        varchar qui_1 "Kế hoạch Quý 1"
+        int qui_1_hoantat "Hoàn tất Q1 (0/1)"
+        varchar qui_2 "Kế hoạch Quý 2"
+        int qui_2_hoantat "Hoàn tất Q2 (0/1)"
+        varchar qui_3 "Kế hoạch Quý 3"
+        int qui_3_hoantat "Hoạt tất Q3 (0/1)"
+        varchar qui_4 "Kế hoạch Quý 4"
+        int qui_4_hoantat "Hoàn tất Q4 (0/1)"
+    }
+
+    thietbihckd_iso {
+        int stt PK "ID thiết bị HC/KĐ"
+        varchar mavattu "Mã thiết bị HC/KĐ"
+        varchar somay "Số máy HC/KĐ"
+    }
+
+    kehoach_kiemdinh_2026_iso {
+        int id PK "Khóa chính"
+        int stt FK "FK -> thietbihckd_iso.stt"
+        int nam_kehoach "Năm 2026"
+        int thang_thuchien "Tháng dự kiến Đợt 1"
+        int thang_dot2 "Tháng dự kiến Đợt 2"
+    }
+
+    hosohckd_iso {
+        int id PK "Khóa chính"
+        varchar tenmay "Mã/Số máy thiết bị"
+        date ngayhc "Ngày thực tế HC/KĐ"
+    }
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Luồng xử lý và dữ liệu -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">2. Luồng truy vấn dữ liệu (Execution Flow)</div>
+            <span class="tag">MVC Architecture</span>
+        </div>
+        <div class="diagram-box">
+            <div class="mermaid">
+flowchart TD
+    Req["Yêu cầu: phieuyeucau.php?action=view&phieu=2122"] --> Ctrl["PhieuYeuCauController::view()"]
+    Ctrl --> Model["PhieuYeuCau::getPhieuDetail('2122')"]
+
+    subgraph Q1["Query 1: Lấy thông tin tổng hợp phiếu (Header / Summary)"]
+        H1["hososcbd_iso (WHERE phieu = '2122')"] -->|LEFT JOIN madv = madv| D1["donvi_iso (Lấy tendv)"]
+        H1 --> Agg["Tính toán: so_thietbi, tb_chuath, tb_danglam, tb_hoanthanh, tb_dabg"]
+    end
+
+    subgraph Q2["Query 2: Lấy danh sách thiết bị & kế hoạch liên quan (Devices List)"]
+        H2["hososcbd_iso (WHERE phieu = '2122')"]
+        H2 -->|LEFT JOIN mavt, somay| T["thietbi_iso (Lấy tenvt, model, stt)"]
+        T -->|LEFT JOIN t.stt = k.thietbi_id AND k.nam = YEAR(ngayyc)| K["ke_hoach_bao_duong_dinh_ky_iso (Lấy tiến độ Q1-Q4)"]
+        T -->|LEFT JOIN mavt, somay| THCKD["thietbihckd_iso"]
+        THCKD -->|LEFT JOIN thckd.stt = kd.stt| KD["kehoach_kiemdinh_2026_iso (Tháng KH KĐ)"]
+        THCKD -->|LEFT JOIN tenmay = mavattu/somay| HC["hosohckd_iso (Tháng đã HC/KĐ)"]
+    end
+
+    Model --> Q1
+    Model --> Q2
+    Q1 --> Process["Xử lý mảng bddk_quarters trong PHP"]
+    Q2 --> Process
+    Process --> View["Render View: views/phieuyeucau/view.php"]
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Bảng chi tiết mối quan hệ -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">3. Chi tiết điều kiện JOIN & Mục đích dữ liệu</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 18%;">Bảng nguồn</th>
+                    <th style="width: 22%;">Bảng liên kết</th>
+                    <th style="width: 35%;">Điều kiện JOIN (ON Clause)</th>
+                    <th>Mục đích & Dữ liệu hiển thị</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>hososcbd_iso</code> (h)</td>
+                    <td><code>donvi_iso</code> (d)</td>
+                    <td><code>h.madv = d.madv</code></td>
+                    <td>Lấy tên đơn vị yêu cầu bảo dưỡng (<code>tendv</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>hososcbd_iso</code> (h)</td>
+                    <td><code>thietbi_iso</code> (t)</td>
+                    <td><code>h.mavt = t.mavt AND h.somay = t.somay</code></td>
+                    <td>Lấy tên thiết bị (<code>tenvt</code>), model máy và ID gốc (<code>t.stt</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>thietbi_iso</code> (t)</td>
+                    <td><code>ke_hoach_bao_duong_dinh_ky_iso</code> (k)</td>
+                    <td><code>t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)</code></td>
+                    <td>Lấy kế hoạch và trạng thái hoàn thành bảo dưỡng định kỳ các quý (Q1, Q2, Q3, Q4) trong năm yêu cầu.</td>
+                </tr>
+                <tr>
+                    <td><code>thietbi_iso</code> (t)</td>
+                    <td><code>thietbihckd_iso</code> (thckd)</td>
+                    <td>
+                        <code>(t.mavt = thckd.mavattu AND t.somay = thckd.somay)</code><br>
+                        <code>OR (CONCAT(t.mavt,'-',t.somay) = thckd.mavattu AND t.somay = thckd.somay)</code>
+                    </td>
+                    <td>Ánh xạ thiết bị bảo dưỡng sang bảng quản lý hiệu chuẩn / kiểm định.</td>
+                </tr>
+                <tr>
+                    <td><code>thietbihckd_iso</code> (thckd)</td>
+                    <td><code>kehoach_kiemdinh_2026_iso</code> (kd)</td>
+                    <td><code>thckd.stt = kd.stt AND kd.nam_kehoach = 2026</code></td>
+                    <td>Lấy các tháng dự kiến kiểm định trong kế hoạch năm 2026 (<code>thang_thuchien</code>, <code>thang_dot2</code>).</td>
+                </tr>
+                <tr>
+                    <td><code>thietbihckd_iso</code> (thckd)</td>
+                    <td><code>hosohckd_iso</code> (hc)</td>
+                    <td>
+                        <code>(thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay)</code><br>
+                        <code>AND YEAR(hc.ngayhc) = 2026</code>
+                    </td>
+                    <td>Lấy các tháng thực tế đã thực hiện hiệu chuẩn kiểm định trong năm 2026 (<code>MONTH(hc.ngayhc)</code>).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note-box">
+            <strong>Ghi chú quan trọng:</strong> 
+            Trong hệ thống, một phiếu yêu cầu (ví dụ: <code>phieu = '2122'</code>) có thể chứa <strong>nhiều thiết bị</strong>, mỗi thiết bị tương ứng với 1 dòng trong bảng <code>hososcbd_iso</code> có chung số phiếu.
+        </div>
+    </div>
+
+    <!-- Section 4: SQL Queries Code -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">4. Các câu lệnh SQL thực thi trong PhieuYeuCau::getPhieuDetail()</div>
+        </div>
+        <div class="grid-2">
+            <div>
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: #334155;">Query 1: Thông tin tổng hợp phiếu</h3>
+                <pre><code>SELECT 
+    h.phieu,
+    MIN(h.ngayyc) as ngayyc,
+    h.madv,
+    d.tendv,
+    h.ngyeucau,
+    h.ngnhyeucau,
+    h.dienthoai,
+    h.nhomsc,
+    h.cv,
+    h.ycthemkh,
+    COUNT(*) as so_thietbi,
+    SUM(CASE WHEN h.ngayth IS NULL OR h.ngayth = '0000-00-00' THEN 1 ELSE 0 END) as tb_chuath,
+    SUM(CASE WHEN h.ngayth IS NOT NULL AND h.ngayth != '0000-00-00' AND (h.ngaykt IS NULL OR h.ngaykt = '0000-00-00') THEN 1 ELSE 0 END) as tb_danglam,
+    SUM(CASE WHEN h.ngaykt IS NOT NULL AND h.ngaykt != '0000-00-00' AND h.bg = 0 THEN 1 ELSE 0 END) as tb_hoanthanh,
+    SUM(CASE WHEN h.bg = 1 THEN 1 ELSE 0 END) as tb_dabg
+FROM hososcbd_iso h
+LEFT JOIN donvi_iso d ON h.madv = d.madv
+WHERE h.phieu = '2122'
+GROUP BY h.phieu, h.madv, d.tendv, h.ngyeucau, 
+         h.ngnhyeucau, h.dienthoai, h.nhomsc, h.cv, h.ycthemkh;</code></pre>
+            </div>
+            <div>
+                <h3 style="font-size: 15px; margin-bottom: 8px; color: #334155;">Query 2: Danh sách thiết bị và liên kết BDDK, HC/KĐ</h3>
+                <pre><code>SELECT h.*, t.tenvt, t.stt as thietbi_stt,
+       thckd.stt as thckd_stt,
+       GROUP_CONCAT(DISTINCT kd.thang_thuchien ORDER BY kd.thang_thuchien) as planned_months,
+       GROUP_CONCAT(DISTINCT kd.thang_dot2 ORDER BY kd.thang_dot2) as planned_months_dot2,
+       GROUP_CONCAT(DISTINCT MONTH(hc.ngayhc) ORDER BY hc.ngayhc) as inspected_months,
+       GROUP_CONCAT(DISTINCT 
+           CONCAT(
+               IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
+               IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
+               IF((k.qui_3 IS NOT NULL AND k.qui_3 != '') OR k.qui_3_hoantat = 1, CONCAT('Q3:', COALESCE(k.qui_3_hoantat, 0), ','), ''),
+               IF((k.qui_4 IS NOT NULL AND k.qui_4 != '') OR k.qui_4_hoantat = 1, CONCAT('Q4:', COALESCE(k.qui_4_hoantat, 0), ','), '')
+           )
+       ) as bddk_quarters_raw
+FROM hososcbd_iso h
+LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay
+LEFT JOIN thietbihckd_iso thckd ON (
+    (t.mavt = thckd.mavattu AND t.somay = thckd.somay)
+    OR (CONCAT(t.mavt, '-', t.somay) = thckd.mavattu AND t.somay = thckd.somay)
+)
+LEFT JOIN ke_hoach_bao_duong_dinh_ky_iso k ON t.stt = k.thietbi_id AND k.nam = YEAR(h.ngayyc)
+LEFT JOIN kehoach_kiemdinh_2026_iso kd ON thckd.stt = kd.stt AND kd.nam_kehoach = 2026
+LEFT JOIN hosohckd_iso hc ON (thckd.mavattu = hc.tenmay OR thckd.somay = hc.tenmay) AND YEAR(hc.ngayhc) = 2026
+WHERE h.phieu = '2122'
+GROUP BY h.stt
+ORDER BY h.stt ASC;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

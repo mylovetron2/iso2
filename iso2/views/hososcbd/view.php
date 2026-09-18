@@ -103,6 +103,9 @@ if (!empty($item['hoso'])) {
             <a href="/iso2/hososcbd.php?action=exportphieusc&id=<?php echo $item['stt']; ?>" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm" target="_blank" title="In Phiếu SC">
                 <i class="fas fa-file-word"></i> Phiếu SC
             </a>
+            <a href="/iso2/hososcbd.php?action=exportphieukiemtra&id=<?php echo $item['stt']; ?>" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm" target="_blank" title="In phiếu kiểm tra sau BD/SC">
+                <i class="fas fa-clipboard-check"></i> Phiếu kiểm tra
+            </a>
             <?php /* Ẩn các nút không cần thiết
             <a href="/iso2/hososcbd.php?action=exportword&id=<?php echo $item['stt']; ?>" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm" target="_blank" title="Phiếu Yêu Cầu">
                 <i class="fas fa-file-alt"></i> Phiếu YC

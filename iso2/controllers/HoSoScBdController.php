@@ -76,6 +76,7 @@ class HoSoScBdController
 
         $stats = $this->model->getStats($nhomsc);
         $donViList = $this->donViModel->getAllSimple();
+        $bddkHckdData = $this->model->getBddkHckdBatch($items);
 
         require_once __DIR__ . '/../views/hososcbd/index.php';
     }
@@ -102,11 +103,42 @@ class HoSoScBdController
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        $raw = file_get_contents('php://input');
-        $input = json_decode($raw, true);
+        $raw = trim((string)file_get_contents('php://input'));
+        $input = [];
+
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $input = $decoded;
+            }
+        }
+
+        if (empty($input) && !empty($_POST['items'])) {
+            $postedItems = $_POST['items'];
+            if (is_string($postedItems)) {
+                $decoded = json_decode($postedItems, true);
+                if (is_array($decoded)) {
+                    $input = ['items' => $decoded];
+                }
+            } elseif (is_array($postedItems)) {
+                $input = ['items' => $postedItems];
+            }
+        }
+
+        if (empty($input) && !empty($_GET['items'])) {
+            $queryItems = $_GET['items'];
+            if (is_string($queryItems)) {
+                $decoded = json_decode($queryItems, true);
+                if (is_array($decoded)) {
+                    $input = ['items' => $decoded];
+                }
+            } elseif (is_array($queryItems)) {
+                $input = ['items' => $queryItems];
+            }
+        }
 
         if (!is_array($input) || empty($input['items']) || !is_array($input['items'])) {
-            echo json_encode((object)[]);
+            echo json_encode([]);
             exit;
         }
 
@@ -118,17 +150,19 @@ class HoSoScBdController
             $items[] = [
                 'stt'         => $stt,
                 'thietbi_stt' => (int)($item['thietbi_stt'] ?? 0),
+                'mavt'        => trim((string)($item['mavt'] ?? '')),
+                'somay'       => trim((string)($item['somay'] ?? '')),
                 'ngayyc'      => preg_replace('/[^0-9\-]/', '', (string)($item['ngayyc'] ?? '')),
             ];
         }
 
         if (empty($items)) {
-            echo json_encode((object)[]);
+            echo json_encode([]);
             exit;
         }
 
         $data = $this->model->getBddkHckdBatch($items);
-        echo json_encode($data);
+        echo json_encode($data ?: []);
         exit;
     }
 
@@ -647,6 +681,26 @@ class HoSoScBdController
         }
 
         require_once __DIR__ . '/../views/hososcbd/export_phieu_sc.php';
+    }
+
+    /**
+     * Export the post-repair technical condition inspection form as Word.
+     */
+    public function exportPhieuKiemTra(): void
+    {
+        $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if (!$stt) {
+            header('Location: /iso2/hososcbd.php?error=invalid');
+            exit;
+        }
+
+        $item = $this->model->findById($stt);
+        if (!$item) {
+            header('Location: /iso2/hososcbd.php?error=notfound');
+            exit;
+        }
+
+        require_once __DIR__ . '/../views/hososcbd/export_phieu_kiem_tra.php';
     }
 
     /**

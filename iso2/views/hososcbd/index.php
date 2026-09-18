@@ -515,12 +515,15 @@ foreach ($items as $_item) {
 <script>
 (function () {
     const metaMap = <?php echo json_encode($_bddkMeta, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+    const serverData = <?php echo json_encode($bddkHckdData ?? [], JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 
     if (!Object.keys(metaMap).length) return;
 
     const items = Object.entries(metaMap).map(([stt, d]) => ({
         stt:         parseInt(stt),
         thietbi_stt: d.thietbi_stt,
+        mavt:        d.mavt,
+        somay:       d.somay,
         ngayyc:      d.ngayyc,
     }));
 
@@ -716,16 +719,35 @@ foreach ($items as $_item) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items })
     })
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(r) {
+        if (!r.ok) {
+            return Promise.reject(new Error('HTTP ' + r.status));
+        }
+
+        return r.text().then(function(text) {
+            if (!text || !text.trim()) {
+                return [];
+            }
+
+            try {
+                const parsed = JSON.parse(text);
+                return parsed && typeof parsed === 'object' ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        });
+    })
     .then(function(data) {
-        for (const [stt, d] of Object.entries(data)) {
+        const ajaxPayload = data && typeof data === 'object' ? data : {};
+        const payload = Object.keys(ajaxPayload).length ? ajaxPayload : serverData;
+        for (const [stt, d] of Object.entries(payload)) {
             const meta = metaMap[stt] || {};
             renderBddk(stt, d, meta);
             renderHckd(stt, d, meta);
         }
         // Các stt không có dữ liệu vẫn cần xóa spinner
         for (const stt of Object.keys(metaMap)) {
-            if (!data[stt]) {
+            if (!payload[stt]) {
                 renderBddk(stt, {bddk_quarters: []}, metaMap[stt]);
                 renderHckd(stt, {}, metaMap[stt]);
             }

@@ -142,6 +142,14 @@ switch ($action) {
         $controller->exportPhieuSC();
         break;
 
+    case 'exportphieukiemtra':
+        if (!hasPermission('hososcbd.view')) {
+            header('Location: /iso2/hososcbd.php?error=permission_denied');
+            exit;
+        }
+        $controller->exportPhieuKiemTra();
+        break;
+
     case 'exportlistpdf':
         if (!hasPermission('hososcbd.view')) {
             header('Location: /iso2/hososcbd.php?error=permission_denied');

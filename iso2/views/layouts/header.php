@@ -422,6 +422,13 @@ if (file_exists($dbSelectionFile)) {
                         <i class="fas fa-folder mr-2"></i> Quản lý file
                     </a>
                 </li>
+                <?php if (hasRole(ROLE_ADMIN) || hasPermission('bieumau.view')): ?>
+                <li>
+                    <a href="<?php echo appUrl('bieu_mau.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-file-word mr-2"></i> Biểu mẫu
+                    </a>
+                </li>
+                <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
