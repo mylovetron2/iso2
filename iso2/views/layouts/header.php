@@ -429,6 +429,59 @@ if (file_exists($dbSelectionFile)) {
                     </a>
                 </li>
                 <?php endif; ?>
+
+                <!-- Quy trình ISO -->
+                <?php
+                    $qtPendingCount = 0;
+                    if (hasRole(ROLE_ADMIN) || hasPermission('quytrinh.manage')) {
+                        try {
+                            $dbQt = getDBConnection();
+                            $dbQt->exec("SET NAMES latin1");
+                            $qtStmt = $dbQt->query("SELECT COUNT(*) FROM quy_trinh_gopy_iso WHERE trang_thai='moi'");
+                            $qtPendingCount = $qtStmt ? (int)$qtStmt->fetchColumn() : 0;
+                        } catch (Throwable $e) { $qtPendingCount = 0; }
+                    }
+                ?>
+                <li>
+                    <a href="<?php echo appUrl('quytrinh.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-book-open mr-2"></i> Quy trình ISO
+                        <?php if ($qtPendingCount > 0): ?>
+                            <span class="ml-auto bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full"><?php echo $qtPendingCount; ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <!-- Yêu cầu mua vật tư -->
+                <?php
+                    $ycMuaPendingCount = 0;
+                    if (hasRole(ROLE_ADMIN) || hasPermission('yeucaumuavattu.manage')) {
+                        try {
+                            $dbYcMua = getDBConnection();
+                            $dbYcMua->exec("SET NAMES latin1");
+                            $ycMuaStmt = $dbYcMua->query("SELECT COUNT(*) FROM yeu_cau_mua_vat_tu WHERE trang_thai='moi'");
+                            $ycMuaPendingCount = $ycMuaStmt ? (int)$ycMuaStmt->fetchColumn() : 0;
+                        } catch (Throwable $e) { $ycMuaPendingCount = 0; }
+                    }
+                ?>
+                <?php if (isLoggedIn() && (hasRole(ROLE_ADMIN) || hasPermission('yeucaumuavattu.view'))): ?>
+                <li>
+                    <a href="<?php echo appUrl('yeu_cau_mua_vat_tu.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-cart-plus mr-2"></i> Yêu cầu mua vật tư
+                        <?php if ($ycMuaPendingCount > 0): ?>
+                            <span class="ml-auto bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full"><?php echo $ycMuaPendingCount; ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <!-- Các đường link khác -->
+                <?php if (isLoggedIn()): ?>
+                <li>
+                    <a href="<?php echo appUrl('link_menu_iso.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-link mr-2"></i> Các đường link khác
+                    </a>
+                </li>
                 <?php endif; ?>
 
                 <?php if (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>

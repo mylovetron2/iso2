@@ -134,6 +134,11 @@ $allPermissions = [
 
     'bieumau.view' => 'Xem và tải biểu mẫu',
     'bieumau.manage' => 'Quản lý biểu mẫu và thư mục',
+
+    'quytrinh.manage' => 'Quản lý quy trình ISO (tải lên tài liệu, duyệt góp ý)',
+    'yeucaumuavattu.view' => 'Xem yêu cầu mua vật tư',
+    'yeucaumuavattu.create' => 'Tạo yêu cầu mua vật tư',
+    'yeucaumuavattu.manage' => 'Xử lý yêu cầu mua vật tư',
 ];
 
 // Cập nhật quyền cho role
@@ -175,6 +180,8 @@ $permissionGroups = [
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
     'Backup Database' => ['backup.create', 'backup.download', 'backup.view'],
     'Biểu mẫu' => ['bieumau.view', 'bieumau.manage'],
+    'Quy trình ISO' => ['quytrinh.manage'],
+    'Yêu cầu mua vật tư' => ['yeucaumuavattu.view', 'yeucaumuavattu.create', 'yeucaumuavattu.manage'],
 ];
 ?>
 <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-4 md:p-8 mt-4 md:mt-8">
