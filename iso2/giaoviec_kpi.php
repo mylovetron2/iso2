@@ -6,10 +6,13 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/permissions.php';
 require_once __DIR__ . '/config/database.php';
 requireAuth();
+requirePermission(PERMISSION_GIAOVIEC_KPI_VIEW);
 
 $db = getDBConnection();
 $currentUser = $_SESSION['username'] ?? 'unknown';
-$isAdmin = hasRole(ROLE_ADMIN);
+$canCreate = hasPermission(PERMISSION_GIAOVIEC_KPI_CREATE);
+$canEdit = hasPermission(PERMISSION_GIAOVIEC_KPI_EDIT);
+$canDelete = hasPermission(PERMISSION_GIAOVIEC_KPI_DELETE);
 $action = $_GET['action'] ?? 'index';
 
 // ============================================================
@@ -69,10 +72,10 @@ try {
         // --------- Gợi ý phiếu/hồ sơ từ hososcbd_iso ---------
         case 'api_hososcbd':
             $q = trim($_GET['q'] ?? '');
-            $sql = "SELECT stt, phieu, somay, hoso FROM hososcbd_iso WHERE 1=1";
+            $sql = "SELECT stt, phieu, mavt, somay, hoso FROM hososcbd_iso WHERE 1=1";
             $params = [];
             if ($q !== '') {
-                $sql .= " AND (phieu LIKE :q OR somay LIKE :q OR hoso LIKE :q)";
+                $sql .= " AND (phieu LIKE :q OR mavt LIKE :q OR somay LIKE :q OR hoso LIKE :q)";
                 $params[':q'] = "%$q%";
             }
             $sql .= " ORDER BY stt DESC LIMIT 100";
@@ -83,11 +86,12 @@ try {
         // --------- Lấy danh sách công việc (root + con) ---------
         case 'api_list':
             $st = $db->query("
-                SELECT g.*, 
+                SELECT g.*, h.mavt AS hoso_mavt,
                     (SELECT GROUP_CONCAT(CONCAT(hoten,'|',vai_tro) SEPARATOR ';;')
                      FROM giaoviec_kpi_nguoi WHERE giaoviec_stt = g.stt) AS nguoi_raw,
                     (SELECT COUNT(*) FROM giaoviec_kpi_nguoi WHERE giaoviec_stt = g.stt) AS nguoi_count
                 FROM giaoviec_kpi g
+                LEFT JOIN hososcbd_iso h ON h.stt = g.hososcbd_stt
                 ORDER BY COALESCE(g.parent_stt, g.stt) DESC, g.parent_stt IS NOT NULL, g.stt ASC
             ");
             $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -106,9 +110,10 @@ try {
 
         // --------- Lưu công việc (create/update) ---------
         case 'api_save':
-            if (!$isAdmin) jsonOut(['ok' => false, 'error' => 'Chỉ admin được giao việc'], 403);
             $in = json_decode(file_get_contents('php://input'), true) ?: [];
             $stt          = isset($in['stt']) ? (int)$in['stt'] : 0;
+          if ($stt > 0 && !$canEdit) jsonOut(['ok' => false, 'error' => 'Bạn không có quyền sửa công việc KPI'], 403);
+          if ($stt === 0 && !$canCreate) jsonOut(['ok' => false, 'error' => 'Bạn không có quyền tạo công việc KPI'], 403);
             $parent_stt   = !empty($in['parent_stt']) ? (int)$in['parent_stt'] : null;
             $hososcbd_stt = !empty($in['hososcbd_stt']) ? (int)$in['hososcbd_stt'] : null;
             $phieu        = trim($in['phieu'] ?? '');
@@ -148,7 +153,7 @@ try {
 
         // --------- Xoá công việc (kèm subtasks + người) ---------
         case 'api_delete':
-            if (!$isAdmin) jsonOut(['ok'=>false,'error'=>'Không đủ quyền'], 403);
+          if (!$canDelete) jsonOut(['ok'=>false,'error'=>'Bạn không có quyền xóa công việc KPI'], 403);
             $stt = (int)($_POST['stt'] ?? $_GET['stt'] ?? 0);
             if (!$stt) jsonOut(['ok'=>false,'error'=>'Thiếu stt'], 400);
             $db->beginTransaction();
@@ -164,7 +169,7 @@ try {
 
         // --------- Lưu người thực hiện (thay thế toàn bộ) ---------
         case 'api_save_nguoi':
-            if (!$isAdmin) jsonOut(['ok'=>false,'error'=>'Không đủ quyền'], 403);
+          if (!$canEdit) jsonOut(['ok'=>false,'error'=>'Bạn không có quyền gán người thực hiện'], 403);
             $in = json_decode(file_get_contents('php://input'), true) ?: [];
             $gvStt = (int)($in['giaoviec_stt'] ?? 0);
             $chinh = trim($in['chinh'] ?? '');
@@ -196,7 +201,31 @@ try {
 $title = 'Giao việc & KPI';
 require_once __DIR__ . '/views/layouts/header.php';
 ?>
-<div id="mainContent" class="flex-1 p-4 lg:p-6 lg:ml-64">
+<style>
+  .task-page {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  .task-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .task-table {
+    min-width: 1080px;
+  }
+  @media (max-width: 640px) {
+    .task-page {
+      padding: 0.75rem;
+    }
+    .task-table {
+      min-width: 920px;
+    }
+  }
+</style>
+<div class="task-page w-full min-w-0">
   <div class="bg-white rounded-lg shadow p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
     <div>
       <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-tasks text-blue-600 mr-2"></i>Giao việc &amp; KPI</h1>
@@ -212,7 +241,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         <option value="dang_lam">Đang thực hiện</option>
         <option value="hoan_thanh">Hoàn thành</option>
       </select>
-      <?php if ($isAdmin): ?>
+      <?php if ($canCreate): ?>
       <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
         <i class="fas fa-plus mr-1"></i> Thêm công việc
       </button>
@@ -220,13 +249,13 @@ require_once __DIR__ . '/views/layouts/header.php';
     </div>
   </div>
 
-  <div class="bg-white rounded-lg shadow overflow-x-auto">
-    <table class="min-w-full text-sm">
+  <div class="task-table-wrap bg-white rounded-lg shadow">
+    <table class="task-table w-full text-sm">
       <thead class="bg-gray-50 text-gray-700">
         <tr>
           <th class="px-3 py-2 text-left w-10">#</th>
           <th class="px-3 py-2 text-left">Tên công việc</th>
-          <th class="px-3 py-2 text-left">Dự án (Phiếu)</th>
+          <th class="px-3 py-2 text-left">Dự án (Hồ sơ)</th>
           <th class="px-3 py-2 text-left">Thời điểm bắt đầu</th>
           <th class="px-3 py-2 text-left">Hạn hoàn thành</th>
           <th class="px-3 py-2 text-left">Tình trạng</th>
@@ -256,7 +285,7 @@ require_once __DIR__ . '/views/layouts/header.php';
       <input type="hidden" id="f_hososcbd_stt">
       <div>
         <label class="text-sm font-medium text-gray-700">Dự án (Phiếu) — chọn hồ sơ SCBD</label>
-        <input list="dl_hoso" id="f_hoso_search" placeholder="Nhập phiếu / số máy / hồ sơ để tìm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
+        <input list="dl_hoso" id="f_hoso_search" placeholder="Nhập phiếu / mã VT / số máy / hồ sơ để tìm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
         <datalist id="dl_hoso"></datalist>
         <div id="f_hoso_info" class="text-xs text-gray-500 mt-1"></div>
       </div>
@@ -344,7 +373,9 @@ require_once __DIR__ . '/views/layouts/header.php';
 
 <script>
 const API = 'giaoviec_kpi.php';
-const IS_ADMIN = <?= $isAdmin ? 'true' : 'false' ?>;
+const CAN_CREATE = <?= $canCreate ? 'true' : 'false' ?>;
+const CAN_EDIT = <?= $canEdit ? 'true' : 'false' ?>;
+const CAN_DELETE = <?= $canDelete ? 'true' : 'false' ?>;
 let ALL_TASKS = [];
 let RESUME_LIST = [];
 let HOSO_LIST = [];
@@ -372,7 +403,7 @@ async function loadHoso(){
   const r = await fetch(`${API}?action=api_hososcbd`).then(r=>r.json());
   HOSO_LIST = r.data || [];
   const dl = document.getElementById('dl_hoso');
-  dl.innerHTML = HOSO_LIST.map(h => `<option data-stt="${h.stt}" value="${esc(h.phieu)} — ${esc(h.somay)} — ${esc(h.hoso)}"></option>`).join('');
+  dl.innerHTML = HOSO_LIST.map(h => `<option data-stt="${h.stt}" value="${esc(h.phieu)} — ${esc(h.mavt)} — ${esc(h.somay)} — ${esc(h.hoso)}"></option>`).join('');
 }
 async function loadTasks(){
   const r = await fetch(`${API}?action=api_list`).then(r=>r.json());
@@ -399,21 +430,22 @@ function renderTable(){
 
 function renderRow(t, idx, level){
   const s = t.trang_thai_hien_thi;
+  const tenHienThi = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
   const badge = `<span class="px-2 py-0.5 rounded text-xs font-medium ${STATUS_CSS[s]||''}">${esc(STATUS_LABEL[s]||s)}</span>`;
   const nguoi = (t.nguoi_list||[]).map(n =>
     `<span class="inline-block ${n.vai_tro==='chinh'?'bg-blue-600 text-white':'bg-gray-200 text-gray-700'} rounded px-2 py-0.5 text-xs mr-1 mb-1" title="${n.vai_tro==='chinh'?'Chính':'Phụ'}">${esc(n.hoten)}</span>`
   ).join('') || '<span class="text-gray-400 text-xs italic">Chưa giao</span>';
   const indent = level ? `<span class="text-gray-400 ml-4">↳</span> ` : '';
-  const admin = IS_ADMIN ? `
+  const admin = `${CAN_EDIT ? `
     <button onclick="openNguoi(${t.stt})" title="Người thực hiện" class="text-purple-600 hover:text-purple-800 px-1"><i class="fas fa-user-plus"></i></button>
-    <button onclick="editTask(${t.stt})" title="Sửa" class="text-blue-600 hover:text-blue-800 px-1"><i class="fas fa-edit"></i></button>
-    ${level===0 ? `<button onclick="addSubtask(${t.stt})" title="Thêm việc con" class="text-green-600 hover:text-green-800 px-1"><i class="fas fa-plus-circle"></i></button>` : ''}
-    <button onclick="delTask(${t.stt})" title="Xóa" class="text-red-500 hover:text-red-700 px-1"><i class="fas fa-trash"></i></button>` : '';
+    <button onclick="editTask(${t.stt})" title="Sửa" class="text-blue-600 hover:text-blue-800 px-1"><i class="fas fa-edit"></i></button>` : ''}
+    ${CAN_CREATE && level===0 ? `<button onclick="addSubtask(${t.stt})" title="Thêm việc con" class="text-green-600 hover:text-green-800 px-1"><i class="fas fa-plus-circle"></i></button>` : ''}
+    ${CAN_DELETE ? `<button onclick="delTask(${t.stt})" title="Xóa" class="text-red-500 hover:text-red-700 px-1"><i class="fas fa-trash"></i></button>` : ''}`;
   return `<tr class="border-t hover:bg-gray-50 ${level?'bg-gray-50/40':''}">
     <td class="px-3 py-2 text-gray-500">${idx}</td>
-    <td class="px-3 py-2">${indent}<span class="font-medium">${esc(t.ten_cong_viec)}</span>
+    <td class="px-3 py-2">${indent}<span class="font-medium">${esc(tenHienThi)}</span>
       ${t.mo_ta ? `<div class="text-xs text-gray-500">${esc(t.mo_ta)}</div>` : ''}</td>
-    <td class="px-3 py-2">${esc(t.phieu||'')}${t.somay?`<div class="text-xs text-gray-500">Máy: ${esc(t.somay)}${t.hoso?' · HS: '+esc(t.hoso):''}</div>`:''}</td>
+    <td class="px-3 py-2">${esc(t.hoso||'')}</td>
     <td class="px-3 py-2">${fmtDate(t.ngay_bat_dau)} ${t.gio_bat_dau? '<span class="text-xs text-gray-500">'+t.gio_bat_dau.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2">${fmtDate(t.ngay_ket_thuc)} ${t.gio_ket_thuc? '<span class="text-xs text-gray-500">'+t.gio_ket_thuc.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2">${badge}</td>
@@ -447,7 +479,7 @@ function editTask(stt){
   document.getElementById('f_stt').value = t.stt;
   document.getElementById('f_parent_stt').value = t.parent_stt || '';
   document.getElementById('f_hososcbd_stt').value = t.hososcbd_stt || '';
-  document.getElementById('f_hoso_search').value = t.phieu ? `${t.phieu} — ${t.somay||''} — ${t.hoso||''}` : '';
+  document.getElementById('f_hoso_search').value = t.phieu ? `${t.phieu} — ${t.hoso_mavt||''} — ${t.somay||''} — ${t.hoso||''}` : '';
   document.getElementById('f_ten').value = t.ten_cong_viec || '';
   document.getElementById('f_mota').value = t.mo_ta || '';
   document.getElementById('f_ngay_bd').value = t.ngay_bat_dau || '';
@@ -467,7 +499,7 @@ function addSubtask(parentStt){
   const p = ALL_TASKS.find(x => Number(x.stt) === parentStt);
   if (p) {
     document.getElementById('f_hososcbd_stt').value = p.hososcbd_stt || '';
-    document.getElementById('f_hoso_search').value = p.phieu ? `${p.phieu} — ${p.somay||''} — ${p.hoso||''}` : '';
+    document.getElementById('f_hoso_search').value = p.phieu ? `${p.phieu} — ${p.mavt||''} — ${p.somay||''} — ${p.hoso||''}` : '';
   }
   document.getElementById('modalTaskTitle').textContent = 'Thêm công việc con';
   openModal('modalTask');
@@ -495,7 +527,7 @@ document.getElementById('f_hoso_search').addEventListener('input', function(){
     if (h) {
       document.getElementById('f_hososcbd_stt').value = h.stt;
       if (!document.getElementById('f_ten').value) {
-        document.getElementById('f_ten').value = `Máy ${h.somay||''} — Hồ sơ ${h.hoso||''}`;
+        document.getElementById('f_ten').value = `${h.mavt||''}-${h.somay||''}`;
       }
       document.getElementById('f_hoso_info').textContent = `Phiếu ${h.phieu} · Máy ${h.somay} · HS ${h.hoso}`;
     }

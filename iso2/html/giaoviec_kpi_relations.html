@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Giao việc &amp; KPI — Quan hệ bảng &amp; Chức năng</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; }
+  h1,h2,h3 { color:#1e3a8a; }
+  code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.9em; }
+  table { border-collapse: collapse; width:100%; max-width:100%; margin: 8px 0 20px; font-size: 14px; table-layout: fixed; }
+  th, td { border:1px solid #e5e7eb; padding:6px 10px; vertical-align: top; overflow-wrap:anywhere; word-break:break-word; }
+  th { background:#f8fafc; text-align:left; }
+  .pk { color:#b45309; font-weight:600; }
+  .fk { color:#0369a1; font-weight:600; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .b-gray{background:#e5e7eb;color:#374151}
+  .b-yel{background:#fef3c7;color:#92400e}
+  .b-org{background:#ffedd5;color:#9a3412}
+  .b-red{background:#fee2e2;color:#b91c1c}
+  .b-blue{background:#dbeafe;color:#1e40af}
+  .b-green{background:#dcfce7;color:#166534}
+  section { width:100%; max-width:100%; background:#fff; padding: 20px 24px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; overflow-x:auto; }
+  .mermaid { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; }
+  pre { max-width:100%; overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; }
+</style>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 w-full max-w-none">
+
+<h1 class="text-3xl font-bold mb-1">Giao việc &amp; KPI — Tài liệu chức năng</h1>
+<p class="text-gray-600 mb-6">Mô tả quan hệ bảng CSDL và các chức năng của module <code>giaoviec_kpi.php</code>.</p>
+
+<!-- ====================== 1. Tổng quan ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">1. Tổng quan</h2>
+  <p>Module cho phép <b>trưởng nhóm (admin)</b> giao việc theo <b>phiếu / máy / hồ sơ</b> (lấy từ <code>hososcbd_iso</code>),
+     chọn <b>1 người chính + nhiều người phụ</b> từ bảng <code>resume</code>, quản lý thời hạn và theo dõi tình trạng KPI.</p>
+  <ul class="list-disc pl-6 mt-2 space-y-1">
+    <li>Mỗi công việc gắn với 1 hồ sơ SCBD (phiếu / số máy / hồ sơ).</li>
+    <li>Mỗi công việc có thể có nhiều <b>công việc con</b> (subtask) qua <code>parent_stt</code>.</li>
+    <li>Tình trạng tự tính từ ngày hạn và danh sách người thực hiện.</li>
+  </ul>
+</section>
+
+<!-- ====================== 2. Sơ đồ quan hệ ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">2. Sơ đồ quan hệ bảng (ERD)</h2>
+  <div class="mermaid">
+  erDiagram
+    hososcbd_iso ||--o{ giaoviec_kpi : "1 hồ sơ SCBD → n công việc"
+    giaoviec_kpi ||--o{ giaoviec_kpi : "công việc cha → công việc con (parent_stt)"
+    giaoviec_kpi ||--o{ giaoviec_kpi_nguoi : "1 công việc → n người thực hiện"
+    resume ||--o{ giaoviec_kpi_nguoi : "hoten (đơn vị chuẩn chỉnh máy địa vật lý)"
+
+    hososcbd_iso {
+      INT stt PK
+      VARCHAR phieu
+      VARCHAR somay
+      VARCHAR hoso
+    }
+    giaoviec_kpi {
+      INT stt PK
+      INT parent_stt FK
+      INT hososcbd_stt FK
+      VARCHAR phieu
+      VARCHAR somay
+      VARCHAR hoso
+      VARCHAR ten_cong_viec
+      DATE ngay_bat_dau
+      TIME gio_bat_dau
+      INT so_ngay
+      DATE ngay_ket_thuc
+      TIME gio_ket_thuc
+      TINYINT tien_do
+      VARCHAR trang_thai
+      VARCHAR nguoi_giao
+    }
+    giaoviec_kpi_nguoi {
+      INT stt PK
+      INT giaoviec_stt FK
+      VARCHAR hoten
+      ENUM vai_tro "chinh|phu"
+    }
+    resume {
+      INT stt PK
+      VARCHAR hoten
+      CHAR donvi
+      VARCHAR nghiviec
+    }
+  </div>
+</section>
+
+<!-- ====================== 3. Chi tiết bảng ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">3. Chi tiết bảng</h2>
+
+  <h3 class="text-xl font-semibold mt-4">3.1. <code>giaoviec_kpi</code> — Công việc</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">stt</td><td>INT PK AI</td><td>Khoá chính</td></tr>
+      <tr><td class="fk">parent_stt</td><td>INT NULL</td><td>Công việc cha (NULL = việc gốc)</td></tr>
+      <tr><td class="fk">hososcbd_stt</td><td>INT NULL</td><td>FK → <code>hososcbd_iso.stt</code></td></tr>
+      <tr><td>phieu</td><td>VARCHAR(20)</td><td>Số phiếu (hiển thị "Dự án")</td></tr>
+      <tr><td>somay</td><td>VARCHAR(80)</td><td>Số máy</td></tr>
+      <tr><td>hoso</td><td>VARCHAR(80)</td><td>Mã hồ sơ</td></tr>
+      <tr><td>ten_cong_viec</td><td>VARCHAR(255)</td><td>Tên công việc (thường = "Máy X — Hồ sơ Y")</td></tr>
+      <tr><td>mo_ta</td><td>TEXT</td><td>Mô tả chi tiết</td></tr>
+      <tr><td>ngay_bat_dau / gio_bat_dau</td><td>DATE / TIME</td><td>Thời điểm bắt đầu</td></tr>
+      <tr><td>so_ngay</td><td>INT</td><td>Số ngày dự kiến (dùng để tự tính hạn)</td></tr>
+      <tr><td>ngay_ket_thuc / gio_ket_thuc</td><td>DATE / TIME</td><td>Hạn hoàn thành</td></tr>
+      <tr><td>tien_do</td><td>TINYINT 0-100</td><td>% hoàn thành</td></tr>
+      <tr><td>trang_thai</td><td>VARCHAR(30)</td><td><code>chua_giao</code>, <code>dang_lam</code>, <code>hoan_thanh</code>, <code>huy</code></td></tr>
+      <tr><td>nguoi_giao</td><td>VARCHAR(100)</td><td>Username của người giao (auto)</td></tr>
+      <tr><td>ngay_tao / ngay_cap_nhat</td><td>DATETIME</td><td>Timestamps</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">3.2. <code>giaoviec_kpi_nguoi</code> — Người thực hiện</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">stt</td><td>INT PK AI</td><td>Khoá chính</td></tr>
+      <tr><td class="fk">giaoviec_stt</td><td>INT</td><td>FK → <code>giaoviec_kpi.stt</code></td></tr>
+      <tr><td>hoten</td><td>VARCHAR(100)</td><td>Họ tên (lấy từ <code>resume.hoten</code>)</td></tr>
+      <tr><td>vai_tro</td><td>ENUM('chinh','phu')</td><td>Vai trò trong công việc</td></tr>
+      <tr><td>ngay_gan</td><td>DATETIME</td><td>Ngày gán</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">3.3. Bảng liên quan (không tạo mới)</h3>
+  <ul class="list-disc pl-6">
+    <li><code>hososcbd_iso</code> — nguồn phiếu/số máy/hồ sơ, cột dùng: <code>stt, phieu, somay, hoso</code>.</li>
+    <li><code>resume</code> — nguồn người thực hiện, lọc theo:
+      <pre class="bg-slate-50 p-2 rounded text-xs mt-1">SELECT DISTINCT hoten FROM resume
+WHERE hoten IS NOT NULL AND hoten != ''
+  AND (nghiviec IS NULL OR nghiviec != 'yes')
+  AND donvi LIKE '%chuẩn chỉnh máy địa vật lý%'
+ORDER BY hoten ASC</pre>
+    </li>
+  </ul>
+</section>
+
+<!-- ====================== 4. Trạng thái ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">4. Quy tắc tính "Tình trạng"</h2>
+  <p>Tình trạng hiển thị (<code>trang_thai_hien_thi</code>) được tính runtime từ ngày hạn và số người thực hiện:</p>
+  <table>
+    <thead><tr><th>Điều kiện</th><th>Nhãn</th></tr></thead>
+    <tbody>
+      <tr><td>Chưa gán người thực hiện nào</td><td><span class="badge b-gray">Cần giao</span></td></tr>
+      <tr><td><code>trang_thai = hoan_thanh</code></td><td><span class="badge b-green">Hoàn thành</span></td></tr>
+      <tr><td>Hôm nay &gt; <code>ngay_ket_thuc</code></td><td><span class="badge b-red">Quá hạn</span></td></tr>
+      <tr><td>Hôm nay = <code>ngay_ket_thuc</code></td><td><span class="badge b-org">Đến hạn</span></td></tr>
+      <tr><td>0 &lt; <code>ngay_ket_thuc</code> − hôm nay ≤ 3</td><td><span class="badge b-yel">Sắp đến hạn</span></td></tr>
+      <tr><td>Còn lại (đã có người, còn thời gian)</td><td><span class="badge b-blue">Đang thực hiện</span></td></tr>
+    </tbody>
+  </table>
+  <p class="text-sm text-gray-600">Khi lưu người thực hiện (API <code>api_save_nguoi</code>), nếu công việc đang ở <code>chua_giao</code> sẽ tự chuyển thành <code>dang_lam</code>.</p>
+</section>
+
+<!-- ====================== 5. Luồng nghiệp vụ ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">5. Luồng nghiệp vụ</h2>
+  <div class="mermaid">
+  flowchart LR
+    A[Admin mở giaoviec_kpi.php] --> B[Nhấn Thêm công việc]
+    B --> C[Chọn hồ sơ SCBD phiếu-somay-hoso]
+    C --> D[Nhập tên, mô tả]
+    D --> E[Thiết lập thời gian: ngày/giờ bắt đầu + số ngày + hạn]
+    E --> F[Lưu -> INSERT giaoviec_kpi]
+    F --> G[Nhấn icon người thực hiện]
+    G --> H[Chọn 1 người chính + N người phụ]
+    H --> I[Lưu -> DELETE cũ + INSERT giaoviec_kpi_nguoi<br/>Auto: chua_giao -> dang_lam]
+    I --> J[Danh sách hiển thị badge tình trạng]
+    F --> K[Có thể Thêm việc con parent_stt]
+  </div>
+</section>
+
+<!-- ====================== 6. API endpoints ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">6. API endpoints (cùng file <code>giaoviec_kpi.php</code>)</h2>
+  <table>
+    <thead><tr><th>Action</th><th>Method</th><th>Chức năng</th></tr></thead>
+    <tbody>
+      <tr><td><code>?action=api_resume</code></td><td>GET</td><td>Danh sách <code>hoten</code> từ <code>resume</code> (đơn vị chuẩn chỉnh máy địa vật lý)</td></tr>
+      <tr><td><code>?action=api_hososcbd&amp;q=...</code></td><td>GET</td><td>Tìm hồ sơ SCBD theo phiếu/somay/hoso (giới hạn 100)</td></tr>
+      <tr><td><code>?action=api_list</code></td><td>GET</td><td>Toàn bộ công việc + danh sách người + tình trạng runtime</td></tr>
+      <tr><td><code>?action=api_save</code></td><td>POST JSON</td><td>Thêm/sửa công việc (admin)</td></tr>
+      <tr><td><code>?action=api_delete&amp;stt=</code></td><td>POST</td><td>Xóa công việc + việc con + người (admin)</td></tr>
+      <tr><td><code>?action=api_save_nguoi</code></td><td>POST JSON</td><td>Thay thế toàn bộ người thực hiện của 1 công việc (admin)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ====================== 7. Phân quyền ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">7. Phân quyền</h2>
+  <ul class="list-disc pl-6">
+    <li><b>Người dùng đã đăng nhập</b>: xem danh sách công việc, tình trạng, người thực hiện.</li>
+    <li><b>Admin</b> (<code>hasRole(ROLE_ADMIN)</code>): thêm / sửa / xóa công việc và gán người thực hiện.</li>
+    <li><code>nguoi_giao</code> được tự gán bằng <code>$_SESSION['username']</code> khi tạo.</li>
+  </ul>
+</section>
+
+<!-- ====================== 8. Files ====================== -->
+<section>
+  <h2 class="text-2xl font-semibold mb-2">8. Danh sách file đã tạo</h2>
+  <table>
+    <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+    <tbody>
+      <tr><td><code>migrations/create_giaoviec_kpi_tables.sql</code></td><td>DDL tạo 2 bảng</td></tr>
+      <tr><td><code>setup_giaoviec_kpi.php</code></td><td>Chạy 1 lần (admin) để tạo bảng</td></tr>
+      <tr><td><code>giaoviec_kpi.php</code></td><td>Trang UI + API JSON</td></tr>
+      <tr><td><code>html/giaoviec_kpi_relations.html</code></td><td>Tài liệu này</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<p class="text-center text-gray-400 text-sm mt-6">Cập nhật: 2026-09-23</p>
+</body>
+</html>

@@ -74,6 +74,11 @@ $allPermissions = [
     'hososcbd.delete' => 'Xóa hồ sơ SCBĐ',
     'hososcbd_dinhmuc.view' => 'Xem định mức KPI hồ sơ SCBĐ',
     'hososcbd_dinhmuc.edit' => 'Gán/Sửa định mức KPI hồ sơ SCBĐ',
+
+    'giaoviec_kpi.view' => 'Xem giao việc KPI',
+    'giaoviec_kpi.create' => 'Tạo công việc KPI',
+    'giaoviec_kpi.edit' => 'Sửa công việc KPI và gán người thực hiện',
+    'giaoviec_kpi.delete' => 'Xóa công việc KPI',
     
     'congviec_suachua.view' => 'Xem công việc sửa chữa',
     'congviec_suachua.create' => 'Tạo công việc sửa chữa',
@@ -165,6 +170,7 @@ $permissionGroups = [
     'Đơn vị khách hàng' => ['donvi.view', 'donvi.create', 'donvi.edit', 'donvi.delete'],
     'Thiết bị hỗ trợ' => ['thietbihotro.view', 'thietbihotro.create', 'thietbihotro.edit', 'thietbihotro.delete'],
     'Hồ sơ SCBĐ' => ['hososcbd.view', 'hososcbd.create', 'hososcbd.edit', 'hososcbd.delete', 'hososcbd_dinhmuc.view', 'hososcbd_dinhmuc.edit'],
+    'Giao việc KPI' => ['giaoviec_kpi.view', 'giaoviec_kpi.create', 'giaoviec_kpi.edit', 'giaoviec_kpi.delete'],
     'Công việc sửa chữa' => ['congviec_suachua.view', 'congviec_suachua.create', 'congviec_suachua.edit', 'congviec_suachua.delete'],
     'Quản lý số phiếu YC' => ['phieuyeucau.view', 'phieuyeucau.create', 'phieuyeucau.edit', 'phieuyeucau.delete'],
     'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],

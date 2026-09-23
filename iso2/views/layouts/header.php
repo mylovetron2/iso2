@@ -118,7 +118,8 @@ if (file_exists($dbSelectionFile)) {
                     hasPermission('kpi_baoduong.view') ||
                     hasPermission('kehoachbaoduong.view') ||
                     hasPermission('kehoachbaoduong.create') ||
-                    hasPermission('thietbi.view')
+                    hasPermission('thietbi.view') ||
+                    hasPermission('giaoviec_kpi.view')
                 )): ?>
                 <li>
                     <div id="kpiMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
@@ -147,6 +148,11 @@ if (file_exists($dbSelectionFile)) {
                             </a>
                         </li>
                         <?php endif; ?>
+                        <li>
+                            <a href="<?php echo appUrl('giaoviec_kpi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-tasks mr-2"></i> Giao việc &amp; KPI
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <?php endif; ?>

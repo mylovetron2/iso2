@@ -42,6 +42,12 @@ define('PERMISSION_HOSOSCBD_CREATE', 'hososcbd.create');
 define('PERMISSION_HOSOSCBD_EDIT', 'hososcbd.edit');
 define('PERMISSION_HOSOSCBD_DELETE', 'hososcbd.delete');
 
+// Giao viec KPI permissions
+define('PERMISSION_GIAOVIEC_KPI_VIEW', 'giaoviec_kpi.view');
+define('PERMISSION_GIAOVIEC_KPI_CREATE', 'giaoviec_kpi.create');
+define('PERMISSION_GIAOVIEC_KPI_EDIT', 'giaoviec_kpi.edit');
+define('PERMISSION_GIAOVIEC_KPI_DELETE', 'giaoviec_kpi.delete');
+
 require_once __DIR__.'/database.php';
 require_once __DIR__.'/../includes/functions.php';
 require_once __DIR__.'/../includes/auth.php';
