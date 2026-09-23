@@ -219,7 +219,7 @@ table.MsoTableGrid
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                         <tr>
                             <td class="footer">
-                                <span lang=VI style='mso-ansi-language:VI'>BM.25.07<br>01/01/2024 <o:p></o:p></span>
+                                <span lang=VI style='mso-ansi-language:VI'>BM.25.07<br>01/09/2026 <o:p></o:p></span>
                             </td>
                         </tr>
                     </table>

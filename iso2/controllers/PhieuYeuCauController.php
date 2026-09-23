@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../models/PhieuYeuCau.php';
 require_once __DIR__ . '/../models/HoSoSCBD.php';
 require_once __DIR__ . '/../models/DonVi.php';
+require_once __DIR__ . '/../models/PhieuYeuCauWordTemplate.php';
 
 /**
  * Controller: PhieuYeuCauController
@@ -14,12 +15,14 @@ class PhieuYeuCauController
     private PhieuYeuCau $model;
     private HoSoSCBD $hosoModel;
     private DonVi $donViModel;
+    private PhieuYeuCauWordTemplate $wordTemplateModel;
 
     public function __construct()
     {
         $this->model = new PhieuYeuCau();
         $this->hosoModel = new HoSoSCBD();
         $this->donViModel = new DonVi();
+        $this->wordTemplateModel = new PhieuYeuCauWordTemplate();
     }
 
     /**
@@ -357,8 +360,144 @@ class PhieuYeuCauController
         $gieng = $devices[0]['gieng'] ?? '';
         $xemxetxuong = $devices[0]['xemxetxuong'] ?? '';
 
-        // Xuất Word
+        $template = $this->currentWordTemplate();
+        $templatePath = $template ? $this->wordTemplatePath($template['ten_luu_tru']) : '';
+        if ($template && is_file($templatePath)) {
+            $this->exportWithWordTemplate($templatePath, $sohoso, $ngay, $khachhang, $donvi, $dienthoai, $nhanvien, $cv, $ycthemkh, $devices);
+            return;
+        }
+
+        // Giữ mẫu cũ cho đến khi quản trị viên tải mẫu .docx đầu tiên.
         require_once __DIR__ . '/../views/phieuyeucau/export_word.php';
+    }
+
+    public function wordTemplate(): void
+    {
+        $template = $this->currentWordTemplate();
+        require __DIR__ . '/../views/phieuyeucau/word_template.php';
+    }
+
+    public function uploadWordTemplate(): void
+    {
+        if (!hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)($_POST['csrf_token'] ?? ''))) {
+            http_response_code(419);
+            exit('Phiên thao tác không hợp lệ. Vui lòng tải lại trang.');
+        }
+        if (!isset($_FILES['template']) || $_FILES['template']['error'] !== UPLOAD_ERR_OK) {
+            $this->redirectTemplate('Vui lòng chọn file Word .docx hợp lệ.');
+        }
+
+        $file = $_FILES['template'];
+        $originalName = basename((string)$file['name']);
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $mimeType = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']) ?: '';
+        if ($extension !== 'docx' || (int)$file['size'] > 10 * 1024 * 1024 || !in_array($mimeType, ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip', 'application/octet-stream'], true)) {
+            $this->redirectTemplate('Chỉ chấp nhận file .docx có dung lượng tối đa 10 MB.');
+        }
+
+        require_once __DIR__ . '/../vendor/autoload.php';
+        try {
+            $variables = (new \PhpOffice\PhpWord\TemplateProcessor($file['tmp_name']))->getVariables();
+        } catch (Throwable $exception) {
+            $this->redirectTemplate('File Word không phải mẫu .docx hợp lệ hoặc bị hỏng.');
+        }
+        if (!in_array('stt', $variables, true)) {
+            $this->redirectTemplate('Mẫu phải có biến ${stt} trong dòng bảng thiết bị để hệ thống tạo danh sách thiết bị.');
+        }
+
+        $storageDir = dirname(__DIR__) . '/storage/phieuyeucau-template';
+        if (!is_dir($storageDir) && !mkdir($storageDir, 0750, true) && !is_dir($storageDir)) {
+            $this->redirectTemplate('Không thể tạo thư mục lưu mẫu.');
+        }
+        $storedName = bin2hex(random_bytes(16)) . '.docx';
+        $destination = $this->wordTemplatePath($storedName);
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            $this->redirectTemplate('Không thể lưu file mẫu.');
+        }
+
+        $previous = $this->currentWordTemplate();
+        try {
+            $this->wordTemplateModel->replace([
+                'ten_hien_thi' => pathinfo($originalName, PATHINFO_FILENAME),
+                'ten_luu_tru' => $storedName,
+                'mime_type' => $mimeType,
+                'kich_thuoc' => (int)$file['size'],
+                'nguoi_tai_len' => (int)($_SESSION['user_id'] ?? 0) ?: null,
+            ]);
+        } catch (Throwable $exception) {
+            @unlink($destination);
+            error_log('PhieuYeuCau Word template upload error: ' . $exception->getMessage());
+            $this->redirectTemplate('Không thể lưu thông tin mẫu vào cơ sở dữ liệu.');
+        }
+        if ($previous) {
+            $previousPath = $this->wordTemplatePath($previous['ten_luu_tru']);
+            if (is_file($previousPath)) {
+                @unlink($previousPath);
+            }
+        }
+        $_SESSION['success'] = 'Đã cập nhật mẫu in Phiếu yêu cầu dịch vụ.';
+        header('Location: phieuyeucau_template.php');
+        exit;
+    }
+
+    private function exportWithWordTemplate(string $templatePath, string $sohoso, string $ngay, string $khachhang, string $donvi, string $dienthoai, string $nhanvien, string $cv, string $ycthemkh, array $devices): void
+    {
+        require_once __DIR__ . '/../vendor/autoload.php';
+        $document = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
+        $document->setValues([
+            'so_ho_so' => $sohoso,
+            'ngay' => $ngay,
+            'nguoi_yeu_cau' => $khachhang,
+            'don_vi' => $donvi,
+            'dien_thoai' => $dienthoai,
+            'nguoi_nhan' => $nhanvien,
+            'noi_dung' => $cv,
+            'yeu_cau_them' => $ycthemkh,
+        ]);
+        $rows = array_values($devices);
+        if ($rows) {
+            $document->cloneRow('stt', count($rows));
+            foreach ($rows as $index => $device) {
+                $number = $index + 1;
+                $document->setValues([
+                    "stt#{$number}" => $number,
+                    "ten_thiet_bi#{$number}" => $device['tenvt'] ?? $device['mavt'] ?? '',
+                    "model#{$number}" => $device['model'] ?? '',
+                    "serial#{$number}" => $device['somay'] ?? '',
+                    "tinh_trang#{$number}" => $device['honghoc'] ?? '',
+                    "noi_dung_yeu_cau#{$number}" => $device['cv'] ?? $cv,
+                    "tra_ve_xuong#{$number}" => $device['vitrimaybd'] ?? '',
+                ]);
+            }
+        }
+        $filename = preg_replace('/[^A-Za-z0-9_-]/', '_', $sohoso) . '-YCDV.docx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        $document->saveAs('php://output');
+        exit;
+    }
+
+    private function wordTemplatePath(string $storedName): string
+    {
+        return dirname(__DIR__) . '/storage/phieuyeucau-template/' . basename($storedName);
+    }
+
+    private function currentWordTemplate(): array|false
+    {
+        try {
+            return $this->wordTemplateModel->current();
+        } catch (PDOException $exception) {
+            error_log('PhieuYeuCau Word template table is unavailable: ' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    private function redirectTemplate(string $error): never
+    {
+        $_SESSION['error'] = $error;
+        header('Location: phieuyeucau_template.php');
+        exit;
     }
 
     /**

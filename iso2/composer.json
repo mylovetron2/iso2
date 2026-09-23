@@ -4,10 +4,11 @@
     "type": "project",
     "require": {
         "php": ">=8.0",
-        "ext-pdo": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "phpoffice/phpspreadsheet": "^1.29"
+        "ext-pdo": "*",
+        "phpoffice/phpspreadsheet": "^1.29",
+        "phpoffice/phpword": "1.3"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5"

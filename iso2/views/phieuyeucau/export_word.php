@@ -767,7 +767,7 @@ while ($i <= 5 + $solan) {
                         <tr>
                             <td  class="footer">
                             <span lang=VI style='mso-ansi-language:VI'>BM.25.02<br/>
-	01/01/2024 <o:p></o:p></span>
+	01/09/2026 <o:p></o:p></span>
                             </td>
                         </tr>
                     </table>

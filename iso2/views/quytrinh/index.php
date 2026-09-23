@@ -30,7 +30,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php if (!empty($databaseError)): ?>
             <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-5">
                 <div class="font-semibold"><i class="fas fa-database mr-1"></i> Chưa khởi tạo dữ liệu quy trình</div>
-                <p class="text-sm mt-2">Admin cần mở và chạy file <code>quy_trinh.sql</code> trong phpMyAdmin hoặc MySQL để tạo bảng và 3 quy trình 14, 18, 20.</p>
+                <p class="text-sm mt-2">Admin cần mở và chạy file <code>quy_trinh.sql</code> trong phpMyAdmin hoặc MySQL để tạo bảng và các quy trình 14, 18, 20, 25.</p>
             </div>
         <?php elseif (!$quyTrinhs): ?>
             <div class="text-center text-slate-500 py-12">

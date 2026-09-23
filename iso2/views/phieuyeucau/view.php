@@ -30,6 +30,11 @@ $devices = $detail['devices'];
                title="In phiếu YC">
                 <i class="fas fa-file-word mr-1"></i> In phiếu YC
             </a>
+            <?php if (hasRole(ROLE_ADMIN)): ?>
+            <a href="phieuyeucau_template.php" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded" title="Quản lý mẫu in">
+                <i class="fas fa-cog mr-1"></i> Mẫu in
+            </a>
+            <?php endif; ?>
             <a href="phieuyeucau.php?action=exportworddetail&phieu=<?php echo urlencode($summary['phieu']); ?>" 
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
                target="_blank"
