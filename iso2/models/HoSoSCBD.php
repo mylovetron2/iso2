@@ -129,8 +129,8 @@ class HoSoSCBD extends BaseModel
         if ($this->hasTamDungTable()) {
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
                            COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt) AS kpi_baoduong_stt,
-                           vk.dinh_muc_so_gio AS dinh_muc_so_gio,
-                           vk.loai_congviec AS dinh_muc_loai_congviec,
+                           COALESCE(vk.dinh_muc_so_gio, k.bd_cap_1_so_gio) AS dinh_muc_so_gio,
+                           COALESCE(vk.loai_congviec, IF(k.id IS NOT NULL, 'bd_cap_1', NULL)) AS dinh_muc_loai_congviec,
                            k.kiem_tra_so_gio AS kpi_kiem_tra_so_gio,
                            k.bd_cap_1_so_gio AS kpi_bd_cap_1_so_gio,
                            k.bd_cap_2_so_gio AS kpi_bd_cap_2_so_gio,
@@ -157,8 +157,8 @@ class HoSoSCBD extends BaseModel
             // Fallback: Query đơn giản khi bảng hososcbd_tamdung chưa tồn tại
             $sql = "SELECT h.*, d.tendv, t.stt as thietbi_stt,
                            COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt) AS kpi_baoduong_stt,
-                           vk.dinh_muc_so_gio AS dinh_muc_so_gio,
-                           vk.loai_congviec AS dinh_muc_loai_congviec,
+                           COALESCE(vk.dinh_muc_so_gio, k.bd_cap_1_so_gio) AS dinh_muc_so_gio,
+                           COALESCE(vk.loai_congviec, IF(k.id IS NOT NULL, 'bd_cap_1', NULL)) AS dinh_muc_loai_congviec,
                            k.kiem_tra_so_gio AS kpi_kiem_tra_so_gio,
                            k.bd_cap_1_so_gio AS kpi_bd_cap_1_so_gio,
                            k.bd_cap_2_so_gio AS kpi_bd_cap_2_so_gio,

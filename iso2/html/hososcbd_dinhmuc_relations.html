@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quan hệ bảng định mức KPI hồ sơ SCBĐ</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5b6475;
+      --line: #cfd7e6;
+      --panel: #ffffff;
+      --soft: #f4f7fb;
+      --primary: #176b87;
+      --primary-soft: #e5f3f7;
+      --accent: #b7791f;
+      --accent-soft: #fff3d8;
+      --ok: #237a57;
+      --ok-soft: #e5f6ee;
+      --danger: #a13f3f;
+      --danger-soft: #fdecec;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #eef5f8 0%, #f9fafb 45%, #f3efe7 100%);
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      padding: 24px 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 45px rgba(23, 32, 51, 0.08);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #0f3443;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: 20px;
+      color: #173b4c;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    p {
+      margin: 8px 0 0;
+    }
+
+    code {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #edf2f7;
+      color: #26384f;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.94em;
+    }
+
+    .subtitle {
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: #18536a;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    section {
+      margin-top: 18px;
+      padding: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 32px rgba(23, 32, 51, 0.06);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-height: 100%;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+
+    .card strong {
+      color: #123849;
+    }
+
+    .diagram {
+      overflow-x: auto;
+      padding: 18px;
+      border: 1px dashed #b8c3d3;
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr 54px 1fr 54px 1fr;
+      align-items: stretch;
+      min-width: 980px;
+      gap: 0;
+    }
+
+    .node {
+      padding: 14px;
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .node.kpi {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .node.view {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .node .name {
+      margin-bottom: 6px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .node ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 22px;
+    }
+
+    .fallback {
+      margin-top: 14px;
+      padding: 14px;
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      background: #fff8e8;
+    }
+
+    .mysql-erd {
+      display: grid;
+      grid-template-columns: 1fr 78px 1fr 78px 1fr;
+      gap: 0;
+      align-items: center;
+      min-width: 1060px;
+    }
+
+    .mysql-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mysql-table {
+      overflow: hidden;
+      border: 2px solid #2f5d73;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(23, 32, 51, 0.08);
+    }
+
+    .mysql-table.kpi {
+      border-color: var(--accent);
+    }
+
+    .mysql-table.view {
+      border-color: var(--ok);
+    }
+
+    .mysql-table .table-title {
+      padding: 9px 12px;
+      background: #2f5d73;
+      color: #fff;
+      font-family: Consolas, "Courier New", monospace;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .mysql-table.kpi .table-title {
+      background: var(--accent);
+    }
+
+    .mysql-table.view .table-title {
+      background: var(--ok);
+    }
+
+    .mysql-table ul {
+      margin: 0;
+      padding: 8px 12px 10px;
+      list-style: none;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .mysql-table li {
+      display: flex;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px solid #edf1f5;
+    }
+
+    .mysql-table li:last-child {
+      border-bottom: 0;
+    }
+
+    .key {
+      display: inline-flex;
+      width: 34px;
+      flex: 0 0 34px;
+      justify-content: center;
+      border-radius: 4px;
+      background: #e8eef5;
+      color: #244256;
+      font-weight: 800;
+      font-size: 11px;
+    }
+
+    .key.pk {
+      background: #dbeafe;
+      color: #174174;
+    }
+
+    .key.fk {
+      background: #fee8b6;
+      color: #79510f;
+    }
+
+    .key.uk {
+      background: #dff5eb;
+      color: #1e6b4d;
+    }
+
+    .rel {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      color: #31576a;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .rel::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 50%;
+      border-top: 2px solid #7e93a5;
+    }
+
+    .rel span {
+      position: relative;
+      padding: 3px 6px;
+      border: 1px solid #c4d1dc;
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .relation-canvas {
+      position: relative;
+      width: 1060px;
+      height: 560px;
+      margin-top: 18px;
+      border: 1px solid #d5dfeb;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .relation-canvas svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .relation-node {
+      position: absolute;
+      width: 245px;
+      border: 2px solid #2f5d73;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(23, 32, 51, 0.08);
+    }
+
+    .relation-node.kpi {
+      border-color: var(--accent);
+    }
+
+    .relation-node.view {
+      border-color: var(--ok);
+    }
+
+    .relation-node .title {
+      padding: 8px 10px;
+      background: #2f5d73;
+      color: #fff;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .relation-node.kpi .title {
+      background: var(--accent);
+    }
+
+    .relation-node.view .title {
+      background: var(--ok);
+    }
+
+    .relation-node .body {
+      padding: 8px 10px;
+      color: #314256;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .line-label {
+      position: absolute;
+      z-index: 2;
+      padding: 3px 7px;
+      border: 1px solid #b8c7d6;
+      border-radius: 999px;
+      background: #fff;
+      color: #244256;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf2f5;
+      color: #14394a;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fbfcfe;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      padding: 16px 14px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      counter-increment: step;
+    }
+
+    .step::before {
+      content: counter(step);
+      display: inline-flex;
+      width: 26px;
+      height: 26px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .note {
+      padding: 14px;
+      border: 1px solid #f1cd8c;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: #5c3b09;
+    }
+
+    .warning {
+      padding: 14px;
+      border: 1px solid #efb0b0;
+      border-radius: 8px;
+      background: var(--danger-soft);
+      color: #6d2727;
+    }
+
+    .sql {
+      display: block;
+      overflow-x: auto;
+      margin: 0;
+      padding: 14px;
+      border-radius: 8px;
+      background: #142033;
+      color: #e7edf6;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre;
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: min(100% - 18px, 1180px);
+        padding-top: 12px;
+      }
+
+      header, section {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .grid, .steps {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      header, section {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>Quan hệ giữa các bảng thể hiện định mức KPI hồ sơ SCBĐ</h1>
+      <p class="subtitle">
+        Tài liệu này mô tả cách hệ thống lấy và hiển thị cột <strong>Định mức</strong> cho hồ sơ sửa chữa bảo dưỡng: ưu tiên định mức gán riêng cho hồ sơ, sau đó fallback theo KPI đã gán cho thiết bị.
+      </p>
+      <div class="meta">
+        <span class="pill">Phạm vi: hososcbd.php</span>
+        <span class="pill">Nguồn: migrations 20260714, 20260810, 20260811</span>
+        <span class="pill">Cập nhật: 2026-09-23</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Sơ đồ quan hệ chính</h2>
+      <div class="diagram" aria-label="Sơ đồ quan hệ bảng định mức">
+        <div class="flow">
+          <div class="node">
+            <div class="name">hososcbd_iso</div>
+            <strong>Hồ sơ SCBĐ</strong>
+            <ul>
+              <li><code>stt</code>: khóa chính hồ sơ</li>
+              <li><code>hoso</code>: mã hồ sơ dùng nối người thực hiện</li>
+              <li><code>mavt</code> + <code>somay</code>: nhận diện thiết bị</li>
+            </ul>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <div class="name">hososcbd_dinhmuc_iso</div>
+            <strong>Định mức riêng của hồ sơ</strong>
+            <ul>
+              <li><code>hososcbd_stt</code> là UNIQUE</li>
+              <li><code>loai_congviec</code>: KT, BD1, BD2, BD3, HC</li>
+              <li><code>dinh_muc_gio_thu_cong</code>: giờ nhập tay, nếu có</li>
+            </ul>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node kpi">
+            <div class="name">kpi_baoduong_thietbi_iso</div>
+            <strong>Bảng chuẩn KPI theo loại thiết bị</strong>
+            <ul>
+              <li>Cột giờ: <code>kiem_tra_so_gio</code>, <code>bd_cap_1_so_gio</code>, ...</li>
+              <li>Cột nội dung, nhân công, người thực hiện theo từng loại công việc</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="fallback">
+        Khi hồ sơ chưa có dòng trong <code>hososcbd_dinhmuc_iso</code>, danh sách dùng đường fallback: <code>hososcbd_iso.mavt + somay</code> → <code>thietbi_iso</code> → <code>thietbi_kpi_baoduong_iso</code> → <code>kpi_baoduong_thietbi_iso.bd_cap_1_so_gio</code>.
+      </div>
+    </section>
+
+    <section>
+      <h2>Sơ đồ MySQL của các bảng</h2>
+      <div class="diagram" aria-label="Sơ đồ MySQL ERD của các bảng định mức">
+        <div class="mysql-erd">
+          <div class="mysql-stack">
+            <div class="mysql-table">
+              <div class="table-title">hososcbd_iso</div>
+              <ul>
+                <li><span class="key pk">PK</span><span>stt INT UNSIGNED</span></li>
+                <li><span class="key">IDX</span><span>hoso VARCHAR</span></li>
+                <li><span class="key">COL</span><span>mavt VARCHAR</span></li>
+                <li><span class="key">COL</span><span>somay VARCHAR</span></li>
+                <li><span class="key">COL</span><span>phieu, ngayyc, ngayth, ngaykt</span></li>
+              </ul>
+            </div>
+            <div class="mysql-table">
+              <div class="table-title">ngthuchien_iso</div>
+              <ul>
+                <li><span class="key">IDX</span><span>mahoso → hososcbd_iso.hoso</span></li>
+                <li><span class="key">COL</span><span>hoten</span></li>
+                <li><span class="key">COL</span><span>giolv / giolv1...giolv12</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rel"><span>1 : 1<br>UNIQUE</span></div>
+
+          <div class="mysql-stack">
+            <div class="mysql-table">
+              <div class="table-title">hososcbd_dinhmuc_iso</div>
+              <ul>
+                <li><span class="key pk">PK</span><span>id INT</span></li>
+                <li><span class="key fk">FK</span><span>hososcbd_stt → hososcbd_iso.stt</span></li>
+                <li><span class="key fk">FK</span><span>kpi_baoduong_stt → kpi_baoduong_thietbi_iso.id</span></li>
+                <li><span class="key uk">UK</span><span>UNIQUE(hososcbd_stt)</span></li>
+                <li><span class="key">COL</span><span>loai_congviec ENUM</span></li>
+                <li><span class="key">COL</span><span>dinh_muc_gio_thu_cong DECIMAL</span></li>
+              </ul>
+            </div>
+            <div class="mysql-table view">
+              <div class="table-title">view_hososcbd_kpi_dinhmuc</div>
+              <ul>
+                <li><span class="key">VIEW</span><span>dinh_muc_so_gio = COALESCE(thủ công, KPI)</span></li>
+                <li><span class="key">VIEW</span><span>gio_thuc_te = MAX(ngthuchien_iso.giolv)</span></li>
+              </ul>
+            </div>
+            <div class="mysql-table view">
+              <div class="table-title">view_hososcbd_kpi_ketluan</div>
+              <ul>
+                <li><span class="key">VIEW</span><span>ket_luan_kpi: chua_du_du_lieu / dat / khong_dat</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rel"><span>N : 1</span></div>
+
+          <div class="mysql-stack">
+            <div class="mysql-table kpi">
+              <div class="table-title">kpi_baoduong_thietbi_iso</div>
+              <ul>
+                <li><span class="key pk">PK</span><span>id INT</span></li>
+                <li><span class="key">IDX</span><span>ten_thiet_bi VARCHAR</span></li>
+                <li><span class="key">COL</span><span>kiem_tra_so_gio DECIMAL</span></li>
+                <li><span class="key">COL</span><span>bd_cap_1_so_gio DECIMAL</span></li>
+                <li><span class="key">COL</span><span>bd_cap_2_so_gio DECIMAL</span></li>
+                <li><span class="key">COL</span><span>bd_cap_3_so_gio DECIMAL</span></li>
+                <li><span class="key">COL</span><span>hieu_chuan_so_gio DECIMAL</span></li>
+              </ul>
+            </div>
+            <div class="mysql-table">
+              <div class="table-title">thietbi_kpi_baoduong_iso</div>
+              <ul>
+                <li><span class="key pk">PK</span><span>id INT</span></li>
+                <li><span class="key fk">FK</span><span>thietbi_stt → thietbi_iso.stt</span></li>
+                <li><span class="key fk">FK</span><span>kpi_baoduong_stt → kpi_baoduong_thietbi_iso.id</span></li>
+                <li><span class="key uk">UK</span><span>UNIQUE(thietbi_stt)</span></li>
+              </ul>
+            </div>
+            <div class="mysql-table">
+              <div class="table-title">thietbi_iso</div>
+              <ul>
+                <li><span class="key pk">PK</span><span>stt INT UNSIGNED</span></li>
+                <li><span class="key">COL</span><span>mavt VARCHAR</span></li>
+                <li><span class="key">COL</span><span>somay VARCHAR</span></li>
+                <li><span class="key">COL</span><span>tenvt VARCHAR</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="relation-canvas" aria-label="Đường vẽ quan hệ trực tiếp giữa các bảng MySQL">
+          <svg viewBox="0 0 1060 560" role="img" aria-label="Các đường nối quan hệ bảng">
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#496a7d"></path>
+              </marker>
+              <marker id="arrow-kpi" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#b7791f"></path>
+              </marker>
+              <marker id="arrow-view" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#237a57"></path>
+              </marker>
+            </defs>
+            <path d="M285 110 C340 110, 355 110, 410 110" fill="none" stroke="#496a7d" stroke-width="3" marker-end="url(#arrow)"></path>
+            <path d="M655 110 C710 110, 725 110, 780 110" fill="none" stroke="#b7791f" stroke-width="3" marker-end="url(#arrow-kpi)"></path>
+            <path d="M902 390 L902 308" fill="none" stroke="#496a7d" stroke-width="3" marker-end="url(#arrow)"></path>
+            <path d="M902 246 L902 184" fill="none" stroke="#b7791f" stroke-width="3" marker-end="url(#arrow-kpi)"></path>
+            <path d="M285 380 C352 380, 345 205, 410 205" fill="none" stroke="#237a57" stroke-width="3" stroke-dasharray="7 5" marker-end="url(#arrow-view)"></path>
+            <path d="M532 160 L532 218" fill="none" stroke="#237a57" stroke-width="3" marker-end="url(#arrow-view)"></path>
+            <path d="M532 294 L532 352" fill="none" stroke="#237a57" stroke-width="3" marker-end="url(#arrow-view)"></path>
+            <path d="M410 132 C330 132, 325 430, 780 430" fill="none" stroke="#496a7d" stroke-width="3" stroke-dasharray="8 5" marker-end="url(#arrow)"></path>
+            <path d="M285 132 C370 132, 690 430, 780 430" fill="none" stroke="#496a7d" stroke-width="3" stroke-dasharray="8 5" marker-end="url(#arrow)"></path>
+          </svg>
+
+          <div class="relation-node" style="left: 40px; top: 62px;">
+            <div class="title">hososcbd_iso</div>
+            <div class="body">PK stt<br>hoso<br>mavt + somay</div>
+          </div>
+          <div class="relation-node" style="left: 40px; top: 330px;">
+            <div class="title">ngthuchien_iso</div>
+            <div class="body">mahoso → hoso<br>giolv</div>
+          </div>
+          <div class="relation-node" style="left: 410px; top: 62px;">
+            <div class="title">hososcbd_dinhmuc_iso</div>
+            <div class="body">FK hososcbd_stt<br>FK kpi_baoduong_stt<br>UK hososcbd_stt</div>
+          </div>
+          <div class="relation-node view" style="left: 410px; top: 218px;">
+            <div class="title">view_hososcbd_kpi_dinhmuc</div>
+            <div class="body">dinh_muc_so_gio<br>gio_thuc_te</div>
+          </div>
+          <div class="relation-node view" style="left: 410px; top: 352px;">
+            <div class="title">view_hososcbd_kpi_ketluan</div>
+            <div class="body">ket_luan_kpi</div>
+          </div>
+          <div class="relation-node kpi" style="left: 780px; top: 62px;">
+            <div class="title">kpi_baoduong_thietbi_iso</div>
+            <div class="body">PK id<br>KT / BD1 / BD2 / BD3 / HC</div>
+          </div>
+          <div class="relation-node" style="left: 780px; top: 246px;">
+            <div class="title">thietbi_kpi_baoduong_iso</div>
+            <div class="body">FK thietbi_stt<br>FK kpi_baoduong_stt<br>UK thietbi_stt</div>
+          </div>
+          <div class="relation-node" style="left: 780px; top: 390px;">
+            <div class="title">thietbi_iso</div>
+            <div class="body">PK stt<br>mavt + somay<br>tenvt</div>
+          </div>
+
+          <span class="line-label" style="left: 324px; top: 86px;">1 : 1</span>
+          <span class="line-label" style="left: 692px; top: 86px;">N : 1</span>
+          <span class="line-label" style="left: 918px; top: 318px;">1 : 1</span>
+          <span class="line-label" style="left: 918px; top: 202px;">N : 1</span>
+          <span class="line-label" style="left: 306px; top: 292px;">mahoso = hoso</span>
+          <span class="line-label" style="left: 560px; top: 184px;">view lấy dữ liệu</span>
+          <span class="line-label" style="left: 604px; top: 434px;">fallback mavt + somay</span>
+        </div>
+      </div>
+      <div class="fallback">
+        Đường gán riêng: <code>hososcbd_dinhmuc_iso</code> nối trực tiếp hồ sơ với KPI chuẩn. Đường fallback: <code>hososcbd_iso</code> nối sang <code>thietbi_iso</code> bằng <code>mavt + somay</code>, rồi qua <code>thietbi_kpi_baoduong_iso</code> để tìm KPI chuẩn.
+      </div>
+    </section>
+
+    <section>
+      <h2>Các bảng và vai trò</h2>
+      <div class="grid">
+        <div class="card">
+          <h3><code>hososcbd_iso</code></h3>
+          <p>Bảng nghiệp vụ chính của hồ sơ sửa chữa bảo dưỡng. Cột <code>stt</code> dùng làm khóa liên kết định mức riêng, còn <code>hoso</code> dùng để lấy giờ thực tế từ người thực hiện.</p>
+        </div>
+        <div class="card">
+          <h3><code>hososcbd_dinhmuc_iso</code></h3>
+          <p>Lưu lựa chọn định mức cho từng hồ sơ. Mỗi hồ sơ tối đa một dòng nhờ UNIQUE trên <code>hososcbd_stt</code>. Có thể ghi đè số giờ bằng <code>dinh_muc_gio_thu_cong</code>.</p>
+        </div>
+        <div class="card">
+          <h3><code>kpi_baoduong_thietbi_iso</code></h3>
+          <p>Bảng chuẩn định mức KPI theo nhóm/loại thiết bị. Một dòng chứa đủ định mức cho kiểm tra, bảo dưỡng cấp 1-2-3 và hiệu chuẩn.</p>
+        </div>
+        <div class="card">
+          <h3><code>thietbi_kpi_baoduong_iso</code></h3>
+          <p>Bảng ánh xạ một thiết bị cụ thể sang một dòng KPI chuẩn. Đây là nguồn fallback khi hồ sơ chưa có định mức riêng.</p>
+        </div>
+        <div class="card">
+          <h3><code>thietbi_iso</code></h3>
+          <p>Danh mục thiết bị. Khi nối từ hồ sơ phải dùng cả <code>mavt</code> và <code>somay</code>, sau đó chọn <code>MIN(stt)</code> để tránh nhân bản do thiết bị trùng mã.</p>
+        </div>
+        <div class="card">
+          <h3><code>ngthuchien_iso</code></h3>
+          <p>Lưu người thực hiện và giờ làm. View KPI lấy <code>MAX(giolv)</code> theo <code>ngthuchien_iso.mahoso = hososcbd_iso.hoso</code> để so sánh với định mức.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Khóa liên kết và kiểu quan hệ</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nguồn</th>
+            <th>Đích</th>
+            <th>Quan hệ</th>
+            <th>Mục đích</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>hososcbd_dinhmuc_iso.hososcbd_stt</code></td>
+            <td><code>hososcbd_iso.stt</code></td>
+            <td>1:1</td>
+            <td>Mỗi hồ sơ có tối đa một cấu hình định mức riêng.</td>
+          </tr>
+          <tr>
+            <td><code>hososcbd_dinhmuc_iso.kpi_baoduong_stt</code></td>
+            <td><code>kpi_baoduong_thietbi_iso.id</code></td>
+            <td>N:1</td>
+            <td>Nhiều hồ sơ có thể dùng chung một bộ định mức KPI chuẩn.</td>
+          </tr>
+          <tr>
+            <td><code>thietbi_kpi_baoduong_iso.thietbi_stt</code></td>
+            <td><code>thietbi_iso.stt</code></td>
+            <td>1:1</td>
+            <td>Mỗi thiết bị cụ thể chỉ gán một bộ KPI chuẩn.</td>
+          </tr>
+          <tr>
+            <td><code>thietbi_kpi_baoduong_iso.kpi_baoduong_stt</code></td>
+            <td><code>kpi_baoduong_thietbi_iso.id</code></td>
+            <td>N:1</td>
+            <td>Nhiều thiết bị có thể dùng chung cùng một bộ định mức.</td>
+          </tr>
+          <tr>
+            <td><code>hososcbd_iso.mavt</code> + <code>hososcbd_iso.somay</code></td>
+            <td><code>thietbi_iso.mavt</code> + <code>thietbi_iso.somay</code></td>
+            <td>N:1 đại diện</td>
+            <td>Định danh thiết bị của hồ sơ để tìm KPI fallback.</td>
+          </tr>
+          <tr>
+            <td><code>ngthuchien_iso.mahoso</code></td>
+            <td><code>hososcbd_iso.hoso</code></td>
+            <td>N:1</td>
+            <td>Tính giờ thực tế của hồ sơ, dùng cho kết luận KPI.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Luồng hiển thị cột Định mức</h2>
+      <div class="steps">
+        <div class="step">
+          <h3>Đọc hồ sơ</h3>
+          <p>Trang <code>hososcbd.php</code> gọi <code>HoSoSCBD::getList()</code> và lấy danh sách hồ sơ theo bộ lọc.</p>
+        </div>
+        <div class="step">
+          <h3>Ưu tiên định mức riêng</h3>
+          <p>Query LEFT JOIN <code>view_hososcbd_kpi_ketluan</code> theo <code>vk.hososcbd_stt = h.stt</code>.</p>
+        </div>
+        <div class="step">
+          <h3>Fallback theo thiết bị</h3>
+          <p>Nếu view không có dữ liệu, query dùng <code>thietbi_kpi_baoduong_iso</code> và lấy mặc định <code>bd_cap_1_so_gio</code>.</p>
+        </div>
+        <div class="step">
+          <h3>Render ra bảng</h3>
+          <p>View <code>views/hososcbd/index.php</code> hiển thị số giờ, nhãn loại công việc và dữ liệu KPI để sửa nhanh trên ô.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>View tính định mức và kết luận KPI</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>View</th>
+            <th>Dữ liệu trả về</th>
+            <th>Quy tắc chính</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>view_hososcbd_kpi_dinhmuc</code></td>
+            <td><code>dinh_muc_so_gio</code>, <code>dinh_muc_nhan_cong</code>, <code>dinh_muc_noi_dung</code>, <code>gio_thuc_te</code></td>
+            <td><code>dinh_muc_gio_thu_cong</code> được ưu tiên trước KPI chuẩn. Nếu không nhập tay, lấy cột giờ theo <code>loai_congviec</code>.</td>
+          </tr>
+          <tr>
+            <td><code>view_hososcbd_kpi_ketluan</code></td>
+            <td>Toàn bộ dữ liệu định mức và thêm <code>ket_luan_kpi</code></td>
+            <td>Nếu thiếu giờ thực tế hoặc định mức: <code>chua_du_du_lieu</code>. Nếu <code>gio_thuc_te &lt;= dinh_muc_so_gio</code>: <code>dat</code>, ngược lại <code>khong_dat</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>SQL rút gọn của logic danh sách</h2>
+      <pre class="sql">SELECT
+    h.*,
+    COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt) AS kpi_baoduong_stt,
+    COALESCE(vk.dinh_muc_so_gio, k.bd_cap_1_so_gio) AS dinh_muc_so_gio,
+    COALESCE(vk.loai_congviec, IF(k.id IS NOT NULL, 'bd_cap_1', NULL)) AS dinh_muc_loai_congviec,
+    k.kiem_tra_so_gio,
+    k.bd_cap_1_so_gio,
+    k.bd_cap_2_so_gio,
+    k.bd_cap_3_so_gio,
+    k.hieu_chuan_so_gio
+FROM hososcbd_iso h
+LEFT JOIN (
+    SELECT MIN(stt) AS stt, mavt, somay
+    FROM thietbi_iso
+    GROUP BY mavt, somay
+) t ON h.mavt = t.mavt AND h.somay = t.somay
+LEFT JOIN view_hososcbd_kpi_ketluan vk ON vk.hososcbd_stt = h.stt
+LEFT JOIN thietbi_kpi_baoduong_iso lk ON lk.thietbi_stt = t.stt
+LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = COALESCE(vk.kpi_baoduong_stt, lk.kpi_baoduong_stt);</pre>
+    </section>
+
+    <section>
+      <h2>Ghi chú kiểm tra dữ liệu</h2>
+      <div class="grid">
+        <div class="note">
+          <strong>Khi cột Định mức không hiển thị:</strong>
+          kiểm tra hồ sơ có dòng trong <code>hososcbd_dinhmuc_iso</code> chưa; nếu chưa, kiểm tra thiết bị có liên kết trong <code>thietbi_kpi_baoduong_iso</code> chưa.
+        </div>
+        <div class="warning">
+          <strong>Điểm dễ sai:</strong>
+          không nối thiết bị chỉ bằng <code>mavt</code>. Phải dùng cả <code>mavt</code> và <code>somay</code>, đồng thời chọn một <code>stt</code> đại diện để tránh lặp dòng hồ sơ.
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      File tự chứa, có thể mở trực tiếp bằng trình duyệt hoặc in ra PDF để trao đổi nghiệp vụ.
+    </footer>
+  </main>
+</body>
+</html>
