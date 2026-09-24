@@ -47,6 +47,7 @@ define('PERMISSION_GIAOVIEC_KPI_VIEW', 'giaoviec_kpi.view');
 define('PERMISSION_GIAOVIEC_KPI_CREATE', 'giaoviec_kpi.create');
 define('PERMISSION_GIAOVIEC_KPI_EDIT', 'giaoviec_kpi.edit');
 define('PERMISSION_GIAOVIEC_KPI_DELETE', 'giaoviec_kpi.delete');
+define('PERMISSION_CONGVIEC_CUATOI_VIEW', 'congviec_cuatoi.view');
 
 require_once __DIR__.'/database.php';
 require_once __DIR__.'/../includes/functions.php';

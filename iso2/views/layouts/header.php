@@ -153,6 +153,11 @@ if (file_exists($dbSelectionFile)) {
                                 <i class="fas fa-tasks mr-2"></i> Giao việc &amp; KPI
                             </a>
                         </li>
+                        <li>
+                            <a href="<?php echo appUrl('congviec_cua_toi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-user-clock mr-2"></i> Công việc của tôi
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <?php endif; ?>
