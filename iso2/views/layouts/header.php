@@ -113,6 +113,33 @@ if (file_exists($dbSelectionFile)) {
                 </li>
                 <?php endif; ?>
 
+                <?php
+                $myTaskCount = 0;
+                if (isLoggedIn()) {
+                    try {
+                        $dbNav = getDBConnection();
+                        $taskStmt = $dbNav->prepare("SELECT COUNT(DISTINCT g.stt)
+                                                     FROM giaoviec_kpi g
+                                                     INNER JOIN giaoviec_kpi_nguoi n ON n.giaoviec_stt = g.stt
+                                                     WHERE n.user_stt = :user_stt
+                                                       AND n.vai_tro = 'chinh'
+                                                       AND g.trang_thai IN ('dang_lam', 'chua_giao')");
+                        $taskStmt->execute([':user_stt' => (int)($_SESSION['user_stt'] ?? $_SESSION['user_id'] ?? 0)]);
+                        $myTaskCount = (int)$taskStmt->fetchColumn();
+                    } catch (Throwable $e) { $myTaskCount = 0; }
+                }
+                ?>
+                <?php if (isLoggedIn()): ?>
+                <li>
+                    <a href="<?php echo appUrl('congviec_cua_toi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-user-clock mr-2"></i> Công việc của tôi
+                        <?php if ($myTaskCount > 0): ?>
+                            <span class="ml-auto bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full"><?php echo $myTaskCount; ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endif; ?>
+
                 <?php if (isLoggedIn() && (
                     hasPermission('hososcbd.view') ||
                     hasPermission('kpi_baoduong.view') ||
@@ -151,11 +178,6 @@ if (file_exists($dbSelectionFile)) {
                         <li>
                             <a href="<?php echo appUrl('giaoviec_kpi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-tasks mr-2"></i> Giao việc &amp; KPI
-                            </a>
-                        </li>
-                        <li>
-                            <a href="<?php echo appUrl('congviec_cua_toi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
-                                <i class="fas fa-user-clock mr-2"></i> Công việc của tôi
                             </a>
                         </li>
                     </ul>

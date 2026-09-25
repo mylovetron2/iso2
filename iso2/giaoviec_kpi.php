@@ -124,12 +124,23 @@ function computeStatus(array $row, int $nguoiCount): string {
     if ($nguoiCount === 0) return 'chua_giao';
     if ($row['trang_thai'] === 'hoan_thanh' || $row['trang_thai'] === 'huy') return $row['trang_thai'];
     if (empty($row['ngay_ket_thuc'])) return 'dang_lam';
+
+    if (!empty($row['gio_ket_thuc'])) {
+      $now = new DateTime();
+      $end = new DateTime($row['ngay_ket_thuc'] . ' ' . $row['gio_ket_thuc']);
+      $seconds = $end->getTimestamp() - $now->getTimestamp();
+      if ($seconds < 0) return 'qua_han';
+      if ($seconds < 86400) return 'den_han';
+      if ($seconds <= 3 * 86400) return 'dang_lam';
+      return 'dang_lam';
+    }
+
     $today = new DateTime(date('Y-m-d'));
     $end = new DateTime($row['ngay_ket_thuc']);
     $diff = (int)$today->diff($end)->format('%r%a');
     if ($diff < 0) return 'qua_han';
     if ($diff === 0) return 'den_han';
-    if ($diff <= 3) return 'sap_den_han';
+    if ($diff <= 3) return 'dang_lam';
     return 'dang_lam';
 }
 
@@ -137,7 +148,6 @@ function statusLabel(string $s): array {
     // [label, css]
     return [
         'chua_giao'   => ['Cần giao',     'bg-gray-200 text-gray-800'],
-        'sap_den_han' => ['Sắp đến hạn',  'bg-yellow-100 text-yellow-800'],
         'den_han'     => ['Đến hạn',      'bg-orange-100 text-orange-800'],
         'qua_han'     => ['Quá hạn',      'bg-red-100 text-red-700'],
         'dang_lam'    => ['Đang thực hiện','bg-blue-100 text-blue-800'],
@@ -394,7 +404,6 @@ require_once __DIR__ . '/views/layouts/header.php';
       <select id="filterStatus" class="border rounded px-3 py-2 text-sm">
         <option value="">— Tình trạng: Tất cả —</option>
         <option value="chua_giao">Cần giao</option>
-        <option value="sap_den_han">Sắp đến hạn</option>
         <option value="den_han">Đến hạn</option>
         <option value="qua_han">Quá hạn</option>
         <option value="dang_lam">Đang thực hiện</option>
@@ -581,13 +590,17 @@ let USERS_LIST = [];
 let HOSO_LIST = [];
 
 const STATUS_LABEL = <?= json_encode([
-  'chua_giao'=>'Cần giao', 'sap_den_han'=>'Sắp đến hạn', 'den_han'=>'Đến hạn',
+  'chua_giao'=>'Cần giao', 'den_han'=>'Đến hạn',
   'qua_han'=>'Quá hạn', 'dang_lam'=>'Đang thực hiện', 'hoan_thanh'=>'Hoàn thành', 'huy'=>'Đã hủy'
 ], JSON_UNESCAPED_UNICODE) ?>;
 const STATUS_CSS = {
-  chua_giao:'bg-gray-200 text-gray-800', sap_den_han:'bg-yellow-100 text-yellow-800',
+  chua_giao:'bg-gray-200 text-gray-800',
   den_han:'bg-orange-100 text-orange-800', qua_han:'bg-red-100 text-red-700',
   dang_lam:'bg-blue-100 text-blue-800', hoan_thanh:'bg-green-100 text-green-800', huy:'bg-gray-100 text-gray-500'
+};
+const STATUS_TEXT_CSS = {
+  chua_giao:'text-gray-800', den_han:'text-orange-800',
+  qua_han:'text-red-700', dang_lam:'text-blue-800', hoan_thanh:'text-green-800', huy:'text-gray-500'
 };
 
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
@@ -637,6 +650,7 @@ function renderRow(t, idx, level){
   const s = t.trang_thai_hien_thi;
   const tenHienThi = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
   const badge = `<span class="px-2 py-0.5 rounded text-xs font-medium ${STATUS_CSS[s]||''}">${esc(STATUS_LABEL[s]||s)}</span>`;
+  const deadlineColor = STATUS_TEXT_CSS[s] || 'text-gray-500';
   const nguoi = (t.nguoi_list||[]).map(n =>
     `<span class="inline-block ${n.vai_tro==='chinh'?'bg-blue-600 text-white':'bg-gray-200 text-gray-700'} rounded px-2 py-0.5 text-xs mr-1 mb-1" title="${n.vai_tro==='chinh'?'Chính':'Phụ'}">${esc(n.hoten)}</span>`
   ).join('') || '<span class="text-gray-400 text-xs italic">Chưa giao</span>';
@@ -666,7 +680,7 @@ function renderRow(t, idx, level){
       ${t.mo_ta ? `<div class="text-xs text-gray-500">${esc(t.mo_ta)}</div>` : ''}</td>
     <td class="px-3 py-2">${esc(t.hoso||'')}</td>
     <td class="px-3 py-2">${fmtDate(t.ngay_bat_dau)} ${t.gio_bat_dau? '<span class="text-xs text-gray-500">'+t.gio_bat_dau.substring(0,5)+'</span>':''}</td>
-    <td class="px-3 py-2">${fmtDate(t.ngay_ket_thuc)} ${t.gio_ket_thuc? '<span class="text-xs text-gray-500">'+t.gio_ket_thuc.substring(0,5)+'</span>':''}</td>
+    <td class="px-3 py-2 ${deadlineColor}">${fmtDate(t.ngay_ket_thuc)} ${t.gio_ket_thuc? '<span class="text-xs">'+t.gio_ket_thuc.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2">${badge}</td>
     <td class="px-3 py-2">
       <div class="flex items-center gap-1"><div class="w-16 bg-gray-200 rounded h-1.5"><div class="bg-blue-500 h-1.5 rounded" style="width:${t.tien_do||0}%"></div></div><span class="text-xs">${t.tien_do||0}%</span></div>

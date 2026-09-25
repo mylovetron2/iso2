@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Giao việc KPI - Cách tính tiến độ quá hạn</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", sans-serif; }
+  section {
+    background: white;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  table { border-collapse: collapse; width: 100%; }
+  th, td {
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f8fafc; }
+</style>
+</head>
+<body class="bg-slate-100 p-4 md:p-8">
+
+<h1 class="text-3xl font-bold text-blue-900 mb-2">
+  Giao việc KPI - Cách tính tiến độ quá hạn
+</h1>
+<p class="text-gray-600 mb-6">
+  Tài liệu áp dụng cho <code>giaoviec_kpi.php</code> và
+  <code>congviec_cua_toi.php</code>.
+</p>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    1. Các dữ liệu đầu vào
+  </h2>
+  <table>
+    <tr><th>Dữ liệu</th><th>Nguồn</th><th>Ý nghĩa</th></tr>
+    <tr>
+      <td><code>ngay_bat_dau</code></td>
+      <td><code>giaoviec_kpi</code></td>
+      <td>Ngày bắt đầu kế hoạch.</td>
+    </tr>
+    <tr>
+      <td><code>ngay_ket_thuc</code></td>
+      <td><code>giaoviec_kpi</code></td>
+      <td>Ngày phải hoàn thành.</td>
+    </tr>
+    <tr>
+      <td><code>gio_ket_thuc</code></td>
+      <td><code>giaoviec_kpi</code></td>
+      <td>Giờ phải hoàn thành trong ngày hạn.</td>
+    </tr>
+    <tr>
+      <td><code>tien_do</code></td>
+      <td><code>giaoviec_kpi</code></td>
+      <td>Tiến độ thực tế đang lưu.</td>
+    </tr>
+    <tr>
+      <td><code>tong_gio</code></td>
+      <td><code>giaoviec_kpi_thuchien</code></td>
+      <td>Số giờ thực hiện trong từng nhật ký.</td>
+    </tr>
+    <tr>
+      <td><code>dinh_muc_gio_thu_cong</code></td>
+      <td><code>giaoviec_kpi</code></td>
+      <td>Định mức giờ nhập thủ công.</td>
+    </tr>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    2. Tiến độ thực tế
+  </h2>
+  <p>Định mức giờ được lấy theo thứ tự ưu tiên:</p>
+  <ol class="list-decimal pl-6 space-y-1">
+    <li><code>dinh_muc_gio_thu_cong</code> nếu lớn hơn 0.</li>
+    <li>Định mức KPI theo <code>loai_congviec</code>.</li>
+    <li>Nếu không có định mức, sử dụng <code>tien_do</code> nhập thủ công.</li>
+  </ol>
+
+  <div class="bg-blue-50 p-4 mt-4 rounded">
+    <strong>Công thức:</strong>
+    <pre class="whitespace-pre-wrap mt-2">Tiến độ thực tế =
+Tổng giờ đã làm / Định mức giờ * 100
+
+Tiến độ thực tế = MIN(100, tiến độ tính được)</pre>
+  </div>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    3. Tiến độ kỳ vọng
+  </h2>
+  <p>
+    Tiến độ kỳ vọng cho biết tại thời điểm hiện tại công việc đáng lẽ
+    phải hoàn thành bao nhiêu phần trăm.
+  </p>
+
+  <div class="bg-indigo-50 p-4 mt-4 rounded">
+    <pre class="whitespace-pre-wrap">Tổng thời gian kế hoạch =
+Thời điểm kết thúc - Thời điểm bắt đầu
+
+Thời gian đã trôi qua =
+MIN(Thời điểm hiện tại, Thời điểm kết thúc)
+- Thời điểm bắt đầu
+
+Tiến độ kỳ vọng =
+Thời gian đã trôi qua / Tổng thời gian kế hoạch * 100</pre>
+  </div>
+
+  <p class="mt-3">
+    Giá trị được giới hạn trong khoảng <code>0%</code> đến <code>100%</code>.
+    Sau thời hạn, tiến độ kỳ vọng giữ ở <code>100%</code>.
+  </p>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    4. Xác định công việc quá hạn
+  </h2>
+
+  <pre class="bg-red-50 p-4 rounded whitespace-pre-wrap">Quá hạn =
+Thời điểm hiện tại > thời điểm kết thúc
+AND trạng thái không phải "hoan_thanh"
+AND trạng thái không phải "huy"</pre>
+
+  <table class="mt-4">
+    <tr><th>Tình huống</th><th>Kết quả</th></tr>
+    <tr><td>Chưa có người thực hiện</td><td>Cần giao</td></tr>
+    <tr><td>Hiện tại trước hạn</td><td>Đang thực hiện</td></tr>
+    <tr><td>Còn 0 đến 3 ngày</td><td>Đang thực hiện</td></tr>
+    <tr><td>Đúng ngày hạn</td><td>Đến hạn</td></tr>
+    <tr><td>Đã quá thời điểm kết thúc</td><td>Quá hạn</td></tr>
+    <tr><td>Đã bấm kết thúc</td><td>Hoàn thành, tiến độ 100%</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    5. Mức thiếu tiến độ khi quá hạn
+  </h2>
+
+  <pre class="bg-yellow-50 p-4 rounded whitespace-pre-wrap">Mức thiếu tiến độ =
+MAX(0, Tiến độ kỳ vọng - Tiến độ thực tế)
+
+Khi đã quá hạn:
+Mức chậm = 100 - Tiến độ thực tế</pre>
+
+  <p class="mt-3">Ví dụ:</p>
+  <table>
+    <tr><th>Thông tin</th><th>Giá trị</th></tr>
+    <tr><td>Định mức</td><td>16 giờ</td></tr>
+    <tr><td>Đã làm</td><td>8 giờ</td></tr>
+    <tr><td>Tiến độ thực tế</td><td>50%</td></tr>
+    <tr><td>Đã quá hạn</td><td>Có</td></tr>
+    <tr><td>Mức chậm</td><td>50%</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    6. Công việc cha và công việc con
+  </h2>
+
+  <p>
+    Tiến độ công việc cha nên tính theo trọng số định mức của các công việc con,
+    không nên lấy trung bình đơn giản.
+  </p>
+
+  <pre class="bg-green-50 p-4 rounded whitespace-pre-wrap">Tiến độ cha =
+SUM(Tiến độ con * Định mức con)
+/
+SUM(Định mức con)</pre>
+
+  <p class="mt-3">
+    Nếu công việc cha không có công việc con thì tính trực tiếp từ nhật ký
+    của chính công việc đó.
+  </p>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    7. Khuyến nghị triển khai
+  </h2>
+  <ul class="list-disc pl-6 space-y-2">
+    <li>Sau khi thêm nhật ký, tính lại <code>tien_do</code>.</li>
+    <li>Sau khi xóa nhật ký, cũng phải tính lại <code>tien_do</code>.</li>
+    <li>Khi bấm kết thúc, đặt <code>trang_thai = hoan_thanh</code> và <code>tien_do = 100</code>.</li>
+    <li>Không dùng phần trăm tiến độ để thay thế trạng thái quá hạn.</li>
+    <li>Nên xét cả <code>gio_ket_thuc</code>, không chỉ xét <code>ngay_ket_thuc</code>.</li>
+  </ul>
+</section>
+
+<p class="text-center text-gray-500 text-sm">
+  Cập nhật: 2026-09-25
+</p>
+
+</body>
+</html>

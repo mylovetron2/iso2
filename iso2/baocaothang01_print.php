@@ -15,6 +15,7 @@ $benYeuCau = isset($_GET['benyeucau']) ? strtoupper(trim((string)$_GET['benyeuca
 if (!in_array($benYeuCau, ['TH', 'CNC'], true)) {
     $benYeuCau = '';
 }
+$nhanVienFilter = trim((string)($_GET['nhanvien'] ?? ''));
 
 $fromDate = DateTime::createFromFormat('Y-m-d', $from);
 $toDate = DateTime::createFromFormat('Y-m-d', $to);
@@ -152,19 +153,35 @@ try {
         return trim((string)$text);
     };
 
+    $matchesWorkerFilter = static function (string $workerNames) use ($nhanVienFilter): bool {
+        return $nhanVienFilter === ''
+            || mb_stripos($workerNames, $nhanVienFilter, 0, 'UTF-8') !== false;
+    };
+
     foreach ($result as $item) {
         $stmtWorkers->execute([':hoso' => $item['hoso']]);
         $workerRows = $stmtWorkers->fetchAll(PDO::FETCH_ASSOC);
 
         $workerNames = [];
+        $workerSearchNames = [];
         $hours = 0.0;
 
         foreach ($workerRows as $worker) {
-            $name = $formatWorker((string)($worker['hoten'] ?? ''));
+            $rawName = $normalizeText($worker['hoten'] ?? '');
+            $name = $formatWorker($rawName);
+            if ($rawName !== '') {
+                $workerSearchNames[] = $rawName;
+            }
             if ($name !== '') {
                 $workerNames[] = $name;
             }
             $hours += (float)($worker['giolv'] ?? 0);
+        }
+
+        $displayWorkerNames = implode(', ', array_values(array_unique($workerNames)));
+        $searchWorkerNames = implode(', ', array_values(array_unique(array_merge($workerNames, $workerSearchNames))));
+        if (!$matchesWorkerFilter($searchWorkerNames)) {
+            continue;
         }
 
         $statusAfter = $normalizeText($item['ttktafter'] ?? '');
@@ -192,7 +209,7 @@ try {
             'cv' => $normalizeText($item['cv'] ?? ''),
             'ngayth' => $normalizeText($item['ngayth_fmt'] ?? ''),
             'ngaykt' => $ngayKt,
-            'nhanvien' => implode(', ', array_values(array_unique($workerNames))),
+            'nhanvien' => $displayWorkerNames,
             'ttktafter' => $statusAfter,
             'ttktbefore' => ($normalizeText($item['cv'] ?? '') === 'SC') ? $normalizeText($item['honghoc'] ?? '') : '',
             'madv' => $normalizeText($item['madv'] ?? ''),
@@ -274,6 +291,10 @@ try {
         $nhanVien = $ttkt === 'Tốt'
             ? mb_convert_case($normalizeText($item['nhanvien'] ?? ''), MB_CASE_TITLE, 'UTF-8')
             : '';
+
+        if (!$matchesWorkerFilter($nhanVien)) {
+            continue;
+        }
 
         $hckdRows[] = [
             'sohs' => $sohs,
@@ -803,7 +824,7 @@ function openLegacyPrint(url) {
 
 <script>
 function openExport(type) {
-    const url = '/iso2/baocaothang01_print.php?from=<?php echo urlencode($from); ?>&to=<?php echo urlencode($to); ?>&benyeucau=<?php echo urlencode($benYeuCau); ?>&export=' + type;
+    const url = '/iso2/baocaothang01_print.php?from=<?php echo urlencode($from); ?>&to=<?php echo urlencode($to); ?>&benyeucau=<?php echo urlencode($benYeuCau); ?>&nhanvien=<?php echo urlencode($nhanVienFilter); ?>&export=' + type;
     const win = window.open(url, '_blank');
     if (win) {
         setTimeout(function () {
@@ -855,7 +876,7 @@ function openExport(type) {
         </div>
     </div>
 
-    <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-5 bg-gray-50 border border-gray-200 rounded p-3 no-print">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-5 bg-gray-50 border border-gray-200 rounded p-3 no-print">
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Từ ngày</label>
             <input type="date" name="from" value="<?php echo htmlspecialchars($from); ?>" class="w-full border rounded px-3 py-2">
@@ -871,6 +892,11 @@ function openExport(type) {
                 <option value="TH" <?php echo $benYeuCau === 'TH' ? 'selected' : ''; ?>>TH</option>
                 <option value="CNC" <?php echo $benYeuCau === 'CNC' ? 'selected' : ''; ?>>CNC</option>
             </select>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Nhân viên thực hiện</label>
+            <input type="search" name="nhanvien" value="<?php echo htmlspecialchars($nhanVienFilter); ?>"
+                   placeholder="Nhập tên nhân viên" class="w-full border rounded px-3 py-2">
         </div>
         <div class="md:col-span-2 flex items-end gap-2">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-semibold">

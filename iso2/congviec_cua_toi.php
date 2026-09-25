@@ -67,6 +67,7 @@ $userSttSupported = ensureGiaoviecKpiNguoiColumns($db);
 
 $username = $_SESSION['username'] ?? '';
 $currentUserStt = (int)($_SESSION['user_stt'] ?? $_SESSION['user_id'] ?? 0);
+$isAdmin = hasRole(ROLE_ADMIN);
 
 // Tên hiển thị chỉ lấy từ users; phân quyền và ghép công việc dùng user_stt.
 $currentHoten = '';
@@ -89,6 +90,64 @@ function jsonOut($data, int $code = 200): void {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function getTaskProgress(PDO $db, array $task): array {
+  $hoursStmt = $db->prepare("SELECT COALESCE(SUM(tong_gio), 0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = ?");
+  $hoursStmt->execute([(int)$task['stt']]);
+  $hoursDone = (float)$hoursStmt->fetchColumn();
+
+  $manualHours = $task['dinh_muc_gio_thu_cong'] ?? null;
+  $targetHours = ($manualHours !== null && $manualHours !== '' && (float)$manualHours > 0)
+    ? (float)$manualHours
+    : 0.0;
+
+  if ($targetHours <= 0 && !empty($task['kpi_baoduong_stt']) && !empty($task['loai_congviec'])) {
+    $columnMap = [
+      'kiem_tra' => 'kiem_tra_so_gio',
+      'bd_cap_1' => 'bd_cap_1_so_gio',
+      'bd_cap_2' => 'bd_cap_2_so_gio',
+      'bd_cap_3' => 'bd_cap_3_so_gio',
+      'hieu_chuan' => 'hieu_chuan_so_gio',
+    ];
+    $column = $columnMap[(string)$task['loai_congviec']] ?? null;
+    if ($column !== null) {
+      $stmt = $db->prepare("SELECT {$column} FROM kpi_baoduong_thietbi_iso WHERE id = ? LIMIT 1");
+      $stmt->execute([(int)$task['kpi_baoduong_stt']]);
+      $value = $stmt->fetchColumn();
+      if ($value !== false && $value !== null && (float)$value > 0) {
+        $targetHours = (float)$value;
+      }
+    }
+  }
+
+  $progress = $targetHours > 0
+    ? min(100, (int)round(($hoursDone / $targetHours) * 100))
+    : (int)($task['tien_do'] ?? 0);
+
+  if (($task['trang_thai'] ?? '') === 'hoan_thanh') {
+    $progress = 100;
+  }
+
+  return [
+    'gio_da_lam' => $hoursDone,
+    'dinh_muc_gio_hieu_luc' => $targetHours > 0 ? $targetHours : null,
+    'tien_do_tinh' => max(0, min(100, $progress)),
+  ];
+}
+
+function refreshTaskProgress(PDO $db, int $taskStt): void {
+  $stmt = $db->prepare("SELECT stt, tien_do, trang_thai, kpi_baoduong_stt, loai_congviec, dinh_muc_gio_thu_cong
+              FROM giaoviec_kpi WHERE stt = ? LIMIT 1");
+  $stmt->execute([$taskStt]);
+  $task = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!$task || ($task['trang_thai'] ?? '') === 'hoan_thanh') {
+    return;
+  }
+
+  $progress = getTaskProgress($db, $task);
+  $db->prepare("UPDATE giaoviec_kpi SET tien_do = ? WHERE stt = ?")
+    ->execute([$progress['tien_do_tinh'], $taskStt]);
 }
 
 $action = $_GET['action'] ?? 'index';
@@ -123,7 +182,12 @@ try {
                     ORDER BY FIELD(g.trang_thai,'dang_lam','chua_giao','hoan_thanh','huy'), g.ngay_ket_thuc ASC, g.stt DESC";
             $st = $db->prepare($sql);
             $st->execute($matchParams);
-            jsonOut(['ok' => true, 'hoten' => $currentHoten, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+            $tasks = $st->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($tasks as &$task) {
+              $task = array_merge($task, getTaskProgress($db, $task));
+            }
+            unset($task);
+            jsonOut(['ok' => true, 'hoten' => $currentHoten, 'data' => $tasks]);
 
         case 'api_detail':
             $stt = (int)($_GET['stt'] ?? 0);
@@ -143,6 +207,7 @@ try {
             $st->execute([':s'=>$stt]);
             $task = $st->fetch(PDO::FETCH_ASSOC);
             if (!$task) jsonOut(['ok'=>false,'error'=>'Không tìm thấy công việc'], 404);
+            $task = array_merge($task, getTaskProgress($db, $task));
 
             $st = $db->prepare("SELECT COALESCE(NULLIF(TRIM(u.hoten), ''), u.username) AS hoten, n.vai_tro
                                 FROM giaoviec_kpi_nguoi n
@@ -171,7 +236,7 @@ try {
                 unset($l);
             }
 
-            jsonOut(['ok'=>true, 'task'=>$task, 'members'=>$members, 'logs'=>$logs]);
+            jsonOut(['ok'=>true, 'is_admin'=>$isAdmin, 'task'=>$task, 'members'=>$members, 'logs'=>$logs]);
 
         case 'api_add_log':
             $in = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -185,12 +250,16 @@ try {
             $chk->execute([':s'=>$stt]);
             $trangThai = $chk->fetchColumn();
             if (!$trangThai) jsonOut(['ok'=>false,'error'=>'Công việc không tồn tại'], 404);
-            if (in_array($trangThai, ['hoan_thanh','huy'], true)) jsonOut(['ok'=>false,'error'=>'Công việc đã kết thúc, không thể nhập thêm'], 400);
+            if (in_array($trangThai, ['hoan_thanh','huy'], true) && !$isAdmin) {
+              jsonOut(['ok'=>false,'error'=>'Công việc đã hoàn thành, chỉ admin mới được sửa'], 403);
+            }
 
             [$matchSql, $matchParams] = buildUserMatchCondition($currentUserStt);
             $chk = $db->prepare("SELECT COUNT(*) FROM giaoviec_kpi_nguoi n WHERE n.giaoviec_stt=? AND $matchSql AND n.vai_tro='chinh'");
-            $chk->execute(array_merge([$stt], $matchParams));
-            if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Bạn không phải người thực hiện chính'], 403);
+            if (!$isAdmin) {
+              $chk->execute(array_merge([$stt], $matchParams));
+              if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Bạn không phải người thực hiện chính'], 403);
+            }
 
             $tong = 0.0;
             foreach ($gioList as $item) {
@@ -216,6 +285,7 @@ try {
                 if ($trangThai === 'chua_giao') {
                     $db->prepare("UPDATE giaoviec_kpi SET trang_thai='dang_lam' WHERE stt=?")->execute([$stt]);
                 }
+                refreshTaskProgress($db, $stt);
                 $db->commit();
                 jsonOut(['ok'=>true, 'stt'=>$tcId]);
             } catch (Throwable $e) {
@@ -226,17 +296,26 @@ try {
         case 'api_delete_log':
             $tcId = (int)($_POST['stt'] ?? $_GET['stt'] ?? 0);
             if ($tcId <= 0) jsonOut(['ok'=>false,'error'=>'Thiếu stt'], 400);
-            $st = $db->prepare("SELECT giaoviec_stt, nguoi_nhap FROM giaoviec_kpi_thuchien WHERE stt=:s");
+            $st = $db->prepare("SELECT t.giaoviec_stt, t.nguoi_nhap, g.trang_thai
+                      FROM giaoviec_kpi_thuchien t
+                      INNER JOIN giaoviec_kpi g ON g.stt = t.giaoviec_stt
+                      WHERE t.stt=:s");
             $st->execute([':s'=>$tcId]);
             $log = $st->fetch(PDO::FETCH_ASSOC);
             if (!$log) jsonOut(['ok'=>false,'error'=>'Không tìm thấy log'], 404);
+            if (in_array($log['trang_thai'], ['hoan_thanh','huy'], true) && !$isAdmin) {
+              jsonOut(['ok'=>false,'error'=>'Công việc đã hoàn thành, chỉ admin mới được sửa'], 403);
+            }
             [$matchSql, $matchParams] = buildUserMatchCondition($currentUserStt);
             $chk = $db->prepare("SELECT COUNT(*) FROM giaoviec_kpi_nguoi n WHERE n.giaoviec_stt=? AND $matchSql AND n.vai_tro='chinh'");
-            $chk->execute(array_merge([(int)$log['giaoviec_stt']], $matchParams));
-            if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Không có quyền xoá log này'], 403);
+            if (!$isAdmin) {
+              $chk->execute(array_merge([(int)$log['giaoviec_stt']], $matchParams));
+              if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Không có quyền xoá log này'], 403);
+            }
             $db->beginTransaction();
             $db->prepare("DELETE FROM giaoviec_kpi_thuchien_gio WHERE thuchien_stt=?")->execute([$tcId]);
             $db->prepare("DELETE FROM giaoviec_kpi_thuchien WHERE stt=?")->execute([$tcId]);
+            refreshTaskProgress($db, (int)$log['giaoviec_stt']);
             $db->commit();
             jsonOut(['ok'=>true]);
 
@@ -261,6 +340,8 @@ require_once __DIR__ . '/views/layouts/header.php';
   .cvpage { padding: 1rem; }
   .cv-card { transition: box-shadow .15s; }
   .cv-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .thuchien-log { border-left: 4px solid #60a5fa; background: #eff6ff; }
+  .thuchien-log:hover { border-left-color: #2563eb; }
 </style>
 <div class="cvpage w-full min-w-0">
   <div class="bg-white rounded-lg shadow p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -308,23 +389,23 @@ require_once __DIR__ . '/views/layouts/header.php';
 
       <div class="border rounded-lg p-3 bg-blue-50/30">
         <div class="font-semibold text-gray-800 mb-2 text-sm"><i class="fas fa-pen text-blue-600 mr-1"></i>Nhập nhật ký thực hiện</div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+        <div class="mb-2">
           <div>
             <label class="text-xs text-gray-600">Ngày làm</label>
             <input type="date" id="l_ngay" class="w-full border rounded px-2 py-1.5 text-sm">
-          </div>
-          <div class="md:col-span-2">
-            <label class="text-xs text-gray-600">Nội dung thực hiện</label>
-            <input type="text" id="l_noidung" placeholder="Mô tả nội dung công việc trong ngày" class="w-full border rounded px-2 py-1.5 text-sm">
           </div>
         </div>
         <div>
           <div class="text-xs text-gray-600 mb-1">Số giờ làm của từng thành viên</div>
           <div id="l_gio_list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
         </div>
+        <div class="mt-2">
+          <label class="text-xs text-gray-600">Nội dung thực hiện</label>
+          <textarea id="l_noidung" rows="5" placeholder="Mô tả nội dung công việc trong ngày" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+        </div>
         <div class="text-right mt-2">
-          <button onclick="submitLog()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm">
-            <i class="fas fa-plus mr-1"></i>Thêm log
+          <button id="btnAddLog" onclick="submitLog()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm">
+            <i class="fas fa-plus mr-1"></i>Thêm thực hiện
           </button>
         </div>
       </div>
@@ -381,7 +462,7 @@ function render(){
   if (!list.length) { box.innerHTML = `<div class="col-span-full p-4 text-center text-gray-400">Không có công việc nào.</div>`; return; }
   box.innerHTML = list.map(t => {
     const ten = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
-    const dm = t.dinh_muc_gio_thu_cong || '-';
+    const dm = t.dinh_muc_gio_hieu_luc ?? t.dinh_muc_gio_thu_cong ?? '-';
     const dl = Number(t.gio_da_lam||0);
     const st = t.trang_thai;
     return `
@@ -413,7 +494,8 @@ async function openDetail(stt){
   document.getElementById('dHoso').textContent = t.hoso || '-';
   document.getElementById('dNgayBd').textContent = fmtDate(t.ngay_bat_dau) || '-';
   document.getElementById('dNgayKt').textContent = fmtDate(t.ngay_ket_thuc) || '-';
-  document.getElementById('dDinhMuc').textContent = (t.dinh_muc_gio_thu_cong ?? '-') + (t.dinh_muc_gio_thu_cong ? 'h' : '');
+  const effectiveHours = t.dinh_muc_gio_hieu_luc ?? t.dinh_muc_gio_thu_cong;
+  document.getElementById('dDinhMuc').textContent = (effectiveHours ?? '-') + (effectiveHours ? 'h' : '');
   document.getElementById('dStatus').innerHTML = `<span class="px-2 py-0.5 rounded text-xs ${STATUS_CSS[t.trang_thai]||''}">${esc(STATUS_LABEL[t.trang_thai]||t.trang_thai)}</span>`;
   document.getElementById('dProgress').textContent = (t.tien_do||0)+'%';
   document.getElementById('dGhiChu').textContent = t.ghi_chu ? 'Ghi chú: ' + t.ghi_chu : '';
@@ -443,29 +525,36 @@ async function openDetail(stt){
   renderLogs(r.logs || []);
 
   const finished = ['hoan_thanh','huy'].includes(t.trang_thai);
-  document.getElementById('btnFinish').classList.toggle('hidden', finished);
+  const canEdit = !finished || r.is_admin;
+  document.getElementById('btnAddLog').classList.toggle('hidden', !canEdit);
+  document.getElementById('btnFinish').classList.toggle('hidden', finished || !canEdit);
   openModal('modalDetail');
 }
 
 function renderLogs(logs){
   const box = document.getElementById('logList');
   if (!logs.length) { box.innerHTML = '<div class="text-xs text-gray-400 italic">Chưa có log nào.</div>'; return; }
+  const canEdit = !['hoan_thanh','huy'].includes(CURRENT?.task?.trang_thai) || CURRENT?.is_admin;
   box.innerHTML = logs.map(l => {
-    const gio = (l.chi_tiet_gio||[]).map(g => `<span class="inline-block bg-gray-100 rounded px-2 py-0.5 text-xs mr-1 mb-1">${esc(g.hoten)}: <b>${g.so_gio}h</b></span>`).join('');
+    const gio = (l.chi_tiet_gio||[]).map(g => `<span class="inline-block bg-white border border-blue-100 text-gray-700 rounded px-2 py-0.5 text-xs mr-1 mb-1">${esc(g.hoten)}: <b class="text-blue-700">${g.so_gio}h</b></span>`).join('');
     return `
-    <div class="border rounded p-2 bg-white">
-      <div class="flex items-center justify-between">
-        <div class="text-sm"><b>${fmtDate(l.ngay_lam)}</b> · <span class="text-gray-600">${esc(l.nguoi_nhap||'')}</span> · Tổng <b>${l.tong_gio}h</b></div>
-        <button onclick="delLog(${l.stt})" class="text-red-500 text-xs hover:underline"><i class="fas fa-trash"></i></button>
+    <div class="thuchien-log border rounded p-2">
+      <div class="flex items-center justify-between text-blue-900">
+        <div class="text-sm"><i class="fas fa-calendar-day text-blue-600 mr-1"></i><b>${fmtDate(l.ngay_lam)}</b> · <span class="text-gray-600">${esc(l.nguoi_nhap||'')}</span> · <span class="bg-blue-100 rounded px-1.5 py-0.5">Tổng <b>${l.tong_gio}h</b></span></div>
+        ${canEdit ? `<button onclick="delLog(${l.stt})" class="text-red-500 bg-red-50 hover:bg-red-100 rounded px-2 py-1 text-xs" title="Xóa nhật ký"><i class="fas fa-trash"></i></button>` : ''}
       </div>
-      ${l.noi_dung ? `<div class="text-sm text-gray-700 mt-1">${esc(l.noi_dung)}</div>` : ''}
-      <div class="mt-1">${gio}</div>
+      ${l.noi_dung ? `<div class="text-sm text-gray-700 bg-white/70 rounded px-2 py-1 mt-2">${esc(l.noi_dung)}</div>` : ''}
+      <div class="mt-2">${gio}</div>
     </div>`;
   }).join('');
 }
 
 async function submitLog(){
   if (!CURRENT) return;
+  if (['hoan_thanh','huy'].includes(CURRENT.task.trang_thai) && !CURRENT.is_admin) {
+    alert('Công việc đã hoàn thành, chỉ admin mới được sửa');
+    return;
+  }
   const stt = CURRENT.task.stt;
   const ngay = document.getElementById('l_ngay').value;
   const noiDung = document.getElementById('l_noidung').value.trim();
