@@ -50,7 +50,21 @@ class HoSoSCBDDinhMuc extends BaseModel
         try {
             $check = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'dinh_muc_gio_thu_cong'");
             if ($check->rowCount() === 0 && is_file(self::MIGRATION_FILE_MANUAL_HOUR)) {
-                $this->db->exec((string)file_get_contents(self::MIGRATION_FILE_MANUAL_HOUR));
+                $this->db->exec(
+                    "ALTER TABLE hososcbd_dinhmuc_iso
+                     ADD COLUMN dinh_muc_gio_thu_cong DECIMAL(8,2) NULL DEFAULT NULL AFTER loai_congviec"
+                );
+            }
+
+            $kpiColumn = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'kpi_baoduong_stt'")->fetch(PDO::FETCH_ASSOC);
+            $loaiColumn = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'loai_congviec'")->fetch(PDO::FETCH_ASSOC);
+            if (($kpiColumn && ($kpiColumn['Null'] ?? '') !== 'YES')
+                || ($loaiColumn && ($loaiColumn['Null'] ?? '') !== 'YES')) {
+                $this->db->exec(
+                    "ALTER TABLE hososcbd_dinhmuc_iso
+                     MODIFY COLUMN kpi_baoduong_stt INT NULL DEFAULT NULL,
+                     MODIFY COLUMN loai_congviec ENUM('kiem_tra','bd_cap_1','bd_cap_2','bd_cap_3','hieu_chuan') NULL DEFAULT NULL"
+                );
             }
         } catch (PDOException $e) {
             error_log('Error ensuring dinh_muc_gio_thu_cong exists: ' . $e->getMessage());

@@ -205,6 +205,9 @@ class HoSoScBdController
                 $successCount = 0;
                 $createdDevices = []; // Store created devices info for batch logging
                 $db = $this->model->getDb();
+
+                // DDL (ALTER TABLE) gây implicit commit ở MySQL nên phải chạy trước khi mở transaction
+                $this->ensureGiaoViecKpiSchema($db);
                 
                 try {
                     $db->beginTransaction();
@@ -230,6 +233,10 @@ class HoSoScBdController
                                 (string)$data['somay'],
                                 $_SESSION['username'] ?? null
                             );
+
+                            // Tự động tạo công việc bên giaoviec_kpi.php cho hồ sơ vừa tạo.
+                            // Nếu lỗi ở bước này, exception sẽ được ném lên và cả transaction bị rollback.
+                            $this->createGiaoViecKpiForHoso($db, (int)$id, $data);
                             
                             // Store device info for batch logging later
                             $createdDevices[] = [
@@ -291,6 +298,130 @@ class HoSoScBdController
         require_once __DIR__ . '/../views/hososcbd/create.php';
     }
 
+    /**
+     * Đảm bảo bảng/cột giaoviec_kpi tồn tại trước khi insert tự động.
+     * Phải gọi TRƯỚC khi mở transaction vì ALTER TABLE gây implicit commit ở MySQL.
+     */
+    private function ensureGiaoViecKpiSchema(PDO $db): void
+    {
+        try {
+            $check = $db->query("SHOW TABLES LIKE 'giaoviec_kpi'");
+            if ($check->rowCount() === 0) {
+                $migrationFile = __DIR__ . '/../migrations/create_giaoviec_kpi_tables.sql';
+                if (is_file($migrationFile)) {
+                    $db->exec((string)file_get_contents($migrationFile));
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('ensureGiaoViecKpiSchema failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tự động tạo 1 công việc bên giaoviec_kpi.php ứng với hồ sơ SCBĐ vừa tạo.
+     * Ném PDOException nếu insert thất bại để controller rollback toàn bộ transaction tạo hồ sơ.
+     */
+    private function createGiaoViecKpiForHoso(PDO $db, int $hososcbdStt, array $data): void
+    {
+        $mavt = trim((string)($data['mavt'] ?? ''));
+        $somay = trim((string)($data['somay'] ?? ''));
+        $kpiBaoDuongStt = $this->lookupKpiBaoDuongStt($db, $mavt, $somay);
+
+        $hoso = (string)($data['hoso'] ?? '');
+        $tenCongViec = trim('SC/BD hồ sơ ' . $hoso . ' (' . $mavt . '/' . $somay . ')');
+
+        $sql = "INSERT INTO giaoviec_kpi
+                    (hososcbd_stt, phieu, somay, hoso, kpi_baoduong_stt, loai_congviec,
+                     ten_cong_viec, mo_ta, ngay_bat_dau, tien_do, trang_thai, nguoi_giao)
+                VALUES
+                    (:hs, :ph, :sm, :ho, :kpi, :lc, :t, :mt, :nbd, 0, 'chua_giao', :ng)";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':hs'  => $hososcbdStt,
+            ':ph'  => $data['phieu'] ?? null,
+            ':sm'  => $somay !== '' ? $somay : null,
+            ':ho'  => $hoso !== '' ? $hoso : null,
+            ':kpi' => $kpiBaoDuongStt,
+            ':lc'  => $kpiBaoDuongStt !== null ? 'bd_cap_1' : null,
+            ':t'   => $tenCongViec,
+            ':mt'  => trim((string)($data['cv'] ?? '')),
+            ':nbd' => $data['ngayyc'] ?? null,
+            ':ng'  => $_SESSION['username'] ?? null,
+        ]);
+    }
+
+    /**
+     * Tra cứu KPI mặc định theo thiết bị (giống HoSoSCBDDinhMuc::autoAssignDefaultByDevice)
+     */
+    private function lookupKpiBaoDuongStt(PDO $db, string $mavt, string $somay): ?int
+    {
+        if ($mavt === '' || $somay === '') {
+            return null;
+        }
+        $stmt = $db->prepare(
+            'SELECT l.kpi_baoduong_stt
+             FROM thietbi_iso t
+             LEFT JOIN thietbi_kpi_baoduong_iso l ON l.thietbi_stt = t.stt
+             WHERE t.mavt = :mavt AND t.somay = :somay
+             LIMIT 1'
+        );
+        $stmt->execute([':mavt' => $mavt, ':somay' => $somay]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return ($row && !empty($row['kpi_baoduong_stt'])) ? (int)$row['kpi_baoduong_stt'] : null;
+    }
+
+    /**
+     * Đồng bộ công việc giaoviec_kpi khi hồ sơ SCBĐ được sửa.
+     * Cập nhật nếu đã có công việc liên kết, tự tạo mới nếu hồ sơ cũ chưa có (backfill).
+     */
+    private function syncGiaoViecKpiForHoso(PDO $db, int $hososcbdStt, array $data): void
+    {
+        $stmt = $db->prepare('SELECT stt FROM giaoviec_kpi WHERE hososcbd_stt = :hs LIMIT 1');
+        $stmt->execute([':hs' => $hososcbdStt]);
+        $giaoViecStt = $stmt->fetchColumn();
+
+        if ($giaoViecStt === false) {
+            $this->createGiaoViecKpiForHoso($db, $hososcbdStt, $data);
+            return;
+        }
+
+        $mavt = trim((string)($data['mavt'] ?? ''));
+        $somay = trim((string)($data['somay'] ?? ''));
+        $kpiBaoDuongStt = $this->lookupKpiBaoDuongStt($db, $mavt, $somay);
+
+        $update = $db->prepare(
+            'UPDATE giaoviec_kpi
+             SET phieu = :ph, somay = :sm, hoso = :ho, kpi_baoduong_stt = :kpi,
+                 loai_congviec = COALESCE(loai_congviec, :lc)
+             WHERE stt = :stt'
+        );
+        $update->execute([
+            ':ph'  => $data['phieu'] ?? null,
+            ':sm'  => $somay !== '' ? $somay : null,
+            ':ho'  => $data['hoso'] ?? null,
+            ':kpi' => $kpiBaoDuongStt,
+            ':lc'  => $kpiBaoDuongStt !== null ? 'bd_cap_1' : null,
+            ':stt' => (int)$giaoViecStt,
+        ]);
+    }
+
+    /**
+     * Xóa các công việc giaoviec_kpi (và người thực hiện liên quan) gắn với 1 hồ sơ SCBĐ.
+     */
+    private function deleteGiaoViecKpiForHoso(PDO $db, int $hososcbdStt): void
+    {
+        $stmt = $db->prepare('SELECT stt FROM giaoviec_kpi WHERE hososcbd_stt = :hs');
+        $stmt->execute([':hs' => $hososcbdStt]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        if (empty($ids)) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $db->prepare("DELETE FROM giaoviec_kpi_nguoi WHERE giaoviec_stt IN ($placeholders)")->execute($ids);
+        $db->prepare("DELETE FROM giaoviec_kpi WHERE stt IN ($placeholders)")->execute($ids);
+    }
+
     public function edit(): void
     {
         $stt = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -322,9 +453,19 @@ class HoSoScBdController
                     $data['hoso'] = $this->generateHoSo($data['phieu'], $maxIndex + 1);
                 }
                 
+                $db = $this->model->getDb();
+                $this->ensureGiaoViecKpiSchema($db);
+
                 try {
+                    $db->beginTransaction();
+
                     $success = $this->model->update($stt, $data);
                     if ($success) {
+                        // Đồng bộ công việc liên kết bên giaoviec_kpi (nếu insert/update lỗi, rollback cả hồ sơ)
+                        $this->syncGiaoViecKpiForHoso($db, $stt, $data);
+
+                        $db->commit();
+
                         // Log the update
                         $this->logHistory('UPDATE', [
                             'record_id' => $stt,
@@ -339,8 +480,12 @@ class HoSoScBdController
                         header('Location: /iso2/hososcbd.php?success=updated');
                         exit;
                     }
+                    $db->rollBack();
                     $errors[] = 'Có lỗi xảy ra khi cập nhật hồ sơ';
                 } catch (PDOException $e) {
+                    if ($db->inTransaction()) {
+                        $db->rollBack();
+                    }
                     error_log("HoSoScBd edit error: " . $e->getMessage());
                     error_log("Data: " . print_r($data, true));
                     $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
@@ -375,24 +520,41 @@ class HoSoScBdController
 
         // Get record info before deleting for logging
         $item = $this->model->findById($stt);
-        
-        $success = $this->model->delete($stt);
-        if ($success) {
-            // Log the deletion
-            if ($item) {
-                $this->logHistory('DELETE', [
-                    'record_id' => $stt,
-                    'maql' => $item['maql'] ?? null,
-                    'phieu' => $item['phieu'] ?? null,
-                    'mavt' => $item['mavt'] ?? null,
-                    'somay' => $item['somay'] ?? null,
-                    'madv' => $item['madv'] ?? null,
-                    'description' => "Xóa hồ sơ: {$item['maql']}"
-                ]);
+
+        $db = $this->model->getDb();
+        try {
+            $db->beginTransaction();
+
+            // Xóa các công việc KPI liên kết trước (và người thực hiện của chúng) để tránh mồ côi dữ liệu
+            $this->deleteGiaoViecKpiForHoso($db, $stt);
+
+            $success = $this->model->delete($stt);
+            if ($success) {
+                $db->commit();
+
+                // Log the deletion
+                if ($item) {
+                    $this->logHistory('DELETE', [
+                        'record_id' => $stt,
+                        'maql' => $item['maql'] ?? null,
+                        'phieu' => $item['phieu'] ?? null,
+                        'mavt' => $item['mavt'] ?? null,
+                        'somay' => $item['somay'] ?? null,
+                        'madv' => $item['madv'] ?? null,
+                        'description' => "Xóa hồ sơ: {$item['maql']}"
+                    ]);
+                }
+
+                header('Location: /iso2/hososcbd.php?success=deleted');
+            } else {
+                $db->rollBack();
+                header('Location: /iso2/hososcbd.php?error=delete_failed');
             }
-            
-            header('Location: /iso2/hososcbd.php?success=deleted');
-        } else {
+        } catch (PDOException $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            error_log("HoSoScBd delete error: " . $e->getMessage());
             header('Location: /iso2/hososcbd.php?error=delete_failed');
         }
         exit;
