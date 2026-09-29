@@ -167,17 +167,24 @@ try {
 
         case 'api_my_tasks':
             [$matchSql, $matchParams] = buildUserMatchCondition($currentUserStt);
-            $sql = "SELECT g.stt, g.ten_cong_viec, g.mo_ta, g.ghi_chu, g.phieu, g.somay, g.hoso,
+            $sql = "SELECT g.stt, g.parent_stt, g.ten_cong_viec, g.mo_ta, g.ghi_chu, g.phieu, g.somay, g.hoso,
                            g.ngay_bat_dau, g.ngay_ket_thuc, g.tien_do, g.trang_thai,
                            g.kpi_baoduong_stt, g.loai_congviec, g.dinh_muc_gio_thu_cong,
                            h.mavt AS hoso_mavt,
                            k.ten_thiet_bi,
+                           pg.ten_cong_viec AS parent_ten_cong_viec,
+                           pg.phieu AS parent_phieu,
+                           pg.hoso AS parent_hoso,
+                           pg.somay AS parent_somay,
+                           ph.mavt AS parent_hoso_mavt,
                            (SELECT COALESCE(SUM(tong_gio),0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS gio_da_lam,
                            (SELECT COUNT(*) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS so_log
                     FROM giaoviec_kpi g
                     INNER JOIN giaoviec_kpi_nguoi n ON n.giaoviec_stt = g.stt
                     LEFT JOIN hososcbd_iso h ON h.stt = g.hososcbd_stt
                     LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = g.kpi_baoduong_stt
+                    LEFT JOIN giaoviec_kpi pg ON pg.stt = g.parent_stt
+                    LEFT JOIN hososcbd_iso ph ON ph.stt = pg.hososcbd_stt
                     WHERE $matchSql AND n.vai_tro = 'chinh'
                     ORDER BY FIELD(g.trang_thai,'dang_lam','chua_giao','hoan_thanh','huy'), g.ngay_ket_thuc ASC, g.stt DESC";
             $st = $db->prepare($sql);
@@ -465,13 +472,18 @@ function render(){
     const dm = t.dinh_muc_gio_hieu_luc ?? t.dinh_muc_gio_thu_cong ?? '-';
     const dl = Number(t.gio_da_lam||0);
     const st = t.trang_thai;
+    const parentTen = t.parent_stt ? ([t.parent_hoso_mavt, t.parent_somay].filter(Boolean).join('-') || t.parent_ten_cong_viec || '') : '';
+    const parentInfo = t.parent_stt
+      ? `<div class="text-xs text-red-600"><i class="fas fa-level-up-alt fa-rotate-90 mr-1"></i>Việc con của: <b>${esc(parentTen)}</b>${t.parent_phieu?` · Phiếu cha: <b>${esc(t.parent_phieu)}</b>`:''}</div>`
+      : '';
     return `
     <div class="cv-card bg-white rounded-lg shadow border p-3 flex flex-col gap-2 cursor-pointer" onclick="openDetail(${t.stt})">
       <div class="flex items-start justify-between gap-2">
-        <div class="font-semibold text-gray-800">${esc(ten)}</div>
+        <div class="font-semibold text-gray-800">${t.parent_stt?'<span class="text-red-600 font-bold mr-1">↳</span>':''}${esc(ten)}</div>
         <span class="px-2 py-0.5 rounded text-xs font-medium ${STATUS_CSS[st]||''}">${esc(STATUS_LABEL[st]||st)}</span>
       </div>
-      <div class="text-xs text-gray-500">Phiếu: <b>${esc(t.phieu||'')}</b> · HS: ${esc(t.hoso||'')}</div>
+      ${parentInfo}
+      <div class="text-xs"><span class="text-orange-600 font-semibold">Phiếu:</span> <b class="text-orange-600">${esc(t.phieu||'')}</b> · <span class="text-orange-600 font-semibold">HS:</span> <span class="text-orange-600">${esc(t.hoso||'')}</span></div>
       ${t.ghi_chu ? `<div class="text-xs text-gray-500 italic line-clamp-2">${esc(t.ghi_chu)}</div>` : ''}
       <div class="flex items-center justify-between text-xs mt-1">
         <div>Hạn: <b>${fmtDate(t.ngay_ket_thuc)||'—'}</b></div>

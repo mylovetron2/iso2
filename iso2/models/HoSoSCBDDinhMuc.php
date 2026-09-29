@@ -50,21 +50,7 @@ class HoSoSCBDDinhMuc extends BaseModel
         try {
             $check = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'dinh_muc_gio_thu_cong'");
             if ($check->rowCount() === 0 && is_file(self::MIGRATION_FILE_MANUAL_HOUR)) {
-                $this->db->exec(
-                    "ALTER TABLE hososcbd_dinhmuc_iso
-                     ADD COLUMN dinh_muc_gio_thu_cong DECIMAL(8,2) NULL DEFAULT NULL AFTER loai_congviec"
-                );
-            }
-
-            $kpiColumn = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'kpi_baoduong_stt'")->fetch(PDO::FETCH_ASSOC);
-            $loaiColumn = $this->db->query("SHOW COLUMNS FROM hososcbd_dinhmuc_iso LIKE 'loai_congviec'")->fetch(PDO::FETCH_ASSOC);
-            if (($kpiColumn && ($kpiColumn['Null'] ?? '') !== 'YES')
-                || ($loaiColumn && ($loaiColumn['Null'] ?? '') !== 'YES')) {
-                $this->db->exec(
-                    "ALTER TABLE hososcbd_dinhmuc_iso
-                     MODIFY COLUMN kpi_baoduong_stt INT NULL DEFAULT NULL,
-                     MODIFY COLUMN loai_congviec ENUM('kiem_tra','bd_cap_1','bd_cap_2','bd_cap_3','hieu_chuan') NULL DEFAULT NULL"
-                );
+                $this->db->exec((string)file_get_contents(self::MIGRATION_FILE_MANUAL_HOUR));
             }
         } catch (PDOException $e) {
             error_log('Error ensuring dinh_muc_gio_thu_cong exists: ' . $e->getMessage());
@@ -99,59 +85,14 @@ class HoSoSCBDDinhMuc extends BaseModel
                     d.dinh_muc_gio_thu_cong,
                     d.kpi_baoduong_stt,
                     k.ten_thiet_bi,
-                    CASE d.loai_congviec
-                        WHEN 'kiem_tra'   THEN k.kiem_tra_nhan_cong
-                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_nhan_cong
-                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_nhan_cong
-                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_nhan_cong
-                        WHEN 'hieu_chuan' THEN k.hieu_chuan_nhan_cong
-                    END AS dinh_muc_nhan_cong,
-                    COALESCE(
-                        d.dinh_muc_gio_thu_cong,
-                        CASE d.loai_congviec
-                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
-                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
-                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
-                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
-                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
-                        END
-                    ) AS dinh_muc_so_gio,
-                    CASE d.loai_congviec
-                        WHEN 'kiem_tra'   THEN k.kiem_tra_nguoi_thuc_hien
-                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_nguoi_thuc_hien
-                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_nguoi_thuc_hien
-                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_nguoi_thuc_hien
-                        WHEN 'hieu_chuan' THEN k.hieu_chuan_nguoi_thuc_hien
-                    END AS dinh_muc_nguoi_thuc_hien,
-                    CASE d.loai_congviec
-                        WHEN 'kiem_tra'   THEN k.kiem_tra_noi_dung
-                        WHEN 'bd_cap_1'   THEN k.bd_cap_1_noi_dung
-                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_noi_dung
-                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_noi_dung
-                        WHEN 'hieu_chuan' THEN k.hieu_chuan_noi_dung
-                    END AS dinh_muc_noi_dung,
-                    CASE d.loai_congviec
-                        WHEN 'bd_cap_2'   THEN k.bd_cap_2_tan_suat_thang
-                        WHEN 'bd_cap_3'   THEN k.bd_cap_3_tan_suat_thang
-                        WHEN 'hieu_chuan' THEN k.hieu_chuan_tan_suat_thang
-                        ELSE NULL
-                    END AS dinh_muc_tan_suat_thang,
+                    d.dinh_muc_gio_thu_cong AS dinh_muc_so_gio,
                     (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) AS gio_thuc_te,
                     CASE
-                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) IS NULL OR COALESCE(d.dinh_muc_gio_thu_cong, CASE d.loai_congviec
-                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
-                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
-                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
-                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
-                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
-                        END) IS NULL THEN 'chua_du_du_lieu'
-                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) <= COALESCE(d.dinh_muc_gio_thu_cong, CASE d.loai_congviec
-                            WHEN 'kiem_tra'   THEN k.kiem_tra_so_gio
-                            WHEN 'bd_cap_1'   THEN k.bd_cap_1_so_gio
-                            WHEN 'bd_cap_2'   THEN k.bd_cap_2_so_gio
-                            WHEN 'bd_cap_3'   THEN k.bd_cap_3_so_gio
-                            WHEN 'hieu_chuan' THEN k.hieu_chuan_so_gio
-                        END) THEN 'dat'
+                        WHEN d.dinh_muc_gio_thu_cong IS NULL
+                             OR (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) IS NULL
+                             THEN 'chua_du_du_lieu'
+                        WHEN (SELECT MAX(n.giolv) FROM ngthuchien_iso n WHERE n.mahoso = h.hoso) <= d.dinh_muc_gio_thu_cong
+                             THEN 'dat'
                         ELSE 'khong_dat'
                     END AS ket_luan_kpi
                  FROM hososcbd_dinhmuc_iso d
@@ -211,7 +152,8 @@ class HoSoSCBDDinhMuc extends BaseModel
 
     /**
      * Gan/cap nhat dinh muc cho 1 ho so (1 ho so chi co 1 dinh muc - UNIQUE KEY hososcbd_stt)
-     * $dinhMucGioThuCong: dinh muc gio nhap tay (so thuc), null neu dung theo KPI thiet bi
+     * $dinhMucGioThuCong: dinh muc gio (so thuc, bat buoc) - la nguon du lieu chinh cua cot Dinh muc.
+     * $kpiBaoDuongStt, $loaiCongViec: chi de audit "da chon KPI nao tren UI", khong con dung de tinh gio.
      */
     public function luuDinhMuc(
         int $hososcbdStt,
@@ -220,12 +162,11 @@ class HoSoSCBDDinhMuc extends BaseModel
         ?string $createdBy = null,
         ?float $dinhMucGioThuCong = null
     ): bool {
+        if ($dinhMucGioThuCong === null || $dinhMucGioThuCong < 0) {
+            return false;
+        }
         $hopLe = ['kiem_tra', 'bd_cap_1', 'bd_cap_2', 'bd_cap_3', 'hieu_chuan'];
-        if ($dinhMucGioThuCong === null) {
-            if ($kpiBaoDuongStt === null || $loaiCongViec === null || !in_array($loaiCongViec, $hopLe, true)) {
-                return false;
-            }
-        } elseif ($loaiCongViec !== null && !in_array($loaiCongViec, $hopLe, true)) {
+        if ($loaiCongViec !== null && !in_array($loaiCongViec, $hopLe, true)) {
             return false;
         }
 
@@ -264,9 +205,10 @@ class HoSoSCBDDinhMuc extends BaseModel
 
         try {
             $stmt = $this->db->prepare(
-                'SELECT l.kpi_baoduong_stt
+                'SELECT l.kpi_baoduong_stt, k.bd_cap_1_so_gio
                  FROM thietbi_iso t
                  LEFT JOIN thietbi_kpi_baoduong_iso l ON l.thietbi_stt = t.stt
+                 LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = l.kpi_baoduong_stt
                  WHERE t.mavt = :mavt AND t.somay = :somay
                  LIMIT 1'
             );
@@ -276,7 +218,7 @@ class HoSoSCBDDinhMuc extends BaseModel
             ]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$row || empty($row['kpi_baoduong_stt'])) {
+            if (!$row || empty($row['kpi_baoduong_stt']) || $row['bd_cap_1_so_gio'] === null) {
                 return false;
             }
 
@@ -285,7 +227,7 @@ class HoSoSCBDDinhMuc extends BaseModel
                 (int)$row['kpi_baoduong_stt'],
                 'bd_cap_1',
                 $createdBy,
-                null
+                (float)$row['bd_cap_1_so_gio']
             );
         } catch (PDOException $e) {
             error_log('Error auto assigning default KPI by device: ' . $e->getMessage());

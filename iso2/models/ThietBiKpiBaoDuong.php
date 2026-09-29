@@ -30,17 +30,9 @@ class ThietBiKpiBaoDuong extends BaseModel
     /**
      * Danh sach tat ca thiet bi trong thietbi_iso, kem thong tin lien ket KPI neu co
      */
-    public function searchWithDetails(string $search, int $limit, int $offset): array
+    public function searchWithDetails(string $search, int $limit, int $offset, string $status = ''): array
     {
-        $whereSql = '';
-        $params = [];
-        if ($search !== '') {
-            $whereSql = 'WHERE t.mavt LIKE ? OR t.somay LIKE ? OR t.tenvt LIKE ? OR k.ten_thiet_bi LIKE ?';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-        }
+        [$whereSql, $params] = $this->buildWhere($search, $status);
 
         $sql = "SELECT t.stt AS thietbi_stt, t.mavt, t.somay, t.tenvt AS ten_thiet_bi,
                        l.id AS link_id, l.kpi_baoduong_stt, k.ten_thiet_bi AS kpi_ten_thiet_bi,
@@ -57,17 +49,9 @@ class ThietBiKpiBaoDuong extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function countSearch(string $search): int
+    public function countSearch(string $search, string $status = ''): int
     {
-        $whereSql = '';
-        $params = [];
-        if ($search !== '') {
-            $whereSql = 'WHERE t.mavt LIKE ? OR t.somay LIKE ? OR t.tenvt LIKE ? OR k.ten_thiet_bi LIKE ?';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-        }
+        [$whereSql, $params] = $this->buildWhere($search, $status);
 
         $sql = "SELECT COUNT(*)
                 FROM thietbi_iso t
@@ -77,6 +61,29 @@ class ThietBiKpiBaoDuong extends BaseModel
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * @return array{0:string,1:array<int,mixed>}
+     */
+    private function buildWhere(string $search, string $status): array
+    {
+        $conds = [];
+        $params = [];
+        if ($search !== '') {
+            $conds[] = '(t.mavt LIKE ? OR t.somay LIKE ? OR t.tenvt LIKE ? OR k.ten_thiet_bi LIKE ?)';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+        if ($status === 'assigned') {
+            $conds[] = 'l.id IS NOT NULL';
+        } elseif ($status === 'unassigned') {
+            $conds[] = 'l.id IS NULL';
+        }
+        $whereSql = $conds ? 'WHERE ' . implode(' AND ', $conds) : '';
+        return [$whereSql, $params];
     }
 
     public function findByThietBiStt(int $thietbiStt): array|false

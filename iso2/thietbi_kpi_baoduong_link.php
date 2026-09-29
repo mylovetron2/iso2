@@ -114,6 +114,10 @@ if (isset($_SESSION['link_success'])) {
 }
 
 $search = trim((string)($_GET['search'] ?? ''));
+$status = (string)($_GET['status'] ?? '');
+if (!in_array($status, ['assigned', 'unassigned'], true)) {
+    $status = '';
+}
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
@@ -124,13 +128,13 @@ $totalPages = 1;
 $kpiOptions = [];
 
 try {
-    $totalRows = $model->countSearch($search);
+    $totalRows = $model->countSearch($search, $status);
     $totalPages = max(1, (int)ceil($totalRows / $perPage));
     if ($page > $totalPages) {
         $page = $totalPages;
         $offset = ($page - 1) * $perPage;
     }
-    $items = $model->searchWithDetails($search, $perPage, $offset);
+    $items = $model->searchWithDetails($search, $perPage, $offset, $status);
 
     $db = getDBConnection();
     $kpiStmt = $db->query('SELECT id, ten_thiet_bi FROM kpi_baoduong_thietbi_iso ORDER BY COALESCE(stt_hien_thi, id) ASC');
@@ -172,17 +176,25 @@ require_once __DIR__ . '/views/layouts/header.php';
     <?php endif; ?>
 
     <form method="GET" class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
             <div class="md:col-span-3">
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tìm theo mã VT / số máy / tên thiết bị</label>
                 <input type="text" name="search" value="<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>"
                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Nhập từ khóa...">
             </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Trạng thái gán KPI</label>
+                <select name="status" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                    <option value="" <?php echo $status === '' ? 'selected' : ''; ?>>Tất cả</option>
+                    <option value="assigned" <?php echo $status === 'assigned' ? 'selected' : ''; ?>>Đã gán</option>
+                    <option value="unassigned" <?php echo $status === 'unassigned' ? 'selected' : ''; ?>>Chưa gán</option>
+                </select>
+            </div>
             <div class="flex gap-2">
                 <button type="submit" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-semibold">
                     <i class="fas fa-search mr-1"></i> Tìm
                 </button>
-                <?php if ($search !== ''): ?>
+                <?php if ($search !== '' || $status !== ''): ?>
                 <a href="thietbi_kpi_baoduong_link.php" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-semibold">Xóa lọc</a>
                 <?php endif; ?>
             </div>
@@ -248,13 +260,66 @@ require_once __DIR__ . '/views/layouts/header.php';
     </div>
 
     <?php if ($totalPages > 1): ?>
-    <div class="flex justify-center gap-2 mt-4">
-        <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-            <a href="?search=<?php echo urlencode($search); ?>&page=<?php echo $p; ?>"
-               class="px-3 py-1 rounded text-sm <?php echo $p === $page ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'; ?>">
-                <?php echo $p; ?>
-            </a>
-        <?php endfor; ?>
+    <?php
+        $window = 2;
+        $startP = max(1, $page - $window);
+        $endP = min($totalPages, $page + $window);
+        $baseUrl = '?search=' . urlencode($search) . '&status=' . urlencode($status) . '&page=';
+        $fromRow = ($page - 1) * $perPage + 1;
+        $toRow = min($totalRows, $page * $perPage);
+        $linkCls = 'px-3 py-1 rounded text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-100';
+        $activeCls = 'px-3 py-1 rounded text-sm bg-blue-600 text-white border border-blue-600';
+        $disabledCls = 'px-3 py-1 rounded text-sm bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed';
+    ?>
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+        <div class="text-sm text-gray-600">
+            Hiển thị <b><?php echo $fromRow; ?></b>–<b><?php echo $toRow; ?></b> / <b><?php echo $totalRows; ?></b> bản ghi
+            (Trang <?php echo $page; ?>/<?php echo $totalPages; ?>)
+        </div>
+        <div class="flex flex-wrap justify-center gap-1">
+            <?php if ($page > 1): ?>
+                <a href="<?php echo $baseUrl . 1; ?>" class="<?php echo $linkCls; ?>" title="Trang đầu">«</a>
+                <a href="<?php echo $baseUrl . ($page - 1); ?>" class="<?php echo $linkCls; ?>" title="Trang trước">‹</a>
+            <?php else: ?>
+                <span class="<?php echo $disabledCls; ?>">«</span>
+                <span class="<?php echo $disabledCls; ?>">‹</span>
+            <?php endif; ?>
+
+            <?php if ($startP > 1): ?>
+                <a href="<?php echo $baseUrl . 1; ?>" class="<?php echo $linkCls; ?>">1</a>
+                <?php if ($startP > 2): ?><span class="px-2 py-1 text-sm text-gray-500">…</span><?php endif; ?>
+            <?php endif; ?>
+
+            <?php for ($p = $startP; $p <= $endP; $p++): ?>
+                <a href="<?php echo $baseUrl . $p; ?>"
+                   class="<?php echo $p === $page ? $activeCls : $linkCls; ?>">
+                    <?php echo $p; ?>
+                </a>
+            <?php endfor; ?>
+
+            <?php if ($endP < $totalPages): ?>
+                <?php if ($endP < $totalPages - 1): ?><span class="px-2 py-1 text-sm text-gray-500">…</span><?php endif; ?>
+                <a href="<?php echo $baseUrl . $totalPages; ?>" class="<?php echo $linkCls; ?>"><?php echo $totalPages; ?></a>
+            <?php endif; ?>
+
+            <?php if ($page < $totalPages): ?>
+                <a href="<?php echo $baseUrl . ($page + 1); ?>" class="<?php echo $linkCls; ?>" title="Trang sau">›</a>
+                <a href="<?php echo $baseUrl . $totalPages; ?>" class="<?php echo $linkCls; ?>" title="Trang cuối">»</a>
+            <?php else: ?>
+                <span class="<?php echo $disabledCls; ?>">›</span>
+                <span class="<?php echo $disabledCls; ?>">»</span>
+            <?php endif; ?>
+
+            <form method="GET" class="flex items-center gap-1 ml-2">
+                <input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>">
+                <input type="hidden" name="status" value="<?php echo htmlspecialchars($status); ?>">
+                <label class="text-sm text-gray-600">Tới trang</label>
+                <input type="number" name="page" min="1" max="<?php echo $totalPages; ?>"
+                       value="<?php echo $page; ?>"
+                       class="w-16 border border-gray-300 rounded px-2 py-1 text-sm">
+                <button type="submit" class="<?php echo $linkCls; ?>">Đi</button>
+            </form>
+        </div>
     </div>
     <?php endif; ?>
 </div>

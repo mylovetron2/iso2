@@ -125,6 +125,7 @@ $dinhMucInfo = $canViewDinhMuc ? $dinhMucModel->layTheoHoSo($stt) : false;
 $deviceKpiLink = null;
 $deviceKpiLabel = '';
 $deviceKpiDetails = null;
+$effectiveKpiHour = null;
 $kpiThietBiList = [];
 if ($canEditDinhMuc) {
     try {
@@ -174,24 +175,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dinhmuc_action'])) {
         die('Không có quyền gán định mức KPI');
     }
     $dinhMucGioThuCongRaw = trim((string)($_POST['dinh_muc_gio_thu_cong'] ?? ''));
+    $kpiBaoDuongStt = (int)($_POST['kpi_baoduong_stt'] ?? 0) ?: null;
+    $loaiCongViec = trim((string)($_POST['loai_congviec'] ?? '')) ?: null;
     $dinhMucGioThuCong = null;
-    $manualHourMode = $dinhMucGioThuCongRaw !== '';
-    $kpiBaoDuongStt = $manualHourMode ? null : (int)($_POST['kpi_baoduong_stt'] ?? 0);
-    $loaiCongViec = $manualHourMode ? null : trim((string)($_POST['loai_congviec'] ?? ''));
-    if (!$manualHourMode && ($kpiBaoDuongStt <= 0 || $loaiCongViec === '')) {
-        $dinhMucError = 'Vui lòng chọn đầy đủ thiết bị KPI và loại công việc';
-    } elseif ($dinhMucGioThuCongRaw !== '' && !is_numeric(str_replace(',', '.', $dinhMucGioThuCongRaw))) {
-        $dinhMucError = 'Định mức giờ nhập tay phải là số thực hợp lệ';
-    } else {
-        if ($dinhMucGioThuCongRaw !== '') {
-            $dinhMucGioThuCong = (float)str_replace(',', '.', $dinhMucGioThuCongRaw);
+
+    if ($dinhMucGioThuCongRaw !== '') {
+        $normalized = str_replace(',', '.', $dinhMucGioThuCongRaw);
+        if (!is_numeric($normalized)) {
+            $dinhMucError = 'Định mức giờ nhập tay phải là số thực hợp lệ';
+        } else {
+            $dinhMucGioThuCong = (float)$normalized;
         }
-        $createdBy = $_SESSION['username'] ?? null;
-        if ($dinhMucModel->luuDinhMuc($stt, $kpiBaoDuongStt, $loaiCongViec, $createdBy, $dinhMucGioThuCong)) {
-            header("Location: hososcbd_repair_details.php?id={$stt}");
-            exit;
+    } elseif ($kpiBaoDuongStt !== null && $loaiCongViec !== null
+              && isset($kpiHourPreviewMap[$kpiBaoDuongStt][$loaiCongViec])) {
+        // User chọn KPI + loại công việc → resolve giờ định mức từ KPI chuẩn ghi thẳng vào cột
+        $resolved = $kpiHourPreviewMap[$kpiBaoDuongStt][$loaiCongViec];
+        if ($resolved !== null) {
+            $dinhMucGioThuCong = (float)$resolved;
         }
-        $dinhMucError = 'Có lỗi xảy ra khi lưu định mức KPI';
+    }
+
+    if ($dinhMucError === '') {
+        if ($dinhMucGioThuCong === null) {
+            $dinhMucError = 'Vui lòng nhập định mức giờ hoặc chọn KPI thiết bị + loại công việc có số giờ hợp lệ';
+        } else {
+            $createdBy = $_SESSION['username'] ?? null;
+            if ($dinhMucModel->luuDinhMuc($stt, $kpiBaoDuongStt, $loaiCongViec, $createdBy, $dinhMucGioThuCong)) {
+                header("Location: hososcbd_repair_details.php?id={$stt}");
+                exit;
+            }
+            $dinhMucError = 'Có lỗi xảy ra khi lưu định mức KPI';
+        }
     }
     $dinhMucInfo = $dinhMucModel->layTheoHoSo($stt);
 }

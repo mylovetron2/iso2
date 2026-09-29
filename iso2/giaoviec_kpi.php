@@ -223,7 +223,9 @@ try {
         // --------- Lấy danh sách công việc (root + con) ---------
         case 'api_list':
             $st = $db->query("
-                SELECT g.*, h.mavt AS hoso_mavt,
+                SELECT g.*, h.mavt AS hoso_mavt, h.nhomsc AS nhomsc,
+                  k.ten_thiet_bi AS ten_thiet_bi,
+                  (SELECT COALESCE(SUM(tong_gio),0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS gio_da_lam,
                   (SELECT GROUP_CONCAT(CONCAT(n.user_stt,'|',COALESCE(NULLIF(TRIM(u.hoten), ''), u.username),'|',n.vai_tro) SEPARATOR ';;')
                    FROM giaoviec_kpi_nguoi n
                    INNER JOIN users u ON u.stt = n.user_stt
@@ -231,11 +233,31 @@ try {
                     (SELECT COUNT(*) FROM giaoviec_kpi_nguoi WHERE giaoviec_stt = g.stt) AS nguoi_count
                 FROM giaoviec_kpi g
                 LEFT JOIN hososcbd_iso h ON h.stt = g.hososcbd_stt
+                LEFT JOIN kpi_baoduong_thietbi_iso k ON k.id = g.kpi_baoduong_stt
                 ORDER BY COALESCE(g.parent_stt, g.stt) DESC, g.parent_stt IS NOT NULL, g.stt ASC
             ");
             $rows = $st->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) {
                 $r['trang_thai_hien_thi'] = computeStatus($r, (int)$r['nguoi_count']);
+                // Tính tiến độ động theo giờ đã làm / định mức giờ hiệu lực
+                $hoursDone = (float)($r['gio_da_lam'] ?? 0);
+                $manual = $r['dinh_muc_gio_thu_cong'] ?? null;
+                $target = ($manual !== null && $manual !== '' && (float)$manual > 0) ? (float)$manual : 0.0;
+                if ($target <= 0 && !empty($r['kpi_baoduong_stt']) && !empty($r['loai_congviec'])) {
+                    $kpiId = (int)$r['kpi_baoduong_stt'];
+                    $loai = (string)$r['loai_congviec'];
+                    if (isset($kpiHourPreviewMap[$kpiId][$loai]) && $kpiHourPreviewMap[$kpiId][$loai] !== null && (float)$kpiHourPreviewMap[$kpiId][$loai] > 0) {
+                        $target = (float)$kpiHourPreviewMap[$kpiId][$loai];
+                    }
+                }
+                if (($r['trang_thai'] ?? '') === 'hoan_thanh') {
+                    $r['tien_do'] = 100;
+                } elseif ($target > 0) {
+                    $r['tien_do'] = max(0, min(100, (int)round(($hoursDone / $target) * 100)));
+                } else {
+                    $r['tien_do'] = (int)($r['tien_do'] ?? 0);
+                }
+                $r['dinh_muc_gio_hieu_luc'] = $target > 0 ? $target : null;
                 $r['nguoi_list'] = [];
                 if (!empty($r['nguoi_raw'])) {
                     foreach (explode(';;', $r['nguoi_raw']) as $p) {
@@ -400,7 +422,14 @@ require_once __DIR__ . '/views/layouts/header.php';
       <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-tasks text-blue-600 mr-2"></i>Giao việc &amp; KPI</h1>
       <p class="text-sm text-gray-500">Trưởng nhóm giao việc theo phiếu / máy — theo dõi tiến độ, người thực hiện.</p>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-wrap">
+      <select id="filterNhom" class="border rounded px-3 py-2 text-sm">
+        <option value="">— Nhóm: Tất cả —</option>
+      </select>
+      <input type="text" id="filterThietBi" class="border rounded px-3 py-2 text-sm" placeholder="Tìm tên thiết bị / hồ sơ / số máy...">
+      <select id="filterNguoiChinh" class="border rounded px-3 py-2 text-sm">
+        <option value="">— Người thực hiện chính: Tất cả —</option>
+      </select>
       <select id="filterStatus" class="border rounded px-3 py-2 text-sm">
         <option value="">— Tình trạng: Tất cả —</option>
         <option value="chua_giao">Cần giao</option>
@@ -424,6 +453,7 @@ require_once __DIR__ . '/views/layouts/header.php';
           <th class="px-3 py-2 text-left w-10">#</th>
           <th class="px-3 py-2 text-left">Tên công việc</th>
           <th class="px-3 py-2 text-left">Dự án (Hồ sơ)</th>
+          <th class="px-3 py-2 text-left">Nhóm</th>
           <th class="px-3 py-2 text-left">Thời điểm bắt đầu</th>
           <th class="px-3 py-2 text-left">Hạn hoàn thành</th>
           <th class="px-3 py-2 text-left">Tình trạng</th>
@@ -435,7 +465,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         </tr>
       </thead>
       <tbody id="tblBody">
-        <tr><td colspan="11" class="p-6 text-center text-gray-400">Đang tải...</td></tr>
+        <tr><td colspan="12" class="p-6 text-center text-gray-400">Đang tải...</td></tr>
       </tbody>
     </table>
   </div>
@@ -626,24 +656,89 @@ async function loadHoso(){
 async function loadTasks(){
   const r = await fetch(`${API}?action=api_list`).then(r=>r.json());
   ALL_TASKS = r.data || [];
+  populateGvFilters();
   renderTable();
+}
+
+function populateGvFilters(){
+  const nhomSel = document.getElementById('filterNhom');
+  const tbInput = document.getElementById('filterThietBi');
+  const nguoiSel = document.getElementById('filterNguoiChinh');
+  if (!nhomSel || !tbInput || !nguoiSel) return;
+
+  const nhomSet = new Set();
+  const tbSet = new Set();
+  const nguoiMap = new Map();
+  for (const t of ALL_TASKS) {
+    if (t.nhomsc) nhomSet.add(String(t.nhomsc).trim());
+    if (t.ten_thiet_bi) tbSet.add(String(t.ten_thiet_bi).trim());
+    (t.nguoi_list || []).forEach(n => {
+      if (n.vai_tro === 'chinh' && n.user_stt) {
+        nguoiMap.set(String(n.user_stt), n.hoten || '');
+      }
+    });
+  }
+
+  const rebuild = (sel, items, placeholder) => {
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${placeholder}</option>` +
+      items.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+    if (cur && items.some(([v]) => v === cur)) sel.value = cur;
+  };
+
+  const nhomItems = [...nhomSet].filter(Boolean).sort().map(v => [v, v]);
+  const nguoiItems = [...nguoiMap.entries()].sort((a,b) => (a[1]||'').localeCompare(b[1]||''));
+
+  rebuild(nhomSel, nhomItems, '— Nhóm: Tất cả —');
+  rebuild(nguoiSel, nguoiItems, '— Người thực hiện chính: Tất cả —');
+
+  let dl = document.getElementById('dl_filter_thietbi');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'dl_filter_thietbi';
+    document.body.appendChild(dl);
+    tbInput.setAttribute('list', 'dl_filter_thietbi');
+  }
+  dl.innerHTML = [...tbSet].filter(Boolean).sort()
+    .map(v => `<option value="${esc(v)}"></option>`).join('');
+}
+
+function taskMatchesFilters(t, fNhom, fTb, fNguoi){
+  if (fNhom && String(t.nhomsc || '').trim() !== fNhom) return false;
+  if (fTb) {
+    const hay = [t.ten_thiet_bi, t.hoso, t.somay, t.phieu, t.hoso_mavt]
+      .map(v => String(v || '').toLowerCase()).join(' | ');
+    const keywords = fTb.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!keywords.every(k => hay.includes(k))) return false;
+  }
+  if (fNguoi) {
+    const chinh = (t.nguoi_list || []).find(n => n.vai_tro === 'chinh');
+    if (!chinh || String(chinh.user_stt) !== fNguoi) return false;
+  }
+  return true;
 }
 
 function renderTable(){
   const filter = document.getElementById('filterStatus').value;
+  const fNhom = document.getElementById('filterNhom').value;
+  const fTb = document.getElementById('filterThietBi').value.trim();
+  const fNguoi = document.getElementById('filterNguoiChinh').value;
   const roots = ALL_TASKS.filter(t => !t.parent_stt);
   const rows = [];
   let idx = 0;
   for (const t of roots) {
     if (filter && t.trang_thai_hien_thi !== filter) continue;
+    const children = ALL_TASKS.filter(c => Number(c.parent_stt) === Number(t.stt));
+    const rootMatch = taskMatchesFilters(t, fNhom, fTb, fNguoi);
+    const childMatches = children.filter(c => taskMatchesFilters(c, fNhom, fTb, fNguoi));
+    if (!rootMatch && childMatches.length === 0) continue;
     idx++;
     rows.push(renderRow(t, idx, 0));
-    const children = ALL_TASKS.filter(c => Number(c.parent_stt) === Number(t.stt));
-    for (const c of children) rows.push(renderRow(c, idx+'.'+(children.indexOf(c)+1), 1));
+    childMatches.forEach((c, i) => rows.push(renderRow(c, idx+'.'+(i+1), 1)));
   }
   document.getElementById('tblBody').innerHTML = rows.length
     ? rows.join('')
-    : `<tr><td colspan="10" class="p-6 text-center text-gray-400">Chưa có công việc.</td></tr>`;
+    : `<tr><td colspan="12" class="p-6 text-center text-gray-400">Chưa có công việc.</td></tr>`;
 }
 
 function renderRow(t, idx, level){
@@ -654,7 +749,7 @@ function renderRow(t, idx, level){
   const nguoi = (t.nguoi_list||[]).map(n =>
     `<span class="inline-block ${n.vai_tro==='chinh'?'bg-blue-600 text-white':'bg-gray-200 text-gray-700'} rounded px-2 py-0.5 text-xs mr-1 mb-1" title="${n.vai_tro==='chinh'?'Chính':'Phụ'}">${esc(n.hoten)}</span>`
   ).join('') || '<span class="text-gray-400 text-xs italic">Chưa giao</span>';
-  const indent = level ? `<span class="text-gray-400 ml-4">↳</span> ` : '';
+  const indent = level ? `<span class="text-red-600 font-bold ml-4">↳</span> ` : '';
   const ghiChuText = (t.ghi_chu || '').trim();
 
   let dinhMucText = '';
@@ -679,6 +774,7 @@ function renderRow(t, idx, level){
     <td class="px-3 py-2">${indent}<span class="font-medium">${esc(tenHienThi)}</span>
       ${t.mo_ta ? `<div class="text-xs text-gray-500">${esc(t.mo_ta)}</div>` : ''}</td>
     <td class="px-3 py-2">${esc(t.hoso||'')}</td>
+    <td class="px-3 py-2">${esc(t.nhomsc||'')}</td>
     <td class="px-3 py-2">${fmtDate(t.ngay_bat_dau)} ${t.gio_bat_dau? '<span class="text-xs text-gray-500">'+t.gio_bat_dau.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2 ${deadlineColor}">${fmtDate(t.ngay_ket_thuc)} ${t.gio_ket_thuc? '<span class="text-xs">'+t.gio_ket_thuc.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2">${badge}</td>
@@ -927,6 +1023,9 @@ async function saveNguoi(){
 }
 
 document.getElementById('filterStatus').addEventListener('change', renderTable);
+document.getElementById('filterNhom').addEventListener('change', renderTable);
+document.getElementById('filterThietBi').addEventListener('input', renderTable);
+document.getElementById('filterNguoiChinh').addEventListener('change', renderTable);
 document.getElementById('f_kpi_baoduong_stt')?.addEventListener('change', updateKpiPreview);
 document.getElementById('f_loai_congviec')?.addEventListener('change', updateKpiPreview);
 document.getElementById('f_dinh_muc_gio_thu_cong')?.addEventListener('input', updateKpiPreview);

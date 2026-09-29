@@ -7,11 +7,15 @@ require_once __DIR__ . '/../models/BieuMauThuMuc.php';
 class BieuMauController
 {
     private const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    private const ALLOWED_EXTENSIONS = ['doc', 'docx'];
+    private const ALLOWED_EXTENSIONS = ['doc', 'docx', 'pdf', 'xls', 'xlsx'];
     private const ALLOWED_MIME_TYPES = [
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/pdf',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/octet-stream',
+        'application/zip',
     ];
 
     private BieuMau $model;
@@ -73,7 +77,7 @@ class BieuMauController
         $originalName = basename((string)$file['name']);
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
-            $this->redirect('Chỉ chấp nhận file .doc hoặc .docx.');
+            $this->redirect('Chỉ chấp nhận file .doc, .docx, .pdf, .xls hoặc .xlsx.');
         }
         if ((int)$file['size'] > self::MAX_FILE_SIZE) {
             $this->redirect('File không được lớn hơn 10 MB.');
@@ -81,7 +85,7 @@ class BieuMauController
 
         $mimeType = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']) ?: 'application/octet-stream';
         if (!in_array($mimeType, self::ALLOWED_MIME_TYPES, true)) {
-            $this->redirect('Nội dung file không phải tài liệu Word hợp lệ.');
+            $this->redirect('Nội dung file không phải tài liệu Word/PDF/Excel hợp lệ.');
         }
 
         $displayName = trim((string)($_POST['ten_hien_thi'] ?? ''));

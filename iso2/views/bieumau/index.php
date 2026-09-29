@@ -30,9 +30,9 @@ require_once __DIR__ . '/../layouts/header.php';
             <div class="grid md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end"><label class="block text-sm font-semibold">Tên hiển thị
                 <input type="text" name="ten_hien_thi" maxlength="255" placeholder="Tự lấy theo tên file nếu bỏ trống" class="mt-1 w-full border rounded px-3 py-2 font-normal"></label>
                 <label class="block text-sm font-semibold">Thư mục<select name="thu_muc_id" class="mt-1 w-full border rounded px-3 py-2 font-normal"><option value="0">Không thuộc thư mục</option><?php foreach ($folders as $folder): ?><option value="<?php echo (int)$folder['id']; ?>"><?php echo htmlspecialchars($folder['ten_thu_muc']); ?></option><?php endforeach; ?></select></label>
-                <label class="block text-sm font-semibold">File Word<input type="file" name="file" accept=".doc,.docx" required class="mt-1 w-full border rounded px-3 py-1.5 bg-white font-normal"></label>
+                <label class="block text-sm font-semibold">File biểu mẫu<input type="file" name="file" accept=".doc,.docx,.pdf,.xls,.xlsx" required class="mt-1 w-full border rounded px-3 py-1.5 bg-white font-normal"></label>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Upload</button>
-            </div><div class="text-xs text-gray-500 mt-2">Chỉ nhận .doc và .docx, tối đa 10 MB.</div>
+            </div><div class="text-xs text-gray-500 mt-2">Chỉ nhận .doc, .docx, .pdf, .xls, .xlsx — tối đa 10 MB.</div>
         </form>
         <?php endif; ?>
 

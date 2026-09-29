@@ -23,12 +23,16 @@ if (!$item || !is_file($filePath)) {
 
 header('Content-Type: ' . $item['mime_type']);
 header('Content-Length: ' . filesize($filePath));
+$storedExt = strtolower(pathinfo((string)$item['ten_luu_tru'], PATHINFO_EXTENSION));
+if (!in_array($storedExt, ['doc', 'docx', 'pdf', 'xls', 'xlsx'], true)) {
+    $storedExt = 'docx';
+}
 $downloadName = trim((string)$item['ten_hien_thi']);
-$downloadName = preg_replace('/\.(docx?|DOCX?)$/i', '', $downloadName) ?: 'bieu-mau';
+$downloadName = preg_replace('/\.(docx?|pdf|xlsx?)$/i', '', $downloadName) ?: 'bieu-mau';
 $downloadName = preg_replace('/[\r\n"\\\/]/', '', $downloadName) ?: 'bieu-mau';
 $asciiName = preg_replace('/[^A-Za-z0-9._ -]/', '', $downloadName) ?: 'bieu-mau';
-$encodedName = rawurlencode($downloadName . '.docx');
-header('Content-Disposition: attachment; filename="' . $asciiName . '.docx"; filename*=UTF-8\'\'' . $encodedName);
+$encodedName = rawurlencode($downloadName . '.' . $storedExt);
+header('Content-Disposition: attachment; filename="' . $asciiName . '.' . $storedExt . '"; filename*=UTF-8\'\'' . $encodedName);
 header('X-Content-Type-Options: nosniff');
 readfile($filePath);
 exit;
