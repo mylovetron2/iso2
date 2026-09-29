@@ -329,12 +329,154 @@ try {
         case 'api_finish':
             $in = json_decode(file_get_contents('php://input'), true) ?: [];
             $stt = (int)($in['giaoviec_stt'] ?? 0);
+            $ttktafterIn = trim((string)($in['ttktafter'] ?? ''));
+            $ketluanIn   = trim((string)($in['ketluan'] ?? ''));
             if ($stt <= 0) jsonOut(['ok'=>false,'error'=>'Thiếu stt'], 400);
             [$matchSql, $matchParams] = buildUserMatchCondition($currentUserStt);
             $chk = $db->prepare("SELECT COUNT(*) FROM giaoviec_kpi_nguoi n WHERE n.giaoviec_stt=? AND $matchSql AND n.vai_tro='chinh'");
             $chk->execute(array_merge([$stt], $matchParams));
             if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Bạn không phải người thực hiện chính'], 403);
-            $db->prepare("UPDATE giaoviec_kpi SET trang_thai='hoan_thanh', tien_do=100 WHERE stt=:s")->execute([':s'=>$stt]);
+
+            // Lấy thông tin task + hồ sơ liên quan để ghi ngthuchien_iso
+            $stTask = $db->prepare("SELECT g.hoso, g.hososcbd_stt, g.ngay_bat_dau, g.ngay_ket_thuc, h.mavt, h.somay, h.khacphuc
+                                    FROM giaoviec_kpi g
+                                    LEFT JOIN hososcbd_iso h ON h.stt = g.hososcbd_stt
+                                    WHERE g.stt = :s");
+            $stTask->execute([':s'=>$stt]);
+            $taskInfo = $stTask->fetch(PDO::FETCH_ASSOC) ?: [];
+            $mahoso = trim((string)($taskInfo['hoso'] ?? ''));
+            $hososcbdStt = (int)($taskInfo['hososcbd_stt'] ?? 0);
+
+            // Tự tính ngayth/ngaykt từ min/max ngay_lam của các log
+            $stRange = $db->prepare("SELECT MIN(ngay_lam) AS mn, MAX(ngay_lam) AS mx
+                                     FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = :s");
+            $stRange->execute([':s'=>$stt]);
+            $rangeRow = $stRange->fetch(PDO::FETCH_ASSOC) ?: [];
+            $ngaythIn = !empty($rangeRow['mn']) ? (string)$rangeRow['mn'] : '';
+            $ngayktIn = !empty($rangeRow['mx']) ? (string)$rangeRow['mx'] : '';
+
+            $db->beginTransaction();
+            try {
+                if ($mahoso !== '') {
+                    // Tổng giờ theo từng người trên toàn bộ log của task
+                    $stAgg = $db->prepare("SELECT TRIM(gio.hoten) AS hoten, SUM(gio.so_gio) AS tong
+                                           FROM giaoviec_kpi_thuchien tc
+                                           INNER JOIN giaoviec_kpi_thuchien_gio gio ON gio.thuchien_stt = tc.stt
+                                           WHERE tc.giaoviec_stt = :s AND TRIM(gio.hoten) <> ''
+                                           GROUP BY TRIM(gio.hoten)");
+                    $stAgg->execute([':s'=>$stt]);
+                    $aggRows = $stAgg->fetchAll(PDO::FETCH_ASSOC);
+
+                    if ($aggRows) {
+                        $mavt   = (string)($taskInfo['mavt'] ?? '');
+                        $somay  = (string)($taskInfo['somay'] ?? '');
+                        $ngayth = $ngaythIn !== '' ? $ngaythIn : (!empty($taskInfo['ngay_bat_dau']) ? $taskInfo['ngay_bat_dau'] : '0000-00-00');
+                        $ngaykt = $ngayktIn !== '' ? $ngayktIn : (!empty($taskInfo['ngay_ket_thuc']) ? $taskInfo['ngay_ket_thuc'] : '0000-00-00');
+                        $month  = (int)date('n');
+                        $giolvField = "giolv{$month}";
+
+                        // Map hoten -> stt hiện có trong ngthuchien_iso cho mahoso này
+                        $stEx = $db->prepare("SELECT stt, TRIM(hoten) AS hoten FROM ngthuchien_iso WHERE mahoso = :m");
+                        $stEx->execute([':m'=>$mahoso]);
+                        $existingMap = [];
+                        foreach ($stEx->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                            $existingMap[mb_strtolower($r['hoten'])] = (int)$r['stt'];
+                        }
+
+                        $nextStt = (int)$db->query("SELECT COALESCE(MAX(stt),0) FROM ngthuchien_iso")->fetchColumn() + 1;
+
+                        $sqlUpd = "UPDATE ngthuchien_iso SET
+                                        hoten = :hoten,
+                                        giolv = :giolv,
+                                        mamay = :mamay,
+                                        somay = :somay,
+                                        ngayth = :ngayth,
+                                        ngaykt = :ngaykt,
+                                        {$giolvField} = :giolv_month
+                                    WHERE stt = :stt";
+                        $sqlIns = "INSERT INTO ngthuchien_iso
+                                        (stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolvField})
+                                    VALUES
+                                        (:stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :giolv_month)";
+                        $stmtUpd = $db->prepare($sqlUpd);
+                        $stmtIns = $db->prepare($sqlIns);
+
+                        foreach ($aggRows as $row) {
+                            $hoten = trim((string)$row['hoten']);
+                            if ($hoten === '') continue;
+                            $tong = (float)$row['tong'];
+                            $key = mb_strtolower($hoten);
+                            if (isset($existingMap[$key])) {
+                                $stmtUpd->execute([
+                                    ':hoten'      => $hoten,
+                                    ':giolv'      => $tong,
+                                    ':mamay'      => $mavt,
+                                    ':somay'      => $somay,
+                                    ':ngayth'     => $ngayth,
+                                    ':ngaykt'     => $ngaykt,
+                                    ':giolv_month'=> $tong,
+                                    ':stt'        => $existingMap[$key],
+                                ]);
+                            } else {
+                                $stmtIns->execute([
+                                    ':stt'        => $nextStt,
+                                    ':mahoso'     => $mahoso,
+                                    ':mamay'      => $mavt,
+                                    ':somay'      => $somay,
+                                    ':hoten'      => $hoten,
+                                    ':giolv'      => $tong,
+                                    ':ngayth'     => $ngayth,
+                                    ':ngaykt'     => $ngaykt,
+                                    ':giolv_month'=> $tong,
+                                ]);
+                                $existingMap[$key] = $nextStt;
+                                $nextStt++;
+                            }
+                        }
+                    }
+                }
+
+                // Cập nhật khacphuc của hososcbd_iso: nối tất cả noi_dung log lại
+                if ($hososcbdStt > 0) {
+                    $stLogs = $db->prepare("SELECT ngay_lam, noi_dung
+                                            FROM giaoviec_kpi_thuchien
+                                            WHERE giaoviec_stt = :s AND noi_dung IS NOT NULL AND TRIM(noi_dung) <> ''
+                                            ORDER BY ngay_lam ASC, stt ASC");
+                    $stLogs->execute([':s'=>$stt]);
+                    $lines = [];
+                    foreach ($stLogs->fetchAll(PDO::FETCH_ASSOC) as $lg) {
+                        $nd = trim((string)$lg['noi_dung']);
+                        if ($nd === '') continue;
+                        $lines[] = '[' . $lg['ngay_lam'] . '] ' . $nd;
+                    }
+                    if ($lines) {
+                        $moi = implode("\n", $lines);
+                        $cu = trim((string)($taskInfo['khacphuc'] ?? ''));
+                        $newKhacPhuc = $cu === '' ? $moi : ($cu . "\n" . $moi);
+                        $db->prepare("UPDATE hososcbd_iso SET khacphuc = :k WHERE stt = :s")
+                           ->execute([':k'=>$newKhacPhuc, ':s'=>$hososcbdStt]);
+                    }
+
+                    // Cập nhật ttktafter / ketluan nếu người dùng nhập
+                    $setParts = [];
+                    $params = [':s'=>$hososcbdStt];
+                    if ($ttktafterIn !== '') { $setParts[] = 'ttktafter = :tt'; $params[':tt'] = $ttktafterIn; }
+                    if ($ketluanIn   !== '') { $setParts[] = 'ketluan = :kl';   $params[':kl'] = $ketluanIn; }
+                    if ($ngaythIn    !== '') { $setParts[] = 'ngayth = :nt';    $params[':nt'] = $ngaythIn; }
+                    if ($ngayktIn    !== '') { $setParts[] = 'ngaykt = :nk';    $params[':nk'] = $ngayktIn; }
+                    if ($setParts) {
+                        $db->prepare("UPDATE hososcbd_iso SET ".implode(', ', $setParts)." WHERE stt = :s")
+                           ->execute($params);
+                    }
+                }
+
+                $db->prepare("UPDATE giaoviec_kpi SET trang_thai='hoan_thanh', tien_do=100 WHERE stt=:s")->execute([':s'=>$stt]);
+                $db->commit();
+            } catch (Throwable $e) {
+                $db->rollBack();
+                error_log('api_finish ghi ngthuchien_iso lỗi: ' . $e->getMessage());
+                jsonOut(['ok'=>false,'error'=>'Lỗi khi ghi người thực hiện: '.$e->getMessage()], 500);
+            }
             jsonOut(['ok'=>true]);
     }
 } catch (Throwable $e) {
@@ -432,6 +574,38 @@ require_once __DIR__ . '/views/layouts/header.php';
           <i class="fas fa-flag-checkered mr-1"></i>Kết thúc công việc
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nhập kết luận khi kết thúc -->
+<div id="modalFinish" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[110] p-4">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b">
+      <h3 class="font-semibold text-gray-800"><i class="fas fa-flag-checkered text-green-600 mr-1"></i>Kết thúc công việc</h3>
+      <button onclick="closeModal('modalFinish')" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-4 space-y-3">
+      <div>
+        <label class="text-xs text-gray-600">Tình trạng kỹ thuật sau khi SC/BD</label>
+        <select id="f_ttktafter" class="w-full border rounded px-2 py-1.5 text-sm">
+          <option value="">-- Chọn --</option>
+          <option value="Đạt">Đạt</option>
+          <option value="Hỏng">Hỏng (Không khắc phục được)</option>
+          <option value="Chờ vật tư thay thế">Chờ vật tư thay thế</option>
+          <option value="Chưa kết luận">Chưa kết luận</option>
+          <option value="Đang sửa chữa">Đang sửa chữa</option>
+          <option value="TTKTDB">TTKT Đặc biệt</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-600">Kết luận</label>
+        <textarea id="f_ketluan" rows="3" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="Nhập kết luận"></textarea>
+      </div>
+    </div>
+    <div class="px-5 py-3 border-t flex justify-end gap-2 bg-gray-50">
+      <button onclick="closeModal('modalFinish')" class="px-4 py-2 text-sm rounded border">Huỷ</button>
+      <button onclick="submitFinish()" class="px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700">Xác nhận kết thúc</button>
     </div>
   </div>
 </div>
@@ -595,13 +769,23 @@ async function delLog(id){
 
 async function finishTask(){
   if (!CURRENT) return;
+  document.getElementById('f_ttktafter').value = '';
+  document.getElementById('f_ketluan').value = '';
+  openModal('modalFinish');
+}
+
+async function submitFinish(){
+  if (!CURRENT) return;
   const stt = CURRENT.task.stt;
+  const ttktafter = document.getElementById('f_ttktafter').value;
+  const ketluan = document.getElementById('f_ketluan').value.trim();
   if (!confirm('Xác nhận KẾT THÚC công việc? Trạng thái sẽ chuyển sang Hoàn thành.')) return;
   const r = await fetch(`${API}?action=api_finish`, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ giaoviec_stt: stt })
+    body: JSON.stringify({ giaoviec_stt: stt, ttktafter: ttktafter, ketluan: ketluan })
   }).then(r=>r.json());
   if (!r.ok) { alert('Lỗi: '+(r.error||'')); return; }
+  closeModal('modalFinish');
   closeModal('modalDetail');
   await loadMyTasks();
 }
