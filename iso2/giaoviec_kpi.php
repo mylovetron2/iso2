@@ -509,12 +509,13 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label class="text-xs font-medium text-gray-700">Thiết bị KPI</label>
-            <select id="f_kpi_baoduong_stt" class="w-full border rounded px-2 py-2 mt-1 text-sm">
-              <option value="">-- Chọn thiết bị --</option>
+            <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Nhập tên thiết bị để tìm..." autocomplete="off" class="w-full border rounded px-2 py-2 mt-1 text-sm">
+            <input type="hidden" id="f_kpi_baoduong_stt">
+            <datalist id="dl_kpi_thietbi">
               <?php foreach ($kpiThietBiList as $kpiRow): ?>
-                <option value="<?= (int)$kpiRow['id'] ?>"><?= htmlspecialchars((string)$kpiRow['ten_thiet_bi']) ?></option>
+                <option data-id="<?= (int)$kpiRow['id'] ?>" value="<?= htmlspecialchars((string)$kpiRow['ten_thiet_bi']) ?>"></option>
               <?php endforeach; ?>
-            </select>
+            </datalist>
           </div>
           <div>
             <label class="text-xs font-medium text-gray-700">Loại công việc</label>
@@ -591,13 +592,14 @@ require_once __DIR__ . '/views/layouts/header.php';
       <input type="hidden" id="n_giaoviec_stt">
       <div>
         <label class="text-sm font-medium text-gray-700">Người làm <b>chính</b></label>
-        <select id="n_chinh" class="w-full border rounded px-3 py-2 mt-1 text-sm">
-          <option value="">— Chọn —</option>
-        </select>
+        <input list="dl_users_nguoi" id="n_chinh_search" autocomplete="off" placeholder="Nhập tên để tìm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
+        <input type="hidden" id="n_chinh">
       </div>
       <div>
-        <label class="text-sm font-medium text-gray-700">Người làm <b>phụ</b> (Ctrl/Cmd để chọn nhiều)</label>
-        <select id="n_phu" multiple size="8" class="w-full border rounded px-3 py-2 mt-1 text-sm"></select>
+        <label class="text-sm font-medium text-gray-700">Người làm <b>phụ</b> (gõ tên rồi chọn để thêm)</label>
+        <input list="dl_users_nguoi" id="n_phu_search" autocomplete="off" placeholder="Nhập tên để thêm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
+        <div id="n_phu_tags" class="flex flex-wrap gap-1 mt-2"></div>
+        <datalist id="dl_users_nguoi"></datalist>
       </div>
     </div>
     <div class="px-5 py-3 border-t flex justify-end gap-2 bg-gray-50 rounded-b-lg">
@@ -792,6 +794,39 @@ function renderRow(t, idx, level){
 /* ========= CRUD công việc ========= */
 const KPI_HOUR_MAP = <?= json_encode($kpiHourPreviewMap, JSON_UNESCAPED_UNICODE) ?>;
 
+// Map id ↔ tên thiết bị KPI để hỗ trợ ô tìm kiếm
+const KPI_TB_NAME_BY_ID = {};
+const KPI_TB_ID_BY_NAME = {};
+(function(){
+  const dl = document.getElementById('dl_kpi_thietbi');
+  if (!dl) return;
+  [...dl.options].forEach(opt => {
+    const id = opt.getAttribute('data-id');
+    const name = opt.value;
+    if (id) {
+      KPI_TB_NAME_BY_ID[id] = name;
+      KPI_TB_ID_BY_NAME[name.toLowerCase()] = id;
+    }
+  });
+})();
+
+function setKpiThietBiById(id){
+  const hidden = document.getElementById('f_kpi_baoduong_stt');
+  const search = document.getElementById('f_kpi_baoduong_search');
+  const sid = id ? String(id) : '';
+  if (hidden) hidden.value = sid;
+  if (search) search.value = sid && KPI_TB_NAME_BY_ID[sid] ? KPI_TB_NAME_BY_ID[sid] : '';
+}
+
+function syncKpiSearchToHidden(){
+  const search = document.getElementById('f_kpi_baoduong_search');
+  const hidden = document.getElementById('f_kpi_baoduong_stt');
+  if (!search || !hidden) return;
+  const v = (search.value || '').trim().toLowerCase();
+  hidden.value = v && KPI_TB_ID_BY_NAME[v] ? KPI_TB_ID_BY_NAME[v] : '';
+  updateKpiPreview();
+}
+
 function updateKpiPreview(){
   const kpiId = document.getElementById('f_kpi_baoduong_stt').value;
   const loai = document.getElementById('f_loai_congviec').value;
@@ -822,7 +857,7 @@ function setTaskFormLocked(isLocked){
 function resetTaskForm(){
   ['f_stt','f_parent_stt','f_hososcbd_stt','f_hoso_search','f_ten','f_mota','f_ghi_chu','f_ngay_bd','f_gio_bd','f_ngay_kt','f_gio_kt','f_dinh_muc_gio_thu_cong']
     .forEach(id => document.getElementById(id).value='');
-  document.getElementById('f_kpi_baoduong_stt').value = '';
+  setKpiThietBiById('');
   document.getElementById('f_loai_congviec').value = 'kiem_tra';
   document.getElementById('f_so_ngay').value = 0;
   document.getElementById('f_tien_do').value = 0;
@@ -867,13 +902,12 @@ function editTask(stt){
   document.getElementById('f_dinh_muc_gio_thu_cong').value = savedManualHour;
 
   const savedKpi = t.kpi_baoduong_stt || '';
-  const selectKpi = document.getElementById('f_kpi_baoduong_stt');
   if (savedKpi !== '') {
-    selectKpi.value = String(savedKpi);
+    setKpiThietBiById(savedKpi);
   } else if (t.hososcbd_stt) {
     loadKpiBySelectedHoso(Number(t.hososcbd_stt));
   } else {
-    selectKpi.value = '';
+    setKpiThietBiById('');
   }
 
   setTaskFormLocked(true);
@@ -913,11 +947,10 @@ async function loadKpiBySelectedHoso(stt){
   const data = r && r.data ? r.data : null;
   if (!data) return;
 
-  const select = document.getElementById('f_kpi_baoduong_stt');
-  if (data.kpi_baoduong_stt && select) {
-    select.value = String(data.kpi_baoduong_stt);
-  } else if (select) {
-    select.value = '';
+  if (data.kpi_baoduong_stt) {
+    setKpiThietBiById(data.kpi_baoduong_stt);
+  } else {
+    setKpiThietBiById('');
   }
   document.getElementById('f_dinh_muc_gio_thu_cong').value = '';
   updateKpiPreview();
@@ -985,34 +1018,112 @@ async function delTask(stt){
 }
 
 /* ========= Người thực hiện ========= */
+let NGUOI_USER_OPTIONS = [];
+let NGUOI_NAME_BY_ID = {};
+let NGUOI_ID_BY_NAME = {};
+let NGUOI_PHU_SELECTED = new Set();
+
+function renderPhuTags(){
+  const box = document.getElementById('n_phu_tags');
+  if (!box) return;
+  const ids = [...NGUOI_PHU_SELECTED];
+  if (ids.length === 0) {
+    box.innerHTML = '<span class="text-xs text-gray-400 italic">Chưa chọn ai</span>';
+    return;
+  }
+  box.innerHTML = ids.map(id => {
+    const name = NGUOI_NAME_BY_ID[id] || `#${id}`;
+    return `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+      ${esc(name)}
+      <button type="button" onclick="removePhu('${id}')" class="text-blue-600 hover:text-red-600"><i class="fas fa-times"></i></button>
+    </span>`;
+  }).join('');
+}
+
+function removePhu(id){
+  NGUOI_PHU_SELECTED.delete(String(id));
+  renderPhuTags();
+}
+
+function tryAddPhuFromInput(){
+  const inp = document.getElementById('n_phu_search');
+  if (!inp) return;
+  const key = (inp.value || '').trim().toLowerCase();
+  if (!key) return;
+  const id = NGUOI_ID_BY_NAME[key];
+  if (!id) return;
+  const chinhId = document.getElementById('n_chinh').value;
+  if (chinhId && String(chinhId) === String(id)) {
+    inp.value = '';
+    return;
+  }
+  NGUOI_PHU_SELECTED.add(String(id));
+  inp.value = '';
+  renderPhuTags();
+}
+
+function syncChinhFromInput(){
+  const inp = document.getElementById('n_chinh_search');
+  const hidden = document.getElementById('n_chinh');
+  if (!inp || !hidden) return;
+  const key = (inp.value || '').trim().toLowerCase();
+  hidden.value = key && NGUOI_ID_BY_NAME[key] ? NGUOI_ID_BY_NAME[key] : '';
+  // Nếu người chính vừa được chọn cũng đang có trong danh sách phụ → loại khỏi phụ
+  if (hidden.value && NGUOI_PHU_SELECTED.has(hidden.value)) {
+    NGUOI_PHU_SELECTED.delete(hidden.value);
+    renderPhuTags();
+  }
+}
+
 function openNguoi(stt){
   const t = ALL_TASKS.find(x => Number(x.stt) === stt);
   if (!t) return;
   document.getElementById('n_giaoviec_stt').value = stt;
-  const chinhSel = document.getElementById('n_chinh');
-  const phuSel   = document.getElementById('n_phu');
-  const userOptions = (USERS_LIST || []).map(u => ({
+
+  NGUOI_USER_OPTIONS = (USERS_LIST || []).map(u => ({
     stt: Number(u.stt || 0),
     label: String(u.display_name || u.label || '').trim(),
   })).filter(u => u.stt > 0 && u.label !== '');
-  chinhSel.innerHTML = '<option value="">— Chọn —</option>' + userOptions.map(u => `<option value="${u.stt}">${esc(u.label)}</option>`).join('');
-  phuSel.innerHTML   = userOptions.map(u => `<option value="${u.stt}">${esc(u.label)}</option>`).join('');
-  const cur = t.nguoi_list||[];
-  const chinh = cur.find(x=>x.vai_tro==='chinh');
-  if (chinh && userOptions.some(u => u.stt === Number(chinh.user_stt))) {
-    chinhSel.value = String(chinh.user_stt);
+
+  NGUOI_NAME_BY_ID = {};
+  NGUOI_ID_BY_NAME = {};
+  NGUOI_USER_OPTIONS.forEach(u => {
+    NGUOI_NAME_BY_ID[String(u.stt)] = u.label;
+    NGUOI_ID_BY_NAME[u.label.toLowerCase()] = String(u.stt);
+  });
+
+  const dl = document.getElementById('dl_users_nguoi');
+  dl.innerHTML = NGUOI_USER_OPTIONS.map(u => `<option data-id="${u.stt}" value="${esc(u.label)}"></option>`).join('');
+
+  const cur = t.nguoi_list || [];
+  const chinh = cur.find(x => x.vai_tro === 'chinh');
+  const chinhInput = document.getElementById('n_chinh_search');
+  const chinhHidden = document.getElementById('n_chinh');
+  if (chinh && NGUOI_NAME_BY_ID[String(chinh.user_stt)]) {
+    chinhHidden.value = String(chinh.user_stt);
+    chinhInput.value = NGUOI_NAME_BY_ID[String(chinh.user_stt)];
   } else {
-    chinhSel.value = '';
+    chinhHidden.value = '';
+    chinhInput.value = '';
   }
-  const phuSet = new Set(cur.filter(x=>x.vai_tro==='phu').map(x=>String(x.user_stt)));
-  [...phuSel.options].forEach(o => { if (phuSet.has(o.value)) o.selected = true; });
+
+  NGUOI_PHU_SELECTED = new Set(
+    cur.filter(x => x.vai_tro === 'phu')
+       .map(x => String(x.user_stt))
+       .filter(id => NGUOI_NAME_BY_ID[id])
+  );
+  document.getElementById('n_phu_search').value = '';
+  renderPhuTags();
+
   openModal('modalNguoi');
 }
 
 async function saveNguoi(){
   const gvStt = Number(document.getElementById('n_giaoviec_stt').value);
+  syncChinhFromInput();
+  tryAddPhuFromInput();
   const chinh = Number(document.getElementById('n_chinh').value || 0);
-  const phu = [...document.getElementById('n_phu').selectedOptions].map(o=>Number(o.value));
+  const phu = [...NGUOI_PHU_SELECTED].map(v => Number(v)).filter(n => n > 0 && n !== chinh);
   const r = await fetch(`${API}?action=api_save_nguoi`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ giaoviec_stt: gvStt, chinh, phu })
@@ -1022,11 +1133,19 @@ async function saveNguoi(){
   await loadTasks();
 }
 
+document.getElementById('n_chinh_search')?.addEventListener('input', syncChinhFromInput);
+document.getElementById('n_chinh_search')?.addEventListener('change', syncChinhFromInput);
+document.getElementById('n_phu_search')?.addEventListener('change', tryAddPhuFromInput);
+document.getElementById('n_phu_search')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); tryAddPhuFromInput(); }
+});
+
 document.getElementById('filterStatus').addEventListener('change', renderTable);
 document.getElementById('filterNhom').addEventListener('change', renderTable);
 document.getElementById('filterThietBi').addEventListener('input', renderTable);
 document.getElementById('filterNguoiChinh').addEventListener('change', renderTable);
-document.getElementById('f_kpi_baoduong_stt')?.addEventListener('change', updateKpiPreview);
+document.getElementById('f_kpi_baoduong_search')?.addEventListener('input', syncKpiSearchToHidden);
+document.getElementById('f_kpi_baoduong_search')?.addEventListener('change', syncKpiSearchToHidden);
 document.getElementById('f_loai_congviec')?.addEventListener('change', updateKpiPreview);
 document.getElementById('f_dinh_muc_gio_thu_cong')?.addEventListener('input', updateKpiPreview);
 
