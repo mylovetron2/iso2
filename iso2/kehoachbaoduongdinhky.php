@@ -145,6 +145,15 @@ switch ($action) {
         }
         $controller->exportPdf();
         break;
+
+    case 'exportPdfDanhSachQuy':
+        if (!hasPermission('kehoachbaoduong.view')) {
+            $_SESSION['error'] = 'Bạn không có quyền xuất báo cáo';
+            header('Location: /iso2/index.php');
+            exit;
+        }
+        $controller->exportPdfDanhSachQuy();
+        break;
         
     default:
         $_SESSION['error'] = 'Action không hợp lệ';

@@ -1164,7 +1164,7 @@ class KeHoachBaoDuongDinhKyController
             <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; margin: 0;">BÁO CÁO THỐNG KÊ BẢO DƯỠNG ĐỊNH KỲ<?php if (!empty($doiName)): ?><br/><?php echo strtoupper($doiName); ?><?php endif; ?></h2>
             <p style="font-size: 12pt; font-style: italic; margin: 10px 0;">Năm <?php echo $nam; ?></p>
             <?php if (!empty($qui)): ?>
-                <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Quý <?php echo $qui; ?></p>
+                <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Từ đầu năm tới Quý <?php echo $qui; ?></p>
             <?php endif; ?>
         </div>
 
@@ -1178,16 +1178,8 @@ class KeHoachBaoDuongDinhKyController
             <?php if (!empty($statistics['summary']['selected_qui'])): ?>
                 <!-- Khi chọn quý -->
                 <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-                    <span style="font-weight: bold;">Hoàn thành đúng hạn:</span>
+                    <span style="font-weight: bold;">Hoàn thành:</span>
                     <span style="font-weight: bold; color: #16a34a;"><?php echo $statistics['summary']['da_hoan_thanh']; ?> thiết bị</span>
-                </div>
-                <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-                    <span style="font-weight: bold;">Hoàn thành trước hạn:</span>
-                    <span style="font-weight: bold; color: #0d9488;"><?php echo $statistics['summary']['truoc_han']; ?> thiết bị</span>
-                </div>
-                <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
-                    <span style="font-weight: bold;">Hoàn thành sau hạn:</span>
-                    <span style="font-weight: bold; color: #0891b2;"><?php echo $statistics['summary']['sau_han']; ?> thiết bị</span>
                 </div>
                 <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
                     <span style="font-weight: bold;">Chưa hoàn thành:</span>
@@ -1340,6 +1332,212 @@ class KeHoachBaoDuongDinhKyController
         
         // Close and output PDF document
         $pdf->Output('Bao_cao_bao_duong_dinh_ky_' . $nam . '.pdf', 'D');
+        exit;
+    }
+
+    /**
+     * Xuất PDF: Danh sách thiết bị có kế hoạch trong quý được chọn,
+     * phân loại: Trước hạn / Đúng hạn / Sau hạn / Chưa thực hiện.
+     */
+    public function exportPdfDanhSachQuy(): void
+    {
+        $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
+        $search = $_GET['search'] ?? '';
+        $nhomsc = $_GET['nhomsc'] ?? '';
+        $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
+
+        if ($qui < 1 || $qui > 4) {
+            $_SESSION['error'] = 'Vui lòng chọn quý (1-4) trước khi xuất danh sách.';
+            header('Location: /iso2/kehoachbaoduongdinhky.php?action=thongke&nam=' . $nam);
+            exit;
+        }
+
+        $plans = $this->getAll($nam, $search, 0, $nhomsc, '', '', 0, '');
+
+        // Chỉ giữ thiết bị có kế hoạch trong quý được chọn.
+        $plans = array_values(array_filter($plans, function ($p) use ($qui) {
+            return trim((string)($p['qui_' . $qui] ?? '')) !== '';
+        }));
+
+        $details = [
+            'truoc_han' => [],
+            'dung_han' => [],
+            'sau_han' => [],
+            'chua_thuc_hien' => [],
+        ];
+        foreach ($plans as $p) {
+            $doneBefore = false;
+            $doneAfter  = false;
+            for ($q = 1; $q <= 4; $q++) {
+                if (!empty($p['qui_' . $q . '_hoantat'])) {
+                    if ($q < $qui) { $doneBefore = true; }
+                    elseif ($q > $qui) { $doneAfter = true; }
+                }
+            }
+            if ($doneBefore) {
+                $details['truoc_han'][] = $p;
+            } elseif (!empty($p['qui_' . $qui . '_hoantat'])) {
+                $details['dung_han'][] = $p;
+            } elseif ($doneAfter) {
+                $details['sau_han'][] = $p;
+            } else {
+                $details['chua_thuc_hien'][] = $p;
+            }
+        }
+
+        $totalPlans = count($plans);
+        $completed  = count($details['truoc_han']) + count($details['dung_han']) + count($details['sau_han']);
+        $summary = [
+            'total_plans'    => $totalPlans,
+            'truoc_han'      => count($details['truoc_han']),
+            'dung_han'       => count($details['dung_han']),
+            'sau_han'        => count($details['sau_han']),
+            'chua_thuc_hien' => count($details['chua_thuc_hien']),
+            'tyle_hoan_thanh' => $totalPlans > 0 ? round(($completed / $totalPlans) * 100, 2) : 0,
+            'qui' => $qui,
+        ];
+        $statistics = ['summary' => $summary, 'details' => $details, 'nam' => $nam, 'qui' => $qui];
+
+        require_once __DIR__ . '/../libs/tcpdf/tcpdf.php';
+        $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('ISO System');
+        $pdf->SetAuthor('ISO System');
+        $pdf->SetTitle('Danh sách bảo dưỡng - Quý ' . $qui . ' năm ' . $nam);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(true, 15);
+        $pdf->AddPage();
+        $pdf->SetFont('dejavusans', '', 10);
+
+        // Tên đội theo nhóm máy (đồng nhất với exportPdf).
+        $doiName = '';
+        if (!empty($nhomsc)) {
+            $nhomscUpper = strtoupper(trim($nhomsc));
+            if ($nhomscUpper === 'KTKT') {
+                $doiName = 'ĐỘI KTKT';
+            } elseif (in_array($nhomscUpper, ['CNM', 'CNC', 'RDNGA', 'CNC+RDNGA'])) {
+                $doiName = 'ĐỘI ĐỊA VẬT LÝ TỔNG HỢP';
+            }
+        }
+
+        ob_start();
+        ?>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; margin: 0;">DANH SÁCH BẢO DƯỠNG ĐỊNH KỲ<?php if (!empty($doiName)): ?><br/><?php echo strtoupper($doiName); ?><?php endif; ?></h2>
+            <p style="font-size: 12pt; font-style: italic; margin: 10px 0;">Năm <?php echo $nam; ?></p>
+            <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Quý <?php echo $qui; ?></p>
+        </div>
+
+        <div style="border: 2px solid #2563eb; padding: 10px; margin: 15px 0; background-color: #eff6ff;">
+            <h3 style="margin-top: 0; color: #1e40af; font-size: 13pt;">TỔNG QUAN</h3>
+            <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+                <span style="font-weight: bold;">Tổng số thiết bị có kế hoạch Quý <?php echo $qui; ?>:</span>
+                <span style="font-weight: bold; color: #1e40af;"><?php echo $summary['total_plans']; ?> thiết bị</span>
+            </div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+                <span style="font-weight: bold;">Hoàn thành trước hạn:</span>
+                <span style="font-weight: bold; color: #0d9488;"><?php echo $summary['truoc_han']; ?> thiết bị</span>
+            </div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+                <span style="font-weight: bold;">Hoàn thành đúng hạn:</span>
+                <span style="font-weight: bold; color: #16a34a;"><?php echo $summary['dung_han']; ?> thiết bị</span>
+            </div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+                <span style="font-weight: bold;">Hoàn thành sau hạn:</span>
+                <span style="font-weight: bold; color: #0891b2;"><?php echo $summary['sau_han']; ?> thiết bị</span>
+            </div>
+            <div style="padding: 5px 0; border-bottom: 1px solid #ddd;">
+                <span style="font-weight: bold;">Chưa thực hiện:</span>
+                <span style="font-weight: bold; color: #dc2626;"><?php echo $summary['chua_thuc_hien']; ?> thiết bị</span>
+            </div>
+            <div style="border-bottom: none; margin-top: 10px; background-color: white; padding: 8px;">
+                <span style="font-weight: bold; font-size: 13pt;">TỶ LỆ HOÀN THÀNH:</span>
+                <span style="font-size: 16pt; font-weight: bold; color: #16a34a;"><?php echo $summary['tyle_hoan_thanh']; ?>%</span>
+            </div>
+        </div>
+        <?php
+        $html_summary = ob_get_clean();
+        $pdf->writeHTML($html_summary, true, false, true, false, '');
+
+        // Biểu đồ tròn.
+        $total = $summary['total_plans'];
+        if ($total > 0) {
+            $pdf->Ln(5);
+            $pdf->SetFont('dejavusans', 'B', 14);
+            $pdf->SetTextColor(30, 64, 175);
+            $pdf->Cell(0, 8, 'BIỂU ĐỒ PHÂN BỔ TRẠNG THÁI', 0, 1, 'C');
+            $pdf->Ln(5);
+
+            $data = [
+                $summary['truoc_han'],
+                $summary['dung_han'],
+                $summary['sau_han'],
+                $summary['chua_thuc_hien'],
+            ];
+            $colors = [
+                [13, 148, 136],   // Teal - Trước hạn
+                [22, 163, 74],    // Green - Đúng hạn
+                [8, 145, 178],    // Cyan - Sau hạn
+                [220, 38, 38],    // Red - Chưa thực hiện
+            ];
+            $labels = [
+                'Trước hạn: ' . $data[0] . ' (' . round(($data[0]/$total)*100, 1) . '%)',
+                'Đúng hạn: '  . $data[1] . ' (' . round(($data[1]/$total)*100, 1) . '%)',
+                'Sau hạn: '   . $data[2] . ' (' . round(($data[2]/$total)*100, 1) . '%)',
+                'Chưa thực hiện: ' . $data[3] . ' (' . round(($data[3]/$total)*100, 1) . '%)',
+            ];
+
+            $xc = 105;
+            $yc = $pdf->GetY() + 40;
+            $r  = 30;
+            $startAngle = 0;
+            $labelPositions = [];
+            for ($i = 0; $i < count($data); $i++) {
+                if ($data[$i] <= 0) continue;
+                $angle = ($data[$i] / $total) * 360;
+                $endAngle = $startAngle + $angle;
+                $percentage = round(($data[$i] / $total) * 100, 1);
+                $pdf->SetFillColor($colors[$i][0], $colors[$i][1], $colors[$i][2]);
+                $pdf->PieSector($xc, $yc, $r, $startAngle, $endAngle, 'F', false, 0, 2);
+                if ($percentage >= 5) {
+                    $labelPositions[] = ['start' => $startAngle, 'end' => $endAngle, 'percentage' => $percentage];
+                }
+                $startAngle = $endAngle;
+            }
+            $pdf->SetFont('dejavusans', 'B', 9);
+            $pdf->SetTextColor(255, 255, 255);
+            foreach ($labelPositions as $pos) {
+                $midAngle = ($pos['start'] + $pos['end']) / 2;
+                $angleRad = deg2rad(-$midAngle);
+                $labelRadius = $r * 0.7;
+                $labelX = $xc + $labelRadius * cos($angleRad);
+                $labelY = $yc + $labelRadius * sin($angleRad);
+                $text = $pos['percentage'] . '%';
+                $textWidth = $pdf->GetStringWidth($text);
+                $pdf->Text($labelX - ($textWidth / 2), $labelY + 1.5, $text);
+            }
+            $pdf->SetFont('dejavusans', '', 10);
+            $legendY = $yc + $r + 10;
+            foreach ($labels as $i => $label) {
+                if ($data[$i] <= 0) continue;
+                $pdf->SetFillColor($colors[$i][0], $colors[$i][1], $colors[$i][2]);
+                $pdf->Rect(30, $legendY, 6, 6, 'F');
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetXY(38, $legendY - 1);
+                $pdf->Cell(0, 8, $label, 0, 1, 'L');
+                $legendY += 10;
+            }
+        }
+
+        // Bảng chi tiết.
+        $pdf->AddPage();
+        ob_start();
+        require __DIR__ . '/../views/kehoachbaoduongdinhky/export_pdf_danhsach_quy.php';
+        $html = ob_get_clean();
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        $pdf->Output('DanhSach_BaoDuong_Q' . $qui . '_' . $nam . '.pdf', 'D');
         exit;
     }
 }

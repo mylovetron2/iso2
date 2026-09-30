@@ -33,6 +33,18 @@ require_once __DIR__ . '/../layouts/header.php';
                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
                 <i class="fas fa-file-pdf"></i> Xuất PDF
             </a>
+
+            <?php if (!empty($_GET['qui']) && in_array($_GET['qui'], ['1','2','3','4'], true)): ?>
+            <!-- Xuất PDF danh sách theo quý (không cộng dồn) -->
+            <a href="kehoachbaoduongdinhky.php?action=exportPdfDanhSachQuy&nam=<?php echo $nam; ?>&qui=<?php echo urlencode($_GET['qui']); ?><?php
+                echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '';
+                echo !empty($_GET['nhomsc']) ? '&nhomsc=' . urlencode($_GET['nhomsc']) : '';
+            ?>"
+               title="Chỉ liệt kê thiết bị có kế hoạch trong quý đã chọn (Trước hạn / Đúng hạn / Sau hạn / Chưa thực hiện)"
+               class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
+                <i class="fas fa-file-pdf"></i> PDF danh sách Q<?php echo (int)$_GET['qui']; ?>
+            </a>
+            <?php endif; ?>
             
             <!-- Back Button -->
             <a href="/iso2/kehoachbaoduongdinhky.php?nam=<?php echo $nam; ?>" 

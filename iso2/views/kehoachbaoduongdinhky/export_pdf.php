@@ -22,7 +22,7 @@
     if (!empty($statistics['summary']['selected_qui'])) {
         // Khi chọn quý: 4 trạng thái
         $statusData = [
-            'da_hoan_thanh' => ['title' => 'CHI TIẾT - HOÀN THÀNH ĐÚNG HẠN', 'class' => 'status-complete'],
+            'da_hoan_thanh' => ['title' => 'CHI TIẾT - HOÀN THÀNH', 'class' => 'status-complete'],
             'truoc_han' => ['title' => 'CHI TIẾT - HOÀN THÀNH TRƯỚC HẠN', 'class' => 'status-complete'],
             'sau_han' => ['title' => 'CHI TIẾT - HOÀN THÀNH SAU HẠN', 'class' => 'status-partial'],
             'chua_hoan_thanh' => ['title' => 'CHI TIẾT - CHƯA HOÀN THÀNH', 'class' => 'status-incomplete']
