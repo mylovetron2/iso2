@@ -659,10 +659,17 @@ require_once __DIR__ . '/../layouts/header.php';
                 if (isset($deviceKpiDetails[$hourField]) && $deviceKpiDetails[$hourField] !== null) {
                     $effectiveKpiHour = (float)$deviceKpiDetails[$hourField];
                 }
-                $hasAssignedKpi = !empty($dinhMucInfo) || !empty($deviceKpiLink);
-                $ketLuan = isset($dinhMucInfo['ket_luan_kpi']) ? (string)$dinhMucInfo['ket_luan_kpi'] : '';
-                if (($ketLuan === '' || $ketLuan === 'chua_du_du_lieu') && $hasAssignedKpi) {
-                    $ketLuan = 'da_gan';
+                // Chỉ tin ket_luan_kpi khi có bản ghi thực (dinhmuc_id) + có định mức giờ; nếu không, coi như chưa gán.
+                $dinhMucGioValue = isset($dinhMucInfo['dinh_muc_so_gio']) && $dinhMucInfo['dinh_muc_so_gio'] !== '' && $dinhMucInfo['dinh_muc_so_gio'] !== null
+                    ? (float)$dinhMucInfo['dinh_muc_so_gio'] : null;
+                $hasAssignedKpi = !empty($dinhMucInfo['dinhmuc_id']) && $dinhMucGioValue !== null && $dinhMucGioValue > 0;
+                if (!$hasAssignedKpi) {
+                    $ketLuan = 'chua_du_du_lieu';
+                } else {
+                    $ketLuan = isset($dinhMucInfo['ket_luan_kpi']) ? (string)$dinhMucInfo['ket_luan_kpi'] : '';
+                    if ($ketLuan === '' || $ketLuan === 'chua_du_du_lieu') {
+                        $ketLuan = 'da_gan';
+                    }
                 }
                 $ketLuanBadge = [
                     'dat' => ['bg-green-500 text-white', 'Đạt KPI'],
@@ -679,9 +686,9 @@ require_once __DIR__ . '/../layouts/header.php';
                     <span class="px-3 py-1 rounded font-bold <?php echo $ketLuanBadge[0]; ?>"><?php echo $ketLuanBadge[1]; ?></span>
                 </div>
             </div>
-        <?php elseif ($dinhMucInfo): ?>
+        <?php elseif ($dinhMucInfo && !empty($dinhMucInfo['dinhmuc_id']) && isset($dinhMucInfo['dinh_muc_so_gio']) && $dinhMucInfo['dinh_muc_so_gio'] !== '' && $dinhMucInfo['dinh_muc_so_gio'] !== null && (float)$dinhMucInfo['dinh_muc_so_gio'] > 0): ?>
             <?php
-                $hasAssignedKpi = !empty($dinhMucInfo) || !empty($deviceKpiLink);
+                $hasAssignedKpi = true;
                 $ketLuan = isset($dinhMucInfo['ket_luan_kpi']) ? (string)$dinhMucInfo['ket_luan_kpi'] : '';
                 if (($ketLuan === '' || $ketLuan === 'chua_du_du_lieu') && $hasAssignedKpi) {
                     $ketLuan = 'da_gan';

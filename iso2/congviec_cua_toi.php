@@ -358,22 +358,32 @@ try {
             $db->beginTransaction();
             try {
                 if ($mahoso !== '') {
-                    // Tổng giờ theo từng người trên toàn bộ log của task
-                    $stAgg = $db->prepare("SELECT TRIM(gio.hoten) AS hoten, SUM(gio.so_gio) AS tong
+                    // Tổng giờ theo từng người + theo từng tháng của ngay_lam
+                    $stAgg = $db->prepare("SELECT TRIM(gio.hoten) AS hoten, MONTH(tc.ngay_lam) AS thang, SUM(gio.so_gio) AS gio
                                            FROM giaoviec_kpi_thuchien tc
                                            INNER JOIN giaoviec_kpi_thuchien_gio gio ON gio.thuchien_stt = tc.stt
                                            WHERE tc.giaoviec_stt = :s AND TRIM(gio.hoten) <> ''
-                                           GROUP BY TRIM(gio.hoten)");
+                                           GROUP BY TRIM(gio.hoten), MONTH(tc.ngay_lam)");
                     $stAgg->execute([':s'=>$stt]);
                     $aggRows = $stAgg->fetchAll(PDO::FETCH_ASSOC);
 
-                    if ($aggRows) {
+                    // Gom về mỗi người: tổng + map tháng -> giờ
+                    $perPerson = [];
+                    foreach ($aggRows as $r) {
+                        $ht = trim((string)$r['hoten']);
+                        if ($ht === '') continue;
+                        $m = (int)$r['thang'];
+                        $g = (float)$r['gio'];
+                        if (!isset($perPerson[$ht])) $perPerson[$ht] = ['total'=>0.0, 'months'=>[]];
+                        $perPerson[$ht]['total'] += $g;
+                        $perPerson[$ht]['months'][$m] = ($perPerson[$ht]['months'][$m] ?? 0) + $g;
+                    }
+
+                    if ($perPerson) {
                         $mavt   = (string)($taskInfo['mavt'] ?? '');
                         $somay  = (string)($taskInfo['somay'] ?? '');
                         $ngayth = $ngaythIn !== '' ? $ngaythIn : (!empty($taskInfo['ngay_bat_dau']) ? $taskInfo['ngay_bat_dau'] : '0000-00-00');
                         $ngaykt = $ngayktIn !== '' ? $ngayktIn : (!empty($taskInfo['ngay_ket_thuc']) ? $taskInfo['ngay_ket_thuc'] : '0000-00-00');
-                        $month  = (int)date('n');
-                        $giolvField = "giolv{$month}";
 
                         // Map hoten -> stt hiện có trong ngthuchien_iso cho mahoso này
                         $stEx = $db->prepare("SELECT stt, TRIM(hoten) AS hoten FROM ngthuchien_iso WHERE mahoso = :m");
@@ -385,50 +395,68 @@ try {
 
                         $nextStt = (int)$db->query("SELECT COALESCE(MAX(stt),0) FROM ngthuchien_iso")->fetchColumn() + 1;
 
-                        $sqlUpd = "UPDATE ngthuchien_iso SET
-                                        hoten = :hoten,
-                                        giolv = :giolv,
-                                        mamay = :mamay,
-                                        somay = :somay,
-                                        ngayth = :ngayth,
-                                        ngaykt = :ngaykt,
-                                        {$giolvField} = :giolv_month
-                                    WHERE stt = :stt";
-                        $sqlIns = "INSERT INTO ngthuchien_iso
-                                        (stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolvField})
-                                    VALUES
-                                        (:stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :giolv_month)";
-                        $stmtUpd = $db->prepare($sqlUpd);
-                        $stmtIns = $db->prepare($sqlIns);
+                        foreach ($perPerson as $hoten => $info) {
+                            $tong   = $info['total'];
+                            $months = $info['months'];
+                            $key    = mb_strtolower($hoten);
+                            $isUpd  = isset($existingMap[$key]);
 
-                        foreach ($aggRows as $row) {
-                            $hoten = trim((string)$row['hoten']);
-                            if ($hoten === '') continue;
-                            $tong = (float)$row['tong'];
-                            $key = mb_strtolower($hoten);
-                            if (isset($existingMap[$key])) {
-                                $stmtUpd->execute([
-                                    ':hoten'      => $hoten,
-                                    ':giolv'      => $tong,
-                                    ':mamay'      => $mavt,
-                                    ':somay'      => $somay,
-                                    ':ngayth'     => $ngayth,
-                                    ':ngaykt'     => $ngaykt,
-                                    ':giolv_month'=> $tong,
-                                    ':stt'        => $existingMap[$key],
-                                ]);
+                            // giolv{m} = cộng dồn từ tháng nhỏ nhất đến tháng m (chỉ set cho tháng có dữ liệu)
+                            ksort($months);
+                            $cum = 0.0;
+                            $monthsCum = [];
+                            foreach ($months as $m => $g) {
+                                $cum += $g;
+                                $monthsCum[$m] = $cum;
+                            }
+
+                            // Build SET / column list động cho các cột giolv{m} có dữ liệu
+                            $setMonth = [];
+                            $insCols  = [];
+                            $insPh    = [];
+                            $params   = [];
+                            foreach ($monthsCum as $m => $g) {
+                                $col = "giolv{$m}";
+                                $ph  = ":g{$m}";
+                                $setMonth[] = "{$col} = {$ph}";
+                                $insCols[]  = $col;
+                                $insPh[]    = $ph;
+                                $params[$ph] = $g;
+                            }
+
+                            if ($isUpd) {
+                                $sql = "UPDATE ngthuchien_iso SET
+                                            hoten = :hoten,
+                                            giolv = :giolv,
+                                            mamay = :mamay,
+                                            somay = :somay,
+                                            ngayth = :ngayth,
+                                            ngaykt = :ngaykt"
+                                        . ($setMonth ? ', ' . implode(', ', $setMonth) : '')
+                                        . " WHERE stt = :stt";
+                                $params[':hoten']  = $hoten;
+                                $params[':giolv']  = $tong;
+                                $params[':mamay']  = $mavt;
+                                $params[':somay']  = $somay;
+                                $params[':ngayth'] = $ngayth;
+                                $params[':ngaykt'] = $ngaykt;
+                                $params[':stt']    = $existingMap[$key];
+                                $db->prepare($sql)->execute($params);
                             } else {
-                                $stmtIns->execute([
-                                    ':stt'        => $nextStt,
-                                    ':mahoso'     => $mahoso,
-                                    ':mamay'      => $mavt,
-                                    ':somay'      => $somay,
-                                    ':hoten'      => $hoten,
-                                    ':giolv'      => $tong,
-                                    ':ngayth'     => $ngayth,
-                                    ':ngaykt'     => $ngaykt,
-                                    ':giolv_month'=> $tong,
-                                ]);
+                                $cols = ['stt','mahoso','mamay','somay','hoten','giolv','ngayth','ngaykt'];
+                                $phs  = [':stt',':mahoso',':mamay',':somay',':hoten',':giolv',':ngayth',':ngaykt'];
+                                $cols = array_merge($cols, $insCols);
+                                $phs  = array_merge($phs, $insPh);
+                                $sql = "INSERT INTO ngthuchien_iso (" . implode(',', $cols) . ") VALUES (" . implode(',', $phs) . ")";
+                                $params[':stt']    = $nextStt;
+                                $params[':mahoso'] = $mahoso;
+                                $params[':mamay']  = $mavt;
+                                $params[':somay']  = $somay;
+                                $params[':hoten']  = $hoten;
+                                $params[':giolv']  = $tong;
+                                $params[':ngayth'] = $ngayth;
+                                $params[':ngaykt'] = $ngaykt;
+                                $db->prepare($sql)->execute($params);
                                 $existingMap[$key] = $nextStt;
                                 $nextStt++;
                             }
