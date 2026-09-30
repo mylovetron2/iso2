@@ -268,10 +268,11 @@ try {
               if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Bạn không phải người thực hiện chính'], 403);
             }
 
+            // Tổng giờ của 1 log = MAX giờ trong số người thực hiện (không cộng dồn)
             $tong = 0.0;
             foreach ($gioList as $item) {
                 $so = (float)($item['so_gio'] ?? 0);
-                if ($so > 0) $tong += $so;
+                if ($so > $tong) $tong = $so;
             }
 
             $db->beginTransaction();

@@ -226,6 +226,8 @@ try {
                 SELECT g.*, h.mavt AS hoso_mavt, h.nhomsc AS nhomsc,
                   k.ten_thiet_bi AS ten_thiet_bi,
                   (SELECT COALESCE(SUM(tong_gio),0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS gio_da_lam,
+                  (SELECT MIN(ngay_lam) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS ngay_bd_thuc_te,
+                  (SELECT MAX(ngay_lam) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS ngay_kt_thuc_te,
                   (SELECT GROUP_CONCAT(CONCAT(n.user_stt,'|',COALESCE(NULLIF(TRIM(u.hoten), ''), u.username),'|',n.vai_tro) SEPARATOR ';;')
                    FROM giaoviec_kpi_nguoi n
                    INNER JOIN users u ON u.stt = n.user_stt
@@ -743,6 +745,28 @@ function renderTable(){
     : `<tr><td colspan="12" class="p-6 text-center text-gray-400">Chưa có công việc.</td></tr>`;
 }
 
+function renderThucTeInfo(t){
+  const bd = t.ngay_bd_thuc_te ? fmtDate(t.ngay_bd_thuc_te) : '';
+  const kt = t.ngay_kt_thuc_te ? fmtDate(t.ngay_kt_thuc_te) : '';
+  let html = '';
+  if (bd || kt) {
+    html += `<div class="text-[11px] mt-1 flex items-center gap-1 flex-wrap">`
+      + `<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium" title="Ngày bắt đầu thực tế"><i class="fas fa-play mr-0.5"></i>${esc(bd||'—')}</span>`
+      + `<span class="text-gray-400">→</span>`
+      + `<span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-medium" title="Ngày kết thúc thực tế"><i class="fas fa-flag-checkered mr-0.5"></i>${esc(kt||'—')}</span>`
+      + `</div>`;
+  }
+  const target = Number(t.dinh_muc_gio_hieu_luc || 0);
+  const done = Number(t.gio_da_lam || 0);
+  if (t.trang_thai === 'hoan_thanh' && target > 0) {
+    const dat = done <= target;
+    html += `<div class="text-[11px] mt-1"><span class="px-1.5 py-0.5 rounded font-bold border ${dat?'bg-green-500 text-white border-green-600':'bg-red-500 text-white border-red-600'}"><i class="fas ${dat?'fa-check-circle':'fa-times-circle'} mr-0.5"></i>${dat?'Đạt KPI':'Không đạt KPI'}</span> <span class="font-semibold ${dat?'text-green-700':'text-red-700'}">${done}h/${target}h</span></div>`;
+  } else if (target > 0 && done > 0) {
+    html += `<div class="text-[11px] text-amber-700 mt-1">Đã làm: <span class="font-semibold">${done}h/${target}h</span></div>`;
+  }
+  return html;
+}
+
 function renderRow(t, idx, level){
   const s = t.trang_thai_hien_thi;
   const tenHienThi = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
@@ -781,8 +805,9 @@ function renderRow(t, idx, level){
     <td class="px-3 py-2 ${deadlineColor}">${fmtDate(t.ngay_ket_thuc)} ${t.gio_ket_thuc? '<span class="text-xs">'+t.gio_ket_thuc.substring(0,5)+'</span>':''}</td>
     <td class="px-3 py-2">${badge}</td>
     <td class="px-3 py-2">
-      <div class="flex items-center gap-1"><div class="w-16 bg-gray-200 rounded h-1.5"><div class="bg-blue-500 h-1.5 rounded" style="width:${t.tien_do||0}%"></div></div><span class="text-xs">${t.tien_do||0}%</span></div>
-      ${dinhMucText ? `<div class="text-[11px] text-gray-500 mt-1">Định mức: <span class="font-medium text-gray-700">${esc(dinhMucText)}</span></div>` : ''}
+      <div class="flex items-center gap-1"><div class="w-20 bg-gray-200 rounded h-2"><div class="h-2 rounded ${(t.tien_do||0)>=100?'bg-green-500':(t.tien_do||0)>=70?'bg-blue-500':(t.tien_do||0)>=40?'bg-yellow-500':'bg-red-500'}" style="width:${t.tien_do||0}%"></div></div><span class="text-xs font-semibold ${(t.tien_do||0)>=100?'text-green-700':(t.tien_do||0)>=70?'text-blue-700':(t.tien_do||0)>=40?'text-yellow-700':'text-red-600'}">${t.tien_do||0}%</span></div>
+      ${dinhMucText ? `<div class="text-[11px] text-teal-700 mt-1"><i class="fas fa-bullseye mr-0.5"></i>Định mức: <span class="font-semibold">${esc(dinhMucText)}</span></div>` : ''}
+      ${renderThucTeInfo(t)}
     </td>
     <td class="px-3 py-2 text-xs text-gray-600" title="${esc(ghiChuText)}">${ghiChuText ? `<span class="line-clamp-2">${esc(ghiChuText)}</span>` : '<span class="text-gray-400 italic">-</span>'}</td>
     <td class="px-3 py-2">${nguoi}</td>
@@ -905,7 +930,8 @@ function editTask(stt){
   if (savedKpi !== '') {
     setKpiThietBiById(savedKpi);
   } else if (t.hososcbd_stt) {
-    loadKpiBySelectedHoso(Number(t.hososcbd_stt));
+    // Không auto-load KPI theo hồ sơ khi sửa: sẽ ghi đè định mức giờ nhập tay đã lưu
+    setKpiThietBiById('');
   } else {
     setKpiThietBiById('');
   }
