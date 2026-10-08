@@ -911,7 +911,12 @@ class KeHoachBaoDuongDinhKyController
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = $_GET['search'] ?? '';
             $nhomsc = $_GET['nhomsc'] ?? '';
-            $qui = $_GET['qui'] ?? '';
+            // Mặc định quý theo ngày hiện tại nếu chưa chọn.
+            $qui = $_GET['qui'] ?? (string)(int)ceil((int)date('n') / 3);
+            if (!in_array($qui, ['1','2','3','4'], true)) {
+                $qui = (string)(int)ceil((int)date('n') / 3);
+            }
+            $_GET['qui'] = $qui;
             
             $availableYears = $this->getAvailableYears();
             

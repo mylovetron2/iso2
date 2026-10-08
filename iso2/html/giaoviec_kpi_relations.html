@@ -114,12 +114,13 @@
       <tr class="new"><td class="fk">kpi_baoduong_stt</td><td>INT NULL</td><td>FK → <code>kpi_baoduong_thietbi_iso.id</code> (định mức KPI theo thiết bị)</td></tr>
       <tr class="new"><td>loai_congviec</td><td>ENUM</td><td><code>kiem_tra</code>, <code>bd_cap_1</code>, <code>bd_cap_2</code>, <code>bd_cap_3</code>, <code>hieu_chuan</code></td></tr>
       <tr class="new"><td>dinh_muc_gio_thu_cong</td><td>DECIMAL(8,2)</td><td>Định mức giờ nhập tay (ưu tiên hơn KPI thiết bị)</td></tr>
+      <tr class="new"><td>dinh_muc_gio_hien_tai</td><td>DECIMAL(8,2)</td><td>Định mức giờ hiện tại; tự tính theo thời gian ngày làm việc (tối đa 6,5 giờ/ngày), bỏ thứ Bảy và Chủ nhật, hoặc nhập tay</td></tr>
       <tr><td>phieu / somay / hoso</td><td>VARCHAR</td><td>Copy từ hồ sơ SCBD</td></tr>
       <tr><td>ten_cong_viec</td><td>VARCHAR(255)</td><td>Hiển thị "Mã VT-Số máy"</td></tr>
       <tr><td>mo_ta</td><td>TEXT</td><td>Mô tả chi tiết</td></tr>
       <tr class="new"><td>ghi_chu</td><td>TEXT</td><td>Ghi chú thêm; hiển thị cột riêng trong danh sách</td></tr>
       <tr><td>ngay_bat_dau / gio_bat_dau</td><td>DATE / TIME</td><td>Thời điểm bắt đầu</td></tr>
-      <tr><td>so_ngay</td><td>INT</td><td>Dùng để tự tính hạn</td></tr>
+      <tr><td>so_ngay</td><td>INT</td><td>Số ngày làm việc (không tính thứ Bảy, Chủ nhật), tự tính theo khoảng ngày và có thể chỉnh sửa thủ công</td></tr>
       <tr><td>ngay_ket_thuc / gio_ket_thuc</td><td>DATE / TIME</td><td>Hạn hoàn thành</td></tr>
       <tr><td>tien_do</td><td>TINYINT 0-100</td><td>% hoàn thành (auto = 100 khi kết thúc)</td></tr>
       <tr><td>trang_thai</td><td>VARCHAR(30)</td><td><code>chua_giao</code>, <code>dang_lam</code>, <code>hoan_thanh</code>, <code>huy</code></td></tr>
@@ -174,11 +175,11 @@
 </section>
 
 <section>
-  <h2 class="text-2xl font-semibold mb-2">4. Cách tính "Định mức giờ"</h2>
+  <h2 class="text-2xl font-semibold mb-2">4. Cách tính định mức giờ</h2>
   <ol class="list-decimal pl-6 space-y-1">
-    <li>Nếu <code>dinh_muc_gio_thu_cong</code> có giá trị &gt; 0 → dùng giá trị nhập tay.</li>
-    <li>Nếu trống → tra <code>kpi_baoduong_thietbi_iso</code> theo <code>kpi_baoduong_stt</code> + <code>loai_congviec</code>.</li>
-    <li>Nếu vẫn không có → hiển thị "—".</li>
+    <li><b>Định mức tham khảo:</b> nếu <code>dinh_muc_gio_thu_cong</code> có giá trị &gt; 0 → dùng giá trị nhập tay; nếu trống → tra <code>kpi_baoduong_thietbi_iso</code> theo <code>kpi_baoduong_stt</code> + <code>loai_congviec</code>; nếu vẫn không có → hiển thị "—".</li>
+    <li><b>Định mức giờ hiện tại:</b> tính theo chênh lệch giữa ngày-giờ bắt đầu và hạn hoàn thành khi đã nhập đủ cả bốn trường; chỉ cộng thời gian từ thứ Hai đến thứ Sáu, tối đa 6,5 giờ cho mỗi ngày làm việc. Có thể nhập tay và giá trị nhập được lưu lại.</li>
+    <li><code>so_ngay</code> tự suy ra theo ngày làm việc (không tính thứ Bảy, Chủ nhật), tính cả ngày bắt đầu và ngày kết thúc khi là ngày làm việc; người dùng có thể chỉnh sửa số ngày thủ công.</li>
   </ol>
   <p class="text-sm text-gray-600">Khi chọn hồ sơ SCBD, hệ thống <b>tự đề xuất</b> thiết bị KPI theo <code>thietbi_kpi_baoduong_iso</code> nối với <code>thietbi_iso</code> (khớp <code>mavt + somay</code>).</p>
 </section>

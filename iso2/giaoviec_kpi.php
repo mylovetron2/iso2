@@ -9,6 +9,7 @@ requireAuth();
 requirePermission(PERMISSION_GIAOVIEC_KPI_VIEW);
 
 $db = getDBConnection();
+$action = $_GET['action'] ?? 'index';
 
 function ensureGiaoviecKpiColumns(PDO $db): void {
     $required = [
@@ -30,6 +31,63 @@ function ensureGiaoviecKpiColumns(PDO $db): void {
             error_log('ensureGiaoviecKpiColumns failed for ' . $col . ': ' . $e->getMessage());
         }
     }
+
+    $column = 'dinh_muc_gio_hien_tai';
+    try {
+        $check = $db->prepare("
+            SELECT 1
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'giaoviec_kpi'
+              AND COLUMN_NAME = :col
+            LIMIT 1
+        ");
+        $check->execute([':col' => $column]);
+        if ($check->fetchColumn() === false) {
+            $db->exec("ALTER TABLE giaoviec_kpi ADD COLUMN `dinh_muc_gio_hien_tai` DECIMAL(8,2) NULL DEFAULT NULL");
+            $check->execute([':col' => $column]);
+            if ($check->fetchColumn() === false) {
+                throw new RuntimeException('Column was not created');
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('ensureGiaoviecKpiColumns failed for ' . $column . ': ' . $e->getMessage());
+        throw new RuntimeException('Không thể tạo cột dinh_muc_gio_hien_tai trong bảng giaoviec_kpi.', 0, $e);
+    }
+}
+
+function calculateBusinessScheduleHours(?string $startDate, ?string $startTime, ?string $endDate, ?string $endTime): ?float {
+    if (!$startDate || !$startTime || !$endDate || !$endTime) {
+        return null;
+    }
+
+    $startValue = $startDate . ' ' . $startTime;
+    $endValue = $endDate . ' ' . $endTime;
+    $start = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $startValue);
+    $end = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $endValue);
+    if (!$start || !$end
+        || $start->format('Y-m-d H:i') !== $startValue
+        || $end->format('Y-m-d H:i') !== $endValue
+        || $end <= $start) {
+        return null;
+    }
+
+    $hours = 0.0;
+    $day = $start->setTime(0, 0);
+    $lastDay = $end->setTime(0, 0);
+    while ($day <= $lastDay) {
+        if ((int)$day->format('N') < 6) {
+            $dayStart = $day > $start ? $day : $start;
+            $nextDay = $day->modify('+1 day');
+            $dayEnd = $nextDay < $end ? $nextDay : $end;
+            if ($dayEnd > $dayStart) {
+                $hours += min(6.5, ($dayEnd->getTimestamp() - $dayStart->getTimestamp()) / 3600);
+            }
+        }
+        $day = $day->modify('+1 day');
+    }
+
+    return $hours;
 }
 
 function ensureGiaoviecKpiNguoiColumns(PDO $db): void {
@@ -82,14 +140,19 @@ try {
     ensureGiaoviecKpiNguoiColumns($db);
 } catch (Throwable $e) {
     error_log('Giaoviec KPI migration check failed: ' . $e->getMessage());
+    $message = 'Cơ sở dữ liệu chưa sẵn sàng cho Định mức giờ hiện tại. Hãy cấp quyền ALTER TABLE hoặc chạy: ALTER TABLE giaoviec_kpi ADD COLUMN dinh_muc_gio_hien_tai DECIMAL(8,2) NULL DEFAULT NULL;';
+    if (str_starts_with((string)$action, 'api_')) {
+        jsonOut(['ok' => false, 'error' => $message], 500);
+    }
+    http_response_code(500);
+    echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    exit;
 }
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 $canCreate = hasPermission(PERMISSION_GIAOVIEC_KPI_CREATE);
 $canEdit = hasPermission(PERMISSION_GIAOVIEC_KPI_EDIT);
 $canDelete = hasPermission(PERMISSION_GIAOVIEC_KPI_DELETE);
-$action = $_GET['action'] ?? 'index';
-
 $loaiCongViecLabels = [
     'kiem_tra' => 'Kiểm tra',
     'bd_cap_1' => 'BD cấp 1',
@@ -260,6 +323,16 @@ try {
                     $r['tien_do'] = (int)($r['tien_do'] ?? 0);
                 }
                 $r['dinh_muc_gio_hieu_luc'] = $target > 0 ? $target : null;
+                $storedScheduleHours = $r['dinh_muc_gio_hien_tai'] ?? null;
+                if ($storedScheduleHours === null || $storedScheduleHours === '') {
+                    $storedScheduleHours = calculateBusinessScheduleHours(
+                        $r['ngay_bat_dau'] ?? null,
+                        isset($r['gio_bat_dau']) ? substr((string)$r['gio_bat_dau'], 0, 5) : null,
+                        $r['ngay_ket_thuc'] ?? null,
+                        isset($r['gio_ket_thuc']) ? substr((string)$r['gio_ket_thuc'], 0, 5) : null
+                    );
+                }
+                $r['dinh_muc_gio_hien_tai'] = $storedScheduleHours;
                 $r['nguoi_list'] = [];
                 if (!empty($r['nguoi_raw'])) {
                     foreach (explode(';;', $r['nguoi_raw']) as $p) {
@@ -299,11 +372,53 @@ try {
             $ten          = trim($in['ten_cong_viec'] ?? '');
             $mo_ta        = trim($in['mo_ta'] ?? '');
             $ghiChu       = trim((string)($in['ghi_chu'] ?? ''));
+            $currentHourInput = $in['dinh_muc_gio_hien_tai'] ?? null;
+            if ($currentHourInput !== null && $currentHourInput !== '') {
+                if (!is_numeric((string)$currentHourInput)) {
+                    jsonOut(['ok' => false, 'error' => 'Định mức giờ hiện tại phải là số hợp lệ'], 400);
+                }
+                $currentHourInput = (float)str_replace(',', '.', (string)$currentHourInput);
+                if (!is_finite($currentHourInput) || $currentHourInput < 0 || $currentHourInput > 999999.99) {
+                    jsonOut(['ok' => false, 'error' => 'Định mức giờ hiện tại phải từ 0 đến 999999.99'], 400);
+                }
+            } else {
+                $currentHourInput = null;
+            }
             $ngay_bd      = $in['ngay_bat_dau'] ?: null;
             $gio_bd       = $in['gio_bat_dau']  ?: null;
-            $so_ngay      = (int)($in['so_ngay'] ?? 0);
             $ngay_kt      = $in['ngay_ket_thuc']?: null;
             $gio_kt       = $in['gio_ket_thuc'] ?: null;
+            $soNgayInput  = $in['so_ngay'] ?? 0;
+            if (filter_var($soNgayInput, FILTER_VALIDATE_INT) === false || (int)$soNgayInput < 0) {
+                jsonOut(['ok' => false, 'error' => 'Số ngày phải là số nguyên không âm'], 400);
+            }
+            $so_ngay = (int)$soNgayInput;
+            if ($ngay_bd !== null && $ngay_kt !== null) {
+                $startDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string)$ngay_bd);
+                $endDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string)$ngay_kt);
+                if (!$startDate || !$endDate
+                    || $startDate->format('Y-m-d') !== $ngay_bd
+                    || $endDate->format('Y-m-d') !== $ngay_kt) {
+                    jsonOut(['ok' => false, 'error' => 'Ngày bắt đầu hoặc hạn hoàn thành không hợp lệ'], 400);
+                }
+                if ($endDate < $startDate) {
+                    jsonOut(['ok' => false, 'error' => 'Hạn hoàn thành không được trước ngày bắt đầu'], 400);
+                }
+            }
+            if ($ngay_bd !== null && $gio_bd !== null && $ngay_kt !== null && $gio_kt !== null) {
+                $startDateTimeValue = $ngay_bd . ' ' . $gio_bd;
+                $endDateTimeValue = $ngay_kt . ' ' . $gio_kt;
+                $startDateTime = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $startDateTimeValue);
+                $endDateTime = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $endDateTimeValue);
+                if (!$startDateTime || !$endDateTime
+                    || $startDateTime->format('Y-m-d H:i') !== $startDateTimeValue
+                    || $endDateTime->format('Y-m-d H:i') !== $endDateTimeValue) {
+                    jsonOut(['ok' => false, 'error' => 'Giờ bắt đầu hoặc giờ kết thúc không hợp lệ'], 400);
+                }
+                if ($endDateTime <= $startDateTime) {
+                    jsonOut(['ok' => false, 'error' => 'Giờ kết thúc phải sau giờ bắt đầu'], 400);
+                }
+            }
             $tien_do      = (int)($in['tien_do'] ?? 0);
             $trang_thai   = $in['trang_thai'] ?? 'chua_giao';
 
@@ -311,22 +426,22 @@ try {
 
             if ($stt > 0) {
                 $sql = "UPDATE giaoviec_kpi SET parent_stt=:p, hososcbd_stt=:hs, phieu=:ph, somay=:sm, hoso=:ho,
-                        kpi_baoduong_stt=:kpi, loai_congviec=:lc, dinh_muc_gio_thu_cong=:dm,
+                        kpi_baoduong_stt=:kpi, loai_congviec=:lc, dinh_muc_gio_thu_cong=:dm, dinh_muc_gio_hien_tai=:dghh,
                         ten_cong_viec=:t, mo_ta=:mt, ghi_chu=:gc, ngay_bat_dau=:nbd, gio_bat_dau=:gbd, so_ngay=:sn,
                         ngay_ket_thuc=:nkt, gio_ket_thuc=:gkt, tien_do=:td, trang_thai=:tt WHERE stt=:s";
                 $st = $db->prepare($sql);
                 $st->execute([':p'=>$parent_stt, ':hs'=>$hososcbd_stt, ':ph'=>$phieu, ':sm'=>$somay, ':ho'=>$hoso,
-                    ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio,
+                    ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio, ':dghh'=>$currentHourInput,
                     ':t'=>$ten, ':mt'=>$mo_ta, ':gc'=>$ghiChu !== '' ? $ghiChu : null, ':nbd'=>$ngay_bd, ':gbd'=>$gio_bd, ':sn'=>$so_ngay,
                     ':nkt'=>$ngay_kt, ':gkt'=>$gio_kt, ':td'=>$tien_do, ':tt'=>$trang_thai, ':s'=>$stt]);
                 jsonOut(['ok'=>true, 'stt'=>$stt]);
             } else {
-                $sql = "INSERT INTO giaoviec_kpi (parent_stt, hososcbd_stt, phieu, somay, hoso, kpi_baoduong_stt, loai_congviec, dinh_muc_gio_thu_cong,
+                $sql = "INSERT INTO giaoviec_kpi (parent_stt, hososcbd_stt, phieu, somay, hoso, kpi_baoduong_stt, loai_congviec, dinh_muc_gio_thu_cong, dinh_muc_gio_hien_tai,
                         ten_cong_viec, mo_ta, ghi_chu, ngay_bat_dau, gio_bat_dau, so_ngay, ngay_ket_thuc, gio_ket_thuc, tien_do, trang_thai, nguoi_giao)
-                        VALUES (:p,:hs,:ph,:sm,:ho,:kpi,:lc,:dm,:t,:mt,:gc,:nbd,:gbd,:sn,:nkt,:gkt,:td,:tt,:ng)";
+                        VALUES (:p,:hs,:ph,:sm,:ho,:kpi,:lc,:dm,:dghh,:t,:mt,:gc,:nbd,:gbd,:sn,:nkt,:gkt,:td,:tt,:ng)";
                 $st = $db->prepare($sql);
                 $st->execute([':p'=>$parent_stt, ':hs'=>$hososcbd_stt, ':ph'=>$phieu, ':sm'=>$somay, ':ho'=>$hoso,
-                    ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio,
+                    ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio, ':dghh'=>$currentHourInput,
                     ':t'=>$ten, ':mt'=>$mo_ta, ':gc'=>$ghiChu !== '' ? $ghiChu : null, ':nbd'=>$ngay_bd, ':gbd'=>$gio_bd, ':sn'=>$so_ngay,
                     ':nkt'=>$ngay_kt, ':gkt'=>$gio_kt, ':td'=>$tien_do, ':tt'=>$trang_thai, ':ng'=>$currentUser]);
                 jsonOut(['ok'=>true, 'stt'=>(int)$db->lastInsertId()]);
@@ -508,9 +623,10 @@ require_once __DIR__ . '/views/layouts/header.php';
           <i class="fas fa-bullseye"></i>
           <span>Định mức KPI</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input type="hidden" id="f_dinh_muc_gio_thu_cong" value="">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-medium text-gray-700">Thiết bị KPI</label>
+            <label class="text-xs font-medium text-gray-700">Thiết bị</label>
             <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Nhập tên thiết bị để tìm..." autocomplete="off" class="w-full border rounded px-2 py-2 mt-1 text-sm">
             <input type="hidden" id="f_kpi_baoduong_stt">
             <datalist id="dl_kpi_thietbi">
@@ -527,13 +643,9 @@ require_once __DIR__ . '/views/layouts/header.php';
               <?php endforeach; ?>
             </select>
           </div>
-          <div>
-            <label class="text-xs font-medium text-gray-700">Định mức giờ (nhập tay)</label>
-            <input type="number" id="f_dinh_muc_gio_thu_cong" step="0.01" min="0" value="" placeholder="Để trống nếu dùng KPI" class="w-full border rounded px-2 py-2 mt-1 text-sm">
-          </div>
         </div>
         <div class="text-xs text-teal-700">
-          <span class="font-medium">Định mức giờ hiện tại:</span>
+          <span class="font-medium">Định mức tham khảo:</span>
           <span id="f_kpi_preview">—</span>
         </div>
       </div>
@@ -549,7 +661,7 @@ require_once __DIR__ . '/views/layouts/header.php';
         </div>
         <div>
           <label class="text-xs font-medium text-gray-600">Số ngày</label>
-          <input type="number" id="f_so_ngay" min="0" value="0" class="w-full border rounded px-2 py-2 text-sm">
+          <input type="number" id="f_so_ngay" min="0" step="1" value="0" class="w-full border rounded px-2 py-2 text-sm">
         </div>
         <div>
           <label class="text-xs font-medium text-gray-600">Tiến độ (%)</label>
@@ -562,6 +674,10 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div>
           <label class="text-xs font-medium text-gray-600">Giờ kết thúc</label>
           <input type="time" id="f_gio_kt" class="w-full border rounded px-2 py-2 text-sm">
+        </div>
+        <div class="col-span-2 md:col-span-4 text-sm text-teal-700">
+          <label for="f_dinh_muc_gio_hien_tai" class="font-medium">Thời gian giao thực tế:</label>
+          <input type="number" id="f_dinh_muc_gio_hien_tai" min="0" step="0.01" class="ml-2 w-32 border rounded px-2 py-1 text-sm text-gray-800">
         </div>
         <div class="col-span-2">
           <label class="text-xs font-medium text-gray-600">Trạng thái</label>
@@ -599,7 +715,7 @@ require_once __DIR__ . '/views/layouts/header.php';
       </div>
       <div>
         <label class="text-sm font-medium text-gray-700">Người làm <b>phụ</b> (gõ tên rồi chọn để thêm)</label>
-        <input list="dl_users_nguoi" id="n_phu_search" autocomplete="off" placeholder="Nhập tên để thêm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
+        <input list="dl_users_nguoi" id="n_phu_search" autocomplete="off" placeholder="Tạm thời không khả dụng" disabled class="w-full border rounded px-3 py-2 mt-1 text-sm bg-gray-100 cursor-not-allowed">
         <div id="n_phu_tags" class="flex flex-wrap gap-1 mt-2"></div>
         <datalist id="dl_users_nguoi"></datalist>
       </div>
@@ -778,17 +894,9 @@ function renderRow(t, idx, level){
   const indent = level ? `<span class="text-red-600 font-bold ml-4">↳</span> ` : '';
   const ghiChuText = (t.ghi_chu || '').trim();
 
-  let dinhMucText = '';
-  const selectedKpiId = Number(t.kpi_baoduong_stt || 0);
-  const selectedLoai = t.loai_congviec || 'kiem_tra';
-  const numericManual = t.dinh_muc_gio_thu_cong !== null && t.dinh_muc_gio_thu_cong !== undefined && t.dinh_muc_gio_thu_cong !== ''
-    ? Number(t.dinh_muc_gio_thu_cong)
-    : NaN;
-  if (!Number.isNaN(numericManual)) {
-    dinhMucText = `${numericManual}h`;
-  } else if (selectedKpiId && KPI_HOUR_MAP[selectedKpiId] && KPI_HOUR_MAP[selectedKpiId][selectedLoai] !== null && KPI_HOUR_MAP[selectedKpiId][selectedLoai] !== undefined) {
-    dinhMucText = `${KPI_HOUR_MAP[selectedKpiId][selectedLoai]}h`;
-  }
+  const scheduleHours = t.dinh_muc_gio_hien_tai !== null && t.dinh_muc_gio_hien_tai !== undefined && t.dinh_muc_gio_hien_tai !== ''
+    ? Number(t.dinh_muc_gio_hien_tai)
+    : calculateScheduledHours(t.ngay_bat_dau, t.gio_bat_dau, t.ngay_ket_thuc, t.gio_ket_thuc);
 
   const admin = `${CAN_EDIT ? `
     <button onclick="openNguoi(${t.stt})" title="Người thực hiện" class="text-purple-600 hover:text-purple-800 px-1"><i class="fas fa-user-plus"></i></button>
@@ -806,7 +914,7 @@ function renderRow(t, idx, level){
     <td class="px-3 py-2">${badge}</td>
     <td class="px-3 py-2">
       <div class="flex items-center gap-1"><div class="w-20 bg-gray-200 rounded h-2"><div class="h-2 rounded ${(t.tien_do||0)>=100?'bg-green-500':(t.tien_do||0)>=70?'bg-blue-500':(t.tien_do||0)>=40?'bg-yellow-500':'bg-red-500'}" style="width:${t.tien_do||0}%"></div></div><span class="text-xs font-semibold ${(t.tien_do||0)>=100?'text-green-700':(t.tien_do||0)>=70?'text-blue-700':(t.tien_do||0)>=40?'text-yellow-700':'text-red-600'}">${t.tien_do||0}%</span></div>
-      ${dinhMucText ? `<div class="text-[11px] text-teal-700 mt-1"><i class="fas fa-bullseye mr-0.5"></i>Định mức: <span class="font-semibold">${esc(dinhMucText)}</span></div>` : ''}
+      ${scheduleHours !== null && Number.isFinite(scheduleHours) && scheduleHours > 0 ? `<div class="text-[11px] text-indigo-700 mt-1"><i class="fas fa-bullseye mr-0.5"></i>Định mức: <span class="font-semibold">${formatScheduleHours(scheduleHours)}</span></div>` : ''}
       ${renderThucTeInfo(t)}
     </td>
     <td class="px-3 py-2 text-xs text-gray-600" title="${esc(ghiChuText)}">${ghiChuText ? `<span class="line-clamp-2">${esc(ghiChuText)}</span>` : '<span class="text-gray-400 italic">-</span>'}</td>
@@ -868,6 +976,76 @@ function updateKpiPreview(){
   preview.textContent = '—';
 }
 
+function calculateScheduledHours(startDate, startTime, endDate, endTime){
+  if (!startDate || !startTime || !endDate || !endTime) return null;
+  const toUtcMilliseconds = (date, time) => {
+    const [year, month, day] = date.split('-').map(Number);
+    const [hour, minute] = time.split(':').map(Number);
+    if (![year, month, day, hour, minute].every(Number.isFinite)) return NaN;
+    return Date.UTC(year, month - 1, day, hour, minute);
+  };
+  const start = toUtcMilliseconds(startDate, startTime);
+  const end = toUtcMilliseconds(endDate, endTime);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return NaN;
+
+  let hours = 0;
+  const getUtcDayStart = date => {
+    const [year, month, day] = date.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  const startDay = getUtcDayStart(startDate);
+  const endDay = getUtcDayStart(endDate);
+  for (let dayStart = startDay; dayStart <= endDay; dayStart += 86400000) {
+    const weekday = new Date(dayStart).getUTCDay();
+    if (weekday === 0 || weekday === 6) continue;
+    const intervalStart = Math.max(start, dayStart);
+    const intervalEnd = Math.min(end, dayStart + 86400000);
+    if (intervalEnd > intervalStart) hours += Math.min(6.5, (intervalEnd - intervalStart) / 3600000);
+  }
+  return hours;
+}
+
+function formatScheduleHours(hours){
+  return `${Number(hours.toFixed(2))}h`;
+}
+
+function updateScheduleDerivedDayCount(){
+  const startDate = document.getElementById('f_ngay_bd').value;
+  const endDate = document.getElementById('f_ngay_kt').value;
+  const daysField = document.getElementById('f_so_ngay');
+
+  if (startDate && endDate) {
+    const startDay = new Date(`${startDate}T00:00:00Z`);
+    const endDay = new Date(`${endDate}T00:00:00Z`);
+    let businessDays = 0;
+    if (!Number.isNaN(startDay.getTime()) && !Number.isNaN(endDay.getTime()) && endDay >= startDay) {
+      for (const day = new Date(startDay); day <= endDay; day.setUTCDate(day.getUTCDate() + 1)) {
+        const weekday = day.getUTCDay();
+        if (weekday !== 0 && weekday !== 6) businessDays++;
+      }
+    }
+    daysField.value = String(businessDays);
+  } else {
+    daysField.value = '0';
+  }
+}
+
+function updateScheduleDerivedHours(){
+  const startDate = document.getElementById('f_ngay_bd').value;
+  const startTime = document.getElementById('f_gio_bd').value;
+  const endDate = document.getElementById('f_ngay_kt').value;
+  const endTime = document.getElementById('f_gio_kt').value;
+  const currentHours = document.getElementById('f_dinh_muc_gio_hien_tai');
+  const hours = calculateScheduledHours(startDate, startTime, endDate, endTime);
+  if (hours === null) {
+    currentHours.value = '';
+  } else if (!Number.isFinite(hours) || hours <= 0) {
+    currentHours.value = '';
+  } else {
+    currentHours.value = Number(hours.toFixed(2));
+  }
+}
+
 function setTaskFormLocked(isLocked){
   const fields = ['f_hoso_search', 'f_ten'];
   fields.forEach(id => {
@@ -890,6 +1068,8 @@ function resetTaskForm(){
   document.getElementById('f_hoso_info').textContent = '';
   setTaskFormLocked(false);
   updateKpiPreview();
+  updateScheduleDerivedDayCount();
+  updateScheduleDerivedHours();
 }
 
 document.getElementById('btnAdd')?.addEventListener('click', () => {
@@ -915,6 +1095,12 @@ function editTask(stt){
   document.getElementById('f_so_ngay').value = t.so_ngay || 0;
   document.getElementById('f_ngay_kt').value = t.ngay_ket_thuc || '';
   document.getElementById('f_gio_kt').value = (t.gio_ket_thuc||'').substring(0,5);
+  const savedCurrentHours = t.dinh_muc_gio_hien_tai;
+  document.getElementById('f_dinh_muc_gio_hien_tai').value =
+    savedCurrentHours !== null && savedCurrentHours !== undefined && savedCurrentHours !== ''
+      ? savedCurrentHours
+      : '';
+  if (document.getElementById('f_dinh_muc_gio_hien_tai').value === '') updateScheduleDerivedHours();
   document.getElementById('f_tien_do').value = t.tien_do || 0;
   document.getElementById('f_trang_thai').value = t.trang_thai || 'chua_giao';
 
@@ -954,17 +1140,14 @@ function addSubtask(parentStt){
   openModal('modalTask');
 }
 
-// Tự động tính hạn hoàn thành từ ngày bắt đầu + số ngày
-function recalcEnd(){
-  const bd = document.getElementById('f_ngay_bd').value;
-  const sn = parseInt(document.getElementById('f_so_ngay').value || '0', 10);
-  if (bd && sn > 0) {
-    const d = new Date(bd);
-    d.setDate(d.getDate() + sn);
-    document.getElementById('f_ngay_kt').value = d.toISOString().substring(0,10);
-  }
-}
-['f_ngay_bd','f_so_ngay'].forEach(id => document.getElementById(id).addEventListener('change', recalcEnd));
+['f_ngay_bd','f_ngay_kt'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateScheduleDerivedDayCount);
+  document.getElementById(id).addEventListener('change', updateScheduleDerivedDayCount);
+});
+['f_ngay_bd','f_gio_bd','f_ngay_kt','f_gio_kt'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateScheduleDerivedHours);
+  document.getElementById(id).addEventListener('change', updateScheduleDerivedHours);
+});
 
 // Khi chọn hồ sơ từ datalist → tự điền tên công việc + hososcbd_stt
 async function loadKpiBySelectedHoso(stt){
@@ -1021,9 +1204,10 @@ async function saveTask(){
     ghi_chu: document.getElementById('f_ghi_chu').value.trim(),
     ngay_bat_dau: document.getElementById('f_ngay_bd').value || null,
     gio_bat_dau: document.getElementById('f_gio_bd').value || null,
-    so_ngay: parseInt(document.getElementById('f_so_ngay').value||'0',10),
+    so_ngay: Number(document.getElementById('f_so_ngay').value || 0),
     ngay_ket_thuc: document.getElementById('f_ngay_kt').value || null,
     gio_ket_thuc: document.getElementById('f_gio_kt').value || null,
+    dinh_muc_gio_hien_tai: document.getElementById('f_dinh_muc_gio_hien_tai').value || null,
     tien_do: parseInt(document.getElementById('f_tien_do').value||'0',10),
     trang_thai: document.getElementById('f_trang_thai').value,
   };
@@ -1061,19 +1245,13 @@ function renderPhuTags(){
     const name = NGUOI_NAME_BY_ID[id] || `#${id}`;
     return `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
       ${esc(name)}
-      <button type="button" onclick="removePhu('${id}')" class="text-blue-600 hover:text-red-600"><i class="fas fa-times"></i></button>
     </span>`;
   }).join('');
 }
 
-function removePhu(id){
-  NGUOI_PHU_SELECTED.delete(String(id));
-  renderPhuTags();
-}
-
 function tryAddPhuFromInput(){
   const inp = document.getElementById('n_phu_search');
-  if (!inp) return;
+  if (!inp || inp.disabled) return;
   const key = (inp.value || '').trim().toLowerCase();
   if (!key) return;
   const id = NGUOI_ID_BY_NAME[key];
@@ -1173,7 +1351,6 @@ document.getElementById('filterNguoiChinh').addEventListener('change', renderTab
 document.getElementById('f_kpi_baoduong_search')?.addEventListener('input', syncKpiSearchToHidden);
 document.getElementById('f_kpi_baoduong_search')?.addEventListener('change', syncKpiSearchToHidden);
 document.getElementById('f_loai_congviec')?.addEventListener('change', updateKpiPreview);
-document.getElementById('f_dinh_muc_gio_thu_cong')?.addEventListener('input', updateKpiPreview);
 
 (async function init(){
   await Promise.all([loadResume(), loadHoso()]);

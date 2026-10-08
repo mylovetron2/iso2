@@ -31,7 +31,12 @@ require_once __DIR__ . '/../layouts/header.php';
                 echo !empty($_GET['nhomsc']) ? '&nhomsc=' . urlencode($_GET['nhomsc']) : '';
             ?>" 
                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
-                <i class="fas fa-file-pdf"></i> Xuất PDF
+                <i class="fas fa-file-pdf"></i>
+                <?php if (!empty($_GET['qui']) && in_array($_GET['qui'], ['1','2','3','4'], true)): ?>
+                    PDF Từ đầu năm tới Q<?php echo (int)$_GET['qui']; ?>
+                <?php else: ?>
+                    Xuất PDF
+                <?php endif; ?>
             </a>
 
             <?php if (!empty($_GET['qui']) && in_array($_GET['qui'], ['1','2','3','4'], true)): ?>
@@ -42,7 +47,7 @@ require_once __DIR__ . '/../layouts/header.php';
             ?>"
                title="Chỉ liệt kê thiết bị có kế hoạch trong quý đã chọn (Trước hạn / Đúng hạn / Sau hạn / Chưa thực hiện)"
                class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
-                <i class="fas fa-file-pdf"></i> PDF danh sách Q<?php echo (int)$_GET['qui']; ?>
+                <i class="fas fa-file-pdf"></i> PDF riêng Q<?php echo (int)$_GET['qui']; ?>
             </a>
             <?php endif; ?>
             
@@ -76,7 +81,6 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-calendar-alt text-blue-600"></i> Quý
                 </label>
                 <select name="qui" class="border rounded px-3 py-2 w-full">
-                    <option value="">-- Tất cả --</option>
                     <option value="1" <?php echo ($_GET['qui'] ?? '') === '1' ? 'selected' : ''; ?>>Quý 1</option>
                     <option value="2" <?php echo ($_GET['qui'] ?? '') === '2' ? 'selected' : ''; ?>>Quý 2</option>
                     <option value="3" <?php echo ($_GET['qui'] ?? '') === '3' ? 'selected' : ''; ?>>Quý 3</option>

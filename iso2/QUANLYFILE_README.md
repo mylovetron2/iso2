@@ -15,7 +15,7 @@ Pham vi gom 2 lop:
 - Vi tri: `views/layouts/header.php`
 - Dieu kien hien thi: user da dang nhap (`isLoggedIn()`).
 - Hanh vi: mo tab moi den URL ben ngoai:
-  - `https://diavatly.cloud/gdrive-manager`
+  - `https://iso2.diavatly.cloud/gdrive-manager`
 
 Muc dich: tach rieng he thong quan ly file tong (Google Drive manager) khoi ung dung chinh.
 

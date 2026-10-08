@@ -451,7 +451,7 @@ if (file_exists($dbSelectionFile)) {
                 <!-- Quản lý file -->
                 <?php if (isLoggedIn()): ?>
                 <li>
-                    <a href="https://diavatly.cloud/gdrive-manager" target="_blank" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                    <a href="https://iso2.diavatly.cloud/gdrive-manager" target="_blank" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder mr-2"></i> Quản lý file
                     </a>
                 </li>
