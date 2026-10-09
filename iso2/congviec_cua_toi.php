@@ -63,6 +63,22 @@ function ensureThucHienTables(PDO $db): void {
     }
 }
 ensureThucHienTables($db);
+
+function ensureNgayThucHienKetThucColumn(PDO $db): void {
+    try {
+        $check = $db->prepare("SHOW COLUMNS FROM giaoviec_kpi LIKE 'ngay_thuc_hien_ket_thuc'");
+        $check->execute();
+        $col = $check->fetch(PDO::FETCH_ASSOC);
+        if (!$col) {
+            $db->exec("ALTER TABLE giaoviec_kpi ADD COLUMN `ngay_thuc_hien_ket_thuc` DATETIME NULL DEFAULT NULL AFTER `gio_ket_thuc`");
+        } elseif (stripos((string)$col['Type'], 'datetime') === false) {
+            $db->exec("ALTER TABLE giaoviec_kpi MODIFY COLUMN `ngay_thuc_hien_ket_thuc` DATETIME NULL DEFAULT NULL");
+        }
+    } catch (Throwable $e) {
+        error_log('ensureNgayThucHienKetThucColumn: ' . $e->getMessage());
+    }
+}
+ensureNgayThucHienKetThucColumn($db);
 $userSttSupported = ensureGiaoviecKpiNguoiColumns($db);
 
 $username = $_SESSION['username'] ?? '';
@@ -499,7 +515,7 @@ try {
                     }
                 }
 
-                $db->prepare("UPDATE giaoviec_kpi SET trang_thai='hoan_thanh', tien_do=100 WHERE stt=:s")->execute([':s'=>$stt]);
+                $db->prepare("UPDATE giaoviec_kpi SET trang_thai='hoan_thanh', tien_do=100, ngay_thuc_hien_ket_thuc=NOW() WHERE stt=:s")->execute([':s'=>$stt]);
                 $db->commit();
             } catch (Throwable $e) {
                 $db->rollBack();

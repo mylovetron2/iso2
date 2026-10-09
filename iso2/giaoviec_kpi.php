@@ -17,6 +17,7 @@ function ensureGiaoviecKpiColumns(PDO $db): void {
         'loai_congviec' => "ALTER TABLE giaoviec_kpi ADD COLUMN `loai_congviec` ENUM('kiem_tra','bd_cap_1','bd_cap_2','bd_cap_3','hieu_chuan') NULL DEFAULT NULL AFTER `kpi_baoduong_stt`",
         'dinh_muc_gio_thu_cong' => "ALTER TABLE giaoviec_kpi ADD COLUMN `dinh_muc_gio_thu_cong` DECIMAL(8,2) NULL DEFAULT NULL AFTER `loai_congviec`",
         'ghi_chu' => "ALTER TABLE giaoviec_kpi ADD COLUMN `ghi_chu` TEXT NULL DEFAULT NULL AFTER `mo_ta`",
+        'ngay_thuc_hien_ket_thuc' => "ALTER TABLE giaoviec_kpi ADD COLUMN `ngay_thuc_hien_ket_thuc` DATETIME NULL DEFAULT NULL AFTER `gio_ket_thuc`",
     ];
 
     foreach ($required as $col => $sql) {
@@ -207,6 +208,23 @@ function computeStatus(array $row, int $nguoiCount): string {
     return 'dang_lam';
 }
 
+// Kết quả KPI của công việc đã hoàn thành: ngày kết thúc thực tế so với hạn hoàn thành.
+// Trả về true (đạt), false (không đạt) hoặc null (chưa đủ dữ liệu).
+function computeKpiResult(array $row): ?bool {
+    if (($row['trang_thai'] ?? '') !== 'hoan_thanh' || empty($row['ngay_ket_thuc'])) return null;
+
+    $actual = !empty($row['ngay_thuc_hien_ket_thuc']) ? (string)$row['ngay_thuc_hien_ket_thuc'] : (string)($row['ngay_kt_thuc_te'] ?? '');
+    if ($actual === '') return null;
+
+    // Dữ liệu cũ chỉ có ngày thì so sánh theo ngày
+    $actualHasTime = strlen($actual) > 10;
+    if (!empty($row['gio_ket_thuc']) && $actualHasTime) {
+        $deadline = new DateTime($row['ngay_ket_thuc'] . ' ' . $row['gio_ket_thuc']);
+        return new DateTime($actual) <= $deadline;
+    }
+    return substr($actual, 0, 10) <= $row['ngay_ket_thuc'];
+}
+
 function statusLabel(string $s): array {
     // [label, css]
     return [
@@ -304,6 +322,8 @@ try {
             $rows = $st->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) {
                 $r['trang_thai_hien_thi'] = computeStatus($r, (int)$r['nguoi_count']);
+                $r['kpi_dat'] = computeKpiResult($r);
+                $r['ngay_ket_thuc_thuc_te'] = !empty($r['ngay_thuc_hien_ket_thuc']) ? $r['ngay_thuc_hien_ket_thuc'] : ($r['ngay_kt_thuc_te'] ?? null);
                 // Tính tiến độ động theo giờ đã làm / định mức giờ hiệu lực
                 $hoursDone = (float)($r['gio_da_lam'] ?? 0);
                 $manual = $r['dinh_muc_gio_thu_cong'] ?? null;
@@ -522,14 +542,43 @@ require_once __DIR__ . '/views/layouts/header.php';
     -webkit-overflow-scrolling: touch;
   }
   .task-table {
-    min-width: 1080px;
+    min-width: 1300px;
+  }
+  .task-table tr.row-parent > td {
+    background-color: #eff6ff;
+    border-top: 2px solid #93c5fd;
+  }
+  .task-table tr.row-parent:hover > td { background-color: #dbeafe; }
+  .task-table tr.row-child > td {
+    background-color: #ffffff;
+    border-top: 1px dashed #e5e7eb;
+    font-size: 0.8125rem;
+  }
+  .task-table tr.row-child > td:first-child {
+    padding-left: 2rem;
+  }
+  .task-table tr.row-child:hover > td { background-color: #f0fdf4; }
+  .task-table tr.row-child:last-of-type > td { border-bottom: 0; }
+  .task-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;
+    border-radius: 0.25rem; color: #1d4ed8; background: #dbeafe; cursor: pointer;
+  }
+  .task-toggle i { transition: transform .15s; font-size: 0.7rem; }
+  .task-toggle.collapsed i { transform: rotate(-90deg); }
+  .child-name { position: relative; padding-left: 1.5rem; display: inline-block; }
+  .child-name::before {
+    content: ""; position: absolute; left: 0.25rem; top: -0.5rem;
+    width: 0.9rem; height: 1.1rem;
+    border-left: 2px solid #16a34a; border-bottom: 2px solid #16a34a;
+    border-bottom-left-radius: 4px;
   }
   @media (max-width: 640px) {
     .task-page {
       padding: 0.75rem;
     }
     .task-table {
-      min-width: 920px;
+      min-width: 1140px;
     }
   }
 </style>
@@ -556,9 +605,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         <option value="hoan_thanh">Hoàn thành</option>
       </select>
       <?php if ($canCreate): ?>
-      <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+      <a href="giaoviec_kpi_detail.php" id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
         <i class="fas fa-plus mr-1"></i> Thêm công việc
-      </button>
+      </a>
       <?php endif; ?>
     </div>
   </div>
@@ -567,8 +616,7 @@ require_once __DIR__ . '/views/layouts/header.php';
     <table class="task-table w-full text-sm">
       <thead class="bg-gray-50 text-gray-700">
         <tr>
-          <th class="px-3 py-2 text-left w-10">#</th>
-          <th class="px-3 py-2 text-left">Tên công việc</th>
+          <th class="px-3 py-2 text-left min-w-[240px] w-[20.8%]">Tên công việc</th>
           <th class="px-3 py-2 text-left">Dự án (Hồ sơ)</th>
           <th class="px-3 py-2 text-left">Nhóm</th>
           <th class="px-3 py-2 text-left">Thời điểm bắt đầu</th>
@@ -582,150 +630,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         </tr>
       </thead>
       <tbody id="tblBody">
-        <tr><td colspan="12" class="p-6 text-center text-gray-400">Đang tải...</td></tr>
+        <tr><td colspan="11" class="p-6 text-center text-gray-400">Đang tải...</td></tr>
       </tbody>
     </table>
-  </div>
-</div>
-
-<!-- ============= Modal: Thêm/Sửa công việc ============= -->
-<div id="modalTask" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[100] p-4">
-  <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-3 border-b">
-      <h3 class="font-semibold text-gray-800" id="modalTaskTitle">Thêm công việc</h3>
-      <button onclick="closeModal('modalTask')" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="p-5 space-y-3 overflow-y-auto flex-1">
-      <input type="hidden" id="f_stt">
-      <input type="hidden" id="f_parent_stt">
-      <input type="hidden" id="f_hososcbd_stt">
-      <div>
-        <label class="text-sm font-medium text-gray-700">Dự án (Phiếu) — chọn hồ sơ SCBD</label>
-        <input list="dl_hoso" id="f_hoso_search" placeholder="Nhập phiếu / mã VT / số máy / hồ sơ để tìm..." class="w-full border rounded px-3 py-2 mt-1 text-sm" readonly>
-        <datalist id="dl_hoso"></datalist>
-        <div id="f_hoso_info" class="text-xs text-gray-500 mt-1"></div>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Tên công việc <span class="text-red-500">*</span></label>
-        <input type="text" id="f_ten" class="w-full border rounded px-3 py-2 mt-1 text-sm" placeholder="VD: Sửa máy XYZ - Hồ sơ 123" readonly>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Mô tả</label>
-        <textarea id="f_mota" rows="2" class="w-full border rounded px-3 py-2 mt-1 text-sm"></textarea>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Ghi chú</label>
-        <textarea id="f_ghi_chu" rows="2" class="w-full border rounded px-3 py-2 mt-1 text-sm" placeholder="Thông tin bổ sung, lưu ý, điều kiện thực hiện..."></textarea>
-      </div>
-
-      <div class="border border-teal-200 bg-teal-50 rounded-lg p-3 space-y-3">
-        <div class="flex items-center gap-2 text-teal-700 font-semibold text-sm">
-          <i class="fas fa-bullseye"></i>
-          <span>Định mức KPI</span>
-        </div>
-        <input type="hidden" id="f_dinh_muc_gio_thu_cong" value="">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs font-medium text-gray-700">Thiết bị</label>
-            <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Nhập tên thiết bị để tìm..." autocomplete="off" class="w-full border rounded px-2 py-2 mt-1 text-sm">
-            <input type="hidden" id="f_kpi_baoduong_stt">
-            <datalist id="dl_kpi_thietbi">
-              <?php foreach ($kpiThietBiList as $kpiRow): ?>
-                <option data-id="<?= (int)$kpiRow['id'] ?>" value="<?= htmlspecialchars((string)$kpiRow['ten_thiet_bi']) ?>"></option>
-              <?php endforeach; ?>
-            </datalist>
-          </div>
-          <div>
-            <label class="text-xs font-medium text-gray-700">Loại công việc</label>
-            <select id="f_loai_congviec" class="w-full border rounded px-2 py-2 mt-1 text-sm">
-              <?php foreach ($loaiCongViecLabels as $key => $label): ?>
-                <option value="<?= htmlspecialchars($key) ?>" <?= $key === 'kiem_tra' ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-        </div>
-        <div class="text-xs text-teal-700">
-          <span class="font-medium">Định mức tham khảo:</span>
-          <span id="f_kpi_preview">—</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div>
-          <label class="text-xs font-medium text-gray-600">Ngày bắt đầu</label>
-          <input type="date" id="f_ngay_bd" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-gray-600">Giờ bắt đầu</label>
-          <input type="time" id="f_gio_bd" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-gray-600">Số ngày</label>
-          <input type="number" id="f_so_ngay" min="0" step="1" value="0" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-gray-600">Tiến độ (%)</label>
-          <input type="number" id="f_tien_do" min="0" max="100" value="0" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-gray-600">Hạn hoàn thành</label>
-          <input type="date" id="f_ngay_kt" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-gray-600">Giờ kết thúc</label>
-          <input type="time" id="f_gio_kt" class="w-full border rounded px-2 py-2 text-sm">
-        </div>
-        <div class="col-span-2 md:col-span-4 text-sm text-teal-700">
-          <label for="f_dinh_muc_gio_hien_tai" class="font-medium">Thời gian giao thực tế:</label>
-          <input type="number" id="f_dinh_muc_gio_hien_tai" min="0" step="0.01" class="ml-2 w-32 border rounded px-2 py-1 text-sm text-gray-800">
-        </div>
-        <div class="col-span-2">
-          <label class="text-xs font-medium text-gray-600">Trạng thái</label>
-          <select id="f_trang_thai" class="w-full border rounded px-2 py-2 text-sm">
-            <option value="chua_giao">Cần giao (chưa giao)</option>
-            <option value="dang_lam">Đang thực hiện</option>
-            <option value="hoan_thanh">Hoàn thành</option>
-            <option value="huy">Đã hủy</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="px-5 py-3 border-t flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-      <button onclick="closeModal('modalTask')" class="px-4 py-2 text-sm rounded border">Hủy</button>
-      <button onclick="saveTask()" class="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">
-        <i class="fas fa-save mr-1"></i>Lưu
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ============= Modal: Chọn người thực hiện ============= -->
-<div id="modalNguoi" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[100] p-4">
-  <div class="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-3 border-b">
-      <h3 class="font-semibold text-gray-800">Chọn người thực hiện</h3>
-      <button onclick="closeModal('modalNguoi')" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="p-5 space-y-3 overflow-y-auto flex-1">
-      <input type="hidden" id="n_giaoviec_stt">
-      <div>
-        <label class="text-sm font-medium text-gray-700">Người làm <b>chính</b></label>
-        <input list="dl_users_nguoi" id="n_chinh_search" autocomplete="off" placeholder="Nhập tên để tìm..." class="w-full border rounded px-3 py-2 mt-1 text-sm">
-        <input type="hidden" id="n_chinh">
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-700">Người làm <b>phụ</b> (gõ tên rồi chọn để thêm)</label>
-        <input list="dl_users_nguoi" id="n_phu_search" autocomplete="off" placeholder="Tạm thời không khả dụng" disabled class="w-full border rounded px-3 py-2 mt-1 text-sm bg-gray-100 cursor-not-allowed">
-        <div id="n_phu_tags" class="flex flex-wrap gap-1 mt-2"></div>
-        <datalist id="dl_users_nguoi"></datalist>
-      </div>
-    </div>
-    <div class="px-5 py-3 border-t flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-      <button onclick="closeModal('modalNguoi')" class="px-4 py-2 text-sm rounded border">Hủy</button>
-      <button onclick="saveNguoi()" class="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700">
-        <i class="fas fa-save mr-1"></i>Lưu
-      </button>
-    </div>
   </div>
 </div>
 
@@ -735,9 +642,6 @@ const CAN_CREATE = <?= $canCreate ? 'true' : 'false' ?>;
 const CAN_EDIT = <?= $canEdit ? 'true' : 'false' ?>;
 const CAN_DELETE = <?= $canDelete ? 'true' : 'false' ?>;
 let ALL_TASKS = [];
-let RESUME_LIST = [];
-let USERS_LIST = [];
-let HOSO_LIST = [];
 
 const STATUS_LABEL = <?= json_encode([
   'chua_giao'=>'Cần giao', 'den_han'=>'Đến hạn',
@@ -753,26 +657,9 @@ const STATUS_TEXT_CSS = {
   qua_han:'text-red-700', dang_lam:'text-blue-800', hoan_thanh:'text-green-800', huy:'text-gray-500'
 };
 
-function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
-function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d){ if(!d) return ''; return d.split('-').reverse().join('/'); }
 
-async function loadResume(){
-  const r = await fetch(`${API}?action=api_users`).then(r=>r.json());
-  USERS_LIST = (r.data || []).map(u => ({
-    stt: Number(u.stt || 0),
-    display_name: String(u.display_name || u.label || '').trim(),
-    label: String(u.label || u.display_name || '').trim(),
-  })).filter(u => u.stt > 0 && u.display_name !== '');
-  RESUME_LIST = USERS_LIST.map(u => u.display_name);
-}
-async function loadHoso(){
-  const r = await fetch(`${API}?action=api_hososcbd`).then(r=>r.json());
-  HOSO_LIST = r.data || [];
-  const dl = document.getElementById('dl_hoso');
-  dl.innerHTML = HOSO_LIST.map(h => `<option data-stt="${h.stt}" value="${esc(h.phieu)} — ${esc(h.mavt)} — ${esc(h.somay)} — ${esc(h.hoso)}"></option>`).join('');
-}
 async function loadTasks(){
   const r = await fetch(`${API}?action=api_list`).then(r=>r.json());
   ALL_TASKS = r.data || [];
@@ -838,6 +725,13 @@ function taskMatchesFilters(t, fNhom, fTb, fNguoi){
   return true;
 }
 
+const COLLAPSED_PARENTS = new Set();
+function toggleChildren(stt){
+  stt = Number(stt);
+  if (COLLAPSED_PARENTS.has(stt)) COLLAPSED_PARENTS.delete(stt); else COLLAPSED_PARENTS.add(stt);
+  renderTable();
+}
+
 function renderTable(){
   const filter = document.getElementById('filterStatus').value;
   const fNhom = document.getElementById('filterNhom').value;
@@ -853,17 +747,20 @@ function renderTable(){
     const childMatches = children.filter(c => taskMatchesFilters(c, fNhom, fTb, fNguoi));
     if (!rootMatch && childMatches.length === 0) continue;
     idx++;
-    rows.push(renderRow(t, idx, 0));
-    childMatches.forEach((c, i) => rows.push(renderRow(c, idx+'.'+(i+1), 1)));
+    const collapsed = COLLAPSED_PARENTS.has(Number(t.stt));
+    rows.push(renderRow(t, idx, 0, {childCount: children.length, collapsed}));
+    if (!collapsed) childMatches.forEach((c, i) => rows.push(renderRow(c, idx+'.'+(i+1), 1)));
   }
   document.getElementById('tblBody').innerHTML = rows.length
     ? rows.join('')
-    : `<tr><td colspan="12" class="p-6 text-center text-gray-400">Chưa có công việc.</td></tr>`;
+    : `<tr><td colspan="11" class="p-6 text-center text-gray-400">Chưa có công việc.</td></tr>`;
 }
 
 function renderThucTeInfo(t){
   const bd = t.ngay_bd_thuc_te ? fmtDate(t.ngay_bd_thuc_te) : '';
-  const kt = t.ngay_kt_thuc_te ? fmtDate(t.ngay_kt_thuc_te) : '';
+  const ktRaw = String(t.ngay_ket_thuc_thuc_te || '');
+  const ktTime = ktRaw.length > 10 ? ktRaw.slice(11, 16) : '';
+  const kt = ktRaw ? fmtDate(ktRaw.slice(0, 10)) + (ktTime && ktTime !== '00:00' ? ' ' + ktTime : '') : '';
   let html = '';
   if (bd || kt) {
     html += `<div class="text-[11px] mt-1 flex items-center gap-1 flex-wrap">`
@@ -874,24 +771,37 @@ function renderThucTeInfo(t){
   }
   const target = Number(t.dinh_muc_gio_hieu_luc || 0);
   const done = Number(t.gio_da_lam || 0);
-  if (t.trang_thai === 'hoan_thanh' && target > 0) {
-    const dat = done <= target;
-    html += `<div class="text-[11px] mt-1"><span class="px-1.5 py-0.5 rounded font-bold border ${dat?'bg-green-500 text-white border-green-600':'bg-red-500 text-white border-red-600'}"><i class="fas ${dat?'fa-check-circle':'fa-times-circle'} mr-0.5"></i>${dat?'Đạt KPI':'Không đạt KPI'}</span> <span class="font-semibold ${dat?'text-green-700':'text-red-700'}">${done}h/${target}h</span></div>`;
+  if (t.trang_thai === 'hoan_thanh' && t.kpi_dat !== null && t.kpi_dat !== undefined) {
+    const dat = !!t.kpi_dat;
+    html += `<div class="text-[11px] mt-1"><span class="px-1.5 py-0.5 rounded font-bold border ${dat?'bg-green-500 text-white border-green-600':'bg-red-500 text-white border-red-600'}" title="So sánh ngày kết thúc thực tế với hạn hoàn thành"><i class="fas ${dat?'fa-check-circle':'fa-times-circle'} mr-0.5"></i>${dat?'Đạt KPI':'Không đạt KPI'}</span>`
+      + (target > 0 ? ` <span class="font-semibold ${dat?'text-green-700':'text-red-700'}">${done}h/${target}h</span>` : '')
+      + `</div>`;
   } else if (target > 0 && done > 0) {
     html += `<div class="text-[11px] text-amber-700 mt-1">Đã làm: <span class="font-semibold">${done}h/${target}h</span></div>`;
   }
   return html;
 }
 
-function renderRow(t, idx, level){
+function renderRow(t, idx, level, opts){
+  opts = opts || {};
   const s = t.trang_thai_hien_thi;
-  const tenHienThi = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
+  const tenHienThi = level
+    ? (t.ten_cong_viec || [t.hoso_mavt, t.somay].filter(Boolean).join('-'))
+    : ([t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec);
+  const detailUrl = `giaoviec_kpi_detail.php?stt=${t.stt}`;
   const badge = `<span class="px-2 py-0.5 rounded text-xs font-medium ${STATUS_CSS[s]||''}">${esc(STATUS_LABEL[s]||s)}</span>`;
   const deadlineColor = STATUS_TEXT_CSS[s] || 'text-gray-500';
   const nguoi = (t.nguoi_list||[]).map(n =>
     `<span class="inline-block ${n.vai_tro==='chinh'?'bg-blue-600 text-white':'bg-gray-200 text-gray-700'} rounded px-2 py-0.5 text-xs mr-1 mb-1" title="${n.vai_tro==='chinh'?'Chính':'Phụ'}">${esc(n.hoten)}</span>`
   ).join('') || '<span class="text-gray-400 text-xs italic">Chưa giao</span>';
-  const indent = level ? `<span class="text-red-600 font-bold ml-4">↳</span> ` : '';
+  let nameHtml;
+  if (level) {
+    nameHtml = `<span class="child-name"><span class="font-medium text-gray-700">${esc(tenHienThi)}</span> <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800 align-middle">Việc con</span></span>`;
+  } else {
+    const n = opts.childCount || 0;
+    const toggle = n ? `<span class="task-toggle ${opts.collapsed?'collapsed':''}" onclick="event.stopPropagation();toggleChildren(${t.stt})" title="${opts.collapsed?'Mở rộng':'Thu gọn'} việc con"><i class="fas fa-chevron-down"></i></span>` : `<span class="inline-block w-5 mr-1"></span>`;
+    nameHtml = `${toggle}<i class="fas fa-folder-open text-blue-600 mr-1"></i><span class="font-bold text-blue-900">${esc(tenHienThi)}</span>${n ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-blue-600 text-white align-middle" title="Số việc con">${n} việc con</span>` : ''}`;
+  }
   const ghiChuText = (t.ghi_chu || '').trim();
 
   const scheduleHours = t.dinh_muc_gio_hien_tai !== null && t.dinh_muc_gio_hien_tai !== undefined && t.dinh_muc_gio_hien_tai !== ''
@@ -899,14 +809,13 @@ function renderRow(t, idx, level){
     : calculateScheduledHours(t.ngay_bat_dau, t.gio_bat_dau, t.ngay_ket_thuc, t.gio_ket_thuc);
 
   const admin = `${CAN_EDIT ? `
-    <button onclick="openNguoi(${t.stt})" title="Người thực hiện" class="text-purple-600 hover:text-purple-800 px-1"><i class="fas fa-user-plus"></i></button>
-    <button onclick="editTask(${t.stt})" title="Sửa" class="text-blue-600 hover:text-blue-800 px-1"><i class="fas fa-edit"></i></button>` : ''}
-    ${CAN_CREATE && level===0 ? `<button onclick="addSubtask(${t.stt})" title="Thêm việc con" class="text-green-600 hover:text-green-800 px-1"><i class="fas fa-plus-circle"></i></button>` : ''}
-    ${CAN_DELETE ? `<button onclick="delTask(${t.stt})" title="Xóa" class="text-red-500 hover:text-red-700 px-1"><i class="fas fa-trash"></i></button>` : ''}`;
-  return `<tr class="border-t hover:bg-gray-50 ${level?'bg-gray-50/40':''}">
-    <td class="px-3 py-2 text-gray-500">${idx}</td>
-    <td class="px-3 py-2">${indent}<span class="font-medium">${esc(tenHienThi)}</span>
-      ${t.mo_ta ? `<div class="text-xs text-gray-500">${esc(t.mo_ta)}</div>` : ''}</td>
+    <a href="${detailUrl}#nguoi" onclick="event.stopPropagation()" title="Người thực hiện" class="text-purple-600 hover:text-purple-800 px-1"><i class="fas fa-user-plus"></i></a>
+    <a href="${detailUrl}" onclick="event.stopPropagation()" title="Sửa" class="text-blue-600 hover:text-blue-800 px-1"><i class="fas fa-edit"></i></a>` : ''}
+    ${CAN_CREATE && level===0 ? `<a href="${detailUrl}#children" onclick="event.stopPropagation()" title="Thêm việc con" class="text-green-600 hover:text-green-800 px-1"><i class="fas fa-plus-circle"></i></a>` : ''}
+    ${CAN_DELETE ? `<button onclick="event.stopPropagation();delTask(${t.stt})" title="Xóa" class="text-red-500 hover:text-red-700 px-1"><i class="fas fa-trash"></i></button>` : ''}`;
+  return `<tr class="${level?'row-child':'row-parent'} cursor-pointer" onclick="location.href='${detailUrl}'" title="Nhấp để mở chi tiết">
+    <td class="px-3 py-2">${nameHtml}
+      ${t.mo_ta ? `<div class="text-xs text-gray-500 ${level?'pl-6':'pl-8'}">${esc(t.mo_ta)}</div>` : ''}</td>
     <td class="px-3 py-2">${esc(t.hoso||'')}</td>
     <td class="px-3 py-2">${esc(t.nhomsc||'')}</td>
     <td class="px-3 py-2">${fmtDate(t.ngay_bat_dau)} ${t.gio_bat_dau? '<span class="text-xs text-gray-500">'+t.gio_bat_dau.substring(0,5)+'</span>':''}</td>
@@ -922,58 +831,6 @@ function renderRow(t, idx, level){
     <td class="px-3 py-2 text-xs text-gray-500">${esc(t.nguoi_giao||'')}</td>
     <td class="px-3 py-2 text-center whitespace-nowrap">${admin}</td>
   </tr>`;
-}
-
-/* ========= CRUD công việc ========= */
-const KPI_HOUR_MAP = <?= json_encode($kpiHourPreviewMap, JSON_UNESCAPED_UNICODE) ?>;
-
-// Map id ↔ tên thiết bị KPI để hỗ trợ ô tìm kiếm
-const KPI_TB_NAME_BY_ID = {};
-const KPI_TB_ID_BY_NAME = {};
-(function(){
-  const dl = document.getElementById('dl_kpi_thietbi');
-  if (!dl) return;
-  [...dl.options].forEach(opt => {
-    const id = opt.getAttribute('data-id');
-    const name = opt.value;
-    if (id) {
-      KPI_TB_NAME_BY_ID[id] = name;
-      KPI_TB_ID_BY_NAME[name.toLowerCase()] = id;
-    }
-  });
-})();
-
-function setKpiThietBiById(id){
-  const hidden = document.getElementById('f_kpi_baoduong_stt');
-  const search = document.getElementById('f_kpi_baoduong_search');
-  const sid = id ? String(id) : '';
-  if (hidden) hidden.value = sid;
-  if (search) search.value = sid && KPI_TB_NAME_BY_ID[sid] ? KPI_TB_NAME_BY_ID[sid] : '';
-}
-
-function syncKpiSearchToHidden(){
-  const search = document.getElementById('f_kpi_baoduong_search');
-  const hidden = document.getElementById('f_kpi_baoduong_stt');
-  if (!search || !hidden) return;
-  const v = (search.value || '').trim().toLowerCase();
-  hidden.value = v && KPI_TB_ID_BY_NAME[v] ? KPI_TB_ID_BY_NAME[v] : '';
-  updateKpiPreview();
-}
-
-function updateKpiPreview(){
-  const kpiId = document.getElementById('f_kpi_baoduong_stt').value;
-  const loai = document.getElementById('f_loai_congviec').value;
-  const manual = document.getElementById('f_dinh_muc_gio_thu_cong').value;
-  const preview = document.getElementById('f_kpi_preview');
-  if (manual !== '') {
-    preview.textContent = `${manual}h`;
-    return;
-  }
-  if (kpiId && KPI_HOUR_MAP[kpiId] && KPI_HOUR_MAP[kpiId][loai] !== null && KPI_HOUR_MAP[kpiId][loai] !== undefined) {
-    preview.textContent = `${KPI_HOUR_MAP[kpiId][loai]}h`;
-    return;
-  }
-  preview.textContent = '—';
 }
 
 function calculateScheduledHours(startDate, startTime, endDate, endTime){
@@ -1009,217 +866,6 @@ function formatScheduleHours(hours){
   return `${Number(hours.toFixed(2))}h`;
 }
 
-function updateScheduleDerivedDayCount(){
-  const startDate = document.getElementById('f_ngay_bd').value;
-  const endDate = document.getElementById('f_ngay_kt').value;
-  const daysField = document.getElementById('f_so_ngay');
-
-  if (startDate && endDate) {
-    const startDay = new Date(`${startDate}T00:00:00Z`);
-    const endDay = new Date(`${endDate}T00:00:00Z`);
-    let businessDays = 0;
-    if (!Number.isNaN(startDay.getTime()) && !Number.isNaN(endDay.getTime()) && endDay >= startDay) {
-      for (const day = new Date(startDay); day <= endDay; day.setUTCDate(day.getUTCDate() + 1)) {
-        const weekday = day.getUTCDay();
-        if (weekday !== 0 && weekday !== 6) businessDays++;
-      }
-    }
-    daysField.value = String(businessDays);
-  } else {
-    daysField.value = '0';
-  }
-}
-
-function updateScheduleDerivedHours(){
-  const startDate = document.getElementById('f_ngay_bd').value;
-  const startTime = document.getElementById('f_gio_bd').value;
-  const endDate = document.getElementById('f_ngay_kt').value;
-  const endTime = document.getElementById('f_gio_kt').value;
-  const currentHours = document.getElementById('f_dinh_muc_gio_hien_tai');
-  const hours = calculateScheduledHours(startDate, startTime, endDate, endTime);
-  if (hours === null) {
-    currentHours.value = '';
-  } else if (!Number.isFinite(hours) || hours <= 0) {
-    currentHours.value = '';
-  } else {
-    currentHours.value = Number(hours.toFixed(2));
-  }
-}
-
-function setTaskFormLocked(isLocked){
-  const fields = ['f_hoso_search', 'f_ten'];
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.readOnly = isLocked;
-    el.classList.toggle('bg-gray-100', isLocked);
-    el.classList.toggle('cursor-not-allowed', isLocked);
-  });
-}
-
-function resetTaskForm(){
-  ['f_stt','f_parent_stt','f_hososcbd_stt','f_hoso_search','f_ten','f_mota','f_ghi_chu','f_ngay_bd','f_gio_bd','f_ngay_kt','f_gio_kt','f_dinh_muc_gio_thu_cong']
-    .forEach(id => document.getElementById(id).value='');
-  setKpiThietBiById('');
-  document.getElementById('f_loai_congviec').value = 'kiem_tra';
-  document.getElementById('f_so_ngay').value = 0;
-  document.getElementById('f_tien_do').value = 0;
-  document.getElementById('f_trang_thai').value = 'chua_giao';
-  document.getElementById('f_hoso_info').textContent = '';
-  setTaskFormLocked(false);
-  updateKpiPreview();
-  updateScheduleDerivedDayCount();
-  updateScheduleDerivedHours();
-}
-
-document.getElementById('btnAdd')?.addEventListener('click', () => {
-  resetTaskForm();
-  setTaskFormLocked(false);
-  document.getElementById('modalTaskTitle').textContent = 'Thêm công việc';
-  openModal('modalTask');
-});
-
-function editTask(stt){
-  const t = ALL_TASKS.find(x => Number(x.stt) === stt);
-  if (!t) return;
-  resetTaskForm();
-  document.getElementById('f_stt').value = t.stt;
-  document.getElementById('f_parent_stt').value = t.parent_stt || '';
-  document.getElementById('f_hososcbd_stt').value = t.hososcbd_stt || '';
-  document.getElementById('f_hoso_search').value = t.phieu ? `${t.phieu} — ${t.hoso_mavt||''} — ${t.somay||''} — ${t.hoso||''}` : '';
-  document.getElementById('f_ten').value = t.ten_cong_viec || '';
-  document.getElementById('f_mota').value = t.mo_ta || '';
-  document.getElementById('f_ghi_chu').value = t.ghi_chu || '';
-  document.getElementById('f_ngay_bd').value = t.ngay_bat_dau || '';
-  document.getElementById('f_gio_bd').value = (t.gio_bat_dau||'').substring(0,5);
-  document.getElementById('f_so_ngay').value = t.so_ngay || 0;
-  document.getElementById('f_ngay_kt').value = t.ngay_ket_thuc || '';
-  document.getElementById('f_gio_kt').value = (t.gio_ket_thuc||'').substring(0,5);
-  const savedCurrentHours = t.dinh_muc_gio_hien_tai;
-  document.getElementById('f_dinh_muc_gio_hien_tai').value =
-    savedCurrentHours !== null && savedCurrentHours !== undefined && savedCurrentHours !== ''
-      ? savedCurrentHours
-      : '';
-  if (document.getElementById('f_dinh_muc_gio_hien_tai').value === '') updateScheduleDerivedHours();
-  document.getElementById('f_tien_do').value = t.tien_do || 0;
-  document.getElementById('f_trang_thai').value = t.trang_thai || 'chua_giao';
-
-  const savedLoai = t.loai_congviec || 'kiem_tra';
-  document.getElementById('f_loai_congviec').value = savedLoai;
-
-  const savedManualHour = t.dinh_muc_gio_thu_cong !== null && t.dinh_muc_gio_thu_cong !== undefined && t.dinh_muc_gio_thu_cong !== ''
-    ? String(t.dinh_muc_gio_thu_cong)
-    : '';
-  document.getElementById('f_dinh_muc_gio_thu_cong').value = savedManualHour;
-
-  const savedKpi = t.kpi_baoduong_stt || '';
-  if (savedKpi !== '') {
-    setKpiThietBiById(savedKpi);
-  } else if (t.hososcbd_stt) {
-    // Không auto-load KPI theo hồ sơ khi sửa: sẽ ghi đè định mức giờ nhập tay đã lưu
-    setKpiThietBiById('');
-  } else {
-    setKpiThietBiById('');
-  }
-
-  setTaskFormLocked(true);
-  document.getElementById('modalTaskTitle').textContent = 'Sửa công việc';
-  updateKpiPreview();
-  openModal('modalTask');
-}
-
-function addSubtask(parentStt){
-  resetTaskForm();
-  document.getElementById('f_parent_stt').value = parentStt;
-  const p = ALL_TASKS.find(x => Number(x.stt) === parentStt);
-  if (p) {
-    document.getElementById('f_hososcbd_stt').value = p.hososcbd_stt || '';
-    document.getElementById('f_hoso_search').value = p.phieu ? `${p.phieu} — ${p.mavt||''} — ${p.somay||''} — ${p.hoso||''}` : '';
-  }
-  document.getElementById('modalTaskTitle').textContent = 'Thêm công việc con';
-  openModal('modalTask');
-}
-
-['f_ngay_bd','f_ngay_kt'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateScheduleDerivedDayCount);
-  document.getElementById(id).addEventListener('change', updateScheduleDerivedDayCount);
-});
-['f_ngay_bd','f_gio_bd','f_ngay_kt','f_gio_kt'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateScheduleDerivedHours);
-  document.getElementById(id).addEventListener('change', updateScheduleDerivedHours);
-});
-
-// Khi chọn hồ sơ từ datalist → tự điền tên công việc + hososcbd_stt
-async function loadKpiBySelectedHoso(stt){
-  if (!stt) return;
-  const r = await fetch(`${API}?action=api_kpi_by_hoso&stt=${encodeURIComponent(stt)}`).then(r => r.json());
-  const data = r && r.data ? r.data : null;
-  if (!data) return;
-
-  if (data.kpi_baoduong_stt) {
-    setKpiThietBiById(data.kpi_baoduong_stt);
-  } else {
-    setKpiThietBiById('');
-  }
-  document.getElementById('f_dinh_muc_gio_thu_cong').value = '';
-  updateKpiPreview();
-}
-
-document.getElementById('f_hoso_search').addEventListener('input', function(){
-  const v = this.value;
-  const opt = [...document.getElementById('dl_hoso').options].find(o => o.value === v);
-  if (opt) {
-    const stt = opt.getAttribute('data-stt');
-    const h = HOSO_LIST.find(x => String(x.stt) === String(stt));
-    if (h) {
-      document.getElementById('f_hososcbd_stt').value = h.stt;
-      if (!document.getElementById('f_ten').value) {
-        document.getElementById('f_ten').value = `${h.mavt||''}-${h.somay||''}`;
-      }
-      document.getElementById('f_hoso_info').textContent = `Phiếu ${h.phieu} · Máy ${h.somay} · HS ${h.hoso}`;
-      loadKpiBySelectedHoso(h.stt);
-    }
-  }
-});
-
-async function saveTask(){
-  const stt = document.getElementById('f_stt').value;
-  // Lấy phiếu/somay/hoso từ hoso_stt
-  let phieu='', somay='', hoso='';
-  const hsStt = document.getElementById('f_hososcbd_stt').value;
-  if (hsStt) {
-    const h = HOSO_LIST.find(x => String(x.stt) === String(hsStt));
-    if (h) { phieu = h.phieu||''; somay = h.somay||''; hoso = h.hoso||''; }
-  }
-  const payload = {
-    stt: stt ? Number(stt) : 0,
-    parent_stt: document.getElementById('f_parent_stt').value || null,
-    hososcbd_stt: hsStt || null,
-    phieu, somay, hoso,
-    kpi_baoduong_stt: document.getElementById('f_kpi_baoduong_stt').value || null,
-    loai_congviec: document.getElementById('f_loai_congviec').value || null,
-    dinh_muc_gio_thu_cong: document.getElementById('f_dinh_muc_gio_thu_cong').value || null,
-    ten_cong_viec: document.getElementById('f_ten').value.trim(),
-    mo_ta: document.getElementById('f_mota').value.trim(),
-    ghi_chu: document.getElementById('f_ghi_chu').value.trim(),
-    ngay_bat_dau: document.getElementById('f_ngay_bd').value || null,
-    gio_bat_dau: document.getElementById('f_gio_bd').value || null,
-    so_ngay: Number(document.getElementById('f_so_ngay').value || 0),
-    ngay_ket_thuc: document.getElementById('f_ngay_kt').value || null,
-    gio_ket_thuc: document.getElementById('f_gio_kt').value || null,
-    dinh_muc_gio_hien_tai: document.getElementById('f_dinh_muc_gio_hien_tai').value || null,
-    tien_do: parseInt(document.getElementById('f_tien_do').value||'0',10),
-    trang_thai: document.getElementById('f_trang_thai').value,
-  };
-  if (!payload.ten_cong_viec) { alert('Vui lòng nhập tên công việc'); return; }
-  const r = await fetch(`${API}?action=api_save`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
-  }).then(r=>r.json());
-  if (!r.ok) { alert('Lỗi: '+(r.error||'')); return; }
-  closeModal('modalTask');
-  await loadTasks();
-}
-
 async function delTask(stt){
   if (!confirm('Xóa công việc này (kèm các công việc con và người thực hiện)?')) return;
   const r = await fetch(`${API}?action=api_delete&stt=${stt}`, { method:'POST' }).then(r=>r.json());
@@ -1227,136 +873,12 @@ async function delTask(stt){
   await loadTasks();
 }
 
-/* ========= Người thực hiện ========= */
-let NGUOI_USER_OPTIONS = [];
-let NGUOI_NAME_BY_ID = {};
-let NGUOI_ID_BY_NAME = {};
-let NGUOI_PHU_SELECTED = new Set();
-
-function renderPhuTags(){
-  const box = document.getElementById('n_phu_tags');
-  if (!box) return;
-  const ids = [...NGUOI_PHU_SELECTED];
-  if (ids.length === 0) {
-    box.innerHTML = '<span class="text-xs text-gray-400 italic">Chưa chọn ai</span>';
-    return;
-  }
-  box.innerHTML = ids.map(id => {
-    const name = NGUOI_NAME_BY_ID[id] || `#${id}`;
-    return `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-      ${esc(name)}
-    </span>`;
-  }).join('');
-}
-
-function tryAddPhuFromInput(){
-  const inp = document.getElementById('n_phu_search');
-  if (!inp || inp.disabled) return;
-  const key = (inp.value || '').trim().toLowerCase();
-  if (!key) return;
-  const id = NGUOI_ID_BY_NAME[key];
-  if (!id) return;
-  const chinhId = document.getElementById('n_chinh').value;
-  if (chinhId && String(chinhId) === String(id)) {
-    inp.value = '';
-    return;
-  }
-  NGUOI_PHU_SELECTED.add(String(id));
-  inp.value = '';
-  renderPhuTags();
-}
-
-function syncChinhFromInput(){
-  const inp = document.getElementById('n_chinh_search');
-  const hidden = document.getElementById('n_chinh');
-  if (!inp || !hidden) return;
-  const key = (inp.value || '').trim().toLowerCase();
-  hidden.value = key && NGUOI_ID_BY_NAME[key] ? NGUOI_ID_BY_NAME[key] : '';
-  // Nếu người chính vừa được chọn cũng đang có trong danh sách phụ → loại khỏi phụ
-  if (hidden.value && NGUOI_PHU_SELECTED.has(hidden.value)) {
-    NGUOI_PHU_SELECTED.delete(hidden.value);
-    renderPhuTags();
-  }
-}
-
-function openNguoi(stt){
-  const t = ALL_TASKS.find(x => Number(x.stt) === stt);
-  if (!t) return;
-  document.getElementById('n_giaoviec_stt').value = stt;
-
-  NGUOI_USER_OPTIONS = (USERS_LIST || []).map(u => ({
-    stt: Number(u.stt || 0),
-    label: String(u.display_name || u.label || '').trim(),
-  })).filter(u => u.stt > 0 && u.label !== '');
-
-  NGUOI_NAME_BY_ID = {};
-  NGUOI_ID_BY_NAME = {};
-  NGUOI_USER_OPTIONS.forEach(u => {
-    NGUOI_NAME_BY_ID[String(u.stt)] = u.label;
-    NGUOI_ID_BY_NAME[u.label.toLowerCase()] = String(u.stt);
-  });
-
-  const dl = document.getElementById('dl_users_nguoi');
-  dl.innerHTML = NGUOI_USER_OPTIONS.map(u => `<option data-id="${u.stt}" value="${esc(u.label)}"></option>`).join('');
-
-  const cur = t.nguoi_list || [];
-  const chinh = cur.find(x => x.vai_tro === 'chinh');
-  const chinhInput = document.getElementById('n_chinh_search');
-  const chinhHidden = document.getElementById('n_chinh');
-  if (chinh && NGUOI_NAME_BY_ID[String(chinh.user_stt)]) {
-    chinhHidden.value = String(chinh.user_stt);
-    chinhInput.value = NGUOI_NAME_BY_ID[String(chinh.user_stt)];
-  } else {
-    chinhHidden.value = '';
-    chinhInput.value = '';
-  }
-
-  NGUOI_PHU_SELECTED = new Set(
-    cur.filter(x => x.vai_tro === 'phu')
-       .map(x => String(x.user_stt))
-       .filter(id => NGUOI_NAME_BY_ID[id])
-  );
-  document.getElementById('n_phu_search').value = '';
-  renderPhuTags();
-
-  openModal('modalNguoi');
-}
-
-async function saveNguoi(){
-  const gvStt = Number(document.getElementById('n_giaoviec_stt').value);
-  syncChinhFromInput();
-  tryAddPhuFromInput();
-  const chinh = Number(document.getElementById('n_chinh').value || 0);
-  const phu = [...NGUOI_PHU_SELECTED].map(v => Number(v)).filter(n => n > 0 && n !== chinh);
-  const r = await fetch(`${API}?action=api_save_nguoi`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ giaoviec_stt: gvStt, chinh, phu })
-  }).then(r=>r.json());
-  if (!r.ok) { alert('Lỗi: '+r.error); return; }
-  closeModal('modalNguoi');
-  await loadTasks();
-}
-
-document.getElementById('n_chinh_search')?.addEventListener('input', syncChinhFromInput);
-document.getElementById('n_chinh_search')?.addEventListener('change', syncChinhFromInput);
-document.getElementById('n_phu_search')?.addEventListener('change', tryAddPhuFromInput);
-document.getElementById('n_phu_search')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); tryAddPhuFromInput(); }
-});
-
 document.getElementById('filterStatus').addEventListener('change', renderTable);
 document.getElementById('filterNhom').addEventListener('change', renderTable);
 document.getElementById('filterThietBi').addEventListener('input', renderTable);
 document.getElementById('filterNguoiChinh').addEventListener('change', renderTable);
-document.getElementById('f_kpi_baoduong_search')?.addEventListener('input', syncKpiSearchToHidden);
-document.getElementById('f_kpi_baoduong_search')?.addEventListener('change', syncKpiSearchToHidden);
-document.getElementById('f_loai_congviec')?.addEventListener('change', updateKpiPreview);
 
-(async function init(){
-  await Promise.all([loadResume(), loadHoso()]);
-  await loadTasks();
-  updateKpiPreview();
-})();
+loadTasks();
 </script>
 
 <?php require_once __DIR__ . '/views/layouts/footer.php'; ?>

@@ -191,7 +191,20 @@ SUM(Định mức con)</pre>
 
 <section>
   <h2 class="text-2xl font-semibold text-blue-800 mb-3">
-    7. Khuyến nghị triển khai
+    7. Kết quả KPI (Đạt / Không đạt)
+  </h2>
+  <pre class="bg-green-50 p-4 rounded whitespace-pre-wrap">Đạt KPI =
+Ngày giờ kết thúc thực tế (ngay_thuc_hien_ket_thuc) &lt;= Hạn hoàn thành (ngay_ket_thuc + gio_ket_thuc)</pre>
+  <ul class="list-disc pl-6 space-y-2 mt-3">
+    <li>Ngày kết thúc thực tế được lưu lúc bấm nút kết thúc công việc.</li>
+    <li>Nếu hạn hoàn thành không có giờ, so sánh theo ngày.</li>
+    <li>Công việc cũ chưa có <code>ngay_thuc_hien_ket_thuc</code> dùng ngày nhật ký cuối cùng để so sánh theo ngày.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold text-blue-800 mb-3">
+    8. Khuyến nghị triển khai
   </h2>
   <ul class="list-disc pl-6 space-y-2">
     <li>Sau khi thêm nhật ký, tính lại <code>tien_do</code>.</li>
