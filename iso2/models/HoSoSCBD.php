@@ -278,7 +278,9 @@ class HoSoSCBD extends BaseModel
         }
 
         // --- Query 1: BDDK quarters ---
-        $sql = "SELECT k.thietbi_id, k.nam,
+        $bddkMap = [];
+        if (!empty($thietbiStts)) {
+            $sql = "SELECT k.thietbi_id, k.nam,
                        GROUP_CONCAT(DISTINCT CONCAT(
                            IF((k.qui_1 IS NOT NULL AND k.qui_1 != '') OR k.qui_1_hoantat = 1, CONCAT('Q1:', COALESCE(k.qui_1_hoantat, 0), ','), ''),
                            IF((k.qui_2 IS NOT NULL AND k.qui_2 != '') OR k.qui_2_hoantat = 1, CONCAT('Q2:', COALESCE(k.qui_2_hoantat, 0), ','), ''),
@@ -289,9 +291,9 @@ class HoSoSCBD extends BaseModel
                 WHERE k.thietbi_id IN ($inClause)
                 GROUP BY k.thietbi_id, k.nam";
 
-        $bddkMap = [];
-        foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $bddkMap[$row['thietbi_id'] . '_' . $row['nam']] = $row['bddk_quarters_raw'];
+            foreach ($this->query($sql)->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $bddkMap[$row['thietbi_id'] . '_' . $row['nam']] = $row['bddk_quarters_raw'];
+            }
         }
         foreach ($items as $item) {
             $stt = (int)$item['stt'];

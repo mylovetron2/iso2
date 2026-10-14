@@ -103,22 +103,35 @@ require_once __DIR__ . '/views/layouts/header.php';
           </div>
         </div>
 
-        <div class="border border-teal-200 bg-teal-50 rounded px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span class="flex items-center gap-1 text-teal-700 font-semibold text-xs whitespace-nowrap"><i class="fas fa-bullseye"></i>Định mức KPI</span>
+        <div class="border border-teal-200 bg-teal-50 rounded-lg p-3 space-y-3">
+          <div class="flex items-center gap-2 text-teal-700 font-semibold text-sm">
+            <i class="fas fa-bullseye"></i><span>Định mức KPI</span>
+          </div>
           <input type="hidden" id="f_dinh_muc_gio_thu_cong" value="">
-          <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Thiết bị..." autocomplete="off" title="Thiết bị" class="flex-1 min-w-[160px] border rounded px-2 py-1 text-xs">
-          <input type="hidden" id="f_kpi_baoduong_stt">
-          <datalist id="dl_kpi_thietbi">
-            <?php foreach ($kpiThietBiList as $kpiRow): ?>
-              <option data-id="<?= (int)$kpiRow['id'] ?>" value="<?= htmlspecialchars((string)$kpiRow['ten_thiet_bi']) ?>"></option>
-            <?php endforeach; ?>
-          </datalist>
-          <select id="f_loai_congviec" title="Loại công việc" class="border rounded px-2 py-1 text-xs">
-            <?php foreach ($loaiCongViecLabels as $key => $label): ?>
-              <option value="<?= htmlspecialchars($key) ?>" <?= $key === 'kiem_tra' ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
-            <?php endforeach; ?>
-          </select>
-          <span class="text-xs text-teal-700 whitespace-nowrap">Tham khảo: <b id="f_kpi_preview">—</b></span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-gray-700">Thiết bị</label>
+              <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Nhập tên thiết bị để tìm..." autocomplete="off" class="w-full border rounded px-2 py-2 mt-1 text-sm">
+              <input type="hidden" id="f_kpi_baoduong_stt">
+              <datalist id="dl_kpi_thietbi">
+                <?php foreach ($kpiThietBiList as $kpiRow): ?>
+                  <option data-id="<?= (int)$kpiRow['id'] ?>" value="<?= htmlspecialchars((string)$kpiRow['ten_thiet_bi']) ?>"></option>
+                <?php endforeach; ?>
+              </datalist>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-gray-700">Loại công việc</label>
+              <select id="f_loai_congviec" class="w-full border rounded px-2 py-2 mt-1 text-sm">
+                <?php foreach ($loaiCongViecLabels as $key => $label): ?>
+                  <option value="<?= htmlspecialchars($key) ?>" <?= $key === 'kiem_tra' ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+          <div class="text-xs text-teal-700">
+            <span class="font-medium">Định mức tham khảo:</span>
+            <span id="f_kpi_preview">—</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">

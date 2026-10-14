@@ -23,6 +23,12 @@ Dựa trên file mô tả `hososcbd_iso_description.html` và code legacy `forms
 **Model:** `models/HoSoSCBD.php`
 **Routes:** `/hososcbd.php`
 
+**Tìm kiếm và dữ liệu liên quan:**
+- Hồ sơ chưa liên kết với danh mục `thietbi_iso` vẫn được hiển thị trong kết quả tìm kiếm.
+- Chỉ truy vấn kế hoạch bảo dưỡng định kỳ khi kết quả có ID thiết bị liên kết, tránh SQL `IN ()` gây lỗi 500.
+- Dữ liệu HC/KĐ vẫn được tra cứu trực tiếp theo mã vật tư và số máy khi chưa có liên kết thiết bị.
+- Kiểm thử hồi quy (không kết nối database): `php vendor/phpunit/phpunit/phpunit --no-configuration tests/HoSoScBdBatchTest.php`.
+
 ---
 
 ### 2. 🏢 Quản Lý Đơn Vị Khách Hàng (DonVi)
