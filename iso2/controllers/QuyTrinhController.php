@@ -38,6 +38,7 @@ class QuyTrinhController
             error_log('QuyTrinh index database error: ' . $e->getMessage());
         }
         $isManager = $this->canManage();
+        $isAdmin = hasRole(ROLE_ADMIN);
         try {
             $pendingCount = $isManager ? $this->gopYModel->pendingCount() : 0;
         } catch (Throwable $e) {
@@ -242,6 +243,54 @@ class QuyTrinhController
             'mo_ta'  => $moTa !== '' ? $moTa : null,
         ]);
         $this->redirectTo('quytrinh.php?action=view&id=' . $quyTrinhId, '', true, 'Đã cập nhật thông tin quy trình.');
+    }
+
+    public function create(): void
+    {
+        $this->requireAdmin();
+        $this->verifyCsrf();
+
+        $soQt = trim((string)($_POST['so_qt'] ?? ''));
+        $tenQt = trim((string)($_POST['ten_qt'] ?? ''));
+        $moTa = trim((string)($_POST['mo_ta'] ?? ''));
+
+        if ($soQt === '' || mb_strlen($soQt) > 20 || !preg_match('/^[A-Za-z0-9._-]+$/', $soQt)) {
+            $this->redirectTo('quytrinh.php', 'Số quy trình không hợp lệ (tối đa 20 ký tự, chỉ gồm chữ, số, . _ -).');
+        }
+        if ($tenQt === '' || mb_strlen($tenQt) > 500) {
+            $this->redirectTo('quytrinh.php', 'Tên quy trình không hợp lệ.');
+        }
+        if (mb_strlen($moTa) > self::MAX_NOTE_LENGTH) {
+            $moTa = mb_substr($moTa, 0, self::MAX_NOTE_LENGTH);
+        }
+
+        try {
+            if ($this->model->findBySoQt($soQt)) {
+                $this->redirectTo('quytrinh.php', 'Số quy trình "' . $soQt . '" đã tồn tại.');
+            }
+            $thuTu = ctype_digit($soQt) ? (int)$soQt : $this->model->nextThuTu();
+            $newId = $this->model->create([
+                'so_qt'         => $soQt,
+                'ten_qt'        => $tenQt,
+                'mo_ta'         => $moTa !== '' ? $moTa : null,
+                'thu_tu'        => $thuTu,
+                'trang_thai'    => 1,
+                'nguoi_tai_len' => (int)($_SESSION['user_id'] ?? 0) ?: null,
+            ]);
+        } catch (Throwable $e) {
+            error_log('QuyTrinh create error: ' . $e->getMessage());
+            $this->redirectTo('quytrinh.php', 'Không thể thêm quy trình.');
+        }
+
+        $this->redirectTo('quytrinh.php?action=view&id=' . (int)$newId, '', true, 'Đã thêm quy trình mới.');
+    }
+
+    private function requireAdmin(): void
+    {
+        if (!hasRole(ROLE_ADMIN)) {
+            http_response_code(403);
+            exit('Chỉ admin mới có quyền thêm quy trình.');
+        }
     }
 
     private function canManage(): bool

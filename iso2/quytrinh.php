@@ -33,6 +33,9 @@ switch ($action) {
     case 'delete_gopy':
         $controller->deleteGopY();
         break;
+    case 'create':
+        $controller->create();
+        break;
     case 'upload':
         $controller->upload();
         break;

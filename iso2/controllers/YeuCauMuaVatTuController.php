@@ -68,7 +68,7 @@ class YeuCauMuaVatTuController
             'nguoi_gui_id' => (int)($_SESSION['user_id'] ?? 0) ?: null,
             'nguoi_gui_ten' => (string)($_SESSION['user_name'] ?? $_SESSION['username'] ?? 'Ẩn danh'),
             'trang_thai' => 'moi',
-        ]);
+        ] + $this->vatTuFields());
         $this->redirect('yeu_cau_mua_vat_tu.php', '', 'Đã gửi yêu cầu mua vật tư.');
     }
 
@@ -135,7 +135,7 @@ class YeuCauMuaVatTuController
             'link_mua' => $linkMua !== '' ? $linkMua : null,
             'thoi_gian_yeu_cau' => date('Y-m-d H:i:s', $timestamp),
             'ghi_chu' => $ghiChu !== '' ? mb_substr($ghiChu, 0, self::MAX_TEXT_LENGTH) : null,
-        ]);
+        ] + $this->vatTuFields());
         $target = (string)($_POST['redirect'] ?? 'yeu_cau_mua_vat_tu.php');
         $this->redirect($target, '', 'Đã cập nhật yêu cầu mua vật tư.');
     }
@@ -149,6 +149,22 @@ class YeuCauMuaVatTuController
             $this->model->delete($id);
         }
         $this->redirect('yeu_cau_mua_vat_tu.php', '', 'Đã xóa yêu cầu.');
+    }
+
+    private function vatTuFields(): array
+    {
+        $limits = [
+            'dac_tinh_ky_thuat' => 1000,
+            'product_number' => 100,
+            'part_number' => 100,
+            'ma_vat_tu' => 100,
+        ];
+        $fields = [];
+        foreach ($limits as $name => $limit) {
+            $value = trim((string)($_POST[$name] ?? ''));
+            $fields[$name] = $value !== '' ? mb_substr($value, 0, $limit) : null;
+        }
+        return $fields;
     }
 
     private function canManage(): bool

@@ -21,6 +21,11 @@ class QuyTrinh extends BaseModel
         return $this->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function nextThuTu(): int
+    {
+        return (int)$this->query('SELECT COALESCE(MAX(thu_tu), 0) + 1 FROM quy_trinh_iso')->fetchColumn();
+    }
+
     public function findBySoQt(string $soQt): array|false
     {
         $stmt = $this->query('SELECT * FROM quy_trinh_iso WHERE so_qt = ? LIMIT 1', [$soQt]);

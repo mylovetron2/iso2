@@ -17,6 +17,13 @@ require_once __DIR__ . '/../layouts/header.php';
                 </h1>
                 <p class="text-sm text-slate-500 mt-1">Đọc quy trình và gửi góp ý để xem xét chỉnh sửa.</p>
             </div>
+            <div class="flex flex-wrap items-center gap-2">
+            <?php if (!empty($isAdmin)): ?>
+            <button type="button" onclick="document.getElementById('addQtForm').classList.toggle('hidden')"
+                    class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm">
+                <i class="fas fa-plus mr-2"></i> Thêm quy trình
+            </button>
+            <?php endif; ?>
             <?php if ($isManager): ?>
             <a href="quytrinh.php?action=pending" class="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm shadow-sm">
                 <i class="fas fa-comments mr-2"></i> Duyệt góp ý
@@ -25,7 +32,39 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php endif; ?>
             </a>
             <?php endif; ?>
+            </div>
         </div>
+
+        <?php if (!empty($isAdmin)): ?>
+        <form id="addQtForm" method="post" action="quytrinh.php?action=create"
+              class="hidden mb-6 bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string)($_SESSION['csrf_token'] ?? '')); ?>">
+            <h2 class="font-semibold text-slate-800"><i class="fas fa-plus-circle text-blue-600 mr-1"></i> Thêm quy trình mới</h2>
+            <div class="grid gap-3 md:grid-cols-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="so_qt">Số quy trình *</label>
+                    <input type="text" id="so_qt" name="so_qt" required maxlength="20" pattern="[A-Za-z0-9._\-]+"
+                           placeholder="VD: 26" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="ten_qt">Tên quy trình *</label>
+                    <input type="text" id="ten_qt" name="ten_qt" required maxlength="500"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="mo_ta">Mô tả</label>
+                <textarea id="mo_ta" name="mo_ta" rows="3" maxlength="4000"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"><i class="fas fa-save mr-1"></i> Lưu</button>
+                <button type="button" onclick="document.getElementById('addQtForm').classList.add('hidden')"
+                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm">Hủy</button>
+            </div>
+            <p class="text-xs text-slate-500">Sau khi tạo, bạn sẽ được chuyển đến trang chi tiết để tải lên tài liệu.</p>
+        </form>
+        <?php endif; ?>
 
         <?php if (!empty($databaseError)): ?>
             <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-5">
