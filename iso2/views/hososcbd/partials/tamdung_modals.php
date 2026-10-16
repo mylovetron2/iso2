@@ -210,7 +210,7 @@ async function openQuanLyTamDungModal(hoso, mavt = '', somay = '', isTamDung = f
         
         // Load thông tin tạm dừng
         try {
-            const response = await fetch(`/iso2/api/hososcbd_tamdung.php?action=check_status&hoso=${encodeURIComponent(hoso)}`);
+            const response = await fetch(`api/hososcbd_tamdung.php?action=check_status&hoso=${encodeURIComponent(hoso)}`);
             const data = await response.json();
             
             if (data.success && data.info) {
@@ -242,7 +242,7 @@ async function openQuanLyTamDungModal(hoso, mavt = '', somay = '', isTamDung = f
     
     // Load lịch sử
     try {
-        const response = await fetch(`/iso2/api/hososcbd_tamdung.php?action=lich_su&hoso=${encodeURIComponent(hoso)}`);
+        const response = await fetch(`api/hososcbd_tamdung.php?action=lich_su&hoso=${encodeURIComponent(hoso)}`);
         const data = await response.json();
         
         if (data.success) {
@@ -321,7 +321,8 @@ document.getElementById('tamDungForm').addEventListener('submit', async function
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang xử lý...';
     
     try {
-        const response = await fetch('/iso2/api/hososcbd_tamdung.php', {
+        // Đường dẫn tương đối: tránh bị redirect /iso2/ -> / (302 làm mất body POST)
+        const response = await fetch('api/hososcbd_tamdung.php', {
             method: 'POST',
             body: formData
         });
@@ -354,7 +355,8 @@ document.getElementById('tiepTucForm').addEventListener('submit', async function
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang xử lý...';
     
     try {
-        const response = await fetch('/iso2/api/hososcbd_tamdung.php', {
+        // Đường dẫn tương đối: tránh bị redirect /iso2/ -> / (302 làm mất body POST)
+        const response = await fetch('api/hososcbd_tamdung.php', {
             method: 'POST',
             body: formData
         });

@@ -66,8 +66,15 @@ try {
         $madvFilterSql = " AND h.madv = :madvFilter ";
     }
 
+    // Mẫu KPI chỉ lấy hồ sơ bảo dưỡng (cv bắt đầu bằng BD, vd BD, BDDK-Cấp 2) có ngày kết thúc nằm trong khoảng chọn
+    $isKpiExport = in_array(strtolower(trim((string)($_GET['export'] ?? ''))), ['kpi', 'excel'], true);
+    $dateFilterSql = $isKpiExport
+        ? "(h.ngaykt BETWEEN :fromStart1 AND :toEnd1) AND h.cv LIKE 'BD%'"
+        : "(h.ngaykt BETWEEN :fromStart1 AND :toEnd1 OR h.ngayth BETWEEN :fromStart2 AND :toEnd2)";
+
     $sql = "
         SELECT
+            h.stt,
             h.maql,
             h.hoso,
             h.mavt,
@@ -86,10 +93,7 @@ try {
             ON tb.mavt = h.mavt
             AND tb.somay = h.somay
             AND tb.model = h.model
-        WHERE (
-            h.ngaykt BETWEEN :fromStart1 AND :toEnd1
-            OR h.ngayth BETWEEN :fromStart2 AND :toEnd2
-        )
+        WHERE {$dateFilterSql}
         {$madvFilterSql}
         {$excludeTamDungSql}
         ORDER BY h.maql DESC, h.hoso DESC
@@ -99,9 +103,12 @@ try {
     $params = [
         ':fromStart1' => $fromStart,
         ':toEnd1' => $toEnd,
-        ':fromStart2' => $fromStart,
-        ':toEnd2' => $toEnd,
     ];
+
+    if (!$isKpiExport) {
+        $params[':fromStart2'] = $fromStart;
+        $params[':toEnd2'] = $toEnd;
+    }
 
     if ($benYeuCau !== '') {
         $params[':madvFilter'] = $benYeuCau;
@@ -114,6 +121,16 @@ try {
     $stmtWorkers = $db->prepare(
         "SELECT hoten, COALESCE(giolv, 0) AS giolv FROM ngthuchien_iso WHERE mahoso = :hoso"
     );
+
+    // Định mức giờ + kết luận KPI (view có thể chưa tồn tại -> bỏ qua, không làm hỏng báo cáo)
+    $stmtKpi = null;
+    try {
+        $stmtKpi = $db->prepare(
+            "SELECT dinh_muc_so_gio, ket_luan_kpi FROM view_hososcbd_kpi_ketluan WHERE hososcbd_stt = :stt LIMIT 1"
+        );
+    } catch (Throwable $e) {
+        $stmtKpi = null;
+    }
 
     $formatWorker = static function (string $fullName): string {
         $fullName = trim($fullName);
@@ -165,6 +182,7 @@ try {
         $workerNames = [];
         $workerSearchNames = [];
         $hours = 0.0;
+        $maxHours = 0.0;
 
         foreach ($workerRows as $worker) {
             $rawName = $normalizeText($worker['hoten'] ?? '');
@@ -176,6 +194,7 @@ try {
                 $workerNames[] = $name;
             }
             $hours += (float)($worker['giolv'] ?? 0);
+            $maxHours = max($maxHours, (float)($worker['giolv'] ?? 0));
         }
 
         $displayWorkerNames = implode(', ', array_values(array_unique($workerNames)));
@@ -200,7 +219,24 @@ try {
             $ngayKt = 'Đang TH';
         }
 
+        $dinhMucGio = null;
+        $ketLuanKpi = '';
+        if ($stmtKpi) {
+            try {
+                $stmtKpi->execute([':stt' => $item['stt']]);
+                $kpiRow = $stmtKpi->fetch(PDO::FETCH_ASSOC);
+                if ($kpiRow) {
+                    $dinhMucGio = $kpiRow['dinh_muc_so_gio'] !== null ? (float)$kpiRow['dinh_muc_so_gio'] : null;
+                    $ketLuanKpi = (string)($kpiRow['ket_luan_kpi'] ?? '');
+                }
+            } catch (Throwable $e) {
+                $stmtKpi = null;
+            }
+        }
+
         $rows[] = [
+            'dinhmuc' => $dinhMucGio,
+            'ketluankpi' => $ketLuanKpi,
             'maql' => $normalizeText($item['maql'] ?? ''),
             'hoso' => $normalizeText($item['hoso'] ?? ''),
             'mavt' => $normalizeText($item['mavt'] ?? ''),
@@ -215,6 +251,7 @@ try {
             'madv' => $normalizeText($item['madv'] ?? ''),
             'ghichu' => $normalizeText($item['ghichufinal'] ?? ''),
             'sogio' => $hours,
+            'sogiomax' => $maxHours,
         ];
     }
 
@@ -722,64 +759,92 @@ if ($isExportExcel) {
             </tbody>
         </table>
     <?php elseif ($exportMode === 'kpi'): ?>
-        <table border="1" style="border-collapse: collapse; width: 100%; font-family: 'Times New Roman', serif; font-size: 11pt;">
+        <?php
+            $kpiHours = static function ($value): string {
+                if ($value === null || $value === '') {
+                    return '';
+                }
+                $hours = (float)$value;
+                return $hours > 0 ? rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.') : '';
+            };
+        ?>
+        <table border="0" style="border-collapse: collapse; width: 1300px; font-family: 'Times New Roman', serif; font-size: 11pt;">
+            <tr>
+                <td colspan="3" style="text-align: left; font-weight: bold;">XN ĐỊA VẬT LÝ GK</td>
+                <td colspan="11" style="text-align: center; font-weight: bold;">LIỆT KÊ CÔNG TÁC BẢO DƯỠNG, SỬA CHỮA, CHUẨN CHỈNH THIẾT BỊ</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: left;">XƯỞNG SCTBĐVL</td>
+                <td colspan="11" style="text-align: center;">Từ <?php echo htmlspecialchars($fromDate->format('d/m/Y')); ?> đến <?php echo htmlspecialchars($toDate->format('d/m/Y')); ?></td>
+            </tr>
+        </table>
+        <br>
+        <table border="1" style="border-collapse: collapse; width: 1300px; font-family: 'Times New Roman', serif; font-size: 11pt;">
+            <colgroup>
+                <col style="width: 35px;">
+                <col style="width: 60px;">
+                <col style="width: 75px;">
+                <col style="width: 185px;">
+                <col style="width: 83px;">
+                <col style="width: 58px;">
+                <col style="width: 88px;">
+                <col style="width: 100px;">
+                <col style="width: 90px;">
+                <col style="width: 80px;">
+                <col style="width: 70px;">
+                <col style="width: 100px;">
+                <col style="width: 130px;">
+                <col style="width: 90px;">
+            </colgroup>
             <thead>
                 <tr>
-                    <th colspan="11" style="text-align: left; font-weight: bold;">XN ĐỊA VẬT LÝ GK</th>
-                </tr>
-                <tr>
-                    <th colspan="11" style="text-align: center; font-weight: bold;">BÁO CÁO KPI CÔNG TÁC BẢO DƯỠNG, SỬA CHỮA, CHUẨN CHỈNH THIẾT BỊ</th>
-                </tr>
-                <tr>
-                    <th colspan="11" style="text-align: center; font-weight: bold; color: #0f766e;">KPI - MẪU MỚI</th>
-                </tr>
-                <tr>
-                    <th colspan="11" style="text-align: center; font-weight: bold;">Từ <?php echo htmlspecialchars($fromDate->format('d/m/Y')); ?> đến <?php echo htmlspecialchars($toDate->format('d/m/Y')); ?></th>
-                </tr>
-                <tr>
-                    <th style="width: 5%;">STT</th>
-                    <th style="width: 10%;">Số hồ sơ</th>
-                    <th style="width: 18%;">Tên TB, công việc</th>
-                    <th style="width: 8%;">Số máy</th>
-                    <th style="width: 8%;">Công việc</th>
-                    <th style="width: 10%;">Ngày hoàn thành</th>
-                    <th style="width: 15%;">Nhân viên thực hiện</th>
-                    <th style="width: 12%;">Tình trạng KT sau SC/BD</th>
-                    <th style="width: 9%;">Bên yêu cầu</th>
-                    <th style="width: 8%;">Số giờ</th>
-                    <th style="width: 10%;">Ghi chú</th>
+                    <th style="background-color: #87CEEB;"></th>
+                    <th style="background-color: #87CEEB;">№ Yêu cầu DV</th>
+                    <th style="background-color: #87CEEB;">Số Hồ Sơ</th>
+                    <th style="background-color: #87CEEB;">Tên TB, công việc</th>
+                    <th style="background-color: #87CEEB;">Số máy</th>
+                    <th style="background-color: #87CEEB;">C.Việc</th>
+                    <th style="background-color: #87CEEB;">Ngày hoàn thành</th>
+                    <th style="background-color: #87CEEB;">Nhân viên thực hiện</th>
+                    <th style="background-color: #87CEEB;">Tình trạng KT sau khi SC, BD</th>
+                    <th style="background-color: #87CEEB; text-align: center;">Giờ định mức/ YC khách hàng</th>
+                    <th style="background-color: #87CEEB; text-align: center;">Số giờ thực tế</th>
+                    <th style="background-color: #87CEEB; text-align: center;">Số lượng yêu cầu KT/Kiểm định/BD/SC</th>
+                    <th style="background-color: #87CEEB; text-align: center;">Số lượng thiết bị đạt KPI</th>
+                    <th style="background-color: #87CEEB; text-align: center;">Ghi chú</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($groupedRows)): ?>
-                    <tr><td colspan="11" style="text-align: center;">Không có dữ liệu trong khoảng thời gian đã chọn.</td></tr>
+                    <tr><td colspan="14" style="text-align: center;">Không có dữ liệu trong khoảng thời gian đã chọn.</td></tr>
                 <?php else: ?>
-                    <?php $stt = 1; ?>
+                    <?php $sttGroup = 1; ?>
                     <?php foreach ($groupedRows as $maql => $group): ?>
-                        <tr style="background-color: #eaf2ff; font-weight: bold;">
-                            <td style="text-align: center;"></td>
-                            <td colspan="7"><?php echo htmlspecialchars($maql); ?></td>
-                            <td style="text-align: center;"></td>
-                            <td style="text-align: center;"><?php echo htmlspecialchars($excelHours($group['totalHours'])); ?></td>
-                            <td></td>
+                        <tr>
+                            <td style="text-align: center;"><?php echo $sttGroup++; ?></td>
+                            <td colspan="13"><?php echo htmlspecialchars($maql === 'Không có mã quản lý' ? '' : $maql); ?></td>
                         </tr>
+                        <?php $sttRow = 1; ?>
                         <?php foreach ($group['items'] as $row): ?>
                             <?php
                                 $mavt = $excelText($row['mavt'] ?? '');
                                 $tenvt = $excelText($row['tenvt'] ?? '');
                                 $tenTbCv = $mavt !== '' && $tenvt !== '' ? ($mavt . '-' . $tenvt) : ($mavt !== '' ? $mavt : $tenvt);
+                                $datKpi = (($row['ketluankpi'] ?? '') === 'dat') ? 1 : 0;
                             ?>
                             <tr>
-                                <td style="text-align: center;"><?php echo $stt++; ?></td>
+                                <td colspan="2" style="text-align: right;"><?php echo $sttRow++; ?>&nbsp;&nbsp;&nbsp;</td>
                                 <td><?php echo htmlspecialchars($excelText($row['hoso'] ?? '')); ?></td>
                                 <td><?php echo htmlspecialchars($tenTbCv); ?></td>
                                 <td><?php echo htmlspecialchars($excelText($row['somay'] ?? '')); ?></td>
                                 <td style="text-align: center;"><?php echo htmlspecialchars($excelText($row['cv'] ?? '')); ?></td>
                                 <td style="text-align: center;"><?php echo htmlspecialchars($excelText($row['ngaykt'] ?? '')); ?></td>
                                 <td><?php echo htmlspecialchars($excelText($row['nhanvien'] ?? '')); ?></td>
-                                <td><?php echo htmlspecialchars($excelText($row['ttktafter'] ?? '')); ?></td>
-                                <td style="text-align: center;"><?php echo htmlspecialchars($excelText($row['madv'] ?? '')); ?></td>
-                                <td style="text-align: right;"><?php echo htmlspecialchars($excelHours($row['sogio'] ?? 0)); ?></td>
+                                <td style="text-align: center;"><?php echo htmlspecialchars($excelText($row['ttktafter'] ?? '')); ?></td>
+                                <td style="text-align: center;"><?php echo htmlspecialchars($kpiHours($row['dinhmuc'] ?? null)); ?></td>
+                                <td style="text-align: center;"><?php echo htmlspecialchars($kpiHours($row['sogiomax'] ?? 0)); ?></td>
+                                <td style="text-align: center;">1</td>
+                                <td style="text-align: center;"><?php echo $datKpi; ?></td>
                                 <td><?php echo htmlspecialchars($excelText($row['ghichu'] ?? '')); ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -863,9 +928,9 @@ function openExport(type) {
                 <i class="fas fa-file-excel mr-2"></i>BCSX
             </button>
             <button type="button"
-                    class="bg-gray-400 text-white px-4 py-2 rounded font-semibold cursor-not-allowed opacity-70"
-                    title="Tạm thời khóa"
-                    disabled>
+                    onclick="openExport('kpi')"
+                    class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded font-semibold"
+                    title="Xuất báo cáo KPI mẫu mới">
                 <i class="fas fa-file-export mr-2"></i>KPI – mới
             </button>
             <a href="/iso2/baocao_giolamviec.php?from_month=<?php echo urlencode($fromDate->format('n')); ?>&amp;from_year=<?php echo urlencode($fromDate->format('Y')); ?>&amp;to_month=<?php echo urlencode($toDate->format('n')); ?>&amp;to_year=<?php echo urlencode($toDate->format('Y')); ?>"
