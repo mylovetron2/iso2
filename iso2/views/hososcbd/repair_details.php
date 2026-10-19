@@ -1109,7 +1109,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <textarea name="khacphuc" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['khacphuc']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Nội dung sửa chữa</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Nội dung kiểm tra sau sửa chữa</label>
                     <textarea name="noidung" rows="4" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['noidung']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">

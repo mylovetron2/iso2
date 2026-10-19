@@ -42,6 +42,7 @@ function ensureThucHienTables(PDO $db): void {
             `giaoviec_stt` INT(11) NOT NULL,
             `ngay_lam` DATE NOT NULL,
             `noi_dung` TEXT DEFAULT NULL,
+            `mo_ta_phat_hien` TEXT DEFAULT NULL,
             `tong_gio` DECIMAL(8,2) DEFAULT 0,
             `nguoi_nhap` VARCHAR(100) DEFAULT NULL,
             `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -49,6 +50,10 @@ function ensureThucHienTables(PDO $db): void {
             KEY `idx_giaoviec` (`giaoviec_stt`),
             KEY `idx_ngay` (`ngay_lam`)
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1");
+        $colChk = $db->query("SHOW COLUMNS FROM `giaoviec_kpi_thuchien` LIKE 'mo_ta_phat_hien'");
+        if (!$colChk->fetch(PDO::FETCH_ASSOC)) {
+            $db->exec("ALTER TABLE `giaoviec_kpi_thuchien` ADD COLUMN `mo_ta_phat_hien` TEXT NULL DEFAULT NULL AFTER `noi_dung`");
+        }
         $db->exec("CREATE TABLE IF NOT EXISTS `giaoviec_kpi_thuchien_gio` (
             `stt` INT(11) NOT NULL AUTO_INCREMENT,
             `thuchien_stt` INT(11) NOT NULL,
@@ -266,6 +271,7 @@ try {
             $stt = (int)($in['giaoviec_stt'] ?? 0);
             $ngay = trim($in['ngay_lam'] ?? '');
             $noiDung = trim((string)($in['noi_dung'] ?? ''));
+            $moTaPhatHien = trim((string)($in['mo_ta_phat_hien'] ?? ''));
             $gioList = is_array($in['gio'] ?? null) ? $in['gio'] : [];
             if ($stt <= 0 || $ngay === '') jsonOut(['ok'=>false,'error'=>'Thiếu dữ liệu bắt buộc'], 400);
 
@@ -293,9 +299,9 @@ try {
 
             $db->beginTransaction();
             try {
-                $st = $db->prepare("INSERT INTO giaoviec_kpi_thuchien (giaoviec_stt, ngay_lam, noi_dung, tong_gio, nguoi_nhap)
-                                    VALUES (:s,:n,:nd,:tg,:np)");
-                $st->execute([':s'=>$stt, ':n'=>$ngay, ':nd'=>$noiDung !== '' ? $noiDung : null, ':tg'=>$tong, ':np'=>$currentHoten]);
+                $st = $db->prepare("INSERT INTO giaoviec_kpi_thuchien (giaoviec_stt, ngay_lam, noi_dung, mo_ta_phat_hien, tong_gio, nguoi_nhap)
+                                    VALUES (:s,:n,:nd,:mt,:tg,:np)");
+                $st->execute([':s'=>$stt, ':n'=>$ngay, ':nd'=>$noiDung !== '' ? $noiDung : null, ':mt'=>$moTaPhatHien !== '' ? $moTaPhatHien : null, ':tg'=>$tong, ':np'=>$currentHoten]);
                 $tcId = (int)$db->lastInsertId();
 
                 $ins = $db->prepare("INSERT INTO giaoviec_kpi_thuchien_gio (thuchien_stt, hoten, so_gio) VALUES (?,?,?)");
@@ -597,6 +603,10 @@ require_once __DIR__ . '/views/layouts/header.php';
           <label class="text-xs text-gray-600">Nội dung thực hiện</label>
           <textarea id="l_noidung" rows="5" placeholder="Mô tả nội dung công việc trong ngày" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
         </div>
+        <div class="mt-2">
+          <label class="text-xs text-gray-600">Mô tả phát hiện</label>
+          <textarea id="l_motaphathien" rows="3" placeholder="Mô tả phát hiện trong quá trình thực hiện" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+        </div>
         <div class="text-right mt-2">
           <button id="btnAddLog" onclick="submitLog()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm">
             <i class="fas fa-plus mr-1"></i>Thêm thực hiện
@@ -739,6 +749,7 @@ async function openDetail(stt){
   const today = new Date().toISOString().substring(0,10);
   document.getElementById('l_ngay').value = today;
   document.getElementById('l_noidung').value = '';
+  document.getElementById('l_motaphathien').value = '';
 
   // Render input giờ theo từng thành viên
   const gioBox = document.getElementById('l_gio_list');
@@ -775,6 +786,7 @@ function renderLogs(logs){
         ${canEdit ? `<button onclick="delLog(${l.stt})" class="text-red-500 bg-red-50 hover:bg-red-100 rounded px-2 py-1 text-xs" title="Xóa nhật ký"><i class="fas fa-trash"></i></button>` : ''}
       </div>
       ${l.noi_dung ? `<div class="text-sm text-gray-700 bg-white/70 rounded px-2 py-1 mt-2">${esc(l.noi_dung)}</div>` : ''}
+      ${l.mo_ta_phat_hien ? `<div class="text-sm text-amber-800 bg-amber-50 rounded px-2 py-1 mt-2"><b>Phát hiện:</b> ${esc(l.mo_ta_phat_hien)}</div>` : ''}
       <div class="mt-2">${gio}</div>
     </div>`;
   }).join('');
@@ -789,6 +801,7 @@ async function submitLog(){
   const stt = CURRENT.task.stt;
   const ngay = document.getElementById('l_ngay').value;
   const noiDung = document.getElementById('l_noidung').value.trim();
+  const moTaPhatHien = document.getElementById('l_motaphathien').value.trim();
   if (!ngay) { alert('Vui lòng chọn ngày làm'); return; }
   const gio = [...document.querySelectorAll('.l_gio_input')].map(inp => ({
     hoten: inp.dataset.hoten,
@@ -797,7 +810,7 @@ async function submitLog(){
   if (!gio.length) { if (!confirm('Chưa có thành viên nào có giờ làm > 0. Vẫn lưu log?')) return; }
   const r = await fetch(`${API}?action=api_add_log`, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ giaoviec_stt: stt, ngay_lam: ngay, noi_dung: noiDung, gio })
+    body: JSON.stringify({ giaoviec_stt: stt, ngay_lam: ngay, noi_dung: noiDung, mo_ta_phat_hien: moTaPhatHien, gio })
   }).then(r=>r.json());
   if (!r.ok) { alert('Lỗi: '+(r.error||'')); return; }
   await openDetail(stt);

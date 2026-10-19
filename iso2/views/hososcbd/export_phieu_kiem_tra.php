@@ -94,7 +94,7 @@ table#hrdftrtbl { margin: 0in 0in 0in 9in; }
 <td>Model: <b><?php echo kiemTraText($item['model'] ?? ''); ?></b></td>
 </tr>
 <tr>
-<td>3. Điện áp nuôi: <b></b></td>
+<td>3. Điện áp nuôi: <b><?php echo kiemTraText($item['dienap'] ?? ''); ?></b></td>
 <td>Dòng tiêu thụ: <b></b></td>
 </tr>
 <tr><td colspan="2">4. Các thiết bị và phần mềm phụ trợ:</td></tr>
@@ -112,7 +112,7 @@ table#hrdftrtbl { margin: 0in 0in 0in 9in; }
 </table>
 
 <p style="margin-top:12pt;">5. Nội dung kiểm tra:</p>
-<p style="min-height:55pt; white-space:pre-wrap;"><span style="mso-tab-count:1"></span><?php echo kiemTraText($item['ttktafter'] ?? ''); ?></p>
+<p style="min-height:55pt; white-space:pre-wrap;"><span style="mso-tab-count:1"></span><?php echo kiemTraText($item['noidung'] ?? ''); ?></p>
 <p>6. Bảng số liệu hoặc file dữ liệu của đường log (Nếu có).</p>
 <p style="min-height:55pt; white-space:pre-wrap;"><?php echo kiemTraText($item['ghichu'] ?? ''); ?></p>
 <p>7. Kết luận:</p>
