@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/auth.php';
 requireAuth();
 
 if (!hasPermission('hososcbd.view')) {
-    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
+    header('Location: ' . appUrl('kehoachbaoduongdinhky.php'));
     exit;
 }
 

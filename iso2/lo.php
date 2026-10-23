@@ -11,7 +11,7 @@ requireAuth();
 
 // Check permissions
 if (!hasPermission('lo.view')) {
-    header('Location: /iso2/thongke_kiemdinh.php?error=no_permission');
+    header('Location: ' . appUrl('kehoachbaoduongdinhky.php'));
     exit;
 }
 

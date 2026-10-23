@@ -95,7 +95,7 @@ if (file_exists($dbSelectionFile)) {
         <nav class="flex-1">
             <ul class="space-y-2">
                 <!-- Dashboard -->
-                <?php if (isLoggedIn()): ?>
+                <?php if (isLoggedIn() && (hasRole(ROLE_ADMIN) || hasPermission('dashboard.view'))): ?>
                 <li>
                     <a href="<?php echo appUrl('dashboard.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 bg-gradient-to-r from-blue-600/30 to-transparent border-l-4 border-yellow-400">
                         <i class="fas fa-chart-pie mr-2 text-yellow-300"></i> 
@@ -115,7 +115,7 @@ if (file_exists($dbSelectionFile)) {
 
                 <?php
                 $myTaskCount = 0;
-                if (isLoggedIn()) {
+                if (isLoggedIn() && hasPermission('congviec_cua_toi.view')) {
                     try {
                         $dbNav = getDBConnection();
                         $taskStmt = $dbNav->prepare("SELECT COUNT(DISTINCT g.stt)
@@ -129,7 +129,7 @@ if (file_exists($dbSelectionFile)) {
                     } catch (Throwable $e) { $myTaskCount = 0; }
                 }
                 ?>
-                <?php if (isLoggedIn()): ?>
+                <?php if (isLoggedIn() && hasPermission('congviec_cua_toi.view')): ?>
                 <li>
                     <a href="<?php echo appUrl('congviec_cua_toi.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-user-clock mr-2"></i> Công việc của tôi
@@ -143,8 +143,6 @@ if (file_exists($dbSelectionFile)) {
                 <?php if (isLoggedIn() && (
                     hasPermission('hososcbd.view') ||
                     hasPermission('kpi_baoduong.view') ||
-                    hasPermission('kehoachbaoduong.view') ||
-                    hasPermission('kehoachbaoduong.create') ||
                     hasPermission('thietbi.view') ||
                     hasPermission('giaoviec_kpi.view')
                 )): ?>
@@ -161,7 +159,7 @@ if (file_exists($dbSelectionFile)) {
                             </a>
                         </li>
                         <?php endif; ?>
-                        <?php if (hasPermission('kpi_baoduong.view') || hasPermission('kehoachbaoduong.view') || hasPermission('kehoachbaoduong.create')): ?>
+                        <?php if (hasPermission('kpi_baoduong.view')): ?>
                         <li>
                             <a href="<?php echo appUrl('kpi_baoduong_thietbi_list.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-ruler-combined mr-2"></i> Định mức KPI
@@ -412,7 +410,7 @@ if (file_exists($dbSelectionFile)) {
                 <?php endif; ?>
 
                 <!-- 7. Thống kê -->
-                <?php if (isLoggedIn()): ?>
+                <?php if (isLoggedIn() && (hasRole(ROLE_ADMIN) || hasPermission('thongke.view'))): ?>
                 <li>
                     <div id="thongkeMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-chart-bar mr-2"></i> Thống kê
@@ -450,11 +448,13 @@ if (file_exists($dbSelectionFile)) {
 
                 <!-- Quản lý file -->
                 <?php if (isLoggedIn()): ?>
+                <?php if (hasRole(ROLE_ADMIN) || hasPermission('filemanager.view')): ?>
                 <li>
                     <a href="https://iso2.diavatly.cloud/gdrive-manager" target="_blank" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-folder mr-2"></i> Quản lý file
                     </a>
                 </li>
+                <?php endif; ?>
                 <?php if (hasRole(ROLE_ADMIN) || hasPermission('bieumau.view')): ?>
                 <li>
                     <a href="<?php echo appUrl('bieu_mau.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
@@ -475,6 +475,7 @@ if (file_exists($dbSelectionFile)) {
                         } catch (Throwable $e) { $qtPendingCount = 0; }
                     }
                 ?>
+                <?php if (hasRole(ROLE_ADMIN) || hasPermission('quytrinh.view') || hasPermission('quytrinh.manage')): ?>
                 <li>
                     <a href="<?php echo appUrl('quytrinh.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-book-open mr-2"></i> Quy trình ISO
@@ -483,6 +484,7 @@ if (file_exists($dbSelectionFile)) {
                         <?php endif; ?>
                     </a>
                 </li>
+                <?php endif; ?>
                 <?php endif; ?>
 
                 <!-- Yêu cầu mua vật tư -->
@@ -509,7 +511,7 @@ if (file_exists($dbSelectionFile)) {
                 <?php endif; ?>
 
                 <!-- Các đường link khác -->
-                <?php if (isLoggedIn()): ?>
+                <?php if (isLoggedIn() && (hasRole(ROLE_ADMIN) || hasPermission('link_menu_iso.view'))): ?>
                 <li>
                     <a href="<?php echo appUrl('link_menu_iso.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
                         <i class="fas fa-link mr-2"></i> Các đường link khác

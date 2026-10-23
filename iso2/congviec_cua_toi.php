@@ -5,7 +5,9 @@ require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/permissions.php';
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/ActivityLogger.php';
 requireAuth();
+requirePermission('congviec_cua_toi.view');
 
 $db = getDBConnection();
 
@@ -89,6 +91,7 @@ $userSttSupported = ensureGiaoviecKpiNguoiColumns($db);
 $username = $_SESSION['username'] ?? '';
 $currentUserStt = (int)($_SESSION['user_stt'] ?? $_SESSION['user_id'] ?? 0);
 $isAdmin = hasRole(ROLE_ADMIN);
+$logger = new ActivityLogger($db);
 
 // Tên hiển thị chỉ lấy từ users; phân quyền và ghép công việc dùng user_stt.
 $currentHoten = '';
@@ -113,15 +116,80 @@ function jsonOut($data, int $code = 200): void {
     exit;
 }
 
+// Số giờ làm việc giữa 2 mốc (T2-T6), chỉ tính ca sáng 7h45-11h15 và ca chiều 13h45-16h45
+function workingHoursBetween(int $startTs, int $endTs): float {
+  if ($endTs <= $startTs) return 0.0;
+  $shifts = [['07:45', '11:15'], ['13:45', '16:45']];
+  $seconds = 0;
+  for ($day = strtotime(date('Y-m-d', $startTs)); $day <= $endTs; $day = strtotime('+1 day', $day)) {
+    if ((int)date('N', $day) >= 6) continue;
+    $d = date('Y-m-d', $day);
+    foreach ($shifts as [$from, $to]) {
+      $a = max($startTs, strtotime("$d $from"));
+      $b = min($endTs, strtotime("$d $to"));
+      if ($b > $a) $seconds += $b - $a;
+    }
+  }
+  return round($seconds / 3600, 2);
+}
+
+function taskTimestamp($date, $time, string $defaultTime): ?int {
+  $date = trim((string)$date);
+  if ($date === '' || strpos($date, '0000') === 0) return null;
+  $time = trim((string)$time);
+  $ts = strtotime(substr($date, 0, 10) . ' ' . ($time !== '' ? $time : $defaultTime));
+  return $ts === false ? null : $ts;
+}
+
+function calcTaskHoursDone(array $task): float {
+  $startTs = taskTimestamp($task['ngay_bat_dau'] ?? '', $task['gio_bat_dau'] ?? '', '07:45:00');
+  if ($startTs === null) return 0.0;
+
+  $actualEnd = trim((string)($task['ngay_thuc_hien_ket_thuc'] ?? ''));
+  $endTs = $actualEnd !== '' && strpos($actualEnd, '0000') !== 0 ? strtotime($actualEnd) : time();
+  if ($endTs === false) $endTs = time();
+  return workingHoursBetween($startTs, $endTs);
+}
+
+// Định mức theo thời gian giao: ưu tiên giá trị đã lưu, nếu chưa có thì tính từ ngày/giờ bắt đầu - hạn
+function calcTaskScheduleHours(array $task): float {
+  $stored = $task['dinh_muc_gio_hien_tai'] ?? null;
+  if ($stored !== null && $stored !== '' && (float)$stored > 0) return (float)$stored;
+
+  $startTs = taskTimestamp($task['ngay_bat_dau'] ?? '', $task['gio_bat_dau'] ?? '', '07:45:00');
+  $endTs = taskTimestamp($task['ngay_ket_thuc'] ?? '', $task['gio_ket_thuc'] ?? '', '16:45:00');
+  if ($startTs === null || $endTs === null) return 0.0;
+  return workingHoursBetween($startTs, $endTs);
+}
+
+// Kết quả KPI của công việc đã hoàn thành: ngày kết thúc thực tế so với hạn hoàn thành (giống trang giao việc).
+// Trả về true (đạt), false (không đạt) hoặc null (chưa đủ dữ liệu).
+function computeKpiResult(PDO $db, array $task): ?bool {
+  if (($task['trang_thai'] ?? '') !== 'hoan_thanh' || empty($task['ngay_ket_thuc'])) return null;
+
+  $actual = !empty($task['ngay_thuc_hien_ket_thuc']) ? (string)$task['ngay_thuc_hien_ket_thuc'] : '';
+  if ($actual === '' && !empty($task['stt'])) {
+    $st = $db->prepare("SELECT MAX(ngay_lam) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = ?");
+    $st->execute([(int)$task['stt']]);
+    $actual = (string)$st->fetchColumn();
+  }
+  if ($actual === '') return null;
+
+  // Dữ liệu cũ chỉ có ngày thì so sánh theo ngày
+  if (!empty($task['gio_ket_thuc']) && strlen($actual) > 10) {
+    return strtotime($actual) <= strtotime($task['ngay_ket_thuc'] . ' ' . $task['gio_ket_thuc']);
+  }
+  return substr($actual, 0, 10) <= substr((string)$task['ngay_ket_thuc'], 0, 10);
+}
+
 function getTaskProgress(PDO $db, array $task): array {
-  $hoursStmt = $db->prepare("SELECT COALESCE(SUM(tong_gio), 0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = ?");
-  $hoursStmt->execute([(int)$task['stt']]);
-  $hoursDone = (float)$hoursStmt->fetchColumn();
+  $hoursDone = calcTaskHoursDone($task);
+  $targetHours = calcTaskScheduleHours($task);
 
   $manualHours = $task['dinh_muc_gio_thu_cong'] ?? null;
-  $targetHours = ($manualHours !== null && $manualHours !== '' && (float)$manualHours > 0)
-    ? (float)$manualHours
-    : 0.0;
+  if ($targetHours <= 0 && $manualHours !== null && $manualHours !== '' && (float)$manualHours > 0) {
+    $targetHours = (float)$manualHours;
+  }
 
   if ($targetHours <= 0 && !empty($task['kpi_baoduong_stt']) && !empty($task['loai_congviec'])) {
     $columnMap = [
@@ -154,12 +222,12 @@ function getTaskProgress(PDO $db, array $task): array {
     'gio_da_lam' => $hoursDone,
     'dinh_muc_gio_hieu_luc' => $targetHours > 0 ? $targetHours : null,
     'tien_do_tinh' => max(0, min(100, $progress)),
+    'kpi_dat' => computeKpiResult($db, $task),
   ];
 }
 
 function refreshTaskProgress(PDO $db, int $taskStt): void {
-  $stmt = $db->prepare("SELECT stt, tien_do, trang_thai, kpi_baoduong_stt, loai_congviec, dinh_muc_gio_thu_cong
-              FROM giaoviec_kpi WHERE stt = ? LIMIT 1");
+  $stmt = $db->prepare("SELECT * FROM giaoviec_kpi WHERE stt = ? LIMIT 1");
   $stmt->execute([$taskStt]);
   $task = $stmt->fetch(PDO::FETCH_ASSOC);
   if (!$task || ($task['trang_thai'] ?? '') === 'hoan_thanh') {
@@ -188,9 +256,9 @@ try {
 
         case 'api_my_tasks':
             [$matchSql, $matchParams] = buildUserMatchCondition($currentUserStt);
-            $sql = "SELECT g.stt, g.parent_stt, g.ten_cong_viec, g.mo_ta, g.ghi_chu, g.phieu, g.somay, g.hoso,
-                           g.ngay_bat_dau, g.ngay_ket_thuc, g.tien_do, g.trang_thai,
-                           g.kpi_baoduong_stt, g.loai_congviec, g.dinh_muc_gio_thu_cong,
+            $sql = "SELECT g.*, g.stt, g.parent_stt, g.ten_cong_viec, g.mo_ta, g.ghi_chu, g.phieu, g.somay, g.hoso,
+                           g.ngay_bat_dau, g.gio_bat_dau, g.ngay_ket_thuc, g.gio_ket_thuc, g.tien_do, g.trang_thai,
+                           g.kpi_baoduong_stt, g.loai_congviec, g.dinh_muc_gio_thu_cong, g.ngay_thuc_hien_ket_thuc,
                            h.mavt AS hoso_mavt,
                            k.ten_thiet_bi,
                            pg.ten_cong_viec AS parent_ten_cong_viec,
@@ -198,7 +266,6 @@ try {
                            pg.hoso AS parent_hoso,
                            pg.somay AS parent_somay,
                            ph.mavt AS parent_hoso_mavt,
-                           (SELECT COALESCE(SUM(tong_gio),0) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS gio_da_lam,
                            (SELECT COUNT(*) FROM giaoviec_kpi_thuchien WHERE giaoviec_stt = g.stt) AS so_log
                     FROM giaoviec_kpi g
                     INNER JOIN giaoviec_kpi_nguoi n ON n.giaoviec_stt = g.stt
@@ -317,6 +384,16 @@ try {
                 }
                 refreshTaskProgress($db, $stt);
                 $db->commit();
+                $logger->log('giaoviec_kpi_thuchien', 'INSERT', $tcId, null, [
+                    'giaoviec_stt' => $stt,
+                    'ngay_lam' => $ngay,
+                    'noi_dung' => $noiDung !== '' ? $noiDung : null,
+                    'mo_ta_phat_hien' => $moTaPhatHien !== '' ? $moTaPhatHien : null,
+                    'nguoi_nhap' => $currentHoten,
+                ]);
+                if ($trangThai === 'chua_giao') {
+                    $logger->log('giaoviec_kpi', 'UPDATE', $stt, ['trang_thai' => 'chua_giao'], ['trang_thai' => 'dang_lam']);
+                }
                 jsonOut(['ok'=>true, 'stt'=>$tcId]);
             } catch (Throwable $e) {
                 $db->rollBack();
@@ -342,11 +419,15 @@ try {
               $chk->execute(array_merge([(int)$log['giaoviec_stt']], $matchParams));
               if ((int)$chk->fetchColumn() === 0) jsonOut(['ok'=>false,'error'=>'Không có quyền xoá log này'], 403);
             }
+            $oldLogSt = $db->prepare("SELECT * FROM giaoviec_kpi_thuchien WHERE stt=?");
+            $oldLogSt->execute([$tcId]);
+            $oldLog = $oldLogSt->fetch(PDO::FETCH_ASSOC) ?: null;
             $db->beginTransaction();
             $db->prepare("DELETE FROM giaoviec_kpi_thuchien_gio WHERE thuchien_stt=?")->execute([$tcId]);
             $db->prepare("DELETE FROM giaoviec_kpi_thuchien WHERE stt=?")->execute([$tcId]);
             refreshTaskProgress($db, (int)$log['giaoviec_stt']);
             $db->commit();
+            $logger->log('giaoviec_kpi_thuchien', 'DELETE', $tcId, $oldLog, null);
             jsonOut(['ok'=>true]);
 
         case 'api_finish':
@@ -379,6 +460,8 @@ try {
             $ngayktIn = !empty($rangeRow['mx']) ? (string)$rangeRow['mx'] : '';
 
             $db->beginTransaction();
+            $newHs = [];
+            $ngLogs = [];
             try {
                 if ($mahoso !== '') {
                     // Tổng giờ theo từng người + theo từng tháng của ngay_lam
@@ -464,7 +547,11 @@ try {
                                 $params[':ngayth'] = $ngayth;
                                 $params[':ngaykt'] = $ngaykt;
                                 $params[':stt']    = $existingMap[$key];
+                                $oldNgSt = $db->prepare("SELECT * FROM ngthuchien_iso WHERE stt = ?");
+                                $oldNgSt->execute([$existingMap[$key]]);
+                                $oldNg = $oldNgSt->fetch(PDO::FETCH_ASSOC) ?: null;
                                 $db->prepare($sql)->execute($params);
+                                $ngLogs[] = ['UPDATE', $existingMap[$key], $oldNg, ['mahoso'=>$mahoso, 'hoten'=>$hoten, 'giolv'=>$tong, 'ngayth'=>$ngayth, 'ngaykt'=>$ngaykt]];
                             } else {
                                 $cols = ['stt','mahoso','mamay','somay','hoten','giolv','ngayth','ngaykt'];
                                 $phs  = [':stt',':mahoso',':mamay',':somay',':hoten',':giolv',':ngayth',':ngaykt'];
@@ -480,6 +567,7 @@ try {
                                 $params[':ngayth'] = $ngayth;
                                 $params[':ngaykt'] = $ngaykt;
                                 $db->prepare($sql)->execute($params);
+                                $ngLogs[] = ['INSERT', $nextStt, null, ['mahoso'=>$mahoso, 'hoten'=>$hoten, 'giolv'=>$tong, 'ngayth'=>$ngayth, 'ngaykt'=>$ngaykt]];
                                 $existingMap[$key] = $nextStt;
                                 $nextStt++;
                             }
@@ -487,6 +575,12 @@ try {
                     }
                 }
 
+                $oldHs = null;
+                if ($hososcbdStt > 0) {
+                    $oldHsSt = $db->prepare("SELECT khacphuc, ttktafter, ketluan, ngayth, ngaykt FROM hososcbd_iso WHERE stt = ?");
+                    $oldHsSt->execute([$hososcbdStt]);
+                    $oldHs = $oldHsSt->fetch(PDO::FETCH_ASSOC) ?: null;
+                }
                 // Cập nhật khacphuc của hososcbd_iso: nối tất cả noi_dung log lại
                 if ($hososcbdStt > 0) {
                     $stLogs = $db->prepare("SELECT ngay_lam, noi_dung
@@ -506,23 +600,40 @@ try {
                         $newKhacPhuc = $cu === '' ? $moi : ($cu . "\n" . $moi);
                         $db->prepare("UPDATE hososcbd_iso SET khacphuc = :k WHERE stt = :s")
                            ->execute([':k'=>$newKhacPhuc, ':s'=>$hososcbdStt]);
+                        $newHs['khacphuc'] = $newKhacPhuc;
                     }
 
                     // Cập nhật ttktafter / ketluan nếu người dùng nhập
                     $setParts = [];
                     $params = [':s'=>$hososcbdStt];
-                    if ($ttktafterIn !== '') { $setParts[] = 'ttktafter = :tt'; $params[':tt'] = $ttktafterIn; }
-                    if ($ketluanIn   !== '') { $setParts[] = 'ketluan = :kl';   $params[':kl'] = $ketluanIn; }
-                    if ($ngaythIn    !== '') { $setParts[] = 'ngayth = :nt';    $params[':nt'] = $ngaythIn; }
-                    if ($ngayktIn    !== '') { $setParts[] = 'ngaykt = :nk';    $params[':nk'] = $ngayktIn; }
+                    if ($ttktafterIn !== '') { $setParts[] = 'ttktafter = :tt'; $params[':tt'] = $ttktafterIn; $newHs['ttktafter'] = $ttktafterIn; }
+                    if ($ketluanIn   !== '') { $setParts[] = 'ketluan = :kl';   $params[':kl'] = $ketluanIn;   $newHs['ketluan'] = $ketluanIn; }
+                    if ($ngaythIn    !== '') { $setParts[] = 'ngayth = :nt';    $params[':nt'] = $ngaythIn;    $newHs['ngayth'] = $ngaythIn; }
+                    if ($ngayktIn    !== '') { $setParts[] = 'ngaykt = :nk';    $params[':nk'] = $ngayktIn;    $newHs['ngaykt'] = $ngayktIn; }
                     if ($setParts) {
                         $db->prepare("UPDATE hososcbd_iso SET ".implode(', ', $setParts)." WHERE stt = :s")
                            ->execute($params);
                     }
                 }
 
+                $oldFinishSt = $db->prepare("SELECT trang_thai, tien_do, ngay_thuc_hien_ket_thuc FROM giaoviec_kpi WHERE stt = ?");
+                $oldFinishSt->execute([$stt]);
+                $oldFinish = $oldFinishSt->fetch(PDO::FETCH_ASSOC) ?: null;
                 $db->prepare("UPDATE giaoviec_kpi SET trang_thai='hoan_thanh', tien_do=100, ngay_thuc_hien_ket_thuc=NOW() WHERE stt=:s")->execute([':s'=>$stt]);
                 $db->commit();
+                if ($oldHs !== null && $newHs) {
+                    $logger->log('hososcbd_iso', 'UPDATE', $hososcbdStt, array_intersect_key($oldHs, $newHs), $newHs);
+                }
+                foreach ($ngLogs as [$ngAction, $ngId, $ngOld, $ngNew]) {
+                    $logger->log('ngthuchien_iso', $ngAction, (int)$ngId, $ngOld, $ngNew);
+                }
+                $logger->log('giaoviec_kpi', 'UPDATE', $stt, $oldFinish, [
+                    'trang_thai' => 'hoan_thanh',
+                    'tien_do' => 100,
+                    'ngay_thuc_hien_ket_thuc' => date('Y-m-d H:i:s'),
+                    'ttktafter' => $ttktafterIn !== '' ? $ttktafterIn : null,
+                    'ketluan' => $ketluanIn !== '' ? $ketluanIn : null,
+                ]);
             } catch (Throwable $e) {
                 $db->rollBack();
                 error_log('api_finish ghi ngthuchien_iso lỗi: ' . $e->getMessage());
@@ -570,7 +681,8 @@ require_once __DIR__ . '/views/layouts/header.php';
     <div class="flex items-center justify-between px-5 py-3 border-b">
       <div>
         <h3 class="font-semibold text-gray-800" id="dTitle">Chi tiết công việc</h3>
-        <div class="text-xs text-gray-500" id="dSub"></div>
+        <div class="text-sm font-medium text-gray-700 mt-0.5" id="dTen"></div>
+        <div class="text-xs text-gray-500 whitespace-pre-line" id="dSub"></div>
       </div>
       <button onclick="closeModal('modalDetail')" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
     </div>
@@ -580,12 +692,21 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div><div class="text-xs text-gray-500">Hồ sơ</div><div id="dHoso" class="font-medium">-</div></div>
         <div><div class="text-xs text-gray-500">Bắt đầu</div><div id="dNgayBd" class="font-medium">-</div></div>
         <div><div class="text-xs text-gray-500">Hạn</div><div id="dNgayKt" class="font-medium">-</div></div>
+        <div><div class="text-xs text-gray-500">Kết thúc thực tế</div><div id="dKetThuc" class="font-medium">-</div></div>
+        <div><div class="text-xs text-gray-500">Kết quả KPI</div><div id="dKpi" class="font-medium">-</div></div>
         <div><div class="text-xs text-gray-500">Định mức</div><div id="dDinhMuc" class="font-medium">-</div></div>
         <div><div class="text-xs text-gray-500">Đã làm</div><div id="dGioLam" class="font-medium">0h</div></div>
         <div><div class="text-xs text-gray-500">Trạng thái</div><div id="dStatus" class="font-medium">-</div></div>
         <div><div class="text-xs text-gray-500">Tiến độ</div><div id="dProgress" class="font-medium">0%</div></div>
       </div>
       <div class="text-xs text-gray-600" id="dGhiChu"></div>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-semibold text-gray-800 text-sm"><i class="fas fa-history text-gray-500 mr-1"></i>Nhật ký đã ghi</div>
+        </div>
+        <div id="logList" class="space-y-2"></div>
+      </div>
 
       <div class="border rounded-lg p-3 bg-blue-50/30">
         <div class="font-semibold text-gray-800 mb-2 text-sm"><i class="fas fa-pen text-blue-600 mr-1"></i>Nhập nhật ký thực hiện</div>
@@ -596,29 +717,18 @@ require_once __DIR__ . '/views/layouts/header.php';
           </div>
         </div>
         <div>
-          <div class="text-xs text-gray-600 mb-1">Số giờ làm của từng thành viên</div>
-          <div id="l_gio_list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+          <label class="text-xs text-gray-600">Mô tả phát hiện</label>
+          <textarea id="l_motaphathien" rows="3" placeholder="Mô tả phát hiện trong quá trình thực hiện" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
         </div>
         <div class="mt-2">
           <label class="text-xs text-gray-600">Nội dung thực hiện</label>
           <textarea id="l_noidung" rows="5" placeholder="Mô tả nội dung công việc trong ngày" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
-        </div>
-        <div class="mt-2">
-          <label class="text-xs text-gray-600">Mô tả phát hiện</label>
-          <textarea id="l_motaphathien" rows="3" placeholder="Mô tả phát hiện trong quá trình thực hiện" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
         </div>
         <div class="text-right mt-2">
           <button id="btnAddLog" onclick="submitLog()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm">
             <i class="fas fa-plus mr-1"></i>Thêm thực hiện
           </button>
         </div>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <div class="font-semibold text-gray-800 text-sm"><i class="fas fa-history text-gray-500 mr-1"></i>Nhật ký đã ghi</div>
-        </div>
-        <div id="logList" class="space-y-2"></div>
       </div>
     </div>
     <div class="px-5 py-3 border-t flex justify-between items-center gap-2 bg-gray-50 rounded-b-lg">
@@ -681,6 +791,20 @@ const STATUS_CSS = {
 
 function esc(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d){ if(!d) return ''; return d.split('-').reverse().join('/'); }
+function fmtDateTime(d, h){ const ds = fmtDate(d); return ds && h ? ds + ' ' + String(h).substring(0,5) : ds; }
+function fmtActualEnd(dt){ if(!dt || String(dt).startsWith('0000')) return ''; const [d, h] = String(dt).split(' '); return fmtDateTime(d, h); }
+function fmtShortStart(t){
+  if (!t.ngay_bat_dau) return '';
+  const [, m, d] = String(t.ngay_bat_dau).substring(0,10).split('-');
+  let s = `${d}/${m}`;
+  if (t.gio_bat_dau) { const [h, mi] = String(t.gio_bat_dau).split(':'); s += ` ${Number(h)}h${mi}`; }
+  return s;
+}
+function kpiBadge(t){
+  if (t.trang_thai !== 'hoan_thanh' || t.kpi_dat === null || t.kpi_dat === undefined) return '';
+  const dat = !!t.kpi_dat;
+  return `<span class="px-1.5 py-0.5 rounded text-xs font-bold border ${dat?'bg-green-500 text-white border-green-600':'bg-red-500 text-white border-red-600'}" title="So sánh thời gian kết thúc thực tế với hạn hoàn thành"><i class="fas ${dat?'fa-check-circle':'fa-times-circle'} mr-0.5"></i>${dat?'Đạt KPI':'Không đạt KPI'}</span>`;
+}
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
@@ -693,7 +817,13 @@ async function loadMyTasks(){
 
 function render(){
   const f = document.getElementById('filterStatus').value;
-  const list = ALL.filter(t => !f || t.trang_thai === f);
+  const startKey = t => `${String(t.ngay_bat_dau||'9999-12-31').substring(0,10)} ${String(t.gio_bat_dau||'00:00:00')}`;
+  const rank = { dang_lam:0, chua_giao:1, hoan_thanh:2, huy:3 };
+  const list = ALL.filter(t => !f || t.trang_thai === f).sort((a, b) => {
+    const d = (rank[a.trang_thai] ?? 9) - (rank[b.trang_thai] ?? 9);
+    if (d !== 0) return d;
+    return a.trang_thai === 'dang_lam' ? startKey(a).localeCompare(startKey(b)) : 0;
+  });
   const box = document.getElementById('taskList');
   if (!list.length) { box.innerHTML = `<div class="col-span-full p-4 text-center text-gray-400">Không có công việc nào.</div>`; return; }
   box.innerHTML = list.map(t => {
@@ -703,19 +833,29 @@ function render(){
     const st = t.trang_thai;
     const parentTen = t.parent_stt ? ([t.parent_hoso_mavt, t.parent_somay].filter(Boolean).join('-') || t.parent_ten_cong_viec || '') : '';
     const parentInfo = t.parent_stt
-      ? `<div class="text-xs text-red-600"><i class="fas fa-level-up-alt fa-rotate-90 mr-1"></i>Việc con của: <b>${esc(parentTen)}</b>${t.parent_phieu?` · Phiếu cha: <b>${esc(t.parent_phieu)}</b>`:''}</div>`
+      ? `<div class="text-xs text-blue-600"><i class="fas fa-level-up-alt fa-rotate-90 mr-1"></i>Việc con của: <b>${esc(parentTen)}</b>${t.parent_phieu?` · Phiếu cha: <b>${esc(t.parent_phieu)}</b>`:''}</div>`
       : '';
     return `
     <div class="cv-card bg-white rounded-lg shadow border p-3 flex flex-col gap-2 cursor-pointer" onclick="openDetail(${t.stt})">
       <div class="flex items-start justify-between gap-2">
         <div class="font-semibold text-gray-800">${t.parent_stt?'<span class="text-red-600 font-bold mr-1">↳</span>':''}${esc(ten)}</div>
-        <span class="px-2 py-0.5 rounded text-xs font-medium ${STATUS_CSS[st]||''}">${esc(STATUS_LABEL[st]||st)}</span>
+        <div class="shrink-0 rounded px-2.5 py-1 text-center leading-tight ${STATUS_CSS[st]||''}">
+          ${['dang_lam','hoan_thanh'].includes(st) && fmtShortStart(t) ? `<div class="text-base font-bold" title="Ngày giờ bắt đầu"><i class="far fa-clock mr-1"></i>${fmtShortStart(t)}</div>` : ''}
+          <div class="text-xs font-medium">${esc(STATUS_LABEL[st]||st)}</div>
+        </div>
       </div>
       ${parentInfo}
+      ${t.ten_cong_viec ? `<div class="text-sm text-gray-700"><span class="font-semibold">Tên công việc:</span> ${esc(t.ten_cong_viec)}</div>` : ''}
+      ${t.mo_ta ? `<div class="text-xs text-gray-600 line-clamp-3"><span class="font-semibold">Mô tả:</span> ${esc(t.mo_ta)}</div>` : ''}
       <div class="text-xs"><span class="text-orange-600 font-semibold">Phiếu:</span> <b class="text-orange-600">${esc(t.phieu||'')}</b> · <span class="text-orange-600 font-semibold">HS:</span> <span class="text-orange-600">${esc(t.hoso||'')}</span></div>
       ${t.ghi_chu ? `<div class="text-xs text-gray-500 italic line-clamp-2">${esc(t.ghi_chu)}</div>` : ''}
       <div class="flex items-center justify-between text-xs mt-1">
-        <div>Hạn: <b>${fmtDate(t.ngay_ket_thuc)||'—'}</b></div>
+        <div>
+          <div>Bắt đầu: <b>${fmtDateTime(t.ngay_bat_dau, t.gio_bat_dau)||'—'}</b></div>
+          <div>Hạn: <b>${fmtDateTime(t.ngay_ket_thuc, t.gio_ket_thuc)||'—'}</b></div>
+          ${fmtActualEnd(t.ngay_thuc_hien_ket_thuc) ? `<div>Kết thúc: <b class="text-green-700">${fmtActualEnd(t.ngay_thuc_hien_ket_thuc)}</b></div>` : ''}
+          ${kpiBadge(t) ? `<div class="mt-1">${kpiBadge(t)}</div>` : ''}
+        </div>
         <div>Đã làm: <b>${dl}h</b>${dm!=='-'?` / ${dm}h`:''}</div>
       </div>
       <div class="w-full bg-gray-200 rounded h-1.5"><div class="bg-blue-500 h-1.5 rounded" style="width:${t.tien_do||0}%"></div></div>
@@ -730,39 +870,30 @@ async function openDetail(stt){
   const t = r.task;
   const ten = [t.hoso_mavt, t.somay].filter(Boolean).join('-') || t.ten_cong_viec;
   document.getElementById('dTitle').textContent = ten;
+  const tenCv = document.getElementById('dTen');
+  tenCv.textContent = t.ten_cong_viec || '';
+  tenCv.classList.toggle('hidden', !t.ten_cong_viec);
   document.getElementById('dSub').textContent = t.mo_ta || '';
   document.getElementById('dPhieu').textContent = t.phieu || '-';
   document.getElementById('dHoso').textContent = t.hoso || '-';
-  document.getElementById('dNgayBd').textContent = fmtDate(t.ngay_bat_dau) || '-';
-  document.getElementById('dNgayKt').textContent = fmtDate(t.ngay_ket_thuc) || '-';
+  document.getElementById('dNgayBd').textContent = fmtDateTime(t.ngay_bat_dau, t.gio_bat_dau) || '-';
+  document.getElementById('dNgayKt').textContent = fmtDateTime(t.ngay_ket_thuc, t.gio_ket_thuc) || '-';
+  document.getElementById('dKetThuc').textContent = fmtActualEnd(t.ngay_thuc_hien_ket_thuc) || '-';
+  document.getElementById('dKpi').innerHTML = kpiBadge(t) || '-';
   const effectiveHours = t.dinh_muc_gio_hieu_luc ?? t.dinh_muc_gio_thu_cong;
   document.getElementById('dDinhMuc').textContent = (effectiveHours ?? '-') + (effectiveHours ? 'h' : '');
   document.getElementById('dStatus').innerHTML = `<span class="px-2 py-0.5 rounded text-xs ${STATUS_CSS[t.trang_thai]||''}">${esc(STATUS_LABEL[t.trang_thai]||t.trang_thai)}</span>`;
   document.getElementById('dProgress').textContent = (t.tien_do||0)+'%';
   document.getElementById('dGhiChu').textContent = t.ghi_chu ? 'Ghi chú: ' + t.ghi_chu : '';
 
-  const totalGio = (r.logs||[]).reduce((s,l)=>s+Number(l.tong_gio||0),0);
-  document.getElementById('dGioLam').textContent = totalGio + 'h';
-  document.getElementById('dTotal').textContent = `Tổng giờ đã ghi: ${totalGio}h · ${r.logs.length} log`;
+  document.getElementById('dGioLam').textContent = Number(t.gio_da_lam||0) + 'h';
+  document.getElementById('dTotal').textContent = `${r.logs.length} log`;
 
   // ngày hôm nay mặc định
   const today = new Date().toISOString().substring(0,10);
   document.getElementById('l_ngay').value = today;
   document.getElementById('l_noidung').value = '';
   document.getElementById('l_motaphathien').value = '';
-
-  // Render input giờ theo từng thành viên
-  const gioBox = document.getElementById('l_gio_list');
-  gioBox.innerHTML = (r.members||[]).map(m => `
-    <div class="flex items-center gap-2 border rounded px-2 py-1 bg-white">
-      <div class="text-sm flex-1 truncate">
-        <span class="${m.vai_tro==='chinh'?'font-semibold text-blue-700':''}">${esc(m.hoten)}</span>
-        <span class="text-xs text-gray-500">(${m.vai_tro==='chinh'?'Chính':'Phụ'})</span>
-      </div>
-      <input type="number" step="0.25" min="0" value="0"
-             class="l_gio_input w-24 border rounded px-2 py-1 text-sm text-right" data-hoten="${esc(m.hoten)}">
-      <span class="text-xs text-gray-500">giờ</span>
-    </div>`).join('') || '<div class="text-xs text-gray-400 italic">Chưa có thành viên</div>';
 
   renderLogs(r.logs || []);
 
@@ -782,14 +913,31 @@ function renderLogs(logs){
     return `
     <div class="thuchien-log border rounded p-2">
       <div class="flex items-center justify-between text-blue-900">
-        <div class="text-sm"><i class="fas fa-calendar-day text-blue-600 mr-1"></i><b>${fmtDate(l.ngay_lam)}</b> · <span class="text-gray-600">${esc(l.nguoi_nhap||'')}</span> · <span class="bg-blue-100 rounded px-1.5 py-0.5">Tổng <b>${l.tong_gio}h</b></span></div>
+        <div class="text-sm"><i class="fas fa-calendar-day text-blue-600 mr-1"></i><b>${fmtDate(l.ngay_lam)}</b> · <span class="text-gray-600">${esc(l.nguoi_nhap||'')}</span>${Number(l.tong_gio) > 0 ? ` · <span class="bg-blue-100 rounded px-1.5 py-0.5">Tổng <b>${l.tong_gio}h</b></span>` : ''}</div>
         ${canEdit ? `<button onclick="delLog(${l.stt})" class="text-red-500 bg-red-50 hover:bg-red-100 rounded px-2 py-1 text-xs" title="Xóa nhật ký"><i class="fas fa-trash"></i></button>` : ''}
       </div>
-      ${l.noi_dung ? `<div class="text-sm text-gray-700 bg-white/70 rounded px-2 py-1 mt-2">${esc(l.noi_dung)}</div>` : ''}
       ${l.mo_ta_phat_hien ? `<div class="text-sm text-amber-800 bg-amber-50 rounded px-2 py-1 mt-2"><b>Phát hiện:</b> ${esc(l.mo_ta_phat_hien)}</div>` : ''}
+      ${l.noi_dung ? `<div class="text-sm text-gray-700 bg-white/70 rounded px-2 py-1 mt-2">${esc(l.noi_dung)}</div>` : ''}
       <div class="mt-2">${gio}</div>
     </div>`;
   }).join('');
+}
+
+async function postLog(){
+  const ngay = document.getElementById('l_ngay').value;
+  if (!ngay) { alert('Vui lòng chọn ngày làm'); return false; }
+  const r = await fetch(`${API}?action=api_add_log`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      giaoviec_stt: CURRENT.task.stt,
+      ngay_lam: ngay,
+      noi_dung: document.getElementById('l_noidung').value.trim(),
+      mo_ta_phat_hien: document.getElementById('l_motaphathien').value.trim(),
+      gio: []
+    })
+  }).then(r=>r.json());
+  if (!r.ok) { alert('Lỗi: '+(r.error||'')); return false; }
+  return true;
 }
 
 async function submitLog(){
@@ -799,20 +947,7 @@ async function submitLog(){
     return;
   }
   const stt = CURRENT.task.stt;
-  const ngay = document.getElementById('l_ngay').value;
-  const noiDung = document.getElementById('l_noidung').value.trim();
-  const moTaPhatHien = document.getElementById('l_motaphathien').value.trim();
-  if (!ngay) { alert('Vui lòng chọn ngày làm'); return; }
-  const gio = [...document.querySelectorAll('.l_gio_input')].map(inp => ({
-    hoten: inp.dataset.hoten,
-    so_gio: parseFloat(inp.value||'0') || 0
-  })).filter(g => g.so_gio > 0);
-  if (!gio.length) { if (!confirm('Chưa có thành viên nào có giờ làm > 0. Vẫn lưu log?')) return; }
-  const r = await fetch(`${API}?action=api_add_log`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ giaoviec_stt: stt, ngay_lam: ngay, noi_dung: noiDung, mo_ta_phat_hien: moTaPhatHien, gio })
-  }).then(r=>r.json());
-  if (!r.ok) { alert('Lỗi: '+(r.error||'')); return; }
+  if (!await postLog()) return;
   await openDetail(stt);
   await loadMyTasks();
 }
@@ -838,6 +973,9 @@ async function submitFinish(){
   const ttktafter = document.getElementById('f_ttktafter').value;
   const ketluan = document.getElementById('f_ketluan').value.trim();
   if (!confirm('Xác nhận KẾT THÚC công việc? Trạng thái sẽ chuyển sang Hoàn thành.')) return;
+  // Tự động lưu nhật ký đang nhập dở trước khi kết thúc
+  const pendingLog = document.getElementById('l_noidung').value.trim() || document.getElementById('l_motaphathien').value.trim();
+  if (pendingLog && !await postLog()) return;
   const r = await fetch(`${API}?action=api_finish`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ giaoviec_stt: stt, ttktafter: ttktafter, ketluan: ketluan })

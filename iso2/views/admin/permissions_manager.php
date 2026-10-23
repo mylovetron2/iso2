@@ -140,6 +140,12 @@ $allPermissions = [
     'bieumau.view' => 'Xem và tải biểu mẫu',
     'bieumau.manage' => 'Quản lý biểu mẫu và thư mục',
 
+    'dashboard.view' => 'Truy cập Dashboard',
+    'thongke.view' => 'Truy cập Thống kê',
+    'congviec_cua_toi.view' => 'Truy cập Công việc của tôi',
+    'filemanager.view' => 'Truy cập Quản lý file',
+    'link_menu_iso.view' => 'Truy cập Các đường link khác',
+    'quytrinh.view' => 'Xem quy trình ISO',
     'quytrinh.manage' => 'Quản lý quy trình ISO (tải lên tài liệu, duyệt góp ý)',
     'yeucaumuavattu.view' => 'Xem yêu cầu mua vật tư',
     'yeucaumuavattu.create' => 'Tạo yêu cầu mua vật tư',
@@ -186,7 +192,10 @@ $permissionGroups = [
     'Nhật ký hoạt động' => ['activitylogs.view', 'activitylogs.export'],
     'Backup Database' => ['backup.create', 'backup.download', 'backup.view'],
     'Biểu mẫu' => ['bieumau.view', 'bieumau.manage'],
-    'Quy trình ISO' => ['quytrinh.manage'],
+    'Dashboard' => ['dashboard.view'],
+    'Thống kê' => ['thongke.view'],
+    'Điều hướng' => ['congviec_cua_toi.view', 'filemanager.view', 'link_menu_iso.view'],
+    'Quy trình ISO' => ['quytrinh.view', 'quytrinh.manage'],
     'Yêu cầu mua vật tư' => ['yeucaumuavattu.view', 'yeucaumuavattu.create', 'yeucaumuavattu.manage'],
 ];
 ?>

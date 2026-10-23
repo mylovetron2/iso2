@@ -5,10 +5,12 @@ require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/permissions.php';
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/ActivityLogger.php';
 requireAuth();
 requirePermission(PERMISSION_GIAOVIEC_KPI_VIEW);
 
 $db = getDBConnection();
+$logger = new ActivityLogger($db);
 $action = $_GET['action'] ?? 'index';
 
 function ensureGiaoviecKpiColumns(PDO $db): void {
@@ -444,7 +446,19 @@ try {
 
             if ($ten === '') jsonOut(['ok' => false, 'error' => 'Thiếu tên công việc'], 400);
 
+            $newData = [
+                'parent_stt'=>$parent_stt, 'hososcbd_stt'=>$hososcbd_stt, 'phieu'=>$phieu, 'somay'=>$somay, 'hoso'=>$hoso,
+                'kpi_baoduong_stt'=>$kpiStt, 'loai_congviec'=>$loaiCongViec !== '' ? $loaiCongViec : null,
+                'dinh_muc_gio_thu_cong'=>$dinhMucGio, 'dinh_muc_gio_hien_tai'=>$currentHourInput,
+                'ten_cong_viec'=>$ten, 'mo_ta'=>$mo_ta, 'ghi_chu'=>$ghiChu !== '' ? $ghiChu : null,
+                'ngay_bat_dau'=>$ngay_bd, 'gio_bat_dau'=>$gio_bd, 'so_ngay'=>$so_ngay,
+                'ngay_ket_thuc'=>$ngay_kt, 'gio_ket_thuc'=>$gio_kt, 'tien_do'=>$tien_do, 'trang_thai'=>$trang_thai,
+            ];
+
             if ($stt > 0) {
+                $oldSt = $db->prepare("SELECT * FROM giaoviec_kpi WHERE stt = ?");
+                $oldSt->execute([$stt]);
+                $oldRow = $oldSt->fetch(PDO::FETCH_ASSOC) ?: null;
                 $sql = "UPDATE giaoviec_kpi SET parent_stt=:p, hososcbd_stt=:hs, phieu=:ph, somay=:sm, hoso=:ho,
                         kpi_baoduong_stt=:kpi, loai_congviec=:lc, dinh_muc_gio_thu_cong=:dm, dinh_muc_gio_hien_tai=:dghh,
                         ten_cong_viec=:t, mo_ta=:mt, ghi_chu=:gc, ngay_bat_dau=:nbd, gio_bat_dau=:gbd, so_ngay=:sn,
@@ -454,6 +468,7 @@ try {
                     ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio, ':dghh'=>$currentHourInput,
                     ':t'=>$ten, ':mt'=>$mo_ta, ':gc'=>$ghiChu !== '' ? $ghiChu : null, ':nbd'=>$ngay_bd, ':gbd'=>$gio_bd, ':sn'=>$so_ngay,
                     ':nkt'=>$ngay_kt, ':gkt'=>$gio_kt, ':td'=>$tien_do, ':tt'=>$trang_thai, ':s'=>$stt]);
+                $logger->log('giaoviec_kpi', 'UPDATE', $stt, $oldRow, $newData);
                 jsonOut(['ok'=>true, 'stt'=>$stt]);
             } else {
                 $sql = "INSERT INTO giaoviec_kpi (parent_stt, hososcbd_stt, phieu, somay, hoso, kpi_baoduong_stt, loai_congviec, dinh_muc_gio_thu_cong, dinh_muc_gio_hien_tai,
@@ -464,7 +479,9 @@ try {
                     ':kpi'=>$kpiStt, ':lc'=>$loaiCongViec !== '' ? $loaiCongViec : null, ':dm'=>$dinhMucGio, ':dghh'=>$currentHourInput,
                     ':t'=>$ten, ':mt'=>$mo_ta, ':gc'=>$ghiChu !== '' ? $ghiChu : null, ':nbd'=>$ngay_bd, ':gbd'=>$gio_bd, ':sn'=>$so_ngay,
                     ':nkt'=>$ngay_kt, ':gkt'=>$gio_kt, ':td'=>$tien_do, ':tt'=>$trang_thai, ':ng'=>$currentUser]);
-                jsonOut(['ok'=>true, 'stt'=>(int)$db->lastInsertId()]);
+                $newStt = (int)$db->lastInsertId();
+                $logger->log('giaoviec_kpi', 'INSERT', $newStt, null, $newData);
+                jsonOut(['ok'=>true, 'stt'=>$newStt]);
             }
 
         // --------- Xoá công việc (kèm subtasks + người) ---------
@@ -478,9 +495,15 @@ try {
             $childSt->execute([$stt]);
             foreach ($childSt->fetchAll(PDO::FETCH_COLUMN) as $c) $ids[] = (int)$c;
             $in = implode(',', array_fill(0, count($ids), '?'));
+            $oldTasksSt = $db->prepare("SELECT * FROM giaoviec_kpi WHERE stt IN ($in)");
+            $oldTasksSt->execute($ids);
+            $oldTasks = $oldTasksSt->fetchAll(PDO::FETCH_ASSOC);
             $db->prepare("DELETE FROM giaoviec_kpi_nguoi WHERE giaoviec_stt IN ($in)")->execute($ids);
             $db->prepare("DELETE FROM giaoviec_kpi WHERE stt IN ($in)")->execute($ids);
             $db->commit();
+            foreach ($oldTasks as $oldTask) {
+                $logger->log('giaoviec_kpi', 'DELETE', (int)$oldTask['stt'], $oldTask, null);
+            }
             jsonOut(['ok'=>true]);
 
         // --------- Lưu người thực hiện (thay thế toàn bộ) ---------
@@ -502,6 +525,12 @@ try {
                 jsonOut(['ok'=>false,'error'=>'Danh sách người thực hiện không hợp lệ'], 400);
               }
             }
+            $oldNguoiSt = $db->prepare("SELECT user_stt, vai_tro FROM giaoviec_kpi_nguoi WHERE giaoviec_stt = ?");
+            $oldNguoiSt->execute([$gvStt]);
+            $oldNguoi = $oldNguoiSt->fetchAll(PDO::FETCH_ASSOC);
+            $oldTrangThaiSt = $db->prepare("SELECT trang_thai FROM giaoviec_kpi WHERE stt = ?");
+            $oldTrangThaiSt->execute([$gvStt]);
+            $oldTrangThai = $oldTrangThaiSt->fetchColumn();
             $db->beginTransaction();
             $db->prepare("DELETE FROM giaoviec_kpi_nguoi WHERE giaoviec_stt = ?")->execute([$gvStt]);
             $ins = $db->prepare("INSERT INTO giaoviec_kpi_nguoi (giaoviec_stt, user_stt, vai_tro) VALUES (?,?,?)");
@@ -516,6 +545,14 @@ try {
                 $db->prepare("UPDATE giaoviec_kpi SET trang_thai='dang_lam' WHERE stt=? AND trang_thai='chua_giao'")->execute([$gvStt]);
             }
             $db->commit();
+            $newNguoi = [['user_stt'=>$chinh, 'vai_tro'=>'chinh']];
+            foreach ($phu as $userStt) {
+                if ($userStt !== $chinh) $newNguoi[] = ['user_stt'=>$userStt, 'vai_tro'=>'phu'];
+            }
+            $logger->log('giaoviec_kpi_nguoi', 'UPDATE', $gvStt, ['nguoi' => $oldNguoi], ['nguoi' => $newNguoi]);
+            if ($oldTrangThai === 'chua_giao') {
+                $logger->log('giaoviec_kpi', 'UPDATE', $gvStt, ['trang_thai' => 'chua_giao'], ['trang_thai' => 'dang_lam']);
+            }
             jsonOut(['ok'=>true]);
     }
 } catch (Throwable $e) {
@@ -543,7 +580,9 @@ require_once __DIR__ . '/views/layouts/header.php';
   }
   .task-table {
     min-width: 1300px;
+    border-collapse: collapse;
   }
+  .task-table th, .task-table td { border: 1px solid #d1d5db; }
   .task-table tr.row-parent > td {
     background-color: #eff6ff;
     border-top: 2px solid #93c5fd;
@@ -551,14 +590,13 @@ require_once __DIR__ . '/views/layouts/header.php';
   .task-table tr.row-parent:hover > td { background-color: #dbeafe; }
   .task-table tr.row-child > td {
     background-color: #ffffff;
-    border-top: 1px dashed #e5e7eb;
+    border-top: 1px solid #d1d5db;
     font-size: 0.8125rem;
   }
   .task-table tr.row-child > td:first-child {
     padding-left: 2rem;
   }
   .task-table tr.row-child:hover > td { background-color: #f0fdf4; }
-  .task-table tr.row-child:last-of-type > td { border-bottom: 0; }
   .task-toggle {
     display: inline-flex; align-items: center; justify-content: center;
     width: 1.25rem; height: 1.25rem; margin-right: 0.25rem;

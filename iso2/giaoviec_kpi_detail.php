@@ -103,15 +103,14 @@ require_once __DIR__ . '/views/layouts/header.php';
           </div>
         </div>
 
-        <div class="border border-teal-200 bg-teal-50 rounded-lg p-3 space-y-3">
-          <div class="flex items-center gap-2 text-teal-700 font-semibold text-sm">
-            <i class="fas fa-bullseye"></i><span>Định mức KPI</span>
-          </div>
+        <div class="border border-teal-200 bg-teal-50 rounded-lg px-3 py-2">
           <input type="hidden" id="f_dinh_muc_gio_thu_cong" value="">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-gray-700">Thiết bị</label>
-              <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" placeholder="Nhập tên thiết bị để tìm..." autocomplete="off" class="w-full border rounded px-2 py-2 mt-1 text-sm">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div class="flex items-center gap-1 text-teal-700 font-semibold text-sm whitespace-nowrap">
+              <i class="fas fa-bullseye"></i><span>Định mức KPI</span>
+            </div>
+            <div class="flex-1 min-w-[180px]">
+              <input list="dl_kpi_thietbi" id="f_kpi_baoduong_search" title="Thiết bị" placeholder="Thiết bị (nhập để tìm)..." autocomplete="off" class="w-full border rounded px-2 py-1 text-sm">
               <input type="hidden" id="f_kpi_baoduong_stt">
               <datalist id="dl_kpi_thietbi">
                 <?php foreach ($kpiThietBiList as $kpiRow): ?>
@@ -119,18 +118,17 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <?php endforeach; ?>
               </datalist>
             </div>
-            <div>
-              <label class="text-xs font-medium text-gray-700">Loại công việc</label>
-              <select id="f_loai_congviec" class="w-full border rounded px-2 py-2 mt-1 text-sm">
+            <div class="min-w-[150px]">
+              <select id="f_loai_congviec" title="Loại công việc" class="w-full border rounded px-2 py-1 text-sm">
                 <?php foreach ($loaiCongViecLabels as $key => $label): ?>
                   <option value="<?= htmlspecialchars($key) ?>" <?= $key === 'kiem_tra' ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
-          </div>
-          <div class="text-xs text-teal-700">
-            <span class="font-medium">Định mức tham khảo:</span>
-            <span id="f_kpi_preview">—</span>
+            <div class="text-xs text-teal-700 whitespace-nowrap">
+              <span class="font-medium">Tham khảo:</span>
+              <span id="f_kpi_preview">—</span>
+            </div>
           </div>
         </div>
 
@@ -178,16 +176,11 @@ require_once __DIR__ . '/views/layouts/header.php';
           <div class="flex items-center gap-2 text-purple-700 font-semibold text-sm">
             <i class="fas fa-user-plus"></i><span>Người thực hiện</span>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-gray-700">Người làm <b>chính</b></label>
-              <select id="n_chinh" class="w-full border rounded px-2 py-2 mt-1 text-sm bg-white"></select>
-            </div>
-            <div>
-              <label class="text-xs font-medium text-gray-700">Người làm <b>phụ</b></label>
-              <div id="n_phu_tags" class="flex flex-wrap gap-1 mt-2"></div>
-            </div>
+          <div>
+            <label class="text-xs font-medium text-gray-700">Người làm <b>chính</b></label>
+            <select id="n_chinh" class="w-full border rounded px-2 py-2 mt-1 text-sm bg-white"></select>
           </div>
+          <div id="n_phu_tags" class="hidden"></div>
         </div>
       </div>
       <div class="need-edit px-5 py-3 border-t flex justify-end gap-2 bg-gray-50 rounded-b-lg">
@@ -202,10 +195,6 @@ require_once __DIR__ . '/views/layouts/header.php';
     <div id="childrenCard" class="bg-white rounded-lg shadow hidden">
       <div class="px-5 py-3 border-b flex flex-wrap items-center justify-between gap-2">
         <div class="font-semibold text-gray-800"><i class="fas fa-sitemap text-green-600 mr-2"></i>Công việc con <span id="childCount" class="ml-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800"></span></div>
-        <div class="need-create flex flex-wrap gap-2">
-          <button type="button" onclick="addChildRows([''])" class="px-3 py-1.5 text-sm rounded border border-green-600 text-green-700 hover:bg-green-50"><i class="fas fa-plus mr-1"></i>Thêm dòng</button>
-          <button type="button" onclick="saveChildren()" class="px-3 py-1.5 text-sm rounded bg-green-600 text-white hover:bg-green-700"><i class="fas fa-save mr-1"></i>Lưu việc con</button>
-        </div>
       </div>
       <div class="need-create px-5 py-3 border-b bg-gray-50">
         <label class="text-xs font-medium text-gray-600">Thêm nhanh nhiều việc con — mỗi dòng một tên</label>
@@ -231,6 +220,10 @@ require_once __DIR__ . '/views/layouts/header.php';
         </table>
         <div id="childEmpty" class="p-6 text-center text-gray-400 text-sm hidden">Chưa có công việc con.</div>
       </div>
+              <div class="need-create px-5 py-3 border-t flex flex-wrap gap-2">
+                <button type="button" onclick="addChildRows([''])" class="px-3 py-1.5 text-sm rounded border border-green-600 text-green-700 hover:bg-green-50"><i class="fas fa-plus mr-1"></i>Thêm dòng</button>
+                <button type="button" onclick="saveChildren()" class="px-3 py-1.5 text-sm rounded bg-green-600 text-white hover:bg-green-700"><i class="fas fa-save mr-1"></i>Lưu việc con</button>
+              </div>
     </div>
   </div>
 </div>

@@ -4,7 +4,7 @@ mb_internal_encoding('UTF-8');
 
 require_once __DIR__ . '/config/constants.php';
 if (isLoggedIn()) {
-    header('Location: hososcbd.php');
+    header('Location: ' . appUrl('kehoachbaoduongdinhky.php'));
     exit;
 } else {
     header('Location: views/auth/login.php');

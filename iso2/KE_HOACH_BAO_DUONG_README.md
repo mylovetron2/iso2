@@ -2,6 +2,11 @@
 
 Module quản lý kế hoạch bảo dưỡng thiết bị định kỳ theo quý, hỗ trợ import dữ liệu từ file Excel.
 
+## Trang mặc định
+
+Sau khi đăng nhập (kể cả ghi nhớ đăng nhập), ứng dụng mở `kehoachbaoduongdinhky.php`.
+Trang này yêu cầu quyền `kehoachbaoduong.view`; nếu thiếu quyền, ứng dụng trả HTTP 403 thay vì chuyển hướng vòng lặp.
+
 ## Tính năng
 
 - ✅ Quản lý kế hoạch bảo dưỡng định kỳ theo năm và quý

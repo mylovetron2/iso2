@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Kế hoạch bảo dưỡng định kỳ — Sơ đồ quan hệ &amp; Chức năng</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; }
+  h1,h2,h3 { color:#1e3a8a; }
+  code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.9em; }
+  table { border-collapse: collapse; width:100%; max-width:100%; margin: 8px 0 20px; font-size: 14px; table-layout: fixed; }
+  th, td { border:1px solid #e5e7eb; padding:6px 10px; vertical-align: top; overflow-wrap:anywhere; word-break:break-word; }
+  th { background:#f8fafc; text-align:left; }
+  .pk { color:#b45309; font-weight:600; }
+  .fk { color:#0369a1; font-weight:600; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .b-gray{background:#e5e7eb;color:#374151}
+  .b-blue{background:#dbeafe;color:#1e40af}
+  .b-green{background:#dcfce7;color:#166534}
+  .b-org{background:#ffedd5;color:#9a3412}
+  .b-red{background:#fee2e2;color:#b91c1c}
+  section { width:100%; max-width:100%; background:#fff; padding: 20px 24px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; overflow-x:auto; }
+  .mermaid { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; }
+  pre { max-width:100%; overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; }
+</style>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 w-full max-w-none">
+
+<h1 class="text-3xl font-bold mb-1">Kế hoạch bảo dưỡng định kỳ — Tài liệu chức năng</h1>
+<p class="text-gray-600 mb-6">Mô tả sơ đồ quan hệ và các chức năng của <code>kehoachbaoduongdinhky.php</code> (router) → <code>KeHoachBaoDuongDinhKyController</code> → bảng <code>ke_hoach_bao_duong_dinh_ky_iso</code>.</p>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">1. Tổng quan</h2>
+  <ul class="list-disc pl-6 mt-2 space-y-1">
+    <li><b>Kế hoạch theo năm</b>: mỗi dòng là 1 thiết bị trong kế hoạch của 1 năm (<code>nam</code>), lên lịch cho <b>4 quý</b> (<code>qui_1..qui_4</code>) và đánh dấu <b>hoàn tất từng quý</b> (<code>qui_N_hoantat</code>).</li>
+    <li>Mỗi dòng gắn với thiết bị trong <code>thietbi_iso</code> qua <code>thietbi_id</code> (có thể NULL khi import chưa khớp; sau đó gán lại bằng <code>updateThietbiId</code>).</li>
+    <li>Nhóm sửa chữa <code>nhomsc</code>: <code>RDNGA</code>, <code>CNC</code>, <code>KTKT</code>, <code>TV</code>; đơn vị thực hiện gồm <b>làm chính</b> và <b>làm phụ</b>.</li>
+    <li>Dữ liệu vào bằng <b>import Excel</b> hoặc <b>thêm thiết bị từ <code>thietbi_iso</code></b>; ra bằng <b>Excel / PDF / thống kê</b>.</li>
+    <li>Phân quyền qua bảng <code>roles.permissions</code> (<code>kehoachbaoduong.view/create/edit/delete</code>).</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">2. Sơ đồ quan hệ bảng (ERD)</h2>
+  <div class="mermaid">
+  erDiagram
+    thietbi_iso ||--o{ ke_hoach_bao_duong_dinh_ky_iso : "thietbi_id (1 thiết bị → n kế hoạch theo năm)"
+    users ||--o{ ke_hoach_bao_duong_dinh_ky_iso : "created_by (username)"
+    users ||--o{ role_user : "user_id"
+    roles ||--o{ role_user : "role_id"
+    roles }o--o{ PERMISSION : "permissions (chuỗi CSV)"
+
+    thietbi_iso {
+      INT stt PK
+      VARCHAR mavt
+      VARCHAR tenvt
+      VARCHAR somay
+      VARCHAR model
+      VARCHAR madv
+    }
+    ke_hoach_bao_duong_dinh_ky_iso {
+      INT id PK
+      INT thietbi_id FK
+      INT nam
+      VARCHAR ten_thietbi
+      VARCHAR so_serial
+      VARCHAR nhomsc
+      VARCHAR qui_1
+      VARCHAR qui_2
+      VARCHAR qui_3
+      VARCHAR qui_4
+      TINYINT qui_1_hoantat
+      TINYINT qui_2_hoantat
+      TINYINT qui_3_hoantat
+      TINYINT qui_4_hoantat
+      VARCHAR donvi_lam_chinh
+      VARCHAR donvi_lam_phu
+      TEXT ghi_chu
+      VARCHAR created_by
+    }
+    users { INT id PK VARCHAR username }
+    role_user { INT user_id FK INT role_id FK }
+    roles { INT id PK VARCHAR name TEXT permissions }
+    PERMISSION { VARCHAR kehoachbaoduong_view VARCHAR kehoachbaoduong_create VARCHAR kehoachbaoduong_edit VARCHAR kehoachbaoduong_delete }
+  </div>
+  <p class="text-sm text-gray-600">Lưu ý: <code>thietbi_id</code> và <code>created_by</code> là quan hệ logic (ứng dụng kiểm tra), không bắt buộc khoá ngoại ở CSDL. <code>ten_thietbi</code>, <code>so_serial</code> được sao chép từ <code>thietbi_iso</code> (<code>tenvt</code>, <code>somay</code>) khi thêm thiết bị.</p>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">3. Chi tiết bảng <code>ke_hoach_bao_duong_dinh_ky_iso</code></h2>
+  <table>
+    <thead><tr><th style="width:25%">Cột</th><th style="width:20%">Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td>INT PK AI</td><td>Khoá chính của dòng kế hoạch</td></tr>
+      <tr><td class="fk">thietbi_id</td><td>INT NULL</td><td>FK logic → <code>thietbi_iso.stt</code>; NULL/0 = chưa khớp thiết bị</td></tr>
+      <tr><td>nam</td><td>INT</td><td>Năm kế hoạch (khoá lọc chính, mỗi thiết bị chỉ 1 dòng/năm khi thêm từ danh sách)</td></tr>
+      <tr><td>ten_thietbi / so_serial</td><td>VARCHAR</td><td>Tên thiết bị / số máy (sao chép)</td></tr>
+      <tr><td>nhomsc</td><td>VARCHAR</td><td>Nhóm sửa chữa: <code>RDNGA</code>, <code>CNC</code>, <code>KTKT</code>, <code>TV</code></td></tr>
+      <tr><td>qui_1 … qui_4</td><td>VARCHAR</td><td>Nội dung/lịch bảo dưỡng của từng quý (rỗng = không có kế hoạch quý đó)</td></tr>
+      <tr><td>qui_1_hoantat … qui_4_hoantat</td><td>TINYINT(1)</td><td>1 = quý đã hoàn tất</td></tr>
+      <tr><td>donvi_lam_chinh / donvi_lam_phu</td><td>VARCHAR(255)</td><td>Đơn vị làm chính / phụ</td></tr>
+      <tr><td>ghi_chu</td><td>TEXT</td><td>Ghi chú</td></tr>
+      <tr><td>created_by</td><td>VARCHAR</td><td>Username người tạo (từ session)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">4. Luồng xử lý (router → controller → DB)</h2>
+  <div class="mermaid">
+  flowchart LR
+    U([Người dùng]) --> R[kehoachbaoduongdinhky.php<br/>?action=...]
+    R --> A{requireAuth +<br/>hasPermission}
+    A -- từ chối --> X[Redirect / JSON lỗi]
+    A -- hợp lệ --> C[KeHoachBaoDuongDinhKyController]
+    C --> V1[views/kehoachbaoduongdinhky/index.php]
+    C --> V2[views/.../import.php]
+    C --> V3[views/.../thongke.php]
+    C --> V4[export_pdf*.php + TCPDF]
+    C --> V5[PhpSpreadsheet Excel]
+    C --> T1[(ke_hoach_bao_duong_dinh_ky_iso)]
+    C --> T2[(thietbi_iso)]
+  </div>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">5. Danh sách action</h2>
+  <table>
+    <thead><tr><th style="width:20%">Action</th><th style="width:20%">Quyền</th><th style="width:30%">Bảng tác động</th><th>Mô tả</th></tr></thead>
+    <tbody>
+      <tr><td><code>index</code></td><td><span class="badge b-blue">view</span></td><td>kế hoạch (đọc)</td><td>Danh sách theo năm; lọc: tìm kiếm, quý, nhóm SC, trạng thái hoàn tất, thiết bị ID, sắp xếp theo quý; phân trang; thống kê theo quý</td></tr>
+      <tr><td><code>import</code></td><td><span class="badge b-green">create</span></td><td>—</td><td>Hiển thị form upload Excel</td></tr>
+      <tr><td><code>processImport</code></td><td><span class="badge b-green">create</span></td><td>kế hoạch (INSERT, tuỳ chọn DELETE theo năm)</td><td>Đọc Excel (cột: thietbi_id, tên, serial, nhóm SC, 4 quý, đơn vị chính/phụ, ghi chú); trong transaction; có thể xoá dữ liệu cũ của năm trước khi nạp</td></tr>
+      <tr><td><code>exportExcel</code></td><td><span class="badge b-blue">view</span></td><td>kế hoạch (đọc)</td><td>Xuất Excel theo bộ lọc hiện tại</td></tr>
+      <tr><td><code>delete</code></td><td><span class="badge b-red">delete</span></td><td>kế hoạch (DELETE theo năm)</td><td>Xoá toàn bộ kế hoạch của 1 năm</td></tr>
+      <tr><td><code>updateHoanTat</code></td><td><span class="badge b-org">edit</span></td><td>kế hoạch (UPDATE)</td><td>AJAX: đặt <code>qui_N_hoantat</code> cho 1 quý</td></tr>
+      <tr><td><code>updateMultipleHoanTat</code></td><td><span class="badge b-org">edit</span></td><td>kế hoạch (UPDATE)</td><td>AJAX: cập nhật hoàn tất cả 4 quý cùng lúc</td></tr>
+      <tr><td><code>updateThietbiId</code></td><td><span class="badge b-org">edit</span></td><td>thietbi_iso (kiểm tra), kế hoạch (UPDATE)</td><td>AJAX: gán lại <code>thietbi_id</code> sau khi kiểm tra tồn tại trong <code>thietbi_iso</code></td></tr>
+      <tr><td><code>updateDonViFields</code></td><td><span class="badge b-org">edit</span></td><td>kế hoạch (UPDATE)</td><td>AJAX: cập nhật đơn vị làm chính / phụ</td></tr>
+      <tr><td><code>getThietbiIsoList</code></td><td><span class="badge b-blue">view</span></td><td>thietbi_iso, kế hoạch (đọc)</td><td>AJAX: danh sách thiết bị chưa có trong kế hoạch năm đã chọn (để chọn thêm)</td></tr>
+      <tr><td><code>addThietbiToKeHoach</code></td><td><span class="badge b-green">create</span></td><td>thietbi_iso (đọc), kế hoạch (INSERT)</td><td>AJAX: thêm nhiều thiết bị vào kế hoạch năm; bỏ qua thiết bị đã có</td></tr>
+      <tr><td><code>thongke</code></td><td><span class="badge b-blue">view</span></td><td>kế hoạch (đọc)</td><td>Trang thống kê theo năm / nhóm SC / quý</td></tr>
+      <tr><td><code>exportPdf</code></td><td><span class="badge b-blue">view</span></td><td>kế hoạch (đọc)</td><td>Xuất PDF báo cáo (TCPDF)</td></tr>
+      <tr><td><code>exportPdfDanhSachQuy</code></td><td><span class="badge b-blue">view</span></td><td>kế hoạch (đọc)</td><td>Xuất PDF danh sách theo quý</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">6. Trình tự thêm thiết bị &amp; hoàn tất quý</h2>
+  <div class="mermaid">
+  sequenceDiagram
+    actor ND as Người dùng
+    participant R as kehoachbaoduongdinhky.php
+    participant C as Controller
+    participant TB as thietbi_iso
+    participant KH as ke_hoach_bao_duong_dinh_ky_iso
+    ND->>R: ?action=getThietbiIsoList
+    R->>C: kiểm tra quyền view
+    C->>KH: lấy thietbi_id đã có trong năm
+    C->>TB: lấy thiết bị (lọc theo năm, chưa có)
+    C-->>ND: JSON danh sách
+    ND->>R: ?action=addThietbiToKeHoach (nam, thietbi_ids, nhomsc)
+    R->>C: kiểm tra quyền create
+    C->>TB: SELECT stt, tenvt, somay
+    C->>KH: kiểm tra đã tồn tại (nam + thietbi_id)
+    C->>KH: INSERT các thiết bị mới (transaction)
+    C-->>ND: added / skipped
+    ND->>R: ?action=updateHoanTat (id, qui, hoantat)
+    R->>C: kiểm tra quyền edit
+    C->>KH: UPDATE qui_N_hoantat
+    C-->>ND: JSON success
+  </div>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">7. Quy tắc nghiệp vụ</h2>
+  <ul class="list-disc pl-6 space-y-1">
+    <li>Trạng thái "đã hoàn thành" = ít nhất 1 quý có <code>qui_N_hoantat = 1</code>; "chưa hoàn thành" = tất cả quý đều 0/NULL.</li>
+    <li>Lọc theo quý chỉ lấy các dòng có <code>qui_N</code> khác rỗng.</li>
+    <li>Sắp xếp <code>qui_tangdan</code>: quý có kế hoạch sớm nhất trước, trong cùng quý dòng đã hoàn tất lên trên.</li>
+    <li>Lọc nhóm <code>CNC+RDNGA</code> = <code>nhomsc IN ('CNC','RDNGA')</code>.</li>
+    <li>Thống kê mặc định theo quý hiện tại của năm.</li>
+    <li>Import/xoá/thêm thiết bị có xử lý transaction; lỗi sẽ rollback.</li>
+  </ul>
+</section>
+
+</body>
+</html>

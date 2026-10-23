@@ -7,6 +7,14 @@ require_once __DIR__ . '/includes/permissions.php';
 require_once __DIR__ . '/controllers/QuyTrinhController.php';
 
 requireAuth();
+if (
+    !hasRole(ROLE_ADMIN)
+    && !hasPermission('quytrinh.view')
+    && !hasPermission('quytrinh.manage')
+) {
+    http_response_code(403);
+    exit('Bạn không có quyền truy cập Quy trình ISO.');
+}
 
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

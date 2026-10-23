@@ -26,8 +26,8 @@ switch ($action) {
         // Kiểm tra quyền xem
         if (!hasPermission('kehoachbaoduong.view')) {
             $_SESSION['error'] = 'Bạn không có quyền xem kế hoạch bảo dưỡng';
-            header('Location: /iso2/index.php');
-            exit;
+            http_response_code(403);
+            exit('Bạn không có quyền xem kế hoạch bảo dưỡng.');
         }
         $controller->index();
         break;

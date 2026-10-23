@@ -9,6 +9,10 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/includes/permissions.php';
 
 requireAuth();
+if (!hasRole(ROLE_ADMIN) && !hasPermission('dashboard.view')) {
+    http_response_code(403);
+    exit('Bạn không có quyền truy cập Dashboard.');
+}
 
 $title = 'Dashboard Thống Kê';
 
