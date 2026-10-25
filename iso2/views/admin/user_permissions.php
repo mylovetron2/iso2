@@ -58,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $roleId = (int)($_POST['role_id'] ?? 0);
+    $madv = trim($_POST['madv'] ?? '');
     
     $errors = [];
     
@@ -85,6 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $errors[] = 'Vui lòng chọn role';
     }
     
+    if ($madv === '') {
+        $errors[] = 'Vui lòng chọn đơn vị';
+    } elseif (!in_array($madv, array_map(function($d) { return trim((string)$d['madv']); }, $donViList), true)) {
+        $errors[] = 'Đơn vị không hợp lệ';
+    }
+    
     // Kiểm tra username đã tồn tại
     if (empty($errors)) {
         $db = getDBConnection();
@@ -102,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             
             // Insert user - sử dụng các cột thực tế của bảng users
             $stmt = $db->prepare('INSERT INTO users (username, password, hoten, email, madv, nhom, phanquyen) VALUES (?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$username, $hashedPassword, $name, $email, '', '', 0]);
+            $stmt->execute([$username, $hashedPassword, $name, $email, $madv, '', 0]);
             $newUserId = $db->lastInsertId();
             
             // Gán role
@@ -249,6 +256,20 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="">-- Chọn role --</option>
                     <?php foreach ($roles as $role): ?>
                         <option value="<?php echo $role['id']; ?>"><?php echo htmlspecialchars($role['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block mb-2 font-semibold text-sm">
+                    Đơn vị <span class="text-red-500">*</span>
+                </label>
+                <select name="madv" required class="w-full px-3 py-2 border rounded text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Chọn đơn vị --</option>
+                    <?php foreach ($donViList as $donVi): ?>
+                        <option value="<?php echo htmlspecialchars($donVi['madv']); ?>" <?php echo (isset($_POST['madv']) && trim($_POST['madv']) === (string)$donVi['madv']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($donVi['madv'] . ' - ' . $donVi['tendv']); ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>

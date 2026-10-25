@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -18,19 +19,20 @@ if (!hasPermission('kehoachbaoduong.edit')) {
 
 $lockFile = __DIR__ . '/../storage/kehoachbd_edit_lock.txt';
 
-// Đảm bảo thư mục tồn tại
-if (!is_dir(__DIR__ . '/../storage')) {
-    mkdir(__DIR__ . '/../storage', 0755, true);
-}
-
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     // Trả về trạng thái hiện tại
     $locked = true;
     if (file_exists($lockFile)) {
-        $content = trim(file_get_contents($lockFile));
-        $locked = ($content !== 'unlocked');
+        $content = @file_get_contents($lockFile);
+        if ($content === false) {
+            http_response_code(500);
+            error_log('edit_lock: lock file is not readable');
+            echo json_encode(['success' => false, 'message' => 'Không đọc được file khóa. Kiểm tra quyền thư mục storage.']);
+            exit;
+        }
+        $locked = (trim($content) !== 'unlocked');
     }
     echo json_encode(['success' => true, 'locked' => $locked]);
     exit;
@@ -38,6 +40,11 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($input)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Dữ liệu JSON không hợp lệ']);
+        exit;
+    }
     $action = $input['action'] ?? '';
     $password = $input['password'] ?? '';
 
@@ -50,14 +57,26 @@ if ($method === 'POST') {
             echo json_encode(['success' => false, 'message' => 'Mật khẩu không đúng']);
             exit;
         }
-        file_put_contents($lockFile, 'unlocked');
-        echo json_encode(['success' => true, 'locked' => false]);
-        exit;
     }
 
-    if ($action === 'lock') {
-        file_put_contents($lockFile, 'locked');
-        echo json_encode(['success' => true, 'locked' => true]);
+    if ($action === 'lock' || $action === 'unlock') {
+        $storageDir = dirname($lockFile);
+        if (!is_dir($storageDir) && !@mkdir($storageDir, 0755, true) && !is_dir($storageDir)) {
+            http_response_code(500);
+            error_log('edit_lock: cannot create storage directory');
+            echo json_encode(['success' => false, 'message' => 'Không tạo được thư mục storage. Kiểm tra quyền ghi trên hosting.']);
+            exit;
+        }
+        $state = $action === 'unlock' ? 'unlocked' : 'locked';
+        if ((!file_exists($lockFile) && !is_writable($storageDir))
+            || (file_exists($lockFile) && !is_writable($lockFile))
+            || @file_put_contents($lockFile, $state, LOCK_EX) !== strlen($state)) {
+            http_response_code(500);
+            error_log('edit_lock: cannot write lock state');
+            echo json_encode(['success' => false, 'message' => 'Không lưu được trạng thái khóa. Kiểm tra quyền ghi storage/kehoachbd_edit_lock.txt.']);
+            exit;
+        }
+        echo json_encode(['success' => true, 'locked' => $action === 'lock']);
         exit;
     }
 

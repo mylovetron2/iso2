@@ -99,6 +99,26 @@ switch ($action) {
         $controller->updateThietbiId();
         break;
         
+    case 'updateHoSoId':
+        header('Content-Type: application/json; charset=UTF-8');
+        if (!hasPermission('kehoachbaoduong.edit')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền cập nhật']);
+            exit;
+        }
+        $controller->updateHoSoId();
+        break;
+
+    case 'updateDoiExecution':
+        header('Content-Type: application/json; charset=UTF-8');
+        if (!hasPermission('kehoachbaoduong.edit')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền cập nhật']);
+            exit;
+        }
+        $controller->updateDoiExecution();
+        break;
+
     case 'updateDonViFields':
         // Kiểm tra quyền chỉnh sửa
         if (!hasPermission('kehoachbaoduong.edit')) {

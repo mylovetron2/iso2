@@ -45,6 +45,7 @@ require_once __DIR__ . '/../layouts/header.php';
             if (isset($qui) && $qui > 0) $exportUrl .= "&qui=" . $qui;            if (!empty($nhomsc)) $exportUrl .= "&nhomsc=" . urlencode($nhomsc);            if (!empty($trangthai)) $exportUrl .= "&trangthai=" . urlencode($trangthai);
             if (!empty($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
             if (!empty($thietbi_id_filter)) $exportUrl .= "&thietbi_id_filter=" . urlencode($thietbi_id_filter);
+            if (!empty($_GET['donvi_chinh'])) $exportUrl .= "&donvi_chinh=" . urlencode($_GET['donvi_chinh']);
             ?>
             <a href="<?php echo $exportUrl; ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-excel mr-1"></i> Xuất Excel
@@ -74,7 +75,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </a>
             </div>
         <?php endif; ?>
-        <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-9 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Năm:</label>
                 <select name="nam" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -105,6 +106,18 @@ require_once __DIR__ . '/../layouts/header.php';
                 </select>
             </div>
             
+            <div>
+                <label class="block text-sm font-medium mb-1">ĐV chính:</label>
+                <?php $donviChinhFilter = $_GET['donvi_chinh'] ?? ''; ?>
+                <select name="donvi_chinh" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
+                    <option value="" <?php echo $donviChinhFilter === '' ? 'selected' : ''; ?>>Tất cả</option>
+                    <?php foreach (['KTKT', 'ĐVLTH', 'CNM', 'RDNGA'] as $dvOpt): ?>
+                        <option value="<?php echo $dvOpt; ?>" <?php echo $donviChinhFilter === $dvOpt ? 'selected' : ''; ?>><?php echo $dvOpt; ?></option>
+                    <?php endforeach; ?>
+                    <option value="__none__" <?php echo $donviChinhFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
+                </select>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium mb-1">Trạng thái:</label>
                 <select name="trangthai" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -207,29 +220,66 @@ require_once __DIR__ . '/../layouts/header.php';
                 white-space: nowrap;
             }
             #kehoach-table td.qui-cell {
+                box-sizing: border-box;
                 overflow: visible;
                 text-overflow: clip;
                 white-space: normal;
+                width: 56px;
+                min-width: 56px;
+                max-width: 56px;
+                height: 56px;
+                padding: 0;
+                vertical-align: top;
+            }
+            #kehoach-table .qui-header-cell {
+                box-sizing: border-box;
+                width: 56px;
+                min-width: 56px;
+                max-width: 56px;
+                height: 56px;
+                padding: 0;
+                text-align: center;
+                vertical-align: middle;
+            }
+            #kehoach-table .qui-square {
+                box-sizing: border-box;
+                display: flex;
+                width: 56px;
+                height: 56px;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                border-right: 1px solid #d1d5db;
+            }
+            #kehoach-table .qui-square-first {
+                border-left: 1px solid #d1d5db;
+            }
+            #kehoach-table td.execution-people {
+                white-space: normal;
+                overflow-wrap: anywhere;
             }
         </style>
-        <div>
-            <table id="kehoach-table" class="w-full divide-y divide-gray-200" style="table-layout:fixed;">
+        <div class="overflow-x-auto">
+            <table id="kehoach-table" class="w-full divide-y divide-gray-200" style="table-layout:fixed;min-width:1600px;">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">STT</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%">ID</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">ID TB</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:16%">Tên thiết bị</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:8%">Tên thiết bị</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Số S/N</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:6%">Nhóm SC</th>
-                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300" style="width:5%">Q1</th>
-                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q2</th>
-                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q3</th>
-                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:5%">Q4</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">Nhóm SC</th>
+                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Q1</th>
+                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q2</th>
+                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q3</th>
+                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q4</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300" style="width:10%">ĐV Chính</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:9%">ĐV Phụ</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">Ghi chú</th>
-                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50" style="width:10%">Trạng thái</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">ID hồ sơ</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Ngày thực hiện / kết thúc</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:14%">Các người thực hiện</th>
+                        <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50" style="display:none">Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -291,16 +341,22 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <span class="font-medium text-gray-900">
                                     <?php echo htmlspecialchars($item['ten_thietbi']); ?>
                                 </span>
+                                <?php if (!empty($item['nhomsc'])): ?>
+                                    <div class="mt-1 text-xs text-gray-500">
+                                        Nhóm SC: <?php echo htmlspecialchars($item['nhomsc'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-3">
                                 <span class="font-mono text-blue-700 text-sm">
                                     <?php echo htmlspecialchars($item['so_serial']); ?>
                                 </span>
                             </td>
-                            <td class="px-2 py-1 text-xs text-gray-600">
+                            <td class="px-2 py-1 text-xs text-gray-600" style="display:none">
                                 <?php echo htmlspecialchars($item['nhomsc'] ?? ''); ?>
                             </td>
-                            <td class="qui-cell px-2 py-1 text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell text-center">
+                                <div class="qui-square qui-square-first <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_1_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_1'])): ?>
@@ -315,8 +371,10 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php else: ?>
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell text-center">
+                                <div class="qui-square <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_2_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_2'])): ?>
@@ -331,8 +389,10 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php else: ?>
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell text-center">
+                                <div class="qui-square <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_3_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_3'])): ?>
@@ -347,8 +407,10 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php else: ?>
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="qui-cell px-2 py-1 text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                            <td class="qui-cell text-center">
+                                <div class="qui-square <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
                                 <?php if (!empty($item['qui_4_hoantat'])): ?>
                                     <i class="fas fa-check text-blue-600 text-lg"></i>
                                 <?php elseif (!empty($item['qui_4'])): ?>
@@ -363,6 +425,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php else: ?>
                                     <span class="text-gray-300">-</span>
                                 <?php endif; ?>
+                                </div>
                             </td>
                             <td class="px-2 py-1 text-xs text-gray-600 border-l border-r border-gray-300">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
@@ -490,7 +553,78 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="px-2 py-1 text-xs text-gray-600" title="<?php echo htmlspecialchars($item['ghi_chu']); ?>">
                                 <?php echo htmlspecialchars($item['ghi_chu']); ?>
                             </td>
-                            <td class="px-4 py-3 text-center bg-blue-50">
+                            <td class="px-2 py-1 text-xs" style="display:none">
+                                <?php if ($item['hososcbd_id'] !== null): ?>
+                                    <?php echo htmlspecialchars((string)$item['hososcbd_id'], ENT_QUOTES, 'UTF-8'); ?>
+                                <?php elseif ($item['hososcbd_doi_id'] !== null): ?>
+                                    <?php echo htmlspecialchars((string)$item['hososcbd_doi_id'], ENT_QUOTES, 'UTF-8'); ?>
+                                <?php elseif ($item['hososcbd_doi_id'] === null
+                                    && in_array(strtoupper(trim((string)$item['donvi_lam_chinh'])), ['CNM', 'RDNGA'], true)
+                                    && hasPermission('kehoachbaoduong.edit')): ?>
+                                    <form class="hoso-id-form" data-id="<?php echo (int)$item['id']; ?>" style="display:none">
+                                        <input name="hososcbd_id" type="number" min="1" step="1" required
+                                               aria-label="hososcbd_id cho kế hoạch <?php echo (int)$item['id']; ?>"
+                                               class="border rounded px-1 py-1 w-full">
+                                        <button type="submit" class="text-blue-600 hover:underline">Lưu</button>
+                                    </form>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-2 py-1 text-xs text-gray-600">
+                                <?php
+                                $dateStart = $item['ngay_thuc_hien'] ?? null;
+                                $dateEnd = $item['ngay_ket_thuc'] ?? null;
+                                if ($dateStart && substr($dateStart, 0, 10) !== '0000-00-00') {
+                                    echo '<div class="text-orange-500 font-semibold"><i class="fas fa-play text-xs"></i> '
+                                        . htmlspecialchars(date('d/m/Y', strtotime($dateStart)), ENT_QUOTES, 'UTF-8')
+                                        . '</div>';
+                                }
+                                if ($dateEnd && substr($dateEnd, 0, 10) !== '0000-00-00') {
+                                    echo '<div class="text-green-600 font-semibold mt-1"><i class="fas fa-arrow-right text-xs"></i> '
+                                        . htmlspecialchars(date('d/m/Y', strtotime($dateEnd)), ENT_QUOTES, 'UTF-8')
+                                        . '</div>';
+                                }
+                                if ((!$dateStart || substr($dateStart, 0, 10) === '0000-00-00')
+                                    && (!$dateEnd || substr($dateEnd, 0, 10) === '0000-00-00')) {
+                                    echo '—';
+                                }
+                                ?>
+                            </td>
+                            <td class="execution-people px-2 py-1 text-xs text-gray-600">
+                                <?php if (!empty($item['cac_nguoi_thuc_hien'])): ?>
+                                    <?php foreach ($item['cac_nguoi_thuc_hien'] as $personName): ?>
+                                        <div><?php echo htmlspecialchars($personName, ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                                <?php
+                                $mainUnit = strtoupper(trim((string)($item['donvi_lam_chinh'] ?? '')));
+                                $canEditDoiExecution = ($item['hososcbd_id'] ?? null) === null
+                                    && (($item['nguon_hoso'] ?? null) === null
+                                        || ($item['nguon_hoso'] ?? null) === 'hososcbd_doi_iso')
+                                    && (($item['hososcbd_doi_id'] ?? null) !== null
+                                        || ($mainUnit !== '' && !in_array($mainUnit, ['CNM', 'RDNGA'], true)))
+                                    && hasPermission('kehoachbaoduong.edit');
+                                if ($canEditDoiExecution):
+                                    $dateStart = $item['ngay_thuc_hien'] ?? '';
+                                    $dateEnd = $item['ngay_ket_thuc'] ?? '';
+                                    $dateStart = $dateStart && substr($dateStart, 0, 10) !== '0000-00-00' ? substr($dateStart, 0, 10) : '';
+                                    $dateEnd = $dateEnd && substr($dateEnd, 0, 10) !== '0000-00-00' ? substr($dateEnd, 0, 10) : '';
+                                ?>
+                                    <button type="button"
+                                            class="doi-execution-open mt-1 text-blue-600 hover:underline"
+                                            data-id="<?php echo (int)$item['id']; ?>"
+                                            data-date-start="<?php echo htmlspecialchars($dateStart, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-date-end="<?php echo htmlspecialchars($dateEnd, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-person="<?php echo htmlspecialchars((string)($item['nguoi_thuc_hien_nhap'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-create="<?php echo ($item['hososcbd_doi_id'] ?? null) === null ? '1' : '0'; ?>">
+                                        <i class="fas fa-pen mr-1"></i>Nhập liệu
+                                    </button>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3 text-center bg-blue-50" style="display:none">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                     <?php
                                     // Xác định quý nào đã hoàn thành (chỉ 1 quý duy nhất)
@@ -536,7 +670,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="12" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="14" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2"></i>
                                 <p>Chưa có kế hoạch bảo dưỡng cho năm <?php echo $nam; ?></p>
                                 <?php if (hasPermission('kehoachbaoduong.create')): ?>
@@ -1141,11 +1275,153 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
+<div id="doiExecutionModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog" aria-labelledby="doiExecutionModalTitle">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDoiExecutionModal()"></div>
+    <div class="relative mx-auto mt-20 w-full max-w-lg rounded-lg bg-white shadow-xl">
+        <form id="doiExecutionForm" class="p-6">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h2 id="doiExecutionModalTitle" class="text-lg font-bold text-gray-900">Thông tin bảo dưỡng hồ sơ đội</h2>
+                    <p id="doiExecutionModalHint" class="mt-1 text-sm text-gray-600"></p>
+                </div>
+                <button type="button" onclick="closeDoiExecutionModal()" class="text-gray-400 hover:text-gray-600" aria-label="Đóng">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <input type="hidden" id="doiExecutionPlanId">
+            <div class="space-y-4">
+                <div>
+                    <label for="doiExecutionStart" class="mb-1 block text-sm font-medium text-gray-700">Ngày thực hiện <span class="text-red-500">*</span></label>
+                    <input type="date" id="doiExecutionStart" required class="w-full rounded border px-3 py-2">
+                </div>
+                <div>
+                    <label for="doiExecutionEnd" class="mb-1 block text-sm font-medium text-gray-700">Ngày kết thúc</label>
+                    <input type="date" id="doiExecutionEnd" class="w-full rounded border px-3 py-2">
+                </div>
+                <div>
+                    <label for="doiExecutionPerson" class="mb-1 block text-sm font-medium text-gray-700">Người thực hiện <span class="text-red-500">*</span></label>
+                    <input type="text" id="doiExecutionPerson" maxlength="255" required class="w-full rounded border px-3 py-2">
+                </div>
+                <p id="doiExecutionLockedHint" class="hidden text-sm text-amber-700">Mở khóa sửa trên đầu trang để nhập và lưu thông tin.</p>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button type="button" onclick="closeDoiExecutionModal()" class="rounded bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Đóng</button>
+                <button type="submit" id="doiExecutionSubmit" class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">
+                    <span id="doiExecutionSubmitLabel">Lưu</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // ===== KHÓA / MỞ KHÓA CHỈNH SỬA (toàn server) =====
-const LOCK_API_URL = '/iso2/api/edit_lock.php';
+const LOCK_API_URL = <?php echo json_encode(appUrl('api/edit_lock.php'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
 let _currentLockState = true; // mặc định: đang khóa
+
+document.querySelectorAll('.hoso-id-form').forEach(form => {
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (_currentLockState || !form.reportValidity()) return;
+        const input = form.querySelector('[name="hososcbd_id"]');
+        const button = form.querySelector('button');
+        if (!window.confirm(`Liên kết hồ sơ ID ${input.value}? Sau khi lưu không thể thay đổi tại đây.`)) return;
+        button.disabled = true;
+        input.disabled = true;
+        try {
+            const response = await fetch('kehoachbaoduongdinhky.php?action=updateHoSoId', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    kehoach_id: form.dataset.id,
+                    hososcbd_id: input.value,
+                    csrf: <?php echo json_encode($_SESSION['kehoach_hoso_csrf'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'Không lưu được hồ sơ.');
+            window.location.reload();
+        } catch (error) {
+            alert(error.message || 'Lỗi kết nối. Hãy tải lại trang để kiểm tra trước khi thử lại.');
+            button.disabled = false;
+            input.disabled = false;
+        }
+    });
+});
+
+document.querySelectorAll('.doi-execution-open').forEach(button => {
+    button.addEventListener('click', () => openDoiExecutionModal(button));
+});
+
+const doiExecutionForm = document.getElementById('doiExecutionForm');
+doiExecutionForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (_currentLockState || !doiExecutionForm.reportValidity()) return;
+
+    const performedOn = document.getElementById('doiExecutionStart');
+    const endedOn = document.getElementById('doiExecutionEnd');
+    const person = document.getElementById('doiExecutionPerson');
+    if (endedOn.value && endedOn.value < performedOn.value) {
+        alert('Ngày kết thúc không được trước ngày thực hiện.');
+        return;
+    }
+
+    const submit = document.getElementById('doiExecutionSubmit');
+    const inputs = doiExecutionForm.querySelectorAll('input:not([type="hidden"])');
+    submit.disabled = true;
+    inputs.forEach(input => input.disabled = true);
+    try {
+        const response = await fetch('kehoachbaoduongdinhky.php?action=updateDoiExecution', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                kehoach_id: document.getElementById('doiExecutionPlanId').value,
+                ngay_thuc_hien: performedOn.value,
+                ngay_ket_thuc: endedOn.value,
+                nguoi_thuc_hien: person.value,
+                csrf: <?php echo json_encode($_SESSION['kehoach_hoso_csrf'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Không lưu được thông tin bảo dưỡng.');
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || 'Lỗi kết nối. Hãy tải lại trang để kiểm tra trước khi thử lại.');
+        inputs.forEach(input => input.disabled = _currentLockState);
+        submit.disabled = _currentLockState;
+    }
+});
+
+function openDoiExecutionModal(button) {
+    const modal = document.getElementById('doiExecutionModal');
+    document.getElementById('doiExecutionPlanId').value = button.dataset.id;
+    document.getElementById('doiExecutionStart').value = button.dataset.dateStart || '';
+    document.getElementById('doiExecutionEnd').value = button.dataset.dateEnd || '';
+    document.getElementById('doiExecutionPerson').value = button.dataset.person || '';
+    document.getElementById('doiExecutionModalHint').textContent = button.dataset.create === '1'
+        ? `Kế hoạch #${button.dataset.id}: lưu sẽ tạo hồ sơ đội mới và liên kết vào kế hoạch.`
+        : `Kế hoạch #${button.dataset.id}: cập nhật thông tin bảo dưỡng hồ sơ đội.`;
+    document.getElementById('doiExecutionSubmitLabel').textContent = button.dataset.create === '1'
+        ? 'Tạo hồ sơ đội và lưu'
+        : 'Lưu';
+    modal.classList.remove('hidden');
+    updateDoiExecutionModalLockState();
+    if (!_currentLockState) document.getElementById('doiExecutionStart').focus();
+}
+
+function closeDoiExecutionModal() {
+    document.getElementById('doiExecutionModal').classList.add('hidden');
+}
+
+function updateDoiExecutionModalLockState() {
+    const lockedHint = document.getElementById('doiExecutionLockedHint');
+    const submit = document.getElementById('doiExecutionSubmit');
+    const inputs = document.querySelectorAll('#doiExecutionForm input:not([type="hidden"])');
+    lockedHint.classList.toggle('hidden', !_currentLockState);
+    inputs.forEach(input => input.disabled = _currentLockState);
+    submit.disabled = _currentLockState;
+}
 
 function applyLockState(locked) {
     _currentLockState = locked;
@@ -1165,6 +1441,10 @@ function applyLockState(locked) {
     }
 
     const unlocked = !locked;
+    document.querySelectorAll('.hoso-id-form').forEach(form => {
+        form.style.display = unlocked ? '' : 'none';
+    });
+    updateDoiExecutionModalLockState();
 
     // Ẩn/hiện nút sửa ID thiết bị
     document.querySelectorAll('.thietbi-id-edit-toggle').forEach(el => {
@@ -1200,24 +1480,40 @@ function applyLockState(locked) {
     }
 }
 
+async function requestEditLock(options = {}) {
+    const response = await fetch(LOCK_API_URL, {cache: 'no-store', ...options});
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (error) {
+        throw new Error(`API khóa trả về dữ liệu không hợp lệ (HTTP ${response.status}). Kiểm tra đường dẫn ${LOCK_API_URL} và PHP error log.`);
+    }
+    if (!response.ok || !data.success || typeof data.locked !== 'boolean') {
+        throw new Error(data.message || `Không đọc được trạng thái khóa (HTTP ${response.status}).`);
+    }
+    return data;
+}
+
 function fetchLockState() {
-    fetch(LOCK_API_URL)
-        .then(r => r.json())
-        .then(data => { if (data.success) applyLockState(data.locked); })
-        .catch(() => {});
+    requestEditLock()
+        .then(data => applyLockState(data.locked))
+        .catch(error => {
+            applyLockState(true);
+            alert(error.message);
+        });
 }
 
 function toggleEditLock() {
     if (!_currentLockState) {
         // Đang mở → khóa lại không cần password
-        fetch(LOCK_API_URL, {
+        requestEditLock({
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({action: 'lock'})
         })
-        .then(r => r.json())
-        .then(data => { if (data.success) applyLockState(data.locked); })
-        .catch(() => alert('Có lỗi khi khóa'));
+        .then(data => applyLockState(data.locked))
+        .catch(error => alert(error.message));
     } else {
         // Đang khóa → mở modal nhập password
         openEditLockModal();
@@ -1247,12 +1543,11 @@ function confirmEditLockPassword() {
     const confirmBtn = document.querySelector('#editLockModal button[onclick="confirmEditLockPassword()"]');
     if (confirmBtn) confirmBtn.disabled = true;
 
-    fetch(LOCK_API_URL, {
+    requestEditLock({
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({action: 'unlock', password: password})
     })
-    .then(r => r.json())
     .then(data => {
         if (data.success) {
             closeEditLockModal();
@@ -1264,7 +1559,11 @@ function confirmEditLockPassword() {
             input.focus();
         }
     })
-    .catch(() => alert('Có lỗi kết nối'))
+    .catch(failure => {
+        error.textContent = failure.message || 'Có lỗi kết nối';
+        error.classList.remove('hidden');
+        input.focus();
+    })
     .finally(() => { if (confirmBtn) confirmBtn.disabled = false; });
 }
 

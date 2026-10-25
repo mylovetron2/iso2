@@ -41,6 +41,9 @@
     <li>Nhóm sửa chữa <code>nhomsc</code>: <code>RDNGA</code>, <code>CNC</code>, <code>KTKT</code>, <code>TV</code>; đơn vị thực hiện gồm <b>làm chính</b> và <b>làm phụ</b>.</li>
     <li>Dữ liệu vào bằng <b>import Excel</b> hoặc <b>thêm thiết bị từ <code>thietbi_iso</code></b>; ra bằng <b>Excel / PDF / thống kê</b>.</li>
     <li>Phân quyền qua bảng <code>roles.permissions</code> (<code>kehoachbaoduong.view/create/edit/delete</code>).</li>
+    <li>Nút mở khoá sửa gọi api/edit_lock.php theo đường dẫn ứng dụng (appUrl). Hosting cần cho PHP ghi storage/kehoachbd_edit_lock.txt; API chỉ báo thành công khi đã ghi trạng thái. Lỗi quyền, đường dẫn hoặc phản hồi không phải JSON được hiển thị thay vì bỏ qua. Khi lỗi tải trạng thái, giao diện giữ trạng thái khoá.</li>
+    <li>Cột hososcbd_id cho nhập ID hồ sơ (stt, không phải mã hoso) khi chưa có cả hai liên kết và đơn vị làm chính là CNM/RDNGA. Người có quyền kehoachbaoduong.edit mở khoá sửa, nhập ID rồi Lưu; đã liên kết chỉ được xem. Action updateHoSoId dùng POST + CSRF, kiểm tra phạm vi đơn vị của người dùng, hồ sơ tồn tại và đúng mavt/somay của thiết bị, chưa thuộc kế hoạch khác; không lọc cv, năm hoặc quý. Ghi trong transaction, không ghi đè liên kết; tải lại danh sách sau khi lưu để cập nhật ngày và người thực hiện.</li>
+    <li>Danh sách hiển thị ngày thực hiện/ngày kết thúc từ ngayth/ngaykt của hồ sơ đã liên kết qua hososcbd_id hoặc hososcbd_doi_id, định dạng dd/mm/yyyy. Người thực hiện hồ sơ CNM/RDNGA lấy từ ngthuchien_iso (mahoso = hoso). Với kế hoạch chưa liên kết có đơn vị làm chính khác CNM/RDNGA, người có quyền kehoachbaoduong.edit mở khóa sửa rồi bấm Nhập liệu để mở modal nhập đúng ba trường ngày thực hiện, ngày kết thúc và người thực hiện; lưu sẽ tự tạo hồ sơ BDDK trong hososcbd_doi_iso, tự lấy thông tin thiết bị từ kế hoạch và gắn nguồn hồ sơ đội. Hồ sơ đã liên kết đội cho phép cập nhật lại đúng ba trường này qua modal. Không ghi vào hososcbd_iso. Máy chủ kiểm tra CSRF, nguồn liên kết và phạm vi đơn vị. Dữ liệu được tải theo lô cho trang hiện tại, không đổi số dòng hoặc bộ lọc/phân trang. Chưa thay đổi biểu mẫu xuất Excel/PDF.</li>
   </ul>
 </section>
 
@@ -53,6 +56,9 @@
     users ||--o{ role_user : "user_id"
     roles ||--o{ role_user : "role_id"
     roles }o--o{ PERMISSION : "permissions (chuỗi CSV)"
+    hososcbd_iso |o--o| ke_hoach_bao_duong_dinh_ky_iso : "hososcbd_id (CNM / RDNGA)"
+    hososcbd_doi_iso |o--o| ke_hoach_bao_duong_dinh_ky_iso : "hososcbd_doi_id (don vi khac)"
+    ke_hoach_bao_duong_dinh_ky_iso ||--o{ baoduong_dinhky_chitiet_iso : "kehoach_id"
 
     thietbi_iso {
       INT stt PK
@@ -81,6 +87,29 @@
       VARCHAR donvi_lam_phu
       TEXT ghi_chu
       VARCHAR created_by
+      INT hososcbd_id FK,UK
+      INT hososcbd_doi_id FK,UK
+      ENUM nguon_hoso    }
+    hososcbd_iso {
+      INT stt PK
+      VARCHAR hoso
+    }
+    hososcbd_doi_iso {
+      INT stt PK
+      VARCHAR hoso
+    }
+    baoduong_dinhky_chitiet_iso {
+      BIGINT id PK
+      INT kehoach_id FK
+      TINYINT qui
+      DATE ngay_bat_dau
+      DATE ngay_ket_thuc
+      TEXT noi_dung
+      TEXT ket_qua
+      VARCHAR nguoi_thuc_hien
+      VARCHAR created_by
+      TIMESTAMP created_at
+      TIMESTAMP updated_at
     }
     users { INT id PK VARCHAR username }
     role_user { INT user_id FK INT role_id FK }
@@ -88,6 +117,7 @@
     PERMISSION { VARCHAR kehoachbaoduong_view VARCHAR kehoachbaoduong_create VARCHAR kehoachbaoduong_edit VARCHAR kehoachbaoduong_delete }
   </div>
   <p class="text-sm text-gray-600">Lưu ý: <code>thietbi_id</code> và <code>created_by</code> là quan hệ logic (ứng dụng kiểm tra), không bắt buộc khoá ngoại ở CSDL. <code>ten_thietbi</code>, <code>so_serial</code> được sao chép từ <code>thietbi_iso</code> (<code>tenvt</code>, <code>somay</code>) khi thêm thiết bị.</p>
+  <p class="text-sm text-gray-600"><b>Phần mở rộng bước 1, chưa triển khai vào DB:</b> hai liên kết hồ sơ và bảng chi tiết trong sơ đồ được chuẩn bị bởi migration <code>20261023_link_kehoach_hososcbd.sql</code>. Kiểu ID thực tế được lấy từ bảng cha, giữ nguyên cả thuộc tính UNSIGNED; INT trong sơ đồ chỉ mang tính minh hoạ. <code>stt</code> là ID bản ghi, còn <code>hoso</code> là số hồ sơ nghiệp vụ.</p>
 </section>
 
 <section>
@@ -105,6 +135,9 @@
       <tr><td>donvi_lam_chinh / donvi_lam_phu</td><td>VARCHAR(255)</td><td>Đơn vị làm chính / phụ</td></tr>
       <tr><td>ghi_chu</td><td>TEXT</td><td>Ghi chú</td></tr>
       <tr><td>created_by</td><td>VARCHAR</td><td>Username người tạo (từ session)</td></tr>
+      <tr><td class="fk">hososcbd_id (mới)</td><td>Kiểu của hososcbd_iso.stt, NULL, UNIQUE</td><td>FK → hososcbd_iso.stt; dùng cho CNM/RDNGA</td></tr>
+      <tr><td class="fk">hososcbd_doi_id (mới)</td><td>Kiểu của hososcbd_iso.stt, NULL, UNIQUE</td><td>FK → hososcbd_doi_iso.stt; dùng cho đơn vị khác đã được chọn</td></tr>
+      <tr><td class="fk">nguon_hoso (mới)</td><td>ENUM('hososcbd_iso','hososcbd_doi_iso'), NULL</td><td>Nguồn truy xuất hồ sơ duy nhất của kế hoạch. NULL = chưa chọn/chưa liên kết. CHECK chk_kh_nguon_hoso chỉ cho điền hososcbd_id khi nguồn là hososcbd_iso, hososcbd_doi_id khi nguồn là hososcbd_doi_iso. Danh sách web chỉ đọc ngày/người thực hiện từ bảng được chọn. Migration: <code>20261025_add_nguon_hoso_kehoach.sql</code> (chạy sau 20261023, tự suy ra nguồn từ liên kết hiện có).</td></tr>
     </tbody>
   </table>
 </section>
@@ -186,6 +219,64 @@
     <li>Lọc nhóm <code>CNC+RDNGA</code> = <code>nhomsc IN ('CNC','RDNGA')</code>.</li>
     <li>Thống kê mặc định theo quý hiện tại của năm.</li>
     <li>Import/xoá/thêm thiết bị có xử lý transaction; lỗi sẽ rollback.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">8. Hồ sơ bảo dưỡng năm và chi tiết từng lần/quý — bước 1</h2>
+  <p><b>Trạng thái:</b> chỉ chuẩn bị migration và thiết kế; chưa chạy migration, chưa bổ sung action tạo/mở hồ sơ, chưa thay đổi hành vi hiện tại.</p>
+  <h3 class="text-xl font-semibold mt-4">8.1. Quan hệ và ràng buộc dữ liệu</h3>
+  <ul class="list-disc pl-6 space-y-1">
+    <li>Một kế hoạch có 0 hoặc 1 hồ sơ cho cả năm. Trước khi bảo dưỡng, cả hai FK là NULL; khi bắt đầu ghi nhận bảo dưỡng, chỉ một FK được điền.</li>
+    <li>CNM/RDNGA dùng <code>hososcbd_iso</code>; đơn vị khác dùng <code>hososcbd_doi_iso</code>. CHECK ngăn điền cả hai FK hoặc liên kết sai nhóm đơn vị (chuẩn hoá UPPER/TRIM). Không cho gắn hồ sơ khi chưa chọn đơn vị.</li>
+    <li>UNIQUE trên từng FK ngăn dùng chung một hồ sơ cho nhiều kế hoạch. Hai bảng có không gian ID riêng; cùng giá trị stt ở hai bảng không phải cùng hồ sơ.</li>
+    <li><code>hososcbd_doi_iso</code> được tạo bằng CREATE TABLE LIKE: sao chép cột, chỉ mục và tuỳ chọn bảng tại thời điểm chạy, không sao chép dữ liệu, FK hoặc trigger. Các thay đổi schema về sau cần migration riêng cho cả hai bảng nếu cần đồng bộ.</li>
+    <li><code>baoduong_dinhky_chitiet_iso</code> liên kết kế hoạch qua <code>kehoach_id</code>, dùng chung cho cả hai loại hồ sơ. Cho phép nhiều lần thực hiện trong cùng quý; không đặt UNIQUE (kehoach_id, qui).</li>
+    <li>FK dùng ON DELETE/UPDATE RESTRICT: không xoá hồ sơ đang được kế hoạch tham chiếu; không xoá kế hoạch đã có chi tiết. FK từ kế hoạch sang hồ sơ không tự ngăn xoá kế hoạch chỉ mới có liên kết hồ sơ mà chưa có chi tiết.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Cột chi tiết</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td>id / kehoach_id</td><td>Khoá chính lần thực hiện / FK về kế hoạch năm</td></tr>
+      <tr><td>qui</td><td>Quý kế hoạch 1–4, có CHECK tại DB</td></tr>
+      <tr><td>ngay_bat_dau / ngay_ket_thuc</td><td>Ngày bắt đầu bắt buộc; ngày kết thúc NULL khi đang thực hiện, nếu có phải không trước ngày bắt đầu</td></tr>
+      <tr><td>noi_dung / ket_qua</td><td>Nội dung bắt buộc; kết quả có thể NULL khi chưa kết thúc</td></tr>
+      <tr><td>nguoi_thuc_hien</td><td>Tên hoặc danh sách người thực hiện dạng văn bản, chưa phải FK nhân viên</td></tr>
+      <tr><td>created_by / created_at / updated_at</td><td>Username người ghi nhận và thời điểm tạo/cập nhật</td></tr>
+    </tbody>
+  </table>
+  <h3 class="text-xl font-semibold mt-4">8.2. Yêu cầu cho bước nghiệp vụ tiếp theo (chưa có trong code)</h3>
+  <ul class="list-disc pl-6 space-y-1">
+    <li>Khi bắt đầu bảo dưỡng: transaction, SELECT kế hoạch FOR UPDATE, mở lại hồ sơ đã có hoặc tạo đúng bảng rồi cập nhật FK; thêm chi tiết trong cùng transaction. Không tạo hồ sơ khi chỉ import/thêm kế hoạch.</li>
+    <li>Ứng dụng phải kiểm tra kế hoạch đã liên kết hồ sơ trước khi thêm chi tiết, quý có trong kế hoạch, ngày thực tế/năm kế hoạch phù hợp, và các trường nội dung/người thực hiện không rỗng. FK chi tiết hiện chỉ bảo đảm kế hoạch tồn tại.</li>
+    <li>Không suy ra hoàn tất quý chỉ từ việc có hồ sơ năm. Cần thống nhất cách tổng hợp các lần thực hiện thành qui_N_hoantat trước khi nối với updateHoanTat/updateMultipleHoanTat.</li>
+    <li>Chặn tháo/đổi liên kết khi đã có lịch sử; không tự di chuyển hồ sơ sang bảng khác khi đổi đơn vị. CHECK hiện chỉ ngăn đổi nhóm đơn vị trong khi giữ nguyên liên kết không phù hợp.</li>
+    <li>Chặn xoá kế hoạch hoặc import thay thế theo năm nếu đã có hồ sơ. RESTRICT của bảng chi tiết là lớp bảo vệ bổ sung, không thay thế kiểm tra nghiệp vụ.</li>
+    <li>Hồ sơ đội có luồng tạo/cập nhật riêng tại trang kế hoạch, chỉ cho người dùng nhập ba trường ngayth, ngaykt, nguoi_thuc_hien_iso. Khi tạo mới, ứng dụng lấy mavt/somay/model/madv từ thiết bị, đặt cv = BDDK, ngày yêu cầu bằng ngày thực hiện; mã phiếu có dạng DOI-&lt;năm&gt;-&lt;ID kế hoạch 8 chữ số&gt;, mã hồ sơ thêm hậu tố -1. Không ghi nhầm dữ liệu vào hososcbd_iso hoặc các bảng KPI/định mức/người thực hiện của hồ sơ cũ. Không sửa hososcbd.php để hiển thị hồ sơ đội.</li>
+    <li>Backfill dùng script CLI bên dưới, chỉ gắn hồ sơ có sẵn. Không tạo chi tiết giả chỉ từ cờ hoàn tất cũ.</li>
+  </ul>
+  <h3 class="text-xl font-semibold mt-4">8.3. Cách chạy migration sau khi được duyệt</h3>
+  <p>File: <a href="../migrations/20261023_link_kehoach_hososcbd.sql">20261023_link_kehoach_hososcbd.sql</a>. Yêu cầu MySQL ≥ 8.0.16 hoặc MariaDB ≥ 10.2.1 để CHECK được thực thi; hai bảng cha phải dùng InnoDB và khoá chính số nguyên đơn cột. Migration kiểm tra điều kiện trước khi thay đổi bảng, không tự đổi engine.</p>
+  <p>Sau migration trên, chạy thêm <a href="../migrations/20261025_add_nguon_hoso_kehoach.sql">20261025_add_nguon_hoso_kehoach.sql</a> và <a href="../migrations/20261025_add_doi_execution_input.sql">20261025_add_doi_execution_input.sql</a> để thêm nguồn truy xuất và trường người thực hiện cho hososcbd_doi_iso. Mỗi file chạy một lần trên DB đã sao lưu; kiểm tra SHOW CREATE TABLE sau khi chạy.</p>
+  <ol class="list-decimal pl-6 space-y-1">
+    <li>Sao lưu đầy đủ dữ liệu/schema; kiểm tra SELECT VERSION() và SHOW CREATE TABLE của hai bảng cha; thử trên bản sao DB trước.</li>
+    <li>Dùng mysql client chọn đúng database và chạy SOURCE với đường dẫn file migration, hoặc dùng công cụ hỗ trợ DELIMITER. Không dùng migrations/run_migration.php vì trình này tách SQL theo dấu chấm phẩy.</li>
+    <li>Kiểm tra ba kết quả SHOW CREATE TABLE cuối file, số dòng hai bảng nguồn không đổi; hai bảng mới rỗng và hai cột liên kết đều NULL.</li>
+    <li>Đây là migration chạy một lần, không dùng IF NOT EXISTS để che schema chưa đúng. DDL tự commit; nếu lỗi giữa chừng, dừng và kiểm tra cấu trúc, không chạy lại mù quáng. Nếu thủ tục migrate_20261023_link_kehoach_hososcbd còn tồn tại do lỗi, kiểm tra và xoá thủ tục này trước khi tiếp tục theo trạng thái thực tế.</li>
+    <li>Chưa có script rollback tự động: không xoá bảng mới nếu đã có dữ liệu. Khi cần phục hồi, dùng bản sao lưu và kế hoạch phục hồi đã kiểm tra.</li>
+  </ol>
+  <h3 class="text-xl font-semibold mt-4">8.4. Backfill liên kết hồ sơ có sẵn</h3>
+  <p>Script <a href="../backfill_kehoach_hososcbd.php">backfill_kehoach_hososcbd.php</a> chạy qua PHP CLI, sau khi migration thành công. Dùng kết nối trong config/database.php; kiểm tra đúng môi trường và sao lưu trước khi áp dụng.</p>
+  <p>Hosting không có Terminal: tải cả script trên và <a href="../backfill_kehoach_hososcbd_web.php">backfill_kehoach_hososcbd_web.php</a> vào thư mục ứng dụng. Đăng nhập tài khoản có ROLE_ADMIN, mở trang web, chọn năm và xem trước; chỉ sau khi xem trước thành công mới có nút xác nhận cập nhật. POST có CSRF và mã xác nhận một lần, hết hạn sau 10 phút. Khi áp dụng sẽ đối chiếu lại DB, không đóng băng kết quả xem trước. GET không thực hiện backfill; gỡ trang công cụ sau khi dùng xong.</p>
+  <pre>php backfill_kehoach_hososcbd.php --year=2026
+php backfill_kehoach_hososcbd.php --year=2026 --apply</pre>
+  <ul class="list-disc pl-6 space-y-1">
+    <li>Mặc định dry-run; bỏ --year để xét tất cả năm. Đầu ra JSON từng dòng, cuối cùng là tổng kết. Kết quả CLI và bảng trên web hiển thị somay (số máy từ thiết bị liên kết, kể cả khi không tìm được hồ sơ) và phieu (số phiếu của hồ sơ tìm được). Chỉ xét CNM/RDNGA, cả hai FK đang NULL và có quý hoàn tất.</li>
+    <li>Từ thietbi_id lấy mavt + somay để đối chiếu đúng cách JOIN hiện tại của hệ thống. Thiếu mã/số máy hoặc nhiều thiết bị cùng cặp định danh thì bỏ qua, không đoán theo tên/serial.</li>
+    <li>Không lọc loại công việc cv; tìm mọi hồ sơ của đúng thiết bị có ngayth (ngày bắt đầu) thuộc năm kế hoạch và một trong các quý đã hoàn tất.</li>
+    <li>Chọn ngayth mới nhất; cùng ngày chọn stt lớn nhất. Nếu hồ sơ đã thuộc kế hoạch khác thì bỏ qua, không lấy hồ sơ cũ hơn thay thế. Kế hoạch được xử lý theo id tăng dần; dry-run cũng giữ chỗ để không đề xuất dùng chung hồ sơ.</li>
+    <li>--apply khoá các dòng kế hoạch/hồ sơ được chọn và cập nhật trong một transaction; chỉ tổng kết result=committed xác nhận đã lưu. Các dòng pending_commit chưa phải kết quả thành công; gặp lỗi sẽ rollback toàn bộ cập nhật của lần chạy.</li>
+    <li>Không ghi đè liên kết, không sửa hososcbd_iso, không tạo hồ sơ hoặc chi tiết mới. Dry-run không thay đổi dữ liệu; kết quả có thể thay đổi nếu DB được cập nhật trước lần chạy --apply.</li>
   </ul>
 </section>
 

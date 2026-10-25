@@ -12,6 +12,9 @@ package-lock.json
 # Logs and databases
 *.log
 *.sql
+!/migrations/20261023_link_kehoach_hososcbd.sql
+!/migrations/20261025_add_nguon_hoso_kehoach.sql
+!/migrations/20261025_add_doi_execution_input.sql
 *.sqlite
 *.db
 

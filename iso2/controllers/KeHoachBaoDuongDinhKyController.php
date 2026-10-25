@@ -11,10 +11,107 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class KeHoachBaoDuongDinhKyController
 {
     private PDO $db;
+    private string $userMadv;
+    private ?bool $userIsAdmin = null;
 
     public function __construct()
     {
         $this->db = getDBConnection();
+    }
+
+    /**
+     * Lấy mã đơn vị (madv) của user đang đăng nhập.
+     */
+    private function getUserMadv(): string
+    {
+        if (isset($this->userMadv)) {
+            return $this->userMadv;
+        }
+        $this->userMadv = '';
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId !== null) {
+            $stmt = $this->db->prepare("SELECT madv FROM users WHERE stt = :stt LIMIT 1");
+            $stmt->execute([':stt' => $userId]);
+            $this->userMadv = trim((string)($stmt->fetchColumn() ?: ''));
+        }
+        return $this->userMadv;
+    }
+
+    private function isAdmin(): bool
+    {
+        if ($this->userIsAdmin === null) {
+            $this->userIsAdmin = hasRole(ROLE_ADMIN);
+        }
+        return $this->userIsAdmin;
+    }
+
+    /**
+     * Danh sách madv được xem là cùng đơn vị với user.
+     * TH và CNC đã gộp thành DVLTH nên coi là một nhóm.
+     */
+    private function getMadvScope(): array
+    {
+        $madv = $this->getUserMadv();
+        if ($madv === '') {
+            return [];
+        }
+        if (in_array(strtoupper($madv), ['TH', 'CNC', 'DVLTH'], true)) {
+            return ['TH', 'CNC', 'DVLTH'];
+        }
+        return [$madv];
+    }
+
+    /**
+     * Thêm điều kiện lọc theo đơn vị của user (qua thietbi_iso.madv) vào câu SQL.
+     */
+    private function applyDonViFilter(string &$sql, array &$params): void
+    {
+        if ($this->isAdmin()) {
+            return;
+        }
+        $scope = $this->getMadvScope();
+        if (empty($scope)) {
+            $sql .= " AND 1 = 0";
+            return;
+        }
+        $in = [];
+        foreach ($scope as $i => $value) {
+            $key = ':user_madv' . $i;
+            $in[] = $key;
+            $params[$key] = $value;
+        }
+        $sql .= " AND EXISTS (
+            SELECT 1
+            FROM thietbi_iso t
+            WHERE t.stt = ke_hoach_bao_duong_dinh_ky_iso.thietbi_id
+              AND TRIM(t.madv) IN (" . implode(',', $in) . ")
+        )";
+    }
+
+    /**
+     * Lọc theo đơn vị làm chính (GET donvi_chinh). '__none__' = chưa chọn đơn vị.
+     */
+    private function applyDonViChinhFilter(string &$sql, array &$params): void
+    {
+        $dv = trim((string)($_GET['donvi_chinh'] ?? ''));
+        if ($dv === '') {
+            return;
+        }
+        if ($dv === '__none__') {
+            $sql .= " AND (donvi_lam_chinh IS NULL OR TRIM(donvi_lam_chinh) = '')";
+            return;
+        }
+        if (!in_array($dv, ['KTKT', 'ĐVLTH', 'CNM', 'RDNGA'], true)) {
+            return;
+        }
+        // ĐVLTH có thể được lưu dưới dạng không dấu
+        $values = $dv === 'ĐVLTH' ? ['ĐVLTH', 'DVLTH'] : [$dv];
+        $in = [];
+        foreach ($values as $i => $value) {
+            $in[] = ':donvi_chinh' . $i;
+            $params[':donvi_chinh' . $i] = $value;
+        }
+        $sql .= " AND TRIM(donvi_lam_chinh) IN (" . implode(',', $in) . ")";
     }
 
     /**
@@ -23,6 +120,9 @@ class KeHoachBaoDuongDinhKyController
     public function index(): void
     {
         try {
+            if (!isset($_SESSION['kehoach_hoso_csrf'])) {
+                $_SESSION['kehoach_hoso_csrf'] = bin2hex(random_bytes(32));
+            }
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = trim($_GET['search'] ?? '');
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
@@ -40,6 +140,7 @@ class KeHoachBaoDuongDinhKyController
             $offset = ($page - 1) * $perpage;
 
             $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, $thietbi_id, $thietbi_id_filter, $perpage, $offset);
+            $items = $this->loadHoSoExecutionInfo($items);
             $total = $totalRecords;
 
             // Đếm số thiết bị theo quý cho thống kê (toàn bộ kết quả lọc, không phân trang)
@@ -51,10 +152,71 @@ class KeHoachBaoDuongDinhKyController
             require_once __DIR__ . '/../views/kehoachbaoduongdinhky/index.php';
         } catch (Exception $e) {
             error_log("Error in KeHoachBaoDuongDinhKyController::index: " . $e->getMessage());
-            $_SESSION['error'] = 'Có lỗi xảy ra khi tải danh sách';
-            header('Location: /iso2/index.php');
+            http_response_code(500);
+            echo '<!doctype html><html lang="vi"><meta charset="utf-8"><title>Lỗi tải kế hoạch</title>'
+                . '<body><h1>Không tải được kế hoạch bảo dưỡng</h1>'
+                . '<p>Máy chủ gặp lỗi khi truy xuất dữ liệu. Vui lòng kiểm tra PHP error log và xác nhận các migration hồ sơ bảo dưỡng đã được áp dụng đúng thứ tự.</p>'
+                . '<p>Sau khi cập nhật cơ sở dữ liệu, hãy tải lại trang.</p></body></html>';
             exit;
         }
+    }
+
+    private function loadHoSoExecutionInfo(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+        $ids = array_column($items, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $queries = [
+            "SELECT k.id, h.ngayth, h.ngaykt, n.hoten AS nguoi_thuc_hien,
+                    NULL AS nguoi_thuc_hien_nhap
+             FROM ke_hoach_bao_duong_dinh_ky_iso k
+             INNER JOIN hososcbd_iso h ON h.stt = k.hososcbd_id
+             LEFT JOIN ngthuchien_iso n ON n.mahoso = h.hoso
+             WHERE k.nguon_hoso = 'hososcbd_iso' AND k.id IN ($placeholders)
+             ORDER BY k.id, n.stt",
+            "SELECT k.id, h.ngayth, h.ngaykt,
+                    COALESCE(NULLIF(h.nguoi_thuc_hien_iso, ''), c.nguoi_thuc_hien) AS nguoi_thuc_hien,
+                    h.nguoi_thuc_hien_iso AS nguoi_thuc_hien_nhap
+             FROM ke_hoach_bao_duong_dinh_ky_iso k
+             INNER JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
+             LEFT JOIN baoduong_dinhky_chitiet_iso c ON c.kehoach_id = k.id
+                 AND (h.nguoi_thuc_hien_iso IS NULL OR h.nguoi_thuc_hien_iso = '')
+             WHERE k.nguon_hoso = 'hososcbd_doi_iso' AND k.id IN ($placeholders)
+             ORDER BY k.id, c.id",
+        ];
+        $execution = [];
+        foreach ($queries as $sql) {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($ids);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $id = $row['id'];
+                if (!isset($execution[$id])) {
+                    $execution[$id] = [
+                        'ngay_thuc_hien' => $row['ngayth'],
+                        'ngay_ket_thuc' => $row['ngaykt'],
+                        'cac_nguoi_thuc_hien' => [],
+                        'nguoi_thuc_hien_nhap' => $row['nguoi_thuc_hien_nhap'] ?? null,
+                    ];
+                }
+                $name = trim((string)($row['nguoi_thuc_hien'] ?? ''));
+                if ($name !== '' && !in_array($name, $execution[$id]['cac_nguoi_thuc_hien'], true)) {
+                    $execution[$id]['cac_nguoi_thuc_hien'][] = $name;
+                }
+            }
+        }
+        foreach ($items as &$item) {
+            $info = $execution[$item['id']] ?? [
+                'ngay_thuc_hien' => null,
+                'ngay_ket_thuc' => null,
+                'cac_nguoi_thuc_hien' => [],
+                'nguoi_thuc_hien_nhap' => null,
+            ];
+            $item = array_merge($item, $info);
+        }
+        unset($item);
+        return $items;
     }
 
     /**
@@ -308,6 +470,257 @@ class KeHoachBaoDuongDinhKyController
         exit;
     }
 
+    public function updateHoSoId(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            header('Allow: POST');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Chỉ chấp nhận POST.']);
+            return;
+        }
+        try {
+            $input = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            $token = is_array($input) ? ($input['csrf'] ?? null) : null;
+            if (!is_string($token) || empty($_SESSION['kehoach_hoso_csrf'])
+                || !hash_equals($_SESSION['kehoach_hoso_csrf'], $token)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Phiên xác nhận không hợp lệ. Hãy tải lại trang.']);
+                return;
+            }
+            $planId = filter_var($input['kehoach_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $hosoId = filter_var($input['hososcbd_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($planId === false || $hosoId === false) {
+                throw new InvalidArgumentException('ID kế hoạch và hososcbd_id phải là số nguyên dương.');
+            }
+            $this->linkHoSoId($planId, $hosoId);
+            echo json_encode(['success' => true, 'message' => 'Đã liên kết hồ sơ.']);
+        } catch (JsonException | InvalidArgumentException $e) {
+            http_response_code(400);
+            error_log('updateHoSoId rejected: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e instanceof JsonException ? 'Dữ liệu JSON không hợp lệ.' : $e->getMessage()]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            error_log('updateHoSoId failed: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Không lưu được liên kết. Hãy tải lại trang và kiểm tra hồ sơ có đang được sử dụng không.']);
+        }
+    }
+
+    public function updateDoiExecution(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            header('Allow: POST');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Chỉ chấp nhận POST.']);
+            return;
+        }
+        try {
+            $input = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($input)) {
+                throw new InvalidArgumentException('Dữ liệu gửi lên không hợp lệ.');
+            }
+            $token = $input['csrf'] ?? null;
+            if (!is_string($token) || empty($_SESSION['kehoach_hoso_csrf'])
+                || !hash_equals($_SESSION['kehoach_hoso_csrf'], $token)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Phiên xác nhận không hợp lệ. Hãy tải lại trang.']);
+                return;
+            }
+            $planId = filter_var($input['kehoach_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($planId === false) {
+                throw new InvalidArgumentException('ID kế hoạch phải là số nguyên dương.');
+            }
+            $performedOn = $this->normalizeExecutionDate($input['ngay_thuc_hien'] ?? null, false);
+            $endedOn = $this->normalizeExecutionDate($input['ngay_ket_thuc'] ?? null, true);
+            if ($endedOn !== null && $endedOn < $performedOn) {
+                throw new InvalidArgumentException('Ngày kết thúc không được trước ngày thực hiện.');
+            }
+            $personValue = $input['nguoi_thuc_hien'] ?? null;
+            if (!is_string($personValue)) {
+                throw new InvalidArgumentException('Người thực hiện không hợp lệ.');
+            }
+            $person = trim($personValue);
+            if ($person === '' || mb_strlen($person, 'UTF-8') > 255) {
+                throw new InvalidArgumentException('Người thực hiện là bắt buộc và không được vượt quá 255 ký tự.');
+            }
+            $this->saveDoiExecution($planId, $performedOn, $endedOn, $person);
+            echo json_encode(['success' => true, 'message' => 'Đã lưu thông tin bảo dưỡng hồ sơ đội.']);
+        } catch (JsonException | InvalidArgumentException $e) {
+            http_response_code(400);
+            error_log('updateDoiExecution rejected: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            error_log('updateDoiExecution failed: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Không lưu được thông tin bảo dưỡng hồ sơ đội.']);
+        }
+    }
+
+    private function normalizeExecutionDate(mixed $value, bool $nullable): ?string
+    {
+        if ($nullable && ($value === null || $value === '')) {
+            return null;
+        }
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            throw new InvalidArgumentException('Ngày thực hiện và ngày kết thúc phải đúng định dạng YYYY-MM-DD.');
+        }
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+        if ($date === false || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))
+            || $date->format('Y-m-d') !== $value) {
+            throw new InvalidArgumentException('Ngày thực hiện hoặc ngày kết thúc không hợp lệ.');
+        }
+        return $value;
+    }
+
+    private function saveDoiExecution(int $planId, string $performedOn, ?string $endedOn, string $person): void
+    {
+        $this->db->beginTransaction();
+        try {
+            $sql = "SELECT k.hososcbd_id, k.hososcbd_doi_id, k.nguon_hoso,
+                           k.donvi_lam_chinh, k.nam, t.mavt, t.somay, t.model, t.madv
+                FROM ke_hoach_bao_duong_dinh_ky_iso k
+                INNER JOIN thietbi_iso t ON t.stt = k.thietbi_id
+                WHERE k.id = :id
+                  AND (k.nguon_hoso IS NULL OR k.nguon_hoso = 'hososcbd_doi_iso')";
+            $params = [':id' => $planId];
+            $this->applyDonViFilter($sql, $params);
+            $stmt = $this->db->prepare($sql . ' FOR UPDATE');
+            $stmt->execute($params);
+            $plan = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$plan) {
+                throw new InvalidArgumentException('Kế hoạch không tồn tại hoặc ngoài phạm vi đơn vị của bạn.');
+            }
+
+            $mainUnit = strtoupper(trim((string)$plan['donvi_lam_chinh']));
+            if ($plan['hososcbd_id'] !== null || $mainUnit === ''
+                || in_array($mainUnit, ['CNM', 'RDNGA'], true)) {
+                throw new InvalidArgumentException('Chỉ tạo hồ sơ đội cho kế hoạch chưa liên kết hoặc đã chọn nguồn hososcbd_doi_iso.');
+            }
+
+            $dossierId = $plan['hososcbd_doi_id'];
+            $endDate = $endedOn ?? '0000-00-00';
+            if ($dossierId !== null) {
+                $stmt = $this->db->prepare('UPDATE hososcbd_doi_iso
+                    SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien
+                    WHERE stt = :stt');
+                $stmt->execute([
+                    ':ngayth' => $performedOn,
+                    ':ngaykt' => $endDate,
+                    ':nguoi_thuc_hien' => $person,
+                    ':stt' => $dossierId,
+                ]);
+            } else {
+                if ($plan['nguon_hoso'] !== null && $plan['nguon_hoso'] !== 'hososcbd_doi_iso') {
+                    throw new InvalidArgumentException('Kế hoạch đã chọn nguồn hồ sơ khác.');
+                }
+                if (trim((string)$plan['mavt']) === '' || trim((string)$plan['somay']) === ''
+                    || trim((string)$plan['madv']) === '') {
+                    throw new InvalidArgumentException('Thiết bị cần có mã vật tư, số máy và đơn vị để tạo hồ sơ đội.');
+                }
+
+                $year = (int)$plan['nam'];
+                $phieu = sprintf('DOI-%04d-%08d', $year, $planId);
+                $hoso = $phieu . '-1';
+                $maql = $performedOn . '-' . trim((string)$plan['madv']) . '-' . $phieu;
+                $stmt = $this->db->prepare('INSERT INTO hososcbd_doi_iso
+                    (maql, phieu, hoso, ngayyc, madv, cv, mavt, somay, model,
+                     ngayth, ngaykt, nguoi_thuc_hien_iso)
+                    VALUES
+                    (:maql, :phieu, :hoso, :ngayyc, :madv, :cv, :mavt, :somay, :model,
+                     :ngayth, :ngaykt, :nguoi_thuc_hien)');
+                $stmt->execute([
+                    ':maql' => $maql,
+                    ':phieu' => $phieu,
+                    ':hoso' => $hoso,
+                    ':ngayyc' => $performedOn,
+                    ':madv' => trim((string)$plan['madv']),
+                    ':cv' => 'BDDK',
+                    ':mavt' => trim((string)$plan['mavt']),
+                    ':somay' => trim((string)$plan['somay']),
+                    ':model' => trim((string)($plan['model'] ?? '')),
+                    ':ngayth' => $performedOn,
+                    ':ngaykt' => $endDate,
+                    ':nguoi_thuc_hien' => $person,
+                ]);
+                $dossierId = (int)$this->db->lastInsertId();
+                if ($dossierId <= 0) {
+                    throw new RuntimeException('Could not determine inserted team dossier ID');
+                }
+
+                $stmt = $this->db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso
+                    SET hososcbd_doi_id = :dossier_id, nguon_hoso = 'hososcbd_doi_iso'
+                    WHERE id = :plan_id
+                      AND hososcbd_id IS NULL AND hososcbd_doi_id IS NULL
+                      AND (nguon_hoso IS NULL OR nguon_hoso = 'hososcbd_doi_iso')");
+                $stmt->execute([':dossier_id' => $dossierId, ':plan_id' => $planId]);
+                if ($stmt->rowCount() !== 1) {
+                    throw new RuntimeException('Plan source changed while creating team dossier');
+                }
+            }
+            $this->db->commit();
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    private function linkHoSoId(int $planId, int $hosoId): void
+    {
+        $this->db->beginTransaction();
+        try {
+            $sql = 'SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE id = :id';
+            $params = [':id' => $planId];
+            $this->applyDonViFilter($sql, $params);
+            $stmt = $this->db->prepare($sql . ' FOR UPDATE');
+            $stmt->execute($params);
+            $plan = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$plan) {
+                throw new InvalidArgumentException('Kế hoạch không tồn tại hoặc ngoài phạm vi đơn vị của bạn.');
+            }
+            if ($plan['hososcbd_id'] !== null || $plan['hososcbd_doi_id'] !== null) {
+                throw new InvalidArgumentException('Kế hoạch đã có liên kết hồ sơ, không được thay đổi.');
+            }
+            if ($plan['nguon_hoso'] !== null && $plan['nguon_hoso'] !== 'hososcbd_iso') {
+                throw new InvalidArgumentException('Kế hoạch đã chọn nguồn hồ sơ khác hososcbd_iso.');
+            }
+            if (!in_array(strtoupper(trim((string)$plan['donvi_lam_chinh'])), ['CNM', 'RDNGA'], true)) {
+                throw new InvalidArgumentException('Chỉ nhập hososcbd_id cho đơn vị làm chính CNM/RDNGA.');
+            }
+            $stmt = $this->db->prepare("SELECT h.stt FROM hososcbd_iso h
+                WHERE h.stt = :hoso_id
+                  AND EXISTS (SELECT 1 FROM thietbi_iso t WHERE t.stt = :thietbi_id
+                    AND TRIM(t.mavt) <> '' AND TRIM(t.somay) <> ''
+                    AND t.mavt = h.mavt AND t.somay = h.somay)
+                FOR UPDATE");
+            $stmt->execute([':hoso_id' => $hosoId, ':thietbi_id' => $plan['thietbi_id']]);
+            if ($stmt->fetchColumn() === false) {
+                throw new InvalidArgumentException('Hồ sơ không tồn tại hoặc không đúng mã vật tư/số máy của thiết bị.');
+            }
+            $stmt = $this->db->prepare('SELECT id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE hososcbd_id = ?');
+            $stmt->execute([$hosoId]);
+            if ($stmt->fetchColumn() !== false) {
+                throw new InvalidArgumentException('Hồ sơ đã được liên kết với kế hoạch khác.');
+            }
+            $stmt = $this->db->prepare('UPDATE ke_hoach_bao_duong_dinh_ky_iso             SET hososcbd_id = ?, nguon_hoso = \'hososcbd_iso\'
+                            WHERE id = ? AND hososcbd_id IS NULL AND hososcbd_doi_id IS NULL
+                              AND (nguon_hoso IS NULL OR nguon_hoso = \'hososcbd_iso\')');
+            $stmt->execute([$hosoId, $planId]);
+            if ($stmt->rowCount() !== 1) {
+                throw new RuntimeException('Plan link changed during update');
+            }
+            $this->db->commit();
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     /**
      * Cập nhật đơn vị làm chính và đơn vị làm phụ
      */
@@ -525,6 +938,8 @@ class KeHoachBaoDuongDinhKyController
     {
         $sql = "SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
+        $this->applyDonViFilter($sql, $params);
+        $this->applyDonViChinhFilter($sql, $params);
 
         // Lọc theo thiết bị ID cụ thể
         if ($thietbi_id > 0) {
@@ -641,6 +1056,8 @@ class KeHoachBaoDuongDinhKyController
     {
         $sql = "SELECT COUNT(*) FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
         $params = [':nam' => $nam];
+        $this->applyDonViFilter($sql, $params);
+        $this->applyDonViChinhFilter($sql, $params);
 
         if ($thietbi_id > 0) {
             $sql .= " AND thietbi_id = :thietbi_id";
@@ -701,9 +1118,11 @@ class KeHoachBaoDuongDinhKyController
         // Dùng lại bộ lọc của countAll nhưng đếm theo từng quý
         $baseWhere = "WHERE nam = :nam";
         $params = [':nam' => $nam];
+        $this->applyDonViFilter($baseWhere, $params);
+        $this->applyDonViChinhFilter($baseWhere, $params);
 
         if ($thietbi_id > 0) {
-            $baseWhere .= " AND thietbi_id = :thietbi_id";
+            $baseWhere .=  " AND thietbi_id = :thietbi_id";
             $params[':thietbi_id'] = $thietbi_id;
         }
         if ($thietbi_id_filter === 'null') {
@@ -786,6 +1205,20 @@ class KeHoachBaoDuongDinhKyController
             $sql = "SELECT t.stt, t.mavt, t.tenvt, t.somay, t.model, t.madv FROM thietbi_iso t WHERE 1=1";
             $params = [];
 
+            if (!$this->isAdmin()) {
+                $scope = $this->getMadvScope();
+                if (empty($scope)) {
+                    $sql .= " AND 1 = 0";
+                } else {
+                    $in = [];
+                    foreach ($scope as $i => $value) {
+                        $in[] = ':user_madv' . $i;
+                        $params[':user_madv' . $i] = $value;
+                    }
+                    $sql .= " AND TRIM(t.madv) IN (" . implode(',', $in) . ")";
+                }
+            }
+
             if (!empty($search)) {
                 $sql .= " AND (t.tenvt LIKE :s1 OR t.mavt LIKE :s2 OR t.somay LIKE :s3 OR t.model LIKE :s4)";
                 $params[':s1'] = '%' . $search . '%';
@@ -834,8 +1267,18 @@ class KeHoachBaoDuongDinhKyController
             // Lấy thông tin thiết bị từ thietbi_iso
             $placeholders = implode(',', array_fill(0, count($thietbiIds), '?'));
             $sql = "SELECT stt, tenvt, somay FROM thietbi_iso WHERE stt IN ($placeholders)";
+            $sqlParams = array_map('intval', $thietbiIds);
+            if (!$this->isAdmin()) {
+                $scope = $this->getMadvScope();
+                if (empty($scope)) {
+                    $sql .= " AND 1 = 0";
+                } else {
+                    $sql .= " AND TRIM(madv) IN (" . implode(',', array_fill(0, count($scope), '?')) . ")";
+                    array_push($sqlParams, ...$scope);
+                }
+            }
             $stmt = $this->db->prepare($sql);
-            $stmt->execute(array_map('intval', $thietbiIds));
+            $stmt->execute($sqlParams);
             $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($devices)) {
