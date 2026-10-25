@@ -219,66 +219,103 @@ require_once __DIR__ . '/../layouts/header.php';
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
+            #kehoach-table thead th {
+                text-align: center;
+            }
             #kehoach-table td.qui-cell {
-                box-sizing: border-box;
                 overflow: visible;
                 text-overflow: clip;
                 white-space: normal;
-                width: 56px;
-                min-width: 56px;
-                max-width: 56px;
-                height: 56px;
-                padding: 0;
-                vertical-align: top;
             }
-            #kehoach-table .qui-header-cell {
+            #kehoach-table th.qui-column,
+            #kehoach-table td.qui-cell {
                 box-sizing: border-box;
-                width: 56px;
-                min-width: 56px;
-                max-width: 56px;
-                height: 56px;
-                padding: 0;
+                width: 78px !important;
+                min-width: 78px;
+                max-width: 78px;
+                height: 26px;
+                padding: 0 !important;
+            }
+            #kehoach-table th.qui-column {
+                white-space: normal;
                 text-align: center;
-                vertical-align: middle;
             }
-            #kehoach-table .qui-square {
+            #kehoach-table .unit-main-column,
+            #kehoach-table .unit-aux-column {
                 box-sizing: border-box;
-                display: flex;
-                width: 56px;
-                height: 56px;
+                width: 76px !important;
+                min-width: 76px;
+                max-width: 76px;
+                white-space: nowrap;
+                overflow: visible;
+            }
+            #kehoach-table .execution-date-column {
+                box-sizing: border-box;
+                width: 112px !important;
+                min-width: 112px;
+                max-width: 112px;
+            }
+            #kehoach-table .donvi-chinh-view,
+            #kehoach-table .donvi-phu-view {
+                display: inline-flex;
+                width: max-content;
+                justify-content: flex-start;
+            }
+            .qui-cell-inner {
+                box-sizing: border-box;
+                display: inline-flex;
+                width: 78px;
+                height: 26px;
                 align-items: center;
                 justify-content: center;
+                vertical-align: middle;
                 overflow: hidden;
-                border-right: 1px solid #d1d5db;
+                border-radius: 4px;
             }
-            #kehoach-table .qui-square-first {
-                border-left: 1px solid #d1d5db;
+            .qui-cell-inner > span:not(.text-gray-300) {
+                display: flex;
+                width: 100%;
+                height: 100%;
+                align-items: center;
+                justify-content: center;
+                background-color: #e5e7eb;
+                text-align: center;
+                line-height: 1;
+                overflow-wrap: anywhere;
             }
             #kehoach-table td.execution-people {
                 white-space: normal;
                 overflow-wrap: anywhere;
             }
+            #kehoach-table tbody .text-xs {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+            }
+            #kehoach-table thead .text-xs {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+            }
         </style>
         <div class="overflow-x-auto">
-            <table id="kehoach-table" class="w-full divide-y divide-gray-200" style="table-layout:fixed;min-width:1600px;">
+            <table id="kehoach-table" class="w-full divide-y divide-gray-200" style="table-layout:fixed;width:max-content;">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">STT</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%">ID</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">ID TB</th>
+                        <th class="plan-id-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">ID</th>
+                        <th class="equipment-id-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%;display:none">ID TB</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:8%">Tên thiết bị</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Số S/N</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">Nhóm SC</th>
-                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Q1</th>
-                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q2</th>
-                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q3</th>
-                        <th class="qui-header-cell text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q4</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300" style="width:10%">ĐV Chính</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300" style="width:9%">ĐV Phụ</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%">Ghi chú</th>
+                        <th class="qui-column text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Q1</th>
+                        <th class="qui-column text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q2</th>
+                        <th class="qui-column text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q3</th>
+                        <th class="qui-column text-center text-xs font-medium text-gray-500 uppercase border-r border-gray-300">Q4</th>
+                        <th class="unit-main-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">ĐV Chính</th>
+                        <th class="unit-aux-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-300">ĐV Phụ</th>
+                        <th class="notes-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">Ghi chú</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">ID hồ sơ</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Ngày thực hiện / kết thúc</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:14%">Các người thực hiện</th>
+                        <th class="execution-date-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:112px">Ngày</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:14%">Người thực hiện</th>
                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50" style="display:none">Trạng thái</th>
                     </tr>
                 </thead>
@@ -287,12 +324,12 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php foreach ($items as $index => $item): ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-2 py-1 text-xs" style="display:none"><?php echo $offset + $index + 1; ?></td>
-                            <td class="px-2 py-1 text-xs">
+                            <td class="plan-id-column px-2 py-1 text-xs" style="display:none">
                                 <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
                                     <?php echo htmlspecialchars($item['id']); ?>
                                 </span>
                             </td>
-                            <td class="px-2 py-1 text-xs">
+                            <td class="equipment-id-column px-2 py-1 text-xs" style="display:none">
                                 <?php if (!empty($item['thietbi_id'])): ?>
                                     <div class="flex items-center gap-1">
                                         <a href="/iso2/thietbi.php?action=view&id=<?php echo $item['thietbi_id']; ?>" 
@@ -338,9 +375,15 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-2 py-1 text-xs" title="<?php echo htmlspecialchars($item['ten_thietbi']); ?>">
-                                <span class="font-medium text-gray-900">
+                                <?php if (!empty($item['thietbi_id'])): ?>
+                                <a href="/iso2/thietbi.php?action=view&id=<?php echo (int)$item['thietbi_id']; ?>"
+                                   class="font-medium text-blue-700 hover:text-blue-800 hover:underline"
+                                   title="Xem chi tiết thiết bị">
                                     <?php echo htmlspecialchars($item['ten_thietbi']); ?>
-                                </span>
+                                </a>
+                                <?php else: ?>
+                                <span class="font-medium text-gray-900"><?php echo htmlspecialchars($item['ten_thietbi']); ?></span>
+                                <?php endif; ?>
                                 <?php if (!empty($item['nhomsc'])): ?>
                                     <div class="mt-1 text-xs text-gray-500">
                                         Nhóm SC: <?php echo htmlspecialchars($item['nhomsc'], ENT_QUOTES, 'UTF-8'); ?>
@@ -355,79 +398,59 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="px-2 py-1 text-xs text-gray-600" style="display:none">
                                 <?php echo htmlspecialchars($item['nhomsc'] ?? ''); ?>
                             </td>
-                            <td class="qui-cell text-center">
-                                <div class="qui-square qui-square-first <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <?php if (!empty($item['qui_1_hoantat'])): ?>
-                                    <i class="fas fa-check text-blue-600 text-lg"></i>
-                                <?php elseif (!empty($item['qui_1'])): ?>
-                                    <?php 
-                                    $isTOQ1 = strtoupper(trim($item['qui_1'])) === 'TO';
-                                    ?>
-                                    <?php if (!$isTOQ1): ?>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+                            <td class="qui-cell text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_1_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                    <?php if (!empty($item['qui_1_hoantat'])): ?>
+                                        <i class="fas fa-check text-blue-600 text-lg"></i>
+                                    <?php elseif (!empty($item['qui_1']) && strtoupper(trim($item['qui_1'])) !== 'TO'): ?>
+                                        <span class="text-xs font-semibold text-gray-800" title="<?php echo htmlspecialchars($item['qui_1'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php echo htmlspecialchars($item['qui_1']); ?>
                                         </span>
+                                    <?php elseif (empty($item['qui_1'])): ?>
+                                        <span class="text-gray-300">-</span>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-gray-300">-</span>
-                                <?php endif; ?>
                                 </div>
                             </td>
-                            <td class="qui-cell text-center">
-                                <div class="qui-square <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <?php if (!empty($item['qui_2_hoantat'])): ?>
-                                    <i class="fas fa-check text-blue-600 text-lg"></i>
-                                <?php elseif (!empty($item['qui_2'])): ?>
-                                    <?php 
-                                    $isTOQ2 = strtoupper(trim($item['qui_2'])) === 'TO';
-                                    ?>
-                                    <?php if (!$isTOQ2): ?>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+                            <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_2_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                    <?php if (!empty($item['qui_2_hoantat'])): ?>
+                                        <i class="fas fa-check text-blue-600 text-lg"></i>
+                                    <?php elseif (!empty($item['qui_2']) && strtoupper(trim($item['qui_2'])) !== 'TO'): ?>
+                                        <span class="text-xs font-semibold text-gray-800" title="<?php echo htmlspecialchars($item['qui_2'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php echo htmlspecialchars($item['qui_2']); ?>
                                         </span>
+                                    <?php elseif (empty($item['qui_2'])): ?>
+                                        <span class="text-gray-300">-</span>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-gray-300">-</span>
-                                <?php endif; ?>
                                 </div>
                             </td>
-                            <td class="qui-cell text-center">
-                                <div class="qui-square <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <?php if (!empty($item['qui_3_hoantat'])): ?>
-                                    <i class="fas fa-check text-blue-600 text-lg"></i>
-                                <?php elseif (!empty($item['qui_3'])): ?>
-                                    <?php 
-                                    $isTOQ3 = strtoupper(trim($item['qui_3'])) === 'TO';
-                                    ?>
-                                    <?php if (!$isTOQ3): ?>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+                            <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_3_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                    <?php if (!empty($item['qui_3_hoantat'])): ?>
+                                        <i class="fas fa-check text-blue-600 text-lg"></i>
+                                    <?php elseif (!empty($item['qui_3']) && strtoupper(trim($item['qui_3'])) !== 'TO'): ?>
+                                        <span class="text-xs font-semibold text-gray-800" title="<?php echo htmlspecialchars($item['qui_3'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php echo htmlspecialchars($item['qui_3']); ?>
                                         </span>
+                                    <?php elseif (empty($item['qui_3'])): ?>
+                                        <span class="text-gray-300">-</span>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-gray-300">-</span>
-                                <?php endif; ?>
                                 </div>
                             </td>
-                            <td class="qui-cell text-center">
-                                <div class="qui-square <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <?php if (!empty($item['qui_4_hoantat'])): ?>
-                                    <i class="fas fa-check text-blue-600 text-lg"></i>
-                                <?php elseif (!empty($item['qui_4'])): ?>
-                                    <?php 
-                                    $isTOQ4 = strtoupper(trim($item['qui_4'])) === 'TO';
-                                    ?>
-                                    <?php if (!$isTOQ4): ?>
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-800">
+                            <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_4_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                    <?php if (!empty($item['qui_4_hoantat'])): ?>
+                                        <i class="fas fa-check text-blue-600 text-lg"></i>
+                                    <?php elseif (!empty($item['qui_4']) && strtoupper(trim($item['qui_4'])) !== 'TO'): ?>
+                                        <span class="text-xs font-semibold text-gray-800" title="<?php echo htmlspecialchars($item['qui_4'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php echo htmlspecialchars($item['qui_4']); ?>
                                         </span>
+                                    <?php elseif (empty($item['qui_4'])): ?>
+                                        <span class="text-gray-300">-</span>
                                     <?php endif; ?>
-                                <?php else: ?>
-                                    <span class="text-gray-300">-</span>
-                                <?php endif; ?>
                                 </div>
                             </td>
-                            <td class="px-2 py-1 text-xs text-gray-600 border-l border-r border-gray-300">
+                            <td class="unit-main-column px-2 py-1 text-xs text-gray-600 border-l border-r border-gray-300">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                     <div class="donvi-chinh-container" data-kehoach-id="<?php echo $item['id']; ?>">
                                         <!-- Chế độ xem (mặc định) -->
@@ -486,7 +509,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-2 py-1 text-xs text-gray-600 border-r border-gray-300">
+                            <td class="unit-aux-column px-2 py-1 text-xs text-gray-600 border-r border-gray-300">
                                 <?php if (hasPermission('kehoachbaoduong.edit')): ?>
                                     <div class="donvi-phu-container" data-kehoach-id="<?php echo $item['id']; ?>">
                                         <!-- Chế độ xem (mặc định) -->
@@ -550,7 +573,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-2 py-1 text-xs text-gray-600" title="<?php echo htmlspecialchars($item['ghi_chu']); ?>">
+                            <td class="notes-column px-2 py-1 text-xs text-gray-600" style="display:none" title="<?php echo htmlspecialchars($item['ghi_chu']); ?>">
                                 <?php echo htmlspecialchars($item['ghi_chu']); ?>
                             </td>
                             <td class="px-2 py-1 text-xs" style="display:none">
@@ -571,7 +594,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     —
                                 <?php endif; ?>
                             </td>
-                            <td class="px-2 py-1 text-xs text-gray-600">
+                            <td class="execution-date-column px-2 py-1 text-xs text-gray-600">
                                 <?php
                                 $dateStart = $item['ngay_thuc_hien'] ?? null;
                                 $dateEnd = $item['ngay_ket_thuc'] ?? null;
@@ -670,7 +693,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="14" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2"></i>
                                 <p>Chưa có kế hoạch bảo dưỡng cho năm <?php echo $nam; ?></p>
                                 <?php if (hasPermission('kehoachbaoduong.create')): ?>
@@ -687,6 +710,23 @@ require_once __DIR__ . '/../layouts/header.php';
             </table>
         </div>
     </div>
+    <script>
+    (() => {
+        const table = document.getElementById('kehoach-table');
+        const header = table?.querySelector('thead tr');
+        if (!header) return;
+
+        header.append(
+            header.querySelector('.unit-main-column'),
+            header.querySelector('.unit-aux-column')
+        );
+        table.querySelectorAll('tbody tr').forEach(row => {
+            const mainUnit = row.querySelector('.unit-main-column');
+            const auxUnit = row.querySelector('.unit-aux-column');
+            if (mainUnit && auxUnit) row.append(mainUnit, auxUnit);
+        });
+    })();
+    </script>
 
     <!-- Phân trang -->
     <?php if ($totalPages > 1 || $total > 0): ?>
@@ -1425,6 +1465,9 @@ function updateDoiExecutionModalLockState() {
 
 function applyLockState(locked) {
     _currentLockState = locked;
+    document.querySelectorAll('.plan-id-column, .equipment-id-column').forEach(column => {
+        column.style.display = locked ? 'none' : '';
+    });
     const btn = document.getElementById('editLockBtn');
     const icon = document.getElementById('editLockIcon');
     const label = document.getElementById('editLockLabel');
