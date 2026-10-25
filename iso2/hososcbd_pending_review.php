@@ -32,78 +32,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($pending) {
             if ($action === 'approve') {
-                // Áp dụng thay đổi vào DB
-                $data = json_decode($pending['data_json'], true);
+                $data = json_decode($pending['data_json'], true, 512, JSON_THROW_ON_ERROR);
                 $hososcbd_stt = (int)$pending['hososcbd_stt'];
+                $recordType = $pending['record_type'] ?? 'hososcbd_iso';
+                if ($recordType === 'hososcbd_doi_iso') {
+                    if (!is_array($data)
+                        || !isset($data['ngayth'], $data['nguoi_thuc_hien_iso'])
+                        || !is_string($data['ngayth'])
+                        || !is_string($data['nguoi_thuc_hien_iso'])) {
+                        throw new RuntimeException('Dữ liệu yêu cầu duyệt hồ sơ đội không hợp lệ.');
+                    }
+                    $db->prepare("UPDATE hososcbd_doi_iso
+                        SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :person
+                        WHERE stt = :stt")
+                        ->execute([
+                            ':ngayth' => $data['ngayth'],
+                            ':ngaykt' => $data['ngaykt'] ?? null,
+                            ':person' => $data['nguoi_thuc_hien_iso'],
+                            ':stt' => $hososcbd_stt,
+                        ]);
+                } else {
+                    require_once __DIR__ . '/models/HoSoSCBD.php';
+                    $model = new HoSoSCBD();
+                    $model->update($hososcbd_stt, $data);
 
-                require_once __DIR__ . '/models/HoSoSCBD.php';
-                $model = new HoSoSCBD();
-                $model->update($hososcbd_stt, $data);
+                    // Người thực hiện
+                    $nguoiList = json_decode($pending['nguoi_thuchien_json'] ?? '[]', true);
+                    if (!empty($nguoiList)) {
+                        // Lấy thông tin hồ sơ gốc
+                        $itemStmt = $db->prepare("SELECT hoso, mavt, somay FROM hososcbd_iso WHERE stt = :stt");
+                        $itemStmt->execute([':stt' => $hososcbd_stt]);
+                        $itemInfo = $itemStmt->fetch(PDO::FETCH_ASSOC);
 
-                // Người thực hiện
-                $nguoiList = json_decode($pending['nguoi_thuchien_json'] ?? '[]', true);
-                if (!empty($nguoiList)) {
-                    // Lấy thông tin hồ sơ gốc
-                    $itemStmt = $db->prepare("SELECT hoso, mavt, somay FROM hososcbd_iso WHERE stt = :stt");
-                    $itemStmt->execute([':stt' => $hososcbd_stt]);
-                    $itemInfo = $itemStmt->fetch(PDO::FETCH_ASSOC);
+                        if ($itemInfo) {
+                            $mahoso = $itemInfo['hoso'];
+                            $mavt   = $itemInfo['mavt'];
+                            $somay  = $itemInfo['somay'];
+                            $ngayth = $data['ngayth'] ?? '0000-00-00';
+                            $ngaykt = $data['ngaykt'] ?? '0000-00-00';
+                            $currentMonth = (int)date('n');
+                            $giolv_field  = "giolv{$currentMonth}";
 
-                    if ($itemInfo) {
-                        $mahoso = $itemInfo['hoso'];
-                        $mavt   = $itemInfo['mavt'];
-                        $somay  = $itemInfo['somay'];
-                        $ngayth = $data['ngayth'] ?? '0000-00-00';
-                        $ngaykt = $data['ngaykt'] ?? '0000-00-00';
-                        $currentMonth = (int)date('n');
-                        $giolv_field  = "giolv{$currentMonth}";
+                            // Xóa người thực hiện cũ
+                            $db->prepare("DELETE FROM ngthuchien_iso WHERE mahoso = :mahoso")
+                               ->execute([':mahoso' => $mahoso]);
 
-                        // Xóa người thực hiện cũ
-                        $db->prepare("DELETE FROM ngthuchien_iso WHERE mahoso = :mahoso")
-                           ->execute([':mahoso' => $mahoso]);
+                            // Thêm mới
+                            $stmtMaxStt = $db->prepare("SELECT COALESCE(MAX(stt),0) as m FROM ngthuchien_iso");
+                            $stmtMaxStt->execute();
+                            $nextStt = (int)$stmtMaxStt->fetch(PDO::FETCH_ASSOC)['m'] + 1;
 
-                        // Thêm mới
-                        $stmtMaxStt = $db->prepare("SELECT COALESCE(MAX(stt),0) as m FROM ngthuchien_iso");
-                        $stmtMaxStt->execute();
-                        $nextStt = (int)$stmtMaxStt->fetch(PDO::FETCH_ASSOC)['m'] + 1;
-
-                        foreach ($nguoiList as $ng) {
-                            $sqlIns = "INSERT INTO ngthuchien_iso
-                                (stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field})
-                                VALUES (:stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :gm)";
-                            $db->prepare($sqlIns)->execute([
-                                ':stt'    => $nextStt++,
-                                ':mahoso' => $mahoso,
-                                ':mamay'  => $mavt,
-                                ':somay'  => $somay,
-                                ':hoten'  => $ng['hoten'],
-                                ':giolv'  => $ng['giolv'],
-                                ':ngayth' => $ngayth,
-                                ':ngaykt' => $ngaykt,
-                                ':gm'     => $ng['giolv'],
-                            ]);
+                            foreach ($nguoiList as $ng) {
+                                $sqlIns = "INSERT INTO ngthuchien_iso
+                                    (stt, mahoso, mamay, somay, hoten, giolv, ngayth, ngaykt, {$giolv_field})
+                                    VALUES (:stt, :mahoso, :mamay, :somay, :hoten, :giolv, :ngayth, :ngaykt, :gm)";
+                                $db->prepare($sqlIns)->execute([
+                                    ':stt'    => $nextStt++,
+                                    ':mahoso' => $mahoso,
+                                    ':mamay'  => $mavt,
+                                    ':somay'  => $somay,
+                                    ':hoten'  => $ng['hoten'],
+                                    ':giolv'  => $ng['giolv'],
+                                    ':ngayth' => $ngayth,
+                                    ':ngaykt' => $ngaykt,
+                                    ':gm'     => $ng['giolv'],
+                                ]);
+                            }
                         }
                     }
-                }
 
-                // BDDK
-                if (!empty($pending['bddk_hoantat'])) {
-                    $ngayth = $data['ngayth'] ?? '';
-                    if ($ngayth && $ngayth !== '0000-00-00') {
-                        // Tìm thietbi_id
-                        $itemStmt2 = $db->prepare("SELECT mavt, somay FROM hososcbd_iso WHERE stt = :stt");
-                        $itemStmt2->execute([':stt' => $hososcbd_stt]);
-                        $ii = $itemStmt2->fetch(PDO::FETCH_ASSOC);
-                        if ($ii) {
-                            $tbStmt = $db->prepare("SELECT stt as thietbi_id FROM thietbi_iso WHERE mavt=:mavt AND somay=:somay LIMIT 1");
-                            $tbStmt->execute([':mavt' => $ii['mavt'], ':somay' => $ii['somay']]);
-                            $tb = $tbStmt->fetch(PDO::FETCH_ASSOC);
-                            if ($tb) {
-                                $month   = (int)date('n', strtotime($ngayth));
-                                $quarter = (int)ceil($month / 3);
-                                $nam     = (int)date('Y', strtotime($ngayth));
-                                $hf      = "qui_{$quarter}_hoantat";
-                                $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso SET $hf=1 WHERE thietbi_id=:tid AND nam=:nam")
-                                   ->execute([':tid' => $tb['thietbi_id'], ':nam' => $nam]);
+                    // BDDK
+                    if (!empty($pending['bddk_hoantat'])) {
+                        $ngayth = $data['ngayth'] ?? '';
+                        if ($ngayth && $ngayth !== '0000-00-00') {
+                            // Tìm thietbi_id
+                            $itemStmt2 = $db->prepare("SELECT mavt, somay FROM hososcbd_iso WHERE stt = :stt");
+                            $itemStmt2->execute([':stt' => $hososcbd_stt]);
+                            $ii = $itemStmt2->fetch(PDO::FETCH_ASSOC);
+                            if ($ii) {
+                                $tbStmt = $db->prepare("SELECT stt as thietbi_id FROM thietbi_iso WHERE mavt=:mavt AND somay=:somay LIMIT 1");
+                                $tbStmt->execute([':mavt' => $ii['mavt'], ':somay' => $ii['somay']]);
+                                $tb = $tbStmt->fetch(PDO::FETCH_ASSOC);
+                                if ($tb) {
+                                    $month   = (int)date('n', strtotime($ngayth));
+                                    $quarter = (int)ceil($month / 3);
+                                    $nam     = (int)date('Y', strtotime($ngayth));
+                                    $hf      = "qui_{$quarter}_hoantat";
+                                    $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso SET $hf=1 WHERE thietbi_id=:tid AND nam=:nam")
+                                       ->execute([':tid' => $tb['thietbi_id'], ':nam' => $nam]);
+                                }
                             }
                         }
                     }
@@ -132,9 +149,18 @@ $validFilters = ['pending', 'approved', 'rejected', 'all'];
 if (!in_array($filter, $validFilters, true)) $filter = 'pending';
 
 $whereClause = ($filter === 'all') ? '' : "WHERE pe.status = :status";
-$sql = "SELECT pe.*, h.phieu, h.mavt, h.somay, h.ngaykt
+$sql = "SELECT pe.*,
+               COALESCE(h.phieu, hd.phieu) AS phieu,
+               COALESCE(h.mavt, hd.mavt) AS mavt,
+               COALESCE(h.somay, hd.somay) AS somay,
+               COALESCE(h.ngaykt, hd.ngaykt) AS ngaykt
         FROM hososcbd_pending_edits pe
-        LEFT JOIN hososcbd_iso h ON h.stt = pe.hososcbd_stt
+        LEFT JOIN hososcbd_iso h
+            ON COALESCE(pe.record_type, 'hososcbd_iso') = 'hososcbd_iso'
+            AND h.stt = pe.hososcbd_stt
+        LEFT JOIN hososcbd_doi_iso hd
+            ON pe.record_type = 'hososcbd_doi_iso'
+            AND hd.stt = pe.hososcbd_stt
         $whereClause
         ORDER BY pe.created_at DESC
         LIMIT 200";
@@ -207,6 +233,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <span class="text-gray-600 text-sm">
                         <?= htmlspecialchars($row['mavt'] ?? '') ?> – <?= htmlspecialchars($row['somay'] ?? '') ?>
                     </span>
+                    <?php if (($row['record_type'] ?? 'hososcbd_iso') === 'hososcbd_doi_iso'): ?>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">Hồ sơ đội</span>
+                    <?php endif; ?>
                     <span class="bg-<?= $sc ?>-100 text-<?= $sc ?>-800 text-xs font-semibold px-2 py-0.5 rounded-full">
                         <?= $statusLabels[$row['status']] ?? $row['status'] ?>
                     </span>
@@ -228,6 +257,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             'nhomsc'      => 'Nhóm SC',
                             'ngayth'      => 'Ngày thực hiện',
                             'ngaykt'      => 'Ngày kết thúc',
+                            'nguoi_thuc_hien_iso' => 'Người thực hiện',
                             'honghoc'     => 'Hỏng hóc',
                             'khacphuc'    => 'Khắc phục',
                             'noidung'     => 'Nội dung SC',
@@ -297,10 +327,17 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <?php endif; ?>
 
                     <div class="mt-3">
-                        <a href="/iso2/hososcbd_repair_details.php?id=<?= $row['hososcbd_stt'] ?>"
-                           class="text-blue-600 hover:underline text-sm">
-                            <i class="fas fa-external-link-alt mr-1"></i> Xem hồ sơ gốc
-                        </a>
+                        <?php if (($row['record_type'] ?? 'hososcbd_iso') === 'hososcbd_iso'): ?>
+                            <a href="/iso2/hososcbd_repair_details.php?id=<?= $row['hososcbd_stt'] ?>"
+                               class="text-blue-600 hover:underline text-sm">
+                                <i class="fas fa-external-link-alt mr-1"></i> Xem hồ sơ gốc
+                            </a>
+                        <?php else: ?>
+                            <a href="/iso2/kehoachbaoduongdinhky.php"
+                               class="text-blue-600 hover:underline text-sm">
+                                <i class="fas fa-external-link-alt mr-1"></i> Xem kế hoạch bảo dưỡng
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

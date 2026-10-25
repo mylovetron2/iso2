@@ -612,7 +612,23 @@ require_once __DIR__ . '/../layouts/header.php';
                                     && (!$dateEnd || substr($dateEnd, 0, 10) === '0000-00-00')) {
                                     echo '—';
                                 }
+                                if (!empty($item['pending_review'])):
+                                    $pendingStart = $item['pending_review_ngayth'] ?? null;
+                                    $pendingEnd = $item['pending_review_ngaykt'] ?? null;
+                                    $pendingStart = $pendingStart && substr($pendingStart, 0, 10) !== '0000-00-00'
+                                        ? date('d/m/Y', strtotime($pendingStart))
+                                        : '—';
+                                    $pendingEnd = $pendingEnd && substr($pendingEnd, 0, 10) !== '0000-00-00'
+                                        ? date('d/m/Y', strtotime($pendingEnd))
+                                        : '—';
                                 ?>
+                                    <div class="mt-1 rounded bg-amber-50 px-1 py-1 text-amber-800"
+                                         title="Thông tin đang chờ admin duyệt">
+                                        <i class="fas fa-clock mr-1" aria-hidden="true"></i><strong>Chờ duyệt</strong>
+                                        <div>Từ: <?php echo htmlspecialchars($pendingStart, ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div>Đến: <?php echo htmlspecialchars($pendingEnd, ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td class="execution-people px-2 py-1 text-xs text-gray-600">
                                 <?php if (!empty($item['cac_nguoi_thuc_hien'])): ?>
@@ -621,6 +637,13 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     —
+                                <?php endif; ?>
+                                <?php if (!empty($item['pending_review'])): ?>
+                                    <div class="mt-1 rounded bg-amber-50 px-1 py-1 text-amber-800"
+                                         title="Người thực hiện đang chờ admin duyệt">
+                                        <i class="fas fa-clock mr-1" aria-hidden="true"></i><strong>Chờ duyệt</strong>
+                                        <div><?php echo htmlspecialchars((string)($item['pending_review_person'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </div>
                                 <?php endif; ?>
                                 <?php
                                 $mainUnit = strtoupper(trim((string)($item['donvi_lam_chinh'] ?? '')));
@@ -1342,7 +1365,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label for="doiExecutionPerson" class="mb-1 block text-sm font-medium text-gray-700">Người thực hiện <span class="text-red-500">*</span></label>
                     <input type="text" id="doiExecutionPerson" maxlength="255" required class="w-full rounded border px-3 py-2">
                 </div>
-                <p id="doiExecutionLockedHint" class="hidden text-sm text-amber-700">Mở khóa sửa trên đầu trang để nhập và lưu thông tin.</p>
             </div>
             <div class="mt-6 flex justify-end gap-2">
                 <button type="button" onclick="closeDoiExecutionModal()" class="rounded bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Đóng</button>
@@ -1397,7 +1419,7 @@ document.querySelectorAll('.doi-execution-open').forEach(button => {
 const doiExecutionForm = document.getElementById('doiExecutionForm');
 doiExecutionForm.addEventListener('submit', async event => {
     event.preventDefault();
-    if (_currentLockState || !doiExecutionForm.reportValidity()) return;
+    if (!doiExecutionForm.reportValidity()) return;
 
     const performedOn = document.getElementById('doiExecutionStart');
     const endedOn = document.getElementById('doiExecutionEnd');
@@ -1425,11 +1447,12 @@ doiExecutionForm.addEventListener('submit', async event => {
         });
         const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || 'Không lưu được thông tin bảo dưỡng.');
+        if (data.pending_review) alert(data.message);
         window.location.reload();
     } catch (error) {
         alert(error.message || 'Lỗi kết nối. Hãy tải lại trang để kiểm tra trước khi thử lại.');
-        inputs.forEach(input => input.disabled = _currentLockState);
-        submit.disabled = _currentLockState;
+        inputs.forEach(input => input.disabled = false);
+        submit.disabled = false;
     }
 });
 
@@ -1446,21 +1469,11 @@ function openDoiExecutionModal(button) {
         ? 'Tạo hồ sơ đội và lưu'
         : 'Lưu';
     modal.classList.remove('hidden');
-    updateDoiExecutionModalLockState();
-    if (!_currentLockState) document.getElementById('doiExecutionStart').focus();
+    document.getElementById('doiExecutionStart').focus();
 }
 
 function closeDoiExecutionModal() {
     document.getElementById('doiExecutionModal').classList.add('hidden');
-}
-
-function updateDoiExecutionModalLockState() {
-    const lockedHint = document.getElementById('doiExecutionLockedHint');
-    const submit = document.getElementById('doiExecutionSubmit');
-    const inputs = document.querySelectorAll('#doiExecutionForm input:not([type="hidden"])');
-    lockedHint.classList.toggle('hidden', !_currentLockState);
-    inputs.forEach(input => input.disabled = _currentLockState);
-    submit.disabled = _currentLockState;
 }
 
 function applyLockState(locked) {
@@ -1487,7 +1500,6 @@ function applyLockState(locked) {
     document.querySelectorAll('.hoso-id-form').forEach(form => {
         form.style.display = unlocked ? '' : 'none';
     });
-    updateDoiExecutionModalLockState();
 
     // Ẩn/hiện nút sửa ID thiết bị
     document.querySelectorAll('.thietbi-id-edit-toggle').forEach(el => {

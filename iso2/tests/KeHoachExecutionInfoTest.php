@@ -39,7 +39,17 @@ final class KeHoachExecutionInfoTest extends TestCase
         $team = $this->createMock(PDOStatement::class);
         $team->expects($this->once())->method('execute')->with([11, 12, 13]);
         $team->method('fetch')->willReturnOnConsecutiveCalls(
-            ['id' => 12, 'ngayth' => '2026-03-01', 'ngaykt' => null, 'nguoi_thuc_hien' => 'C'],
+            [
+                'id' => 12,
+                'ngayth' => '2026-03-01',
+                'ngaykt' => null,
+                'nguoi_thuc_hien' => 'C',
+                'pending_review_data' => json_encode([
+                    'ngayth' => '2026-03-02',
+                    'ngaykt' => '2026-03-03',
+                    'nguoi_thuc_hien_iso' => 'Nguyễn Văn B',
+                ]),
+            ],
             ['id' => 12, 'ngayth' => '2026-03-01', 'ngaykt' => null, 'nguoi_thuc_hien' => ''],
             false
         );
@@ -58,6 +68,10 @@ final class KeHoachExecutionInfoTest extends TestCase
         $this->assertSame('2026-01-20', $items[0]['ngay_ket_thuc']);
         $this->assertSame(['C'], $items[1]['cac_nguoi_thuc_hien']);
         $this->assertNull($items[1]['ngay_ket_thuc']);
+        $this->assertTrue($items[1]['pending_review']);
+        $this->assertSame('2026-03-02', $items[1]['pending_review_ngayth']);
+        $this->assertSame('2026-03-03', $items[1]['pending_review_ngaykt']);
+        $this->assertSame('Nguyễn Văn B', $items[1]['pending_review_person']);
         $this->assertNull($items[2]['ngay_thuc_hien']);
         $this->assertSame([], $items[2]['cac_nguoi_thuc_hien']);
         $this->assertStringContainsString('n.mahoso = h.hoso', $queries[0]);
@@ -65,5 +79,6 @@ final class KeHoachExecutionInfoTest extends TestCase
         $this->assertStringNotContainsString('ngthuchien_iso', $queries[1]);
         $this->assertStringContainsString("k.nguon_hoso = 'hososcbd_doi_iso'", $queries[1]);
         $this->assertStringContainsString('h.stt = k.hososcbd_doi_id', $queries[1]);
+        $this->assertStringContainsString("pe_pending.record_type = 'hososcbd_doi_iso'", $queries[1]);
     }
 }

@@ -64,7 +64,7 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Thêm điều kiện lọc theo đơn vị của user (qua thietbi_iso.madv) vào câu SQL.
      */
-    private function applyDonViFilter(string &$sql, array &$params): void
+    private function applyDonViFilter(string &$sql, array &$params, string $planAlias = ''): void
     {
         if ($this->isAdmin()) {
             return;
@@ -80,10 +80,11 @@ class KeHoachBaoDuongDinhKyController
             $in[] = $key;
             $params[$key] = $value;
         }
+        $planTable = $planAlias !== '' ? $planAlias : 'ke_hoach_bao_duong_dinh_ky_iso';
         $sql .= " AND EXISTS (
             SELECT 1
             FROM thietbi_iso t
-            WHERE t.stt = ke_hoach_bao_duong_dinh_ky_iso.thietbi_id
+            WHERE t.stt = {$planTable}.thietbi_id
               AND TRIM(t.madv) IN (" . implode(',', $in) . ")
         )";
     }
@@ -178,11 +179,19 @@ class KeHoachBaoDuongDinhKyController
              ORDER BY k.id, n.stt",
             "SELECT k.id, h.ngayth, h.ngaykt,
                     COALESCE(NULLIF(h.nguoi_thuc_hien_iso, ''), c.nguoi_thuc_hien) AS nguoi_thuc_hien,
-                    h.nguoi_thuc_hien_iso AS nguoi_thuc_hien_nhap
+                    h.nguoi_thuc_hien_iso AS nguoi_thuc_hien_nhap,
+                    pe.data_json AS pending_review_data
              FROM ke_hoach_bao_duong_dinh_ky_iso k
              INNER JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
              LEFT JOIN baoduong_dinhky_chitiet_iso c ON c.kehoach_id = k.id
                  AND (h.nguoi_thuc_hien_iso IS NULL OR h.nguoi_thuc_hien_iso = '')
+             LEFT JOIN hososcbd_pending_edits pe ON pe.id = (
+                 SELECT MAX(pe_pending.id)
+                 FROM hososcbd_pending_edits pe_pending
+                 WHERE pe_pending.hososcbd_stt = h.stt
+                   AND pe_pending.record_type = 'hososcbd_doi_iso'
+                   AND pe_pending.status = 'pending'
+             )
              WHERE k.nguon_hoso = 'hososcbd_doi_iso' AND k.id IN ($placeholders)
              ORDER BY k.id, c.id",
         ];
@@ -193,11 +202,26 @@ class KeHoachBaoDuongDinhKyController
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $id = $row['id'];
                 if (!isset($execution[$id])) {
+                    $pendingReviewData = null;
+                    if (!empty($row['pending_review_data'] ?? null)) {
+                        try {
+                            $decodedPendingData = json_decode($row['pending_review_data'], true, 512, JSON_THROW_ON_ERROR);
+                            if (is_array($decodedPendingData)) {
+                                $pendingReviewData = $decodedPendingData;
+                            }
+                        } catch (JsonException $e) {
+                            error_log('Invalid pending team dossier data for plan ' . $id . ': ' . $e->getMessage());
+                        }
+                    }
                     $execution[$id] = [
                         'ngay_thuc_hien' => $row['ngayth'],
                         'ngay_ket_thuc' => $row['ngaykt'],
                         'cac_nguoi_thuc_hien' => [],
                         'nguoi_thuc_hien_nhap' => $row['nguoi_thuc_hien_nhap'] ?? null,
+                        'pending_review' => $pendingReviewData !== null,
+                        'pending_review_ngayth' => $pendingReviewData['ngayth'] ?? null,
+                        'pending_review_ngaykt' => $pendingReviewData['ngaykt'] ?? null,
+                        'pending_review_person' => $pendingReviewData['nguoi_thuc_hien_iso'] ?? null,
                     ];
                 }
                 $name = trim((string)($row['nguoi_thuc_hien'] ?? ''));
@@ -212,6 +236,10 @@ class KeHoachBaoDuongDinhKyController
                 'ngay_ket_thuc' => null,
                 'cac_nguoi_thuc_hien' => [],
                 'nguoi_thuc_hien_nhap' => null,
+                'pending_review' => false,
+                'pending_review_ngayth' => null,
+                'pending_review_ngaykt' => null,
+                'pending_review_person' => null,
             ];
             $item = array_merge($item, $info);
         }
@@ -544,8 +572,15 @@ class KeHoachBaoDuongDinhKyController
             if ($person === '' || mb_strlen($person, 'UTF-8') > 255) {
                 throw new InvalidArgumentException('Người thực hiện là bắt buộc và không được vượt quá 255 ký tự.');
             }
-            $this->saveDoiExecution($planId, $performedOn, $endedOn, $person);
-            echo json_encode(['success' => true, 'message' => 'Đã lưu thông tin bảo dưỡng hồ sơ đội.']);
+            $pendingReview = $this->saveDoiExecution($planId, $performedOn, $endedOn, $person);
+            $message = $pendingReview
+                ? 'Hồ sơ đã có ngày thực hiện. Yêu cầu sửa đổi đã được gửi đến admin để duyệt.'
+                : 'Đã lưu thông tin bảo dưỡng hồ sơ đội.';
+            echo json_encode([
+                'success' => true,
+                'pending_review' => $pendingReview,
+                'message' => $message,
+            ]);
         } catch (JsonException | InvalidArgumentException $e) {
             http_response_code(400);
             error_log('updateDoiExecution rejected: ' . $e->getMessage());
@@ -574,18 +609,20 @@ class KeHoachBaoDuongDinhKyController
         return $value;
     }
 
-    private function saveDoiExecution(int $planId, string $performedOn, ?string $endedOn, string $person): void
+    private function saveDoiExecution(int $planId, string $performedOn, ?string $endedOn, string $person): bool
     {
         $this->db->beginTransaction();
         try {
             $sql = "SELECT k.hososcbd_id, k.hososcbd_doi_id, k.nguon_hoso,
-                           k.donvi_lam_chinh, k.nam, t.mavt, t.somay, t.model, t.madv
+                           k.donvi_lam_chinh, k.nam, t.mavt, t.somay, t.model, t.madv,
+                           h.ngayth AS dossier_ngayth, h.ngaykt AS dossier_ngaykt
                 FROM ke_hoach_bao_duong_dinh_ky_iso k
                 INNER JOIN thietbi_iso t ON t.stt = k.thietbi_id
+                LEFT JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
                 WHERE k.id = :id
                   AND (k.nguon_hoso IS NULL OR k.nguon_hoso = 'hososcbd_doi_iso')";
             $params = [':id' => $planId];
-            $this->applyDonViFilter($sql, $params);
+            $this->applyDonViFilter($sql, $params, 'k');
             $stmt = $this->db->prepare($sql . ' FOR UPDATE');
             $stmt->execute($params);
             $plan = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -600,8 +637,37 @@ class KeHoachBaoDuongDinhKyController
             }
 
             $dossierId = $plan['hososcbd_doi_id'];
-            $endDate = $endedOn ?? '0000-00-00';
+            $endDate = $endedOn;
             if ($dossierId !== null) {
+                $hasExistingDate = $this->hasExecutionDate($plan['dossier_ngayth'] ?? null)
+                    || $this->hasExecutionDate($plan['dossier_ngaykt'] ?? null);
+                if ($hasExistingDate && !$this->isAdmin()) {
+                    $userId = (int)($_SESSION['user_id'] ?? 0);
+                    $username = trim((string)($_SESSION['username'] ?? $_SESSION['user_name'] ?? ''));
+                    if ($userId <= 0 || $username === '') {
+                        throw new RuntimeException('Không xác định được người gửi yêu cầu duyệt.');
+                    }
+                    $this->db->prepare("DELETE FROM hososcbd_pending_edits
+                        WHERE hososcbd_stt = :stt AND record_type = 'hososcbd_doi_iso'
+                          AND user_id = :user_id AND status = 'pending'")
+                        ->execute([':stt' => $dossierId, ':user_id' => $userId]);
+                    $this->db->prepare("INSERT INTO hososcbd_pending_edits
+                        (hososcbd_stt, record_type, user_id, username, data_json, status)
+                        VALUES (:stt, 'hososcbd_doi_iso', :user_id, :username, :data, 'pending')")
+                        ->execute([
+                            ':stt' => $dossierId,
+                            ':user_id' => $userId,
+                            ':username' => $username,
+                            ':data' => json_encode([
+                                'ngayth' => $performedOn,
+                                'ngaykt' => $endDate,
+                                'nguoi_thuc_hien_iso' => $person,
+                            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+                        ]);
+                    $this->db->commit();
+                    return true;
+                }
+
                 $stmt = $this->db->prepare('UPDATE hososcbd_doi_iso
                     SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien
                     WHERE stt = :stt');
@@ -660,12 +726,18 @@ class KeHoachBaoDuongDinhKyController
                 }
             }
             $this->db->commit();
+            return false;
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;
         }
+    }
+
+    private function hasExecutionDate(mixed $date): bool
+    {
+        return $date !== null && $date !== '' && $date !== '0000-00-00';
     }
 
     private function linkHoSoId(int $planId, int $hosoId): void
