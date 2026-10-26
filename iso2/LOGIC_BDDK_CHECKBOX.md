@@ -2,6 +2,14 @@
 
 ## 1. Tổng quan
 
+### Nhập liệu hồ sơ đội từ kế hoạch BDDK
+
+- Quý hoàn tất được tính theo **ngày thực hiện**: tháng 1-3 là Q1, 4-6 là Q2, 7-9 là Q3, 10-12 là Q4.
+- Khi lưu trực tiếp hoặc admin duyệt yêu cầu sửa hồ sơ đội, đặt `qui_X_hoantat = 1` cho kế hoạch liên kết có năm bằng năm của ngày thực hiện. Không cần có ngày kết thúc.
+- Mỗi kế hoạch chỉ có một quý hoàn tất: đặt ba cột `qui_X_hoantat` còn lại về `0` trong cùng truy vấn, kể cả khi sửa ngày sang quý khác. Giữ nguyên các cột kế hoạch `qui_1` … `qui_4`; không yêu cầu quý đó phải có kế hoạch.
+- Yêu cầu còn chờ duyệt hoặc bị từ chối không cập nhật quý hoàn tất.
+- Quy tắc này áp dụng cho nhập liệu hồ sơ đội; checkbox BDDK trong phiếu SC bên dưới giữ nguyên quy tắc hiện có.
+
 Checkbox **BDDK** (Bảo Dưỡng Định Kỳ) trong phiếu SC dùng để đánh dấu rằng lần sửa chữa/bảo dưỡng này thuộc kế hoạch bảo dưỡng định kỳ đã lên lịch trước.
 
 Dữ liệu kế hoạch được lưu trong bảng: `ke_hoach_bao_duong_dinh_ky_iso`

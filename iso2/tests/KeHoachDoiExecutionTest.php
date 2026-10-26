@@ -35,16 +35,22 @@ final class KeHoachDoiExecutionTest extends TestCase
             ':nguoi_thuc_hien' => 'Nguyễn Văn A',
             ':stt' => 82,
         ]);
+        $completion = $this->createMock(PDOStatement::class);
+        $completion->expects($this->once())->method('execute')->with([':dossier_id' => 82, ':year' => 2026]);
 
         $db = $this->createMock(PDO::class);
         $db->expects($this->once())->method('beginTransaction');
         $db->expects($this->once())->method('commit');
         $db->expects($this->never())->method('rollBack');
         $queries = [];
-        $db->expects($this->exactly(2))->method('prepare')->willReturnCallback(
-            function (string $sql) use (&$queries, $plan, $update): PDOStatement {
+        $db->expects($this->exactly(3))->method('prepare')->willReturnCallback(
+            function (string $sql) use (&$queries, $plan, $update, $completion): PDOStatement {
                 $queries[] = $sql;
-                return count($queries) === 1 ? $plan : $update;
+                return match (count($queries)) {
+                    1 => $plan,
+                    2 => $update,
+                    3 => $completion,
+                };
             }
         );
 
@@ -67,6 +73,7 @@ final class KeHoachDoiExecutionTest extends TestCase
         $this->assertStringContainsString('UPDATE hososcbd_doi_iso', $queries[1]);
         $this->assertStringContainsString('SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien', $queries[1]);
         $this->assertStringNotContainsString('hososcbd_iso', $queries[1]);
+        $this->assertStringContainsString('SET qui_4_hoantat = 1', $queries[2]);
     }
 
     public function testExecutionUpdateWithExistingDateQueuesReviewForNonAdmin(): void
@@ -188,6 +195,8 @@ final class KeHoachDoiExecutionTest extends TestCase
         $link = $this->createMock(PDOStatement::class);
         $link->expects($this->once())->method('execute')->with([':dossier_id' => 82, ':plan_id' => 17]);
         $link->expects($this->once())->method('rowCount')->willReturn(1);
+        $completion = $this->createMock(PDOStatement::class);
+        $completion->expects($this->once())->method('execute')->with([':dossier_id' => 82, ':year' => 2026]);
 
         $db = $this->createMock(PDO::class);
         $db->expects($this->once())->method('beginTransaction');
@@ -195,13 +204,14 @@ final class KeHoachDoiExecutionTest extends TestCase
         $db->expects($this->never())->method('rollBack');
         $db->expects($this->once())->method('lastInsertId')->willReturn('82');
         $queries = [];
-        $db->expects($this->exactly(3))->method('prepare')->willReturnCallback(
-            function (string $sql) use (&$queries, $plan, $insert, $link): PDOStatement {
+        $db->expects($this->exactly(4))->method('prepare')->willReturnCallback(
+            function (string $sql) use (&$queries, $plan, $insert, $link, $completion): PDOStatement {
                 $queries[] = $sql;
                 return match (count($queries)) {
                     1 => $plan,
                     2 => $insert,
                     3 => $link,
+                    4 => $completion,
                 };
             }
         );
@@ -220,5 +230,6 @@ final class KeHoachDoiExecutionTest extends TestCase
 
         $this->assertStringContainsString('INSERT INTO hososcbd_doi_iso', $queries[1]);
         $this->assertStringContainsString("SET hososcbd_doi_id = :dossier_id, nguon_hoso = 'hososcbd_doi_iso'", $queries[2]);
+        $this->assertStringContainsString('SET qui_4_hoantat = 1', $queries[3]);
     }
 }

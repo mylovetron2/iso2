@@ -8,6 +8,7 @@ require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/includes/permissions.php';
+require_once __DIR__ . '/includes/doi_execution.php';
 
 // Chỉ admin được truy cập
 if (!hasRole(ROLE_ADMIN)) {
@@ -42,15 +43,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         || !is_string($data['nguoi_thuc_hien_iso'])) {
                         throw new RuntimeException('Dữ liệu yêu cầu duyệt hồ sơ đội không hợp lệ.');
                     }
-                    $db->prepare("UPDATE hososcbd_doi_iso
-                        SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :person
-                        WHERE stt = :stt")
-                        ->execute([
-                            ':ngayth' => $data['ngayth'],
-                            ':ngaykt' => $data['ngaykt'] ?? null,
-                            ':person' => $data['nguoi_thuc_hien_iso'],
-                            ':stt' => $hososcbd_stt,
-                        ]);
+                    $db->beginTransaction();
+                    try {
+                        $db->prepare("UPDATE hososcbd_doi_iso
+                            SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :person
+                            WHERE stt = :stt")
+                            ->execute([
+                                ':ngayth' => $data['ngayth'],
+                                ':ngaykt' => $data['ngaykt'] ?? null,
+                                ':person' => $data['nguoi_thuc_hien_iso'],
+                                ':stt' => $hososcbd_stt,
+                            ]);
+                        markDoiExecutionQuarterComplete($db, $hososcbd_stt, $data['ngayth']);
+                        $db->commit();
+                    } catch (Throwable $e) {
+                        if ($db->inTransaction()) {
+                            $db->rollBack();
+                        }
+                        throw $e;
+                    }
                 } else {
                     require_once __DIR__ . '/models/HoSoSCBD.php';
                     $model = new HoSoSCBD();

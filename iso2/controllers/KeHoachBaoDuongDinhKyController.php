@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../includes/doi_execution.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -725,6 +726,7 @@ class KeHoachBaoDuongDinhKyController
                     throw new RuntimeException('Plan source changed while creating team dossier');
                 }
             }
+            markDoiExecutionQuarterComplete($this->db, (int)$dossierId, $performedOn);
             $this->db->commit();
             return false;
         } catch (Throwable $e) {
