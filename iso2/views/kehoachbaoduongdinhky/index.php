@@ -633,7 +633,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <td class="execution-people px-2 py-1 text-xs text-gray-600">
                                 <?php if (!empty($item['cac_nguoi_thuc_hien'])): ?>
                                     <?php foreach ($item['cac_nguoi_thuc_hien'] as $personName): ?>
-                                        <div><?php echo htmlspecialchars($personName, ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div class="whitespace-pre-line"><?php echo htmlspecialchars($personName, ENT_QUOTES, 'UTF-8'); ?></div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     —
@@ -642,16 +642,13 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <div class="mt-1 rounded bg-amber-50 px-1 py-1 text-amber-800"
                                          title="Người thực hiện đang chờ admin duyệt">
                                         <i class="fas fa-clock mr-1" aria-hidden="true"></i><strong>Chờ duyệt</strong>
-                                        <div><?php echo htmlspecialchars((string)($item['pending_review_person'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div class="whitespace-pre-line"><?php echo htmlspecialchars((string)($item['pending_review_person'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                                     </div>
                                 <?php endif; ?>
                                 <?php
-                                $mainUnit = strtoupper(trim((string)($item['donvi_lam_chinh'] ?? '')));
                                 $canEditDoiExecution = ($item['hososcbd_id'] ?? null) === null
                                     && (($item['nguon_hoso'] ?? null) === null
                                         || ($item['nguon_hoso'] ?? null) === 'hososcbd_doi_iso')
-                                    && (($item['hososcbd_doi_id'] ?? null) !== null
-                                        || ($mainUnit !== '' && !in_array($mainUnit, ['CNM', 'RDNGA'], true)))
                                     && hasPermission('kehoachbaoduong.edit');
                                 if ($canEditDoiExecution):
                                     $dateStart = $item['ngay_thuc_hien'] ?? '';
@@ -1363,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div>
                     <label for="doiExecutionPerson" class="mb-1 block text-sm font-medium text-gray-700">Người thực hiện <span class="text-red-500">*</span></label>
-                    <input type="text" id="doiExecutionPerson" maxlength="255" required class="w-full rounded border px-3 py-2">
+                    <textarea id="doiExecutionPerson" rows="4" maxlength="255" required class="w-full rounded border px-3 py-2" placeholder="Mỗi người một dòng"></textarea>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-2">
@@ -1430,7 +1427,7 @@ doiExecutionForm.addEventListener('submit', async event => {
     }
 
     const submit = document.getElementById('doiExecutionSubmit');
-    const inputs = doiExecutionForm.querySelectorAll('input:not([type="hidden"])');
+    const inputs = doiExecutionForm.querySelectorAll('input:not([type="hidden"]), textarea');
     submit.disabled = true;
     inputs.forEach(input => input.disabled = true);
     try {

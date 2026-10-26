@@ -16,6 +16,7 @@ package-lock.json
 !/migrations/20261025_add_nguon_hoso_kehoach.sql
 !/migrations/20261025_add_doi_execution_input.sql
 !/migrations/20261025_add_doi_pending_review_type.sql
+!/migrations/20261026_allow_all_units_doi_execution.sql
 *.sqlite
 *.db
 

@@ -43,11 +43,11 @@ final class KeHoachExecutionInfoTest extends TestCase
                 'id' => 12,
                 'ngayth' => '2026-03-01',
                 'ngaykt' => null,
-                'nguoi_thuc_hien' => 'C',
+                'nguoi_thuc_hien' => "C\nD",
                 'pending_review_data' => json_encode([
                     'ngayth' => '2026-03-02',
                     'ngaykt' => '2026-03-03',
-                    'nguoi_thuc_hien_iso' => 'Nguyễn Văn B',
+                    'nguoi_thuc_hien_iso' => "Nguyễn Văn B\nTrần Văn C",
                 ]),
             ],
             ['id' => 12, 'ngayth' => '2026-03-01', 'ngaykt' => null, 'nguoi_thuc_hien' => ''],
@@ -66,12 +66,12 @@ final class KeHoachExecutionInfoTest extends TestCase
         $this->assertSame(['A', 'B'], $items[0]['cac_nguoi_thuc_hien']);
         $this->assertSame('2026-01-15', $items[0]['ngay_thuc_hien']);
         $this->assertSame('2026-01-20', $items[0]['ngay_ket_thuc']);
-        $this->assertSame(['C'], $items[1]['cac_nguoi_thuc_hien']);
+        $this->assertSame(["C\nD"], $items[1]['cac_nguoi_thuc_hien']);
         $this->assertNull($items[1]['ngay_ket_thuc']);
         $this->assertTrue($items[1]['pending_review']);
         $this->assertSame('2026-03-02', $items[1]['pending_review_ngayth']);
         $this->assertSame('2026-03-03', $items[1]['pending_review_ngaykt']);
-        $this->assertSame('Nguyễn Văn B', $items[1]['pending_review_person']);
+        $this->assertSame("Nguyễn Văn B\nTrần Văn C", $items[1]['pending_review_person']);
         $this->assertNull($items[2]['ngay_thuc_hien']);
         $this->assertSame([], $items[2]['cac_nguoi_thuc_hien']);
         $this->assertStringContainsString('n.mahoso = h.hoso', $queries[0]);

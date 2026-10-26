@@ -147,6 +147,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    ':rb' => $_SESSION['user_id'],
                    ':id' => $pendingId
                ]);
+            $source = $pending['record_type'] ?? 'hososcbd_iso';
+            $linkColumn = $source === 'hososcbd_doi_iso' ? 'hososcbd_doi_id' : 'hososcbd_id';
+            $planStmt = $db->prepare("SELECT id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE {$linkColumn} = :dossier_id");
+            $planStmt->execute([':dossier_id' => (int)$pending['hososcbd_stt']]);
+            $planId = $planStmt->fetchColumn();
+            if ($planId !== false) {
+                logBaoDuongActivity($db, 'UPDATE', (int)$planId, [
+                    'pending_id' => $pendingId, 'status' => 'pending',
+                ], [
+                    'operation' => $action === 'approve' ? 'approve_review' : 'reject_review',
+                    'pending_id' => $pendingId, 'status' => $newStatus,
+                    'record_type' => $source, $linkColumn => (int)$pending['hososcbd_stt'],
+                    'requested_by' => $pending['username'], 'admin_note' => $note,
+                    'proposed_data' => json_decode($pending['data_json'], true, 512, JSON_THROW_ON_ERROR),
+                ]);
+            }
 
             $flashMessage = ($action === 'approve') ? 'Đã duyệt và áp dụng thay đổi.' : 'Đã từ chối yêu cầu.';
             $flashType    = ($action === 'approve') ? 'green' : 'red';

@@ -112,8 +112,18 @@ final class KeHoachDoiExecutionTest extends TestCase
                     && $data === [
                         'ngayth' => '2026-10-01',
                         'ngaykt' => '2026-10-02',
-                        'nguoi_thuc_hien_iso' => 'Nguyễn Văn A',
+                        'nguoi_thuc_hien_iso' => "Nguyễn Văn A\nTrần Văn B",
                     ];
+            }
+        ));
+        $audit = $this->createMock(PDOStatement::class);
+        $audit->expects($this->once())->method('execute')->with($this->callback(
+            static function (array $params): bool {
+                $data = json_decode($params[':new_data'], true);
+                return $params[':table_name'] === 'ke_hoach_bao_duong_dinh_ky_iso'
+                    && $params[':record_id'] === 17
+                    && $data['operation'] === 'submit_review'
+                    && $data['status'] === 'pending';
             }
         ));
 
@@ -122,13 +132,14 @@ final class KeHoachDoiExecutionTest extends TestCase
         $db->expects($this->once())->method('commit');
         $db->expects($this->never())->method('rollBack');
         $queries = [];
-        $db->expects($this->exactly(3))->method('prepare')->willReturnCallback(
-            function (string $sql) use (&$queries, $plan, $deletePending, $insertPending): PDOStatement {
+        $db->expects($this->exactly(4))->method('prepare')->willReturnCallback(
+            function (string $sql) use (&$queries, $plan, $deletePending, $insertPending, $audit): PDOStatement {
                 $queries[] = $sql;
                 return match (count($queries)) {
                     1 => $plan,
                     2 => $deletePending,
                     3 => $insertPending,
+                    4 => $audit,
                 };
             }
         );
@@ -146,7 +157,7 @@ final class KeHoachDoiExecutionTest extends TestCase
         try {
             $method = $class->getMethod('saveDoiExecution');
             $method->setAccessible(true);
-            $this->assertTrue($method->invoke($controller, 17, '2026-10-01', '2026-10-02', 'Nguyễn Văn A'));
+            $this->assertTrue($method->invoke($controller, 17, '2026-10-01', '2026-10-02', "Nguyễn Văn A\nTrần Văn B"));
         } finally {
             if ($previousSession === null) {
                 unset($_SESSION);
@@ -160,7 +171,10 @@ final class KeHoachDoiExecutionTest extends TestCase
         $this->assertStringContainsString("'hososcbd_doi_iso'", $queries[2]);
     }
 
-    public function testUnlinkedPlanCreatesTeamDossierAndLinksItsSource(): void
+    /**
+     * @dataProvider mainUnits
+     */
+    public function testUnlinkedPlanCreatesTeamDossierAndLinksItsSource(?string $mainUnit): void
     {
         $plan = $this->createMock(PDOStatement::class);
         $plan->expects($this->once())->method('execute')->with([':id' => 17]);
@@ -168,7 +182,7 @@ final class KeHoachDoiExecutionTest extends TestCase
             'hososcbd_id' => null,
             'hososcbd_doi_id' => null,
             'nguon_hoso' => null,
-            'donvi_lam_chinh' => 'KTKT',
+            'donvi_lam_chinh' => $mainUnit,
             'nam' => 2026,
             'mavt' => 'VT-1',
             'somay' => 'SN-1',
@@ -231,5 +245,17 @@ final class KeHoachDoiExecutionTest extends TestCase
         $this->assertStringContainsString('INSERT INTO hososcbd_doi_iso', $queries[1]);
         $this->assertStringContainsString("SET hososcbd_doi_id = :dossier_id, nguon_hoso = 'hososcbd_doi_iso'", $queries[2]);
         $this->assertStringContainsString('SET qui_4_hoantat = 1', $queries[3]);
+    }
+
+    public function mainUnits(): array
+    {
+        return [
+            'KTKT' => ['KTKT'],
+            'DVLTH' => ['ĐVLTH'],
+            'CNM' => ['CNM'],
+            'RDNGA' => ['RDNGA'],
+            'unassigned' => [null],
+            'empty' => [''],
+        ];
     }
 }

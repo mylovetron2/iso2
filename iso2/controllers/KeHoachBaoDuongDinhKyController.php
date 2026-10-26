@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../includes/doi_execution.php';
+require_once __DIR__ . '/../includes/bao_duong_activity.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -291,6 +292,9 @@ class KeHoachBaoDuongDinhKyController
                 $sql = "DELETE FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([':nam' => $nam]);
+                logBaoDuongActivity($this->db, 'DELETE', null, [
+                    'operation' => 'import_clear', 'nam' => $nam, 'deleted_count' => $stmt->rowCount(),
+                ], null);
             }
 
             // Insert dữ liệu mới
@@ -320,6 +324,18 @@ class KeHoachBaoDuongDinhKyController
                     ':donvi_lam_phu' => trim($row[9] ?? ''),
                     ':ghi_chu' => trim($row[10] ?? ''),
                     ':created_by' => $_SESSION['user']['username'] ?? 'system'
+                ]);
+                logBaoDuongActivity($this->db, 'INSERT', (int)$this->db->lastInsertId(), null, [
+                    'operation' => 'import', 'nam' => $nam,
+                    'thietbi_id' => !empty($row[0]) ? (int)$row[0] : null,
+                    'ten_thietbi' => trim($row[1] ?? ''),
+                    'so_serial' => trim($row[2] ?? ''),
+                    'nhomsc' => trim($row[3] ?? ''),
+                    'qui_1' => trim($row[4] ?? ''), 'qui_2' => trim($row[5] ?? ''),
+                    'qui_3' => trim($row[6] ?? ''), 'qui_4' => trim($row[7] ?? ''),
+                    'donvi_lam_chinh' => trim($row[8] ?? ''),
+                    'donvi_lam_phu' => trim($row[9] ?? ''),
+                    'ghi_chu' => trim($row[10] ?? ''),
                 ]);
                 $count++;
             }
@@ -353,6 +369,9 @@ class KeHoachBaoDuongDinhKyController
                 $sql = "DELETE FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = :nam";
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([':nam' => $nam]);
+                logBaoDuongActivity($this->db, 'DELETE', null, [
+                    'operation' => 'delete_year', 'nam' => $nam, 'deleted_count' => $stmt->rowCount(),
+                ], null);
                 
                 $_SESSION['success'] = "Đã xóa kế hoạch năm $nam thành công!";
             }
@@ -390,6 +409,9 @@ class KeHoachBaoDuongDinhKyController
             $sql = "UPDATE ke_hoach_bao_duong_dinh_ky_iso SET $column = :hoantat WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':hoantat' => $hoantat, ':id' => $id]);
+            logBaoDuongActivity($this->db, 'UPDATE', $id, null, [
+                'operation' => 'update_quarter', $column => $hoantat,
+            ]);
             
             echo json_encode([
                 'success' => true, 
@@ -435,6 +457,13 @@ class KeHoachBaoDuongDinhKyController
                 ':q3' => isset($quarters['3']) ? (int)$quarters['3'] : 0,
                 ':q4' => isset($quarters['4']) ? (int)$quarters['4'] : 0,
                 ':id' => $id
+            ]);
+            logBaoDuongActivity($this->db, 'UPDATE', $id, null, [
+                'operation' => 'update_quarters',
+                'qui_1_hoantat' => (int)($quarters['1'] ?? 0),
+                'qui_2_hoantat' => (int)($quarters['2'] ?? 0),
+                'qui_3_hoantat' => (int)($quarters['3'] ?? 0),
+                'qui_4_hoantat' => (int)($quarters['4'] ?? 0),
             ]);
             
             echo json_encode([
@@ -485,6 +514,9 @@ class KeHoachBaoDuongDinhKyController
             $stmt->execute([
                 ':thietbi_id' => $thietbiId,
                 ':kehoach_id' => $kehoachId
+            ]);
+            logBaoDuongActivity($this->db, 'UPDATE', $kehoachId, null, [
+                'operation' => 'update_device', 'thietbi_id' => $thietbiId,
             ]);
             
             echo json_encode([
@@ -616,7 +648,8 @@ class KeHoachBaoDuongDinhKyController
         try {
             $sql = "SELECT k.hososcbd_id, k.hososcbd_doi_id, k.nguon_hoso,
                            k.donvi_lam_chinh, k.nam, t.mavt, t.somay, t.model, t.madv,
-                           h.ngayth AS dossier_ngayth, h.ngaykt AS dossier_ngaykt
+                           h.ngayth AS dossier_ngayth, h.ngaykt AS dossier_ngaykt,
+                           h.nguoi_thuc_hien_iso AS dossier_person
                 FROM ke_hoach_bao_duong_dinh_ky_iso k
                 INNER JOIN thietbi_iso t ON t.stt = k.thietbi_id
                 LEFT JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
@@ -631,9 +664,7 @@ class KeHoachBaoDuongDinhKyController
                 throw new InvalidArgumentException('Kế hoạch không tồn tại hoặc ngoài phạm vi đơn vị của bạn.');
             }
 
-            $mainUnit = strtoupper(trim((string)$plan['donvi_lam_chinh']));
-            if ($plan['hososcbd_id'] !== null || $mainUnit === ''
-                || in_array($mainUnit, ['CNM', 'RDNGA'], true)) {
+            if ($plan['hososcbd_id'] !== null) {
                 throw new InvalidArgumentException('Chỉ tạo hồ sơ đội cho kế hoạch chưa liên kết hoặc đã chọn nguồn hososcbd_doi_iso.');
             }
 
@@ -665,6 +696,16 @@ class KeHoachBaoDuongDinhKyController
                                 'nguoi_thuc_hien_iso' => $person,
                             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
                         ]);
+                    logBaoDuongActivity($this->db, 'UPDATE', $planId, [
+                        'ngayth' => $plan['dossier_ngayth'], 'ngaykt' => $plan['dossier_ngaykt'],
+                        'nguoi_thuc_hien_iso' => $plan['dossier_person'] ?? null,
+                    ], [
+                        'operation' => 'submit_review', 'status' => 'pending',
+                        'pending_id' => (int)$this->db->lastInsertId(),
+                        'hososcbd_doi_id' => $dossierId,
+                        'ngayth' => $performedOn, 'ngaykt' => $endDate,
+                        'nguoi_thuc_hien_iso' => $person,
+                    ]);
                     $this->db->commit();
                     return true;
                 }
@@ -726,6 +767,17 @@ class KeHoachBaoDuongDinhKyController
                     throw new RuntimeException('Plan source changed while creating team dossier');
                 }
             }
+            logBaoDuongActivity($this->db, 'UPDATE', $planId, [
+                'hososcbd_doi_id' => $plan['hososcbd_doi_id'],
+                'ngayth' => $plan['dossier_ngayth'] ?? null,
+                'ngaykt' => $plan['dossier_ngaykt'] ?? null,
+                'nguoi_thuc_hien_iso' => $plan['dossier_person'] ?? null,
+            ], [
+                'operation' => 'save_execution', 'hososcbd_doi_id' => $dossierId,
+                'nguon_hoso' => 'hososcbd_doi_iso',
+                'ngayth' => $performedOn, 'ngaykt' => $endDate,
+                'nguoi_thuc_hien_iso' => $person,
+            ]);
             markDoiExecutionQuarterComplete($this->db, (int)$dossierId, $performedOn);
             $this->db->commit();
             return false;
@@ -786,6 +838,11 @@ class KeHoachBaoDuongDinhKyController
             if ($stmt->rowCount() !== 1) {
                 throw new RuntimeException('Plan link changed during update');
             }
+            logBaoDuongActivity($this->db, 'UPDATE', $planId, [
+                'hososcbd_id' => $plan['hososcbd_id'], 'nguon_hoso' => $plan['nguon_hoso'],
+            ], [
+                'operation' => 'link_dossier', 'hososcbd_id' => $hosoId, 'nguon_hoso' => 'hososcbd_iso',
+            ]);
             $this->db->commit();
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -824,6 +881,10 @@ class KeHoachBaoDuongDinhKyController
                 ':donvi_lam_chinh' => $donviLamChinh,
                 ':donvi_lam_phu' => $donviLamPhu,
                 ':kehoach_id' => $kehoachId
+            ]);
+            logBaoDuongActivity($this->db, 'UPDATE', $kehoachId, null, [
+                'operation' => 'update_units',
+                'donvi_lam_chinh' => $donviLamChinh, 'donvi_lam_phu' => $donviLamPhu,
             ]);
             
             echo json_encode([
@@ -1388,6 +1449,11 @@ class KeHoachBaoDuongDinhKyController
                     ':so_serial' => $device['somay'] ?? '',
                     ':nhomsc' => $nhomsc,
                     ':created_by' => $_SESSION['user']['username'] ?? 'system'
+                ]);
+                logBaoDuongActivity($this->db, 'INSERT', (int)$this->db->lastInsertId(), null, [
+                    'operation' => 'add_device', 'thietbi_id' => $stt, 'nam' => $nam,
+                    'ten_thietbi' => $device['tenvt'], 'so_serial' => $device['somay'] ?? '',
+                    'nhomsc' => $nhomsc,
                 ]);
                 $added++;
             }

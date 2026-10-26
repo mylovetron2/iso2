@@ -4,10 +4,13 @@
 
 ### Nhập liệu hồ sơ đội từ kế hoạch BDDK
 
+- Người thực hiện hỗ trợ nhiều dòng (mỗi người một dòng), tổng tối đa 255 ký tự. Dữ liệu đã lưu và chờ duyệt giữ nguyên xuống dòng.
+- Tất cả ĐV chính (kể cả chưa chọn) có thể nhập liệu khi `hososcbd_id IS NULL` và nguồn hồ sơ chưa chọn hoặc là `hososcbd_doi_iso`, với quyền sửa và phạm vi đơn vị hiện có. Áp dụng migration `migrations/20261026_allow_all_units_doi_execution.sql` để gỡ ràng buộc đơn vị cũ trên hồ sơ đội.
 - Quý hoàn tất được tính theo **ngày thực hiện**: tháng 1-3 là Q1, 4-6 là Q2, 7-9 là Q3, 10-12 là Q4.
 - Khi lưu trực tiếp hoặc admin duyệt yêu cầu sửa hồ sơ đội, đặt `qui_X_hoantat = 1` cho kế hoạch liên kết có năm bằng năm của ngày thực hiện. Không cần có ngày kết thúc.
 - Mỗi kế hoạch chỉ có một quý hoàn tất: đặt ba cột `qui_X_hoantat` còn lại về `0` trong cùng truy vấn, kể cả khi sửa ngày sang quý khác. Giữ nguyên các cột kế hoạch `qui_1` … `qui_4`; không yêu cầu quý đó phải có kế hoạch.
 - Yêu cầu còn chờ duyệt hoặc bị từ chối không cập nhật quý hoàn tất.
+- Nhật ký hoạt động dùng bảng `ke_hoach_bao_duong_dinh_ky_iso`: ghi import/thêm/xóa, sửa thiết bị/đơn vị, liên kết hồ sơ, nhập liệu, quý hoàn tất và gửi/duyệt/từ chối yêu cầu. Trường `operation` phân biệt từng thao tác; `submit_review` chỉ là đề xuất, không phải dữ liệu đã áp dụng. Các thao tác theo năm ghi năm và số bản ghi bị xóa.
 - Quy tắc này áp dụng cho nhập liệu hồ sơ đội; checkbox BDDK trong phiếu SC bên dưới giữ nguyên quy tắc hiện có.
 
 Checkbox **BDDK** (Bảo Dưỡng Định Kỳ) trong phiếu SC dùng để đánh dấu rằng lần sửa chữa/bảo dưỡng này thuộc kế hoạch bảo dưỡng định kỳ đã lên lịch trước.

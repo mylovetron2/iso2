@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/bao_duong_activity.php';
+
 function markDoiExecutionQuarterComplete(PDO $db, int $dossierId, string $performedOn): void
 {
     $date = DateTimeImmutable::createFromFormat('!Y-m-d', $performedOn);
@@ -21,4 +23,14 @@ function markDoiExecutionQuarterComplete(PDO $db, int $dossierId, string $perfor
           AND (nguon_hoso IS NULL OR nguon_hoso = 'hososcbd_doi_iso')
           AND nam = :year");
     $stmt->execute([':dossier_id' => $dossierId, ':year' => (int)$date->format('Y')]);
+    if ($stmt->rowCount() > 0) {
+        $completion = [];
+        for ($q = 1; $q <= 4; $q++) {
+            $completion["qui_{$q}_hoantat"] = $q === $quarter ? 1 : 0;
+        }
+        logBaoDuongActivity($db, 'UPDATE', null, null, array_merge([
+            'operation' => 'execution_quarter', 'hososcbd_doi_id' => $dossierId,
+            'nam' => (int)$date->format('Y'), 'ngayth' => $performedOn,
+        ], $completion));
+    }
 }
