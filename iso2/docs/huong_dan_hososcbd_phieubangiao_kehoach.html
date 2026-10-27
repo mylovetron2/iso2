@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn sử dụng hệ thống SCBĐ và Bảo dưỡng định kỳ</title>
+<style>
+    :root {
+        --blue: #2563eb; --green: #16a34a; --orange: #ea580c; --red: #dc2626;
+        --purple: #7c3aed; --gray: #6b7280; --border: #e5e7eb; --bg: #f3f4f6;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+        margin: 0; font-family: "Segoe UI", Roboto, Arial, sans-serif;
+        color: #1f2937; background: var(--bg); line-height: 1.6;
+    }
+    header.top {
+        background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;
+        padding: 28px 24px;
+    }
+    header.top h1 { margin: 0 0 6px; font-size: 26px; }
+    header.top p { margin: 0; opacity: .9; }
+    .layout { display: flex; gap: 24px; max-width: 1200px; margin: 24px auto; padding: 0 16px; align-items: flex-start; }
+    nav.toc {
+        position: sticky; top: 16px; flex: 0 0 250px; background: #fff; border-radius: 8px;
+        padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); max-height: calc(100vh - 32px); overflow-y: auto;
+    }
+    nav.toc h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; color: var(--gray); }
+    nav.toc ul { list-style: none; margin: 0; padding: 0; }
+    nav.toc li a { display: block; padding: 4px 8px; color: #374151; text-decoration: none; border-radius: 4px; font-size: 14px; }
+    nav.toc li a:hover { background: #eff6ff; color: var(--blue); }
+    nav.toc li.sub a { padding-left: 22px; font-size: 13px; color: var(--gray); }
+    main { flex: 1; min-width: 0; }
+    section.card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    h2 { margin-top: 0; padding-bottom: 8px; border-bottom: 3px solid var(--blue); font-size: 22px; }
+    h3 { margin-top: 28px; font-size: 18px; color: #111827; }
+    h4 { margin: 18px 0 6px; font-size: 15px; color: #374151; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f9fafb; }
+    code, kbd { background: #f3f4f6; border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: Consolas, monospace; font-size: 13px; }
+    .btn { display: inline-block; padding: 2px 10px; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .btn.blue { background: #2563eb; } .btn.green { background: #16a34a; } .btn.red { background: #dc2626; }
+    .btn.gray { background: #6b7280; } .btn.orange { background: #f97316; } .btn.purple { background: #7c3aed; }
+    .btn.emerald { background: #059669; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+    .b-green { background: #dcfce7; color: #166534; } .b-yellow { background: #fef9c3; color: #854d0e; }
+    .b-orange { background: #ffedd5; color: #9a3412; } .b-purple { background: #ede9fe; color: #5b21b6; }
+    .b-blue { background: #dbeafe; color: #1e40af; } .b-red { background: #fee2e2; color: #991b1b; }
+    .b-gray { background: #e5e7eb; color: #374151; }
+    .chip-done { background: #16a34a; color: #fff; } .chip-plan { background: #d1d5db; color: #374151; }
+    .note, .warn, .tip {
+        border-left: 4px solid; border-radius: 4px; padding: 10px 14px; margin: 14px 0; font-size: 14px;
+    }
+    .note { background: #eff6ff; border-color: #3b82f6; }
+    .warn { background: #fef2f2; border-color: #ef4444; }
+    .tip  { background: #f0fdf4; border-color: #22c55e; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0; }
+    .flow .step { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+    .flow .arrow { color: var(--gray); font-weight: 700; }
+    ol.steps { counter-reset: s; list-style: none; padding-left: 0; }
+    ol.steps > li { counter-increment: s; position: relative; padding: 4px 0 8px 40px; }
+    ol.steps > li::before {
+        content: counter(s); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%;
+        background: var(--blue); color: #fff; text-align: center; line-height: 28px; font-weight: 700; font-size: 14px;
+    }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .box { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; background: #fafafa; }
+    .box h4 { margin-top: 0; }
+    .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .overview a { display: block; text-decoration: none; color: inherit; border: 1px solid var(--border); border-radius: 8px; padding: 14px; border-top: 4px solid var(--blue); background: #fff; }
+    .overview a:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+    .overview a strong { display: block; margin-bottom: 4px; }
+    .overview .file { font-family: Consolas, monospace; font-size: 12px; color: var(--gray); }
+    footer { text-align: center; color: var(--gray); font-size: 13px; padding: 12px 0 32px; }
+    @media (max-width: 860px) {
+        .layout { flex-direction: column; }
+        nav.toc { position: static; flex: none; width: 100%; max-height: none; }
+    }
+    @media print {
+        nav.toc, header.top { display: none; }
+        body { background: #fff; }
+        section.card { box-shadow: none; page-break-inside: avoid; }
+    }
+</style>
+</head>
+<body>
+
+<header class="top">
+    <h1>Hướng dẫn sử dụng hệ thống ISO 2.0</h1>
+    <p>Dành cho người tiếp nhận yêu cầu, theo dõi sửa chữa/bảo dưỡng và bàn giao thiết bị</p>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Mục lục">
+    <h2>Mục lục</h2>
+    <ul>
+        <li><a href="#tongquan">1. Tổng quan &amp; quy trình</a></li>
+        <li><a href="#batdau">2. Bắt đầu sử dụng</a></li>
+        <li><a href="#hoso">3. Hồ sơ SCBĐ</a></li>
+        <li class="sub"><a href="#hoso-ds">3.1 Danh sách, thống kê, lọc</a></li>
+        <li class="sub"><a href="#hoso-cot">3.2 Ý nghĩa các cột</a></li>
+        <li class="sub"><a href="#hoso-tao">3.3 Thêm hồ sơ</a></li>
+        <li class="sub"><a href="#hoso-sua">3.4 Xem / Sửa / Xóa</a></li>
+        <li class="sub"><a href="#hoso-nut">3.5 Cập nhật công việc</a></li>
+        <li class="sub"><a href="#hoso-in">3.6 In &amp; xuất file</a></li>
+        <li><a href="#pbg">4. Phiếu bàn giao</a></li>
+        <li class="sub"><a href="#pbg-ds">4.1 Danh sách phiếu</a></li>
+        <li class="sub"><a href="#pbg-tao">4.2 Tạo phiếu (2 bước)</a></li>
+        <li class="sub"><a href="#pbg-xem">4.3 Xem, in, xuất Word</a></li>
+        <li class="sub"><a href="#pbg-sua">4.4 Phiếu nháp: sửa / xóa</a></li>
+        <li><a href="#kh">5. Kế hoạch bảo dưỡng định kỳ</a></li>
+        <li class="sub"><a href="#kh-loc">5.1 Bộ lọc &amp; thống kê</a></li>
+        <li class="sub"><a href="#kh-bang">5.2 Đọc bảng kế hoạch</a></li>
+        <li class="sub"><a href="#kh-khoa">5.3 Cập nhật thông tin kế hoạch</a></li>
+        <li class="sub"><a href="#kh-them">5.4 Thêm thiết bị vào kế hoạch</a></li>
+        <li class="sub"><a href="#kh-nhaplieu">5.5 Nhập liệu bảo dưỡng</a></li>
+        <li class="sub"><a href="#kh-thongke">5.6 Thống kê &amp; xuất báo cáo</a></li>
+        <li><a href="#lienket">6. Quy trình công việc</a></li>
+        <li><a href="#loi">7. Khi cần hỗ trợ</a></li>
+        <li><a href="#faq">8. Câu hỏi thường gặp</a></li>
+    </ul>
+</nav>
+
+<main>
+
+<!-- ===================== 1. TỔNG QUAN ===================== -->
+<section class="card" id="tongquan">
+    <h2>1. Tổng quan &amp; quy trình</h2>
+    <div class="overview">
+        <a href="#hoso" style="border-top-color:#2563eb">
+            <strong>Hồ sơ Sửa chữa Bảo dưỡng</strong>
+            Tiếp nhận yêu cầu, theo dõi thực hiện, kết thúc và bàn giao thiết bị.
+        </a>
+        <a href="#pbg" style="border-top-color:#dc2626">
+            <strong>Phiếu Bàn giao</strong>
+            Lập phiếu giao thiết bị đã sửa/bảo dưỡng xong cho đơn vị yêu cầu.
+        </a>
+        <a href="#kh" style="border-top-color:#7c3aed">
+            <strong>Kế hoạch Bảo dưỡng định kỳ</strong>
+            Lịch bảo dưỡng theo quý cho từng thiết bị, theo dõi và nhập kết quả thực hiện.
+        </a>
+    </div>
+
+    <h3>Quy trình tổng thể</h3>
+    <div class="flow">
+        <span class="step">Tiếp nhận yêu cầu</span><span class="arrow">→</span>
+        <span class="step">Theo dõi sửa chữa / bảo dưỡng</span><span class="arrow">→</span>
+        <span class="step">Ghi nhận hoàn thành</span><span class="arrow">→</span>
+        <span class="step">Lập phiếu bàn giao</span>
+    </div>
+    <p>Kế hoạch bảo dưỡng định kỳ giúp theo dõi thiết bị cần làm theo quý. Hồ sơ sửa chữa/bảo dưỡng ghi nhận quá trình xử lý từng thiết bị. Khi công việc hoàn tất, người dùng lập phiếu để ghi nhận bàn giao thiết bị cho đơn vị nhận.</p>
+    <div class="note">Đăng nhập bằng tài khoản được cấp và mở chức năng cần dùng từ menu của hệ thống. Các nút thao tác có thể khác nhau tùy tài khoản.</div>
+</section>
+
+<!-- ===================== 2. BẮT ĐẦU ===================== -->
+<section class="card" id="batdau">
+    <h2>2. Bắt đầu sử dụng</h2>
+    <ol class="steps">
+        <li>Đăng nhập vào hệ thống bằng tài khoản cá nhân.</li>
+        <li>Mở chức năng cần thao tác từ menu: <strong>Hồ sơ Sửa chữa Bảo dưỡng</strong>, <strong>Phiếu Bàn giao</strong> hoặc <strong>Kế hoạch Bảo dưỡng thiết bị định kỳ</strong>.</li>
+        <li>Dùng ô tìm kiếm và bộ lọc để tìm đúng phiếu hoặc thiết bị trước khi cập nhật.</li>
+        <li>Kiểm tra lại thông tin trên màn hình trước khi lưu, in hoặc bàn giao.</li>
+    </ol>
+    <div class="note">
+        Nếu không thấy một nút thao tác, hoặc không mở được một chức năng, tài khoản của bạn có thể chưa được cấp quyền sử dụng chức năng đó. Hãy liên hệ người phụ trách hệ thống và cung cấp tên chức năng cùng thao tác bạn cần thực hiện.
+    </div>
+</section>
+
+<!-- ===================== 3. HỒ SƠ SCBĐ ===================== -->
+<section class="card" id="hoso">
+    <h2>3. Hồ sơ Sửa chữa Bảo dưỡng</h2>
+
+    <h3 id="hoso-ds">3.1 Danh sách, thống kê và bộ lọc</h3>
+    <p>Đầu trang hiển thị 3 ô thống kê nhanh: <span class="badge b-yellow">Chưa thực hiện</span> <span class="badge b-orange">Đang làm</span> <span class="badge b-purple">Chưa bàn giao</span>.</p>
+
+    <table>
+        <thead><tr><th>Bộ lọc</th><th>Cách dùng</th></tr></thead>
+        <tbody>
+            <tr><td>Ô tìm kiếm</td><td>Nhập số phiếu, mã vật tư, số máy hoặc tên đơn vị cần tìm.</td></tr>
+            <tr><td>Đơn vị</td><td>Chọn một đơn vị hoặc “Tất cả đơn vị”.</td></tr>
+            <tr><td>Trạng thái</td><td>Chưa thực hiện · Đang làm · Hoàn thành · Chưa bàn giao · Đã bàn giao · TTKTDB · Tạm dừng.</td></tr>
+            <tr><td>CV (công việc)</td><td>SC, BD, KT, BDDK.</td></tr>
+            <tr><td>Nhóm SC</td><td>RDNGA hoặc CNC.</td></tr>
+            <tr><td>Ngày YC / Ngày TH / Ngày KT</td><td>Lọc theo khoảng <em>Từ ngày – Đến ngày</em> của ngày yêu cầu, ngày thực hiện, ngày kết thúc.</td></tr>
+        </tbody>
+    </table>
+    <p>Bấm <span class="btn blue">Lọc</span> để áp dụng, <span class="btn gray">Xóa lọc</span> để xem lại danh sách. Nếu có nhiều kết quả, chuyển trang bằng các nút ở cuối bảng.</p>
+
+    <h3 id="hoso-cot">3.2 Ý nghĩa các cột</h3>
+    <table>
+        <thead><tr><th>Cột</th><th>Nội dung</th></tr></thead>
+        <tbody>
+            <tr><td>Phiếu / Số hồ sơ</td><td>Số phiếu yêu cầu (bấm để xem phiếu) và mã hồ sơ của từng thiết bị. Hồ sơ đang tạm dừng có biểu tượng cảnh báo.</td></tr>
+            <tr><td>Mã VT / Số máy</td><td>Mã vật tư và số máy (bấm Mã VT để xem chi tiết thiết bị).</td></tr>
+            <tr><td>Ngày YC</td><td>Ngày yêu cầu (đen); bên dưới là <span style="color:#f97316;font-weight:600">▶ ngày thực hiện</span> (cam) và <span style="color:#16a34a;font-weight:600">→ ngày kết thúc</span> (xanh lá).</td></tr>
+            <tr><td>Đơn vị</td><td>Đơn vị yêu cầu.</td></tr>
+            <tr><td>CV</td>
+                <td><span class="badge b-blue">KT</span> Kiểm tra · <span class="badge b-green">BD</span> Bảo dưỡng ·
+                    <span class="badge b-red">SC</span> Sửa chữa · <span class="badge b-purple">BDDK</span> Bảo dưỡng định kỳ</td></tr>
+            <tr><td>Định mức</td><td>Số giờ và loại công việc định mức, nếu thông tin này được áp dụng cho hồ sơ.</td></tr>
+            <tr><td>BDDK</td><td>Các quý bảo dưỡng định kỳ của thiết bị: <span class="badge chip-done">✓ Quý 1</span> đã hoàn thành, <span class="badge chip-plan">Quý 2</span> có kế hoạch nhưng chưa xong. Bấm để mở kế hoạch của thiết bị đó.</td></tr>
+            <tr><td>HC/KĐ</td><td>Các tháng hiệu chuẩn/kiểm định: <span class="badge chip-done">✓ T3</span> đã thực hiện, <span class="badge chip-plan">T9</span> theo kế hoạch.</td></tr>
+            <tr><td>Trạng thái</td><td>Xem bảng bên dưới.</td></tr>
+        </tbody>
+    </table>
+    <p>Nếu chưa có kế hoạch hoặc thông tin hiệu chuẩn/kiểm định cho thiết bị, ô tương ứng có thể để trống hoặc hiện dấu “-”.</p>
+
+    <h4>Ý nghĩa các trạng thái</h4>
+    <table>
+        <thead><tr><th>Nhãn</th><th>Điều kiện</th></tr></thead>
+        <tbody>
+            <tr><td><span class="badge b-green">Đã BG</span></td><td>Thiết bị đã nằm trong một phiếu bàn giao.</td></tr>
+            <tr><td><span class="badge b-purple">Hoàn thành</span></td><td>Có ngày kết thúc, chưa bàn giao.</td></tr>
+            <tr><td><span class="badge b-orange">Đang làm</span></td><td>Có ngày thực hiện, chưa có ngày kết thúc.</td></tr>
+            <tr><td><span class="badge b-yellow">Chưa TH</span></td><td>Chưa có ngày thực hiện.</td></tr>
+        </tbody>
+    </table>
+    <p>Với hồ sơ <em>Đã BG</em> hoặc <em>Hoàn thành</em>, nhãn kết quả kỹ thuật sau SC/BĐ (ví dụ <span class="badge b-red">TTKTDB</span>) hiển thị bên dưới.</p>
+
+    <h3 id="hoso-tao">3.3 Thêm hồ sơ mới</h3>
+    <ol class="steps">
+        <li>Bấm <span class="btn green">+ Thêm hồ sơ</span> ở phía trên danh sách.</li>
+        <li><strong>Thông tin cơ bản:</strong> để trống <em>Số phiếu</em> để hệ thống tự điền số tiếp theo; chọn <em>Ngày yêu cầu</em>. Mã quản lý và số hồ sơ được tạo tự động khi lưu.</li>
+        <li><strong>Thông tin đơn vị &amp; yêu cầu:</strong> chọn <em>Đơn vị</em>, điền thông tin người yêu cầu và số điện thoại; chọn loại công việc (<em>KT</em> – Kiểm tra, <em>BD</em> – Bảo dưỡng, <em>SC</em> – Sửa chữa, <em>BDDK</em> – Bảo dưỡng định kỳ) và nhóm sửa chữa. Bổ sung yêu cầu của khách hàng và vị trí Lô – Giếng – Mỏ nếu có.</li>
+        <li><strong>Thêm thiết bị vào hồ sơ:</strong>
+            <ul>
+                <li><em>Cách 1:</em> gõ mã vật tư, số máy hoặc tên vào ô tìm kiếm rồi chọn thiết bị có sẵn.</li>
+                <li><em>Cách 2:</em> nhập thủ công thiết bị mới nếu chưa có trong danh mục.</li>
+            </ul>
+        </li>
+        <li>Bấm <span class="btn blue">Lưu hồ sơ</span> (thanh cố định phía trên) hoặc <span class="btn gray">Hủy</span> để thoát.</li>
+    </ol>
+    <div class="tip">
+        <strong>Thêm thiết bị vào phiếu đã có:</strong> khi mở trang tạo từ một phiếu hiện hữu, các trường đơn vị/yêu cầu được điền tự động (nền xanh, nhãn “Tự động”) và số phiếu bị khóa – chỉ cần thêm thiết bị mới.
+    </div>
+
+    <h3 id="hoso-sua">3.4 Xem, sửa, xóa hồ sơ</h3>
+    <table>
+        <thead><tr><th>Biểu tượng</th><th>Chức năng</th></tr></thead>
+        <tbody>
+            <tr><td><span style="color:#2563eb">👁</span> Xem</td><td>Mở chi tiết hồ sơ (có các nút Quay lại, Sửa, PDF, Phiếu SC, Phiếu kiểm tra, Phiếu YC, In).</td></tr>
+            <tr><td><span style="color:#16a34a">✎</span> Sửa</td><td>Mở hồ sơ cần cập nhật và lưu lại sau khi kiểm tra thông tin.</td></tr>
+            <tr><td><span style="color:#dc2626">🗑</span> Xóa</td><td>Chỉ xóa hồ sơ tạo nhầm sau khi kiểm tra kỹ. Hệ thống sẽ hỏi xác nhận trước khi xóa.</td></tr>
+        </tbody>
+    </table>
+    <p>Trang sửa gồm các nhóm thông tin:</p>
+    <ul>
+        <li><strong>Thông tin cơ bản:</strong> số phiếu, ngày yêu cầu, mã quản lý, mã hồ sơ (tự động, không sửa).</li>
+        <li><strong>Thiết bị:</strong> Mã vật tư*, Số máy*, Model*, Vị trí máy BD, Lô – Giếng.</li>
+        <li><strong>Đơn vị &amp; yêu cầu:</strong> Đơn vị*, Điện thoại, Người yêu cầu/nhận, Công việc*, Yêu cầu thêm của KH.</li>
+        <li><strong>Thực hiện:</strong> Nhóm SC*, Ngày bắt đầu TT, <strong>Ngày thực hiện</strong>, <strong>Ngày kết thúc</strong>, Tình trạng kỹ thuật trước/sau SC/BĐ, Hỏng hóc, Khắc phục, Nội dung sửa chữa, Kết luận, Xem xét xưởng.</li>
+        <li><strong>Bàn giao:</strong> Số lần BG, Dòng, Ghi chú, Ghi chú cuối.</li>
+    </ul>
+    <div class="warn">
+        Nhập <strong>Ngày thực hiện</strong> khi bắt đầu xử lý và <strong>Ngày kết thúc</strong> khi công việc đã hoàn tất. Thiết bị chỉ có thể được chọn lập phiếu bàn giao sau khi có ngày kết thúc.
+    </div>
+
+    <h3 id="hoso-nut">3.5 Cập nhật công việc</h3>
+    <p>Các nút này nằm ở cột “Chi tiết” trong danh sách hồ sơ.</p>
+    <table>
+        <thead><tr><th>Nút</th><th>Mục đích</th></tr></thead>
+        <tbody>
+            <tr><td><span class="btn orange">🔧 SC</span></td><td>Mở phần ghi nhận nội dung sửa chữa và thiết bị đo đã sử dụng.</td></tr>
+            <tr><td><span class="btn" style="background:#3b82f6">☰ CV</span></td><td>Mở danh sách công việc, người thực hiện và tiến độ sửa chữa.</td></tr>
+            <tr><td><span class="btn orange">⏸ Pause</span> / <span class="btn green">▶ Resume</span></td><td>Tạm dừng hồ sơ hoặc tiếp tục xử lý hồ sơ đang tạm dừng. Có thể xem lại lịch sử tạm dừng.</td></tr>
+        </tbody>
+    </table>
+    <p>Nếu cần tạm dừng công việc, hãy ghi nhận lý do theo quy trình của đơn vị trước khi bấm tạm dừng.</p>
+
+    <h3 id="hoso-in">3.6 In và xuất file</h3>
+    <table>
+        <thead><tr><th>Vị trí</th><th>Nút</th><th>Kết quả</th></tr></thead>
+        <tbody>
+            <tr><td>Danh sách</td><td><span class="btn red">In PDF</span></td><td>Danh sách hồ sơ theo bộ lọc đang áp dụng.</td></tr>
+            <tr><td>Danh sách</td><td><span class="btn green">In Excel</span></td><td>Danh sách hồ sơ theo bộ lọc đang áp dụng (file Excel).</td></tr>
+            <tr><td>Chi tiết hồ sơ</td><td><span class="btn red">PDF</span></td><td>Hồ sơ dạng PDF.</td></tr>
+            <tr><td>Chi tiết hồ sơ</td><td><span class="btn" style="background:#3b82f6">Phiếu SC</span></td><td>Phiếu sửa chữa.</td></tr>
+            <tr><td>Chi tiết hồ sơ</td><td><span class="btn green">Phiếu kiểm tra</span></td><td>Phiếu kiểm tra sau BD/SC.</td></tr>
+            <tr><td>Chi tiết hồ sơ</td><td><span class="btn green">Phiếu YC</span></td><td>Phiếu yêu cầu (Word).</td></tr>
+        </tbody>
+    </table>
+    <div class="tip">Hãy đặt bộ lọc trước rồi mới bấm In PDF / In Excel để file chỉ chứa dữ liệu cần thiết.</div>
+</section>
+
+<!-- ===================== 4. PHIẾU BÀN GIAO ===================== -->
+<section class="card" id="pbg">
+    <h2>4. Phiếu bàn giao</h2>
+    <p>Phiếu bàn giao ghi nhận việc Xưởng SCTBĐVL giao lại thiết bị đã sửa chữa/bảo dưỡng cho đơn vị yêu cầu.</p>
+
+    <h3 id="pbg-ds">4.1 Danh sách phiếu</h3>
+    <ul>
+        <li>Tìm kiếm theo số phiếu, phiếu YC, mã VT, số máy, người giao/nhận; lọc theo <em>Đơn vị</em>; bấm <span class="btn blue">Tìm kiếm</span> hoặc <kbd>Enter</kbd>. <span class="btn gray">Reset</span> để xóa lọc.</li>
+        <li>Các cột: <strong>Số phiếu</strong> · Phiếu YC · Ngày BG · Người giao · Người nhận · Danh sách thiết bị (Mã VT – Số máy, kèm số lượng) · Thao tác.</li>
+        <li>Thao tác: <span style="color:#2563eb">👁 Xem chi tiết</span>, <span style="color:#7c3aed">📄 Xuất Word</span>.</li>
+        <li>Số phiếu được tạo tự động từ số phiếu yêu cầu và lần bàn giao, ví dụ <strong>1984-1</strong>, <strong>1984-2</strong>.</li>
+    </ul>
+
+    <h3 id="pbg-tao">4.2 Tạo phiếu bàn giao mới (2 bước)</h3>
+    <div class="flow">
+        <span class="step">Bước 1: Chọn thiết bị</span><span class="arrow">→</span>
+        <span class="step">Bước 2: Xác nhận thông tin</span><span class="arrow">→</span>
+        <span class="step">Phiếu được tạo &amp; duyệt</span>
+    </div>
+    <p>Bấm <span class="btn green">+ Tạo Phiếu Bàn Giao Mới</span>.</p>
+
+    <h4>Bước 1 – Chọn thiết bị</h4>
+    <ol class="steps">
+        <li>Trang liệt kê các thiết bị <strong>đã sửa xong, chưa bàn giao</strong>. Dùng ô tìm mã thiết bị, tên hoặc số máy; có thể lọc theo <em>Đơn vị</em> hoặc <em>Phiếu YC</em> (ví dụ <strong>1926</strong>) rồi bấm <span class="btn blue">Tìm kiếm</span>.</li>
+        <li>Đánh dấu các thiết bị cần bàn giao. Thanh tóm tắt hiển thị “Đã chọn: X thiết bị từ Y phiếu YC” cùng nút <em>Chọn tất cả</em> / <em>Bỏ chọn tất cả</em>.</li>
+        <li>Bấm <span class="btn green">Tiếp tục (Bước 2)</span>. Nếu không chọn thiết bị nào, hệ thống báo “Vui lòng chọn ít nhất 1 thiết bị”.</li>
+    </ol>
+    <div class="note">Thiết bị chỉ xuất hiện khi hồ sơ SCBĐ đã có <strong>ngày kết thúc</strong> và chưa bàn giao. Nếu thiếu thiết bị, kiểm tra lại hồ sơ SCBĐ tương ứng.</div>
+
+    <h4>Bước 2 – Xác nhận thông tin</h4>
+    <p>Thiết bị được tự động <strong>nhóm theo phiếu yêu cầu</strong>; mỗi nhóm tạo thành một phiếu bàn giao riêng.</p>
+    <table>
+        <thead><tr><th>Trường</th><th>Ghi chú</th></tr></thead>
+        <tbody>
+            <tr><td>Số phiếu</td><td>Tự động (xem trước, không sửa).</td></tr>
+            <tr><td>Ngày bàn giao *</td><td>Mặc định là hôm nay.</td></tr>
+            <tr><td>Người giao *</td><td>Họ tên người giao thiết bị.</td></tr>
+            <tr><td>Người nhận *</td><td>Họ tên người nhận thiết bị.</td></tr>
+            <tr><td>Đơn vị giao</td><td>Tự động: XSCTBĐVL.</td></tr>
+            <tr><td>Đơn vị nhận *</td><td>Chọn từ danh sách đơn vị.</td></tr>
+            <tr><td>Ghi chú chung</td><td>Tùy chọn.</td></tr>
+            <tr><td>Từng thiết bị</td><td>“Tình trạng khi bàn giao” (mặc định <em>Hoạt động tốt</em>) và “Ghi chú thiết bị”.</td></tr>
+        </tbody>
+    </table>
+    <p>Bấm nút xác nhận để tạo. Hệ thống tạo phiếu, ghi các thiết bị vào phiếu và đánh dấu hồ sơ SCBĐ tương ứng là <span class="badge b-green">Đã BG</span>. Thông báo “Đã tạo N phiếu bàn giao thành công!” hiện trên danh sách.</p>
+    <div class="warn">Phiếu mới được <strong>duyệt ngay khi tạo</strong> và không thể sửa hoặc xóa trên màn hình. Hãy đối chiếu ngày, người giao/nhận, đơn vị nhận, tình trạng và danh sách thiết bị trước khi xác nhận.</div>
+
+    <h3 id="pbg-xem">4.3 Xem, in và xuất Word</h3>
+    <ul>
+        <li>Bấm 👁 để xem chi tiết phiếu và kiểm tra danh sách thiết bị, tình trạng bàn giao, người giao/nhận và đơn vị nhận.</li>
+        <li><span class="btn blue">In phiếu</span> in trực tiếp từ trình duyệt (bản in tự ẩn các nút và hiện tiêu đề “PHIẾU BÀN GIAO THIẾT BỊ”).</li>
+        <li>Bấm <strong>Xuất Word</strong> ở danh sách để tải phiếu về máy.</li>
+    </ul>
+
+    <h3 id="pbg-sua">4.4 Phiếu nháp</h3>
+    <p>Nếu có phiếu ở trạng thái <span class="badge b-yellow">Nháp</span>, người được phép thao tác có thể mở chi tiết phiếu để sửa hoặc xóa:</p>
+    <ul>
+        <li><span class="btn blue">Sửa Phiếu</span>: cập nhật ngày, người giao/nhận, đơn vị nhận, ghi chú và tình trạng từng thiết bị. Chọn <em>Duyệt phiếu</em> chỉ sau khi đã kiểm tra xong; phiếu được duyệt sẽ không sửa được nữa.</li>
+        <li><span class="btn red">Xóa Phiếu Nháp</span>: chỉ dùng khi phiếu nháp tạo nhầm. Sau khi xóa, thiết bị có thể được chọn để lập phiếu khác.</li>
+    </ul>
+    <p>Phiếu đã duyệt hiển thị thông báo “Không thể sửa phiếu đã duyệt” / “Không thể xóa phiếu đã duyệt”.</p>
+</section>
+
+<!-- ===================== 5. KẾ HOẠCH ===================== -->
+<section class="card" id="kh">
+    <h2>5. Kế hoạch bảo dưỡng thiết bị định kỳ</h2>
+    <p>Trang liệt kê thiết bị cần bảo dưỡng theo năm và theo quý (Q1–Q4), đơn vị thực hiện, và kết quả thực hiện.</p>
+
+    <h3 id="kh-loc">5.1 Bộ lọc và thống kê nhanh</h3>
+    <table>
+        <thead><tr><th>Bộ lọc</th><th>Giá trị</th></tr></thead>
+        <tbody>
+            <tr><td>Năm</td><td>Chọn năm cần xem trong danh sách.</td></tr>
+            <tr><td>Quý</td><td>Tất cả, Quý 1–4.</td></tr>
+            <tr><td>Nhóm máy</td><td>RDNGA, CNC, KTKT, TV.</td></tr>
+            <tr><td>ĐV chính</td><td>KTKT, ĐVLTH, CNM, RDNGA hoặc “Chưa chọn”.</td></tr>
+            <tr><td>Trạng thái</td><td>Tất cả · Đã hoàn thành · Chưa TH.</td></tr>
+            <tr><td>Thiết bị</td><td>Lọc thiết bị đã được liên kết hoặc chưa được liên kết.</td></tr>
+            <tr><td>Sắp xếp theo</td><td>Mặc định hoặc “Quý tăng dần”.</td></tr>
+            <tr><td>Tìm kiếm</td><td>Tên thiết bị hoặc số S/N.</td></tr>
+        </tbody>
+    </table>
+    <p>Chọn năm, quý, nhóm máy, đơn vị hoặc trạng thái để thu hẹp danh sách; nhập tên thiết bị hoặc số sê-ri để tìm nhanh. Bấm <em>Tìm</em> để áp dụng và <em>Reset</em> để xóa các tiêu chí tìm kiếm. Khi mở kế hoạch từ hồ sơ thiết bị, có thể bấm <em>Xóa bộ lọc</em> để xem lại toàn bộ danh sách. Các ô thống kê cho biết tổng số thiết bị trong từng quý.</p>
+
+    <h3 id="kh-bang">5.2 Đọc bảng kế hoạch</h3>
+    <table>
+        <thead><tr><th>Cột</th><th>Ý nghĩa</th></tr></thead>
+        <tbody>
+            <tr><td>Tên thiết bị / Số S/N</td><td>Tên, mã nhận dạng hoặc số sê-ri của thiết bị. Bấm tên nếu muốn xem thông tin thiết bị.</td></tr>
+            <tr><td>Q1 – Q4</td><td>Mỗi cột là một quý. Nội dung trong ô cho biết công việc dự kiến; dấu <span style="color:#2563eb;font-weight:700">✓</span> cho biết đã hoàn thành; “-” là quý đó không có kế hoạch.</td></tr>
+            <tr><td>ĐV Chính / ĐV Phụ</td><td>Đơn vị làm chính/phụ, hiển thị bằng màu: <span class="badge b-blue">KTKT</span> <span class="badge b-green">ĐVLTH</span> <span class="badge b-orange">CNM</span> <span class="badge b-purple">RDNGA</span> <span class="badge b-yellow">TV</span> (chỉ ĐV phụ).</td></tr>
+            <tr><td>Ngày</td><td><span style="color:#f97316;font-weight:600">▶ ngày thực hiện</span> và <span style="color:#16a34a;font-weight:600">→ ngày kết thúc</span>. Khung vàng <span class="badge b-yellow">Chờ duyệt</span> là thông tin đang chờ người phụ trách xác nhận.</td></tr>
+            <tr><td>Người thực hiện</td><td>Mỗi người một dòng.</td></tr>
+            <tr><td>Nhập liệu</td><td>Nút <em>✎ Nhập liệu</em> để ghi ngày và người thực hiện (xem 5.5).</td></tr>
+        </tbody>
+    </table>
+    <p>Nếu không thấy hết các cột, kéo thanh cuộn ngang bên dưới bảng. Dùng các nút ở cuối bảng để chuyển trang.</p>
+
+    <h3 id="kh-khoa">5.3 Cập nhật thông tin kế hoạch</h3>
+    <p>Một số thông tin kế hoạch như đơn vị thực hiện hoặc liên kết thiết bị được bảo vệ để tránh sửa nhầm. Nếu bạn được giao cập nhật, nút mở khóa sẽ nằm ở đầu trang.</p>
+    <ol class="steps">
+        <li>Bấm <span class="btn" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5">🔒 Mở khóa sửa</span>. Nếu được yêu cầu, nhập mật khẩu mở khóa do người phụ trách cung cấp.</li>
+        <li>Khi trang cho phép chỉnh sửa, bấm biểu tượng bút chì cạnh thông tin muốn thay đổi.</li>
+        <li>Chọn hoặc nhập thông tin chính xác, bấm ✓ để lưu; bấm ✗ nếu muốn hủy.</li>
+        <li>Sau khi cập nhật xong, bấm lại nút để khóa trang.</li>
+    </ol>
+    <div class="note">Chỉ thay đổi thông tin liên kết thiết bị hoặc đơn vị khi đã đối chiếu với hồ sơ thực tế. Nếu không có nút sửa hoặc không biết thông tin cần nhập, hãy hỏi người phụ trách kế hoạch trước khi thao tác.</div>
+
+    <h3 id="kh-them">5.4 Thêm thiết bị vào kế hoạch</h3>
+    <ol class="steps">
+        <li>Bấm <span class="btn emerald">+ Thêm từ danh sách thiết bị</span>.</li>
+        <li>Tìm theo tên, mã vật tư, số máy hoặc model. Nếu cần, chọn nhóm sửa chữa. Tích <em>“Ẩn thiết bị đã có trong kế hoạch”</em> để dễ tìm thiết bị chưa có.</li>
+        <li>Tích chọn từng dòng hoặc chọn tất cả (ô đầu bảng). Cột <em>Trong KH</em> cho biết thiết bị đã có trong kế hoạch.</li>
+        <li>Bấm <span class="btn emerald">Thêm thiết bị đã chọn</span>.</li>
+    </ol>
+
+    <h3 id="kh-nhaplieu">5.5 Ghi nhận kết quả bảo dưỡng</h3>
+    <p>Ở những dòng có nút <em>Nhập liệu</em>, dùng nút này để ghi nhận ngày và người đã thực hiện bảo dưỡng.</p>
+    <ol class="steps">
+        <li>Bấm <strong>Nhập liệu</strong> tại đúng dòng thiết bị để mở cửa sổ thông tin.</li>
+        <li>Nhập <strong>Ngày thực hiện</strong>, <strong>Ngày kết thúc</strong> nếu công việc đã xong và <strong>Người thực hiện</strong>. Ghi mỗi người trên một dòng.</li>
+        <li>Kiểm tra ngày kết thúc không sớm hơn ngày thực hiện, rồi bấm lưu.</li>
+    </ol>
+    <div class="warn">
+        Nếu thông tin đã ghi nhận cần thay đổi, hãy nhập thông tin đề nghị cập nhật. Thay đổi có thể cần người phụ trách duyệt trước khi được áp dụng; trong thời gian chờ, nội dung đề nghị hiển thị với nhãn <span class="badge b-yellow">Chờ duyệt</span>.
+    </div>
+    <div class="note">Nếu ở dòng thiết bị không có nút <em>Nhập liệu</em>, thông tin thực hiện có thể được cập nhật trong Hồ sơ Sửa chữa Bảo dưỡng. Mở hồ sơ liên quan và cập nhật ngày thực hiện, ngày kết thúc tại đó.</div>
+
+    <h3 id="kh-thongke">5.6 Thống kê và xuất báo cáo</h3>
+    <ul>
+        <li>Bấm <span class="btn purple">Thống kê</span> để xem tình hình thực hiện theo năm/quý.</li>
+        <li>Bấm nút xuất báo cáo để tải danh sách theo các tiêu chí đang chọn hoặc in báo cáo thống kê.</li>
+        <li>Nếu thấy thao tác xóa kế hoạch, không sử dụng nếu chưa được người phụ trách yêu cầu; việc xóa có thể ảnh hưởng đến toàn bộ kế hoạch năm.</li>
+    </ul>
+</section>
+
+<!-- ===================== 6. QUY TRÌNH ===================== -->
+<section class="card" id="lienket">
+    <h2>6. Quy trình công việc</h2>
+    <table>
+        <thead><tr><th>Khi nào</th><th>Thao tác</th><th>Kết quả</th></tr></thead>
+        <tbody>
+            <tr><td>Đến kỳ bảo dưỡng</td><td>Mở Kế hoạch bảo dưỡng, chọn đúng năm/quý và kiểm tra danh sách thiết bị cần thực hiện.</td><td>Nắm được thiết bị và thời gian dự kiến.</td></tr>
+            <tr><td>Bắt đầu xử lý yêu cầu</td><td>Tạo hoặc mở Hồ sơ Sửa chữa Bảo dưỡng; cập nhật thông tin thiết bị, ngày thực hiện và nội dung công việc.</td><td>Theo dõi được quá trình xử lý.</td></tr>
+            <tr><td>Công việc đã hoàn tất</td><td>Cập nhật ngày kết thúc trong hồ sơ.</td><td>Thiết bị đủ điều kiện để đưa vào danh sách chọn bàn giao.</td></tr>
+            <tr><td>Bàn giao thiết bị</td><td>Tạo Phiếu Bàn giao, chọn thiết bị, kiểm tra thông tin và xác nhận.</td><td>Phiếu ghi nhận việc giao nhận; hồ sơ hiển thị đã bàn giao.</td></tr>
+        </tbody>
+    </table>
+    <div class="tip">Trước khi hoàn tất, hãy đối chiếu số phiếu, thiết bị, ngày thực hiện, ngày kết thúc, người thực hiện và thông tin giao nhận để bảo đảm các màn hình ghi nhận thống nhất.</div>
+</section>
+
+<!-- ===================== 7. HỖ TRỢ ===================== -->
+<section class="card" id="loi">
+    <h2>7. Khi cần hỗ trợ</h2>
+    <ul>
+        <li><strong>Không thấy nút cần dùng:</strong> hỏi người phụ trách hệ thống xem tài khoản của bạn có được sử dụng chức năng đó không.</li>
+        <li><strong>Không tìm thấy thiết bị để bàn giao:</strong> mở hồ sơ thiết bị, kiểm tra đã nhập ngày kết thúc và thiết bị chưa được bàn giao.</li>
+        <li><strong>Ngày nhập không được chấp nhận:</strong> kiểm tra ngày thực hiện, ngày kết thúc và bảo đảm ngày kết thúc không sớm hơn ngày thực hiện.</li>
+        <li><strong>Không lưu được hoặc trang báo lỗi:</strong> chụp ảnh thông báo, ghi lại số phiếu hoặc tên thiết bị và liên hệ người phụ trách. Không bấm lưu/xóa lặp lại nếu chưa biết thao tác trước đã thành công hay chưa.</li>
+        <li><strong>Không mở được trang:</strong> kiểm tra lại kết nối và đăng nhập; nếu lỗi vẫn còn, báo người phụ trách hệ thống.</li>
+    </ul>
+</section>
+
+<!-- ===================== 8. FAQ ===================== -->
+<section class="card" id="faq">
+    <h2>8. Câu hỏi thường gặp</h2>
+
+    <h4>Một phiếu yêu cầu có nhiều thiết bị, có phải lập nhiều phiếu bàn giao?</h4>
+    <p>Không bắt buộc. Có thể chọn một phần thiết bị ở Bước 1; thiết bị còn lại bàn giao ở lần sau. Hệ thống tự tăng số lần bàn giao, ví dụ <strong>1984-1</strong>, <strong>1984-2</strong>.</p>
+
+    <h4>Chọn thiết bị thuộc nhiều phiếu YC trong cùng một lần thì sao?</h4>
+    <p>Hệ thống tự tách thành các phiếu bàn giao riêng cho từng phiếu YC ở Bước 2 và tạo tất cả cùng lúc.</p>
+
+    <h4>Làm sao biết thiết bị đã được bảo dưỡng định kỳ quý nào?</h4>
+    <p>Xem cột BDDK trong Hồ sơ SCBĐ (nhãn xanh có dấu ✓) hoặc dấu ✓ trong các cột Q1–Q4 ở trang Kế hoạch.</p>
+
+    <h4>Đã nhập sai ngày thực hiện ở kế hoạch?</h4>
+    <p>Mở lại nút <em>Nhập liệu</em> và gửi thông tin cần cập nhật. Thay đổi có thể cần người phụ trách xác nhận trước khi được áp dụng.</p>
+
+    <h4>Đã tạo nhầm phiếu bàn giao?</h4>
+    <p>Phiếu đã duyệt không thể sửa/xóa từ giao diện. Liên hệ quản trị viên để được hỗ trợ xử lý.</p>
+
+    <h4>Có thể dùng trên điện thoại?</h4>
+    <p>Có. Trang Hồ sơ SCBĐ tự ẩn bớt cột (Số máy, Ngày YC, Đơn vị, HC/KĐ) trên màn hình nhỏ; xoay ngang màn hình để xem đầy đủ.</p>
+</section>
+
+<footer>Hướng dẫn sử dụng · Hồ sơ Sửa chữa Bảo dưỡng, Phiếu Bàn giao, Kế hoạch Bảo dưỡng định kỳ</footer>
+</main>
+</div>
+</body>
+</html>

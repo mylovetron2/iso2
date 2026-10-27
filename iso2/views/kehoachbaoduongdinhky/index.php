@@ -255,6 +255,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 min-width: 112px;
                 max-width: 112px;
             }
+            #kehoach-table .execution-action-column {
+                width: 100px;
+                min-width: 100px;
+                white-space: nowrap;
+            }
             #kehoach-table .donvi-chinh-view,
             #kehoach-table .donvi-phu-view {
                 display: inline-flex;
@@ -316,6 +321,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">ID hồ sơ</th>
                         <th class="execution-date-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:112px">Ngày</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:14%">Người thực hiện</th>
+                        <th class="execution-action-column px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">Nhập liệu</th>
                         <th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase bg-blue-50" style="display:none">Trạng thái</th>
                     </tr>
                 </thead>
@@ -645,6 +651,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                         <div class="whitespace-pre-line"><?php echo htmlspecialchars((string)($item['pending_review_person'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                                     </div>
                                 <?php endif; ?>
+                            </td>
+                            <td class="execution-action-column px-2 py-1 text-center text-xs">
                                 <?php
                                 $canEditDoiExecution = ($item['hososcbd_id'] ?? null) === null
                                     && (($item['nguon_hoso'] ?? null) === null
@@ -713,7 +721,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="12" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="18" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2"></i>
                                 <p>Chưa có kế hoạch bảo dưỡng cho năm <?php echo $nam; ?></p>
                                 <?php if (hasPermission('kehoachbaoduong.create')): ?>

@@ -113,7 +113,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     // BDDK
-                    if (!empty($pending['bddk_hoantat'])) {
+                    if (($pending['bddk_action'] ?? '') === 'reset') {
+                        $quarter = filter_var($pending['bddk_reset_quarter'] ?? null, FILTER_VALIDATE_INT);
+                        $year = filter_var($pending['bddk_reset_year'] ?? null, FILTER_VALIDATE_INT);
+                        if ($quarter === false || $quarter < 1 || $quarter > 4 || $year === false || $year < 1) {
+                            throw new RuntimeException('Thông tin quý/năm BDDK cần bỏ đánh dấu không hợp lệ.');
+                        }
+
+                        $itemStmt = $db->prepare("SELECT mavt, somay FROM hososcbd_iso WHERE stt = :stt");
+                        $itemStmt->execute([':stt' => $hososcbd_stt]);
+                        $itemInfo = $itemStmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$itemInfo) {
+                            throw new RuntimeException('Không tìm thấy hồ sơ để xác định thiết bị BDDK.');
+                        }
+
+                        $tbStmt = $db->prepare("SELECT stt as thietbi_id FROM thietbi_iso WHERE mavt=:mavt AND somay=:somay LIMIT 1");
+                        $tbStmt->execute([':mavt' => $itemInfo['mavt'], ':somay' => $itemInfo['somay']]);
+                        $tb = $tbStmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$tb) {
+                            throw new RuntimeException('Không tìm thấy thiết bị để bỏ đánh dấu BDDK.');
+                        }
+
+                        $quarterField = "qui_{$quarter}_hoantat";
+                        $planStmt = $db->prepare("SELECT {$quarterField}
+                            FROM ke_hoach_bao_duong_dinh_ky_iso
+                            WHERE thietbi_id = :tid AND nam = :nam");
+                        $planStmt->execute([':tid' => $tb['thietbi_id'], ':nam' => $year]);
+                        $quarterCompleted = $planStmt->fetchColumn();
+                        if ($quarterCompleted === false) {
+                            throw new RuntimeException('Không tìm thấy kế hoạch BDDK cần bỏ đánh dấu.');
+                        }
+                        if (!empty($quarterCompleted)) {
+                            $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso
+                                SET {$quarterField} = 0
+                                WHERE thietbi_id = :tid AND nam = :nam")
+                               ->execute([':tid' => $tb['thietbi_id'], ':nam' => $year]);
+                        }
+                    } elseif (!empty($pending['bddk_hoantat'])) {
                         $ngayth = $data['ngayth'] ?? '';
                         if ($ngayth && $ngayth !== '0000-00-00') {
                             // Tìm thietbi_id
@@ -129,7 +165,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $quarter = (int)ceil($month / 3);
                                     $nam     = (int)date('Y', strtotime($ngayth));
                                     $hf      = "qui_{$quarter}_hoantat";
-                                    $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso SET $hf=1 WHERE thietbi_id=:tid AND nam=:nam")
+                                    $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso
+                                        SET $hf=1
+                                        WHERE thietbi_id=:tid AND nam=:nam
+                                          AND COALESCE(qui_1_hoantat, 0)=0
+                                          AND COALESCE(qui_2_hoantat, 0)=0
+                                          AND COALESCE(qui_3_hoantat, 0)=0
+                                          AND COALESCE(qui_4_hoantat, 0)=0")
                                        ->execute([':tid' => $tb['thietbi_id'], ':nam' => $nam]);
                                 }
                             }
@@ -311,7 +353,14 @@ require_once __DIR__ . '/views/layouts/header.php';
                             </td>
                         </tr>
                         <?php endif; ?>
-                        <?php if (!empty($row['bddk_hoantat'])): ?>
+                        <?php if (($row['bddk_action'] ?? '') === 'reset'): ?>
+                        <tr>
+                            <td class="py-1 pr-2 font-semibold text-purple-600 align-top">BDDK</td>
+                            <td class="py-1 text-purple-700 font-semibold align-top">
+                                Bỏ đánh dấu hoàn tất Quý <?= (int)$row['bddk_reset_quarter'] ?> năm <?= (int)$row['bddk_reset_year'] ?>
+                            </td>
+                        </tr>
+                        <?php elseif (!empty($row['bddk_hoantat'])): ?>
                         <tr>
                             <td class="py-1 pr-2 font-semibold text-purple-600 align-top">BDDK</td>
                             <td class="py-1 text-purple-700 font-semibold align-top">✓ Đánh dấu hoàn thành</td>

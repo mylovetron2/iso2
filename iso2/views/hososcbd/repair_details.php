@@ -70,6 +70,16 @@ try {
     error_log("Error loading BDDK info: " . $e->getMessage());
 }
 
+$bddkCompletedQuarter = 0;
+if ($bddkInfo) {
+    for ($quarter = 1; $quarter <= 4; $quarter++) {
+        if (!empty($bddkInfo["qui_{$quarter}_hoantat"])) {
+            $bddkCompletedQuarter = $quarter;
+            break;
+        }
+    }
+}
+
 // Load danh sách người thực hiện
 $nguoiThucHienList = [];
 if (!empty($item['hoso'])) {
@@ -213,6 +223,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dinhmuc_action'])) {
 // Handle form submission BEFORE any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
     try {
+        $isBddkResetRequest = isset($_POST['bddk_edit'])
+            && $_POST['bddk_edit'] === '1'
+            && !isset($_POST['bddk_hoantat'])
+            && $bddkCompletedQuarter > 0;
+        $sendForApproval = $needsApproval || $isBddkResetRequest;
+
         $data = [
             'cv' => trim($_POST['cv'] ?? 'SC'),
             'nhomsc' => trim($_POST['nhomsc'] ?? ''),
@@ -239,8 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
             'serialtbdosc4' => trim($_POST['serialtbdosc4'] ?? '')
         ];
 
-        // --- Nếu là user thường và hồ sơ đã có ngày kết thúc: lưu vào bảng pending ---
-        if ($needsApproval) {
+        // Gửi chờ duyệt nếu hồ sơ đã kết thúc hoặc yêu cầu bỏ dấu BDDK.
+        if ($sendForApproval) {
             $nguoiThucHienPost = [];
             if (isset($_POST['nguoi_hoten'])) {
                 $hoten_arr = $_POST['nguoi_hoten'] ?? [];
@@ -264,8 +280,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                ->execute([':stt' => $stt, ':uid' => $userInfo]);
 
             $stmt = $db->prepare("INSERT INTO hososcbd_pending_edits
-                (hososcbd_stt, user_id, username, data_json, nguoi_thuchien_json, bddk_hoantat, status)
-                VALUES (:stt, :uid, :uname, :data, :nguoi, :bddk, 'pending')");
+                (hososcbd_stt, user_id, username, data_json, nguoi_thuchien_json,
+                 bddk_hoantat, bddk_action, bddk_reset_quarter, bddk_reset_year, status)
+                VALUES (:stt, :uid, :uname, :data, :nguoi, :bddk, :bddk_action,
+                        :bddk_reset_quarter, :bddk_reset_year, 'pending')");
             $stmt->execute([
                 ':stt'   => $stt,
                 ':uid'   => $userInfo,
@@ -273,9 +291,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                 ':data'  => json_encode($data, JSON_UNESCAPED_UNICODE),
                 ':nguoi' => json_encode($nguoiThucHienPost, JSON_UNESCAPED_UNICODE),
                 ':bddk'  => (isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1') ? 1 : 0,
+                ':bddk_action' => $isBddkResetRequest ? 'reset' : (
+                    isset($_POST['bddk_hoantat']) && $_POST['bddk_hoantat'] === '1'
+                        ? 'complete'
+                        : null
+                ),
+                ':bddk_reset_quarter' => $isBddkResetRequest ? $bddkCompletedQuarter : null,
+                ':bddk_reset_year' => $isBddkResetRequest ? (int)$bddkInfo['nam'] : null,
             ]);
 
-            $pendingMessage = 'Hồ sơ đã có ngày kết thúc. Yêu cầu sửa đổi của bạn đã được gửi đến admin để duyệt.';
+            $pendingMessage = $isBddkResetRequest
+                ? 'Yêu cầu bỏ đánh dấu hoàn thành BDDK và các thay đổi biểu mẫu đã được gửi đến admin để duyệt.'
+                : 'Hồ sơ đã có ngày kết thúc. Yêu cầu sửa đổi của bạn đã được gửi đến admin để duyệt.';
         } else {
             // --- Lưu thẳng vào DB (admin hoặc hồ sơ chưa có ngày kết thúc) ---
             $success = $model->update($stt, $data);
@@ -299,7 +326,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                             $sqlUpdate = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
                                           SET $hoantat_field = 1
                                           WHERE thietbi_id = :thietbi_id 
-                                            AND nam = :nam";
+                                            AND nam = :nam
+                                            AND COALESCE(qui_1_hoantat, 0) = 0
+                                            AND COALESCE(qui_2_hoantat, 0) = 0
+                                            AND COALESCE(qui_3_hoantat, 0) = 0
+                                            AND COALESCE(qui_4_hoantat, 0) = 0";
                             $stmtUpdate = $db->prepare($sqlUpdate);
                             $stmtUpdate->execute([
                                 ':thietbi_id' => $thietbi['thietbi_id'],
@@ -570,45 +601,60 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 
     <!-- Checkbox BDDK hoàn tất -->
-    <?php if ($bddkInfo): 
-        // Tính quý từ ngày thực hiện
+    <?php if ($bddkInfo):
         $ngayth = $item['ngayth'];
         $currentQuarter = 0;
-        $isAlreadyCompleted = false;
         
         if ($ngayth && $ngayth !== '0000-00-00') {
             $month = (int)date('n', strtotime($ngayth));
-            $currentQuarter = ceil($month / 3);
-            $hoantat_field = "qui_{$currentQuarter}_hoantat";
-            $isAlreadyCompleted = !empty($bddkInfo[$hoantat_field]);
+            $currentQuarter = (int)ceil($month / 3);
         }
+
+        $isAlreadyCompleted = $bddkCompletedQuarter > 0;
     ?>
     <div class="bg-purple-50 p-4 rounded-lg border-2 border-purple-300 mb-6">
-        <label class="flex items-center gap-3 <?php echo $isAlreadyCompleted ? 'opacity-75' : 'cursor-pointer'; ?>">
-            <input type="checkbox" name="bddk_hoantat" value="1" 
-                   <?php echo $isAlreadyCompleted ? 'checked disabled' : ''; ?>
-                   form="repair-form"
-                   class="w-5 h-5 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500">
-            <div class="flex-1">
+        <div class="flex flex-wrap items-start gap-3">
+            <label class="flex items-center gap-3 <?php echo $isAlreadyCompleted ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'; ?>">
+                <input type="checkbox" id="bddk-hoantat-checkbox" name="bddk_hoantat" value="1"
+                       <?php echo $isAlreadyCompleted ? 'checked disabled' : ''; ?>
+                       form="repair-form"
+                       class="w-5 h-5 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500">
+                <div class="flex-1">
                 <span class="font-bold text-purple-700 text-base">
                     <i class="fas fa-check-circle mr-2"></i>
                     <?php if ($isAlreadyCompleted): ?>
-                        ✓ Đã hoàn thành BDDK (Quý <?php echo $currentQuarter; ?>)
+                        ✓ Đã hoàn thành BDDK (Quý <?php echo $bddkCompletedQuarter; ?>)
                     <?php else: ?>
                         Đánh dấu hoàn thành BDDK
                     <?php endif; ?>
                 </span>
                 <p class="text-sm text-purple-600 mt-1">
                     <?php if ($isAlreadyCompleted): ?>
-                        Quý <?php echo $currentQuarter; ?> của năm <?php echo $bddkInfo['nam']; ?> đã được đánh dấu hoàn tất
+                        Quý <?php echo $bddkCompletedQuarter; ?> của năm <?php echo $bddkInfo['nam']; ?> đã được đánh dấu hoàn tất; mỗi thiết bị chỉ đánh dấu hoàn tất một quý
                     <?php elseif ($currentQuarter > 0): ?>
                         Khi chọn, Quý <?php echo $currentQuarter; ?> (từ ngày thực hiện) sẽ được đánh dấu hoàn tất trong kế hoạch BDDK
                     <?php else: ?>
                         Vui lòng nhập ngày thực hiện để xác định quý cần hoàn thành
                     <?php endif; ?>
                 </p>
-            </div>
-        </label>
+                </div>
+            </label>
+            <?php if ($isAlreadyCompleted): ?>
+            <button type="button" id="bddk-edit-button" onclick="enableBddkEdit()"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm font-semibold">
+                <i class="fas fa-edit mr-1"></i>Sửa
+            </button>
+            <button type="button" id="bddk-cancel-button" onclick="cancelBddkEdit()"
+                    class="hidden bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                <i class="fas fa-times mr-1"></i>Hủy
+            </button>
+            <?php endif; ?>
+        </div>
+        <?php if ($isAlreadyCompleted): ?>
+        <p id="bddk-edit-hint" class="hidden text-sm text-orange-700 mt-2">
+            Bỏ chọn ô hoàn tất rồi gửi biểu mẫu. Yêu cầu bỏ dấu BDDK và các thay đổi biểu mẫu sẽ chờ admin duyệt.
+        </p>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
@@ -945,6 +991,14 @@ require_once __DIR__ . '/../layouts/header.php';
     }
     
     function validateFormBeforeSubmit() {
+        const bddkEditFlag = document.getElementById('bddk-edit-flag');
+        const bddkCheckbox = document.getElementById('bddk-hoantat-checkbox');
+        if (bddkEditFlag && bddkEditFlag.value === '1' && bddkCheckbox && bddkCheckbox.checked) {
+            alert('Vui lòng bỏ chọn trạng thái hoàn thành BDDK trước khi gửi yêu cầu sửa.');
+            bddkCheckbox.focus();
+            return false;
+        }
+
         // Kiểm tra tất cả tên người thực hiện trước khi submit
         const personInputs = document.querySelectorAll('.person-name-input');
         const invalidNames = [];
@@ -978,6 +1032,56 @@ require_once __DIR__ . '/../layouts/header.php';
         }
         
         return true; // Cho phép submit
+    }
+
+    function enableBddkEdit() {
+        const bddkEditFlag = document.getElementById('bddk-edit-flag');
+        const bddkCheckbox = document.getElementById('bddk-hoantat-checkbox');
+        if (!bddkEditFlag || !bddkCheckbox) {
+            return;
+        }
+
+        bddkEditFlag.value = '1';
+        bddkCheckbox.disabled = false;
+        document.getElementById('bddk-edit-button').classList.add('hidden');
+        document.getElementById('bddk-cancel-button').classList.remove('hidden');
+        document.getElementById('bddk-edit-hint').classList.remove('hidden');
+        const submitButton = document.getElementById('repair-submit-button');
+        if (submitButton) {
+            submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+            submitButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            submitButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Gửi yêu cầu bỏ đánh dấu BDDK (chờ admin duyệt)';
+        }
+        bddkCheckbox.focus();
+    }
+
+    function cancelBddkEdit() {
+        const bddkEditFlag = document.getElementById('bddk-edit-flag');
+        const bddkCheckbox = document.getElementById('bddk-hoantat-checkbox');
+        const editButton = document.getElementById('bddk-edit-button');
+        const cancelButton = document.getElementById('bddk-cancel-button');
+        const editHint = document.getElementById('bddk-edit-hint');
+        const submitButton = document.getElementById('repair-submit-button');
+
+        if (!bddkEditFlag || !bddkCheckbox || !editButton || !cancelButton || !editHint) {
+            return;
+        }
+
+        bddkEditFlag.value = '0';
+        bddkCheckbox.checked = true;
+        bddkCheckbox.disabled = true;
+        editButton.classList.remove('hidden');
+        cancelButton.classList.add('hidden');
+        editHint.classList.add('hidden');
+
+        if (submitButton) {
+            submitButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-yellow-500', 'hover:bg-yellow-600');
+            submitButton.classList.add(<?php echo json_encode($needsApproval ? 'bg-yellow-500' : 'bg-green-600'); ?>);
+            submitButton.classList.add(<?php echo json_encode($needsApproval ? 'hover:bg-yellow-600' : 'hover:bg-green-700'); ?>);
+            submitButton.innerHTML = <?php echo json_encode($needsApproval
+                ? '<i class="fas fa-paper-plane mr-2"></i>Gửi yêu cầu sửa (chờ admin duyệt)'
+                : '<i class="fas fa-save mr-2"></i>Lưu thông tin'); ?>;
+        }
     }
     
     function addPersonRow() {
@@ -1050,6 +1154,7 @@ require_once __DIR__ . '/../layouts/header.php';
     </script>
 
     <form method="POST" class="space-y-6" id="repair-form" onsubmit="return validateFormBeforeSubmit()">
+        <input type="hidden" name="bddk_edit" id="bddk-edit-flag" value="0">
         <!-- Hidden inputs to preserve filters -->
         <?php foreach ($filterParams as $key => $value): ?>
             <input type="hidden" name="filter_<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>">
@@ -1286,7 +1391,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Buttons -->
         <div class="flex flex-col md:flex-row gap-2 pt-4 border-t">
-            <button type="submit" class="<?php echo $needsApproval ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'; ?> text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
+            <button type="submit" id="repair-submit-button" class="<?php echo $needsApproval ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-600 hover:bg-green-700'; ?> text-white px-6 py-3 rounded text-base font-semibold w-full md:w-auto">
                 <?php if ($needsApproval): ?>
                     <i class="fas fa-paper-plane mr-2"></i> Gửi yêu cầu sửa (chờ admin duyệt)
                 <?php else: ?>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logic checkbox Đánh dấu hoàn thành BDDK</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: #f1f5f9;
+      color: #1e293b;
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main { max-width: 1000px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; color: #312e81; }
+    h2 { margin: 0 0 12px; color: #4338ca; font-size: 1.3rem; }
+    p { margin: 8px 0; }
+    section {
+      margin: 18px 0;
+      padding: 20px 24px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+    }
+    .intro { color: #475569; }
+    .notice {
+      padding: 12px 16px;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      background: #fffbeb;
+      color: #78350f;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .step {
+      padding: 14px;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      background: #eef2ff;
+    }
+    .step strong { display: block; margin-bottom: 4px; color: #3730a3; }
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      font-family: Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 9px 11px;
+      border: 1px solid #cbd5e1;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f8fafc; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 5px 0; }
+    .muted { color: #64748b; }
+    @media (max-width: 600px) {
+      body { padding: 18px 10px; }
+      section { padding: 16px; }
+      table { font-size: .9rem; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Logic checkbox “Đánh dấu hoàn thành BDDK”</h1>
+  <p class="intro">
+    Tài liệu mô tả checkbox trên trang chi tiết hồ sơ sửa chữa
+    <code>hososcbd_repair_details.php?id=...</code>, cách xác định quý BDDK
+    và luồng lưu trạng thái ở backend.
+  </p>
+
+  <section>
+    <h2>1. Điều kiện tải và hiển thị dữ liệu BDDK</h2>
+    <ol>
+      <li>Lấy <code>mavt</code> và <code>somay</code> từ hồ sơ sửa chữa.</li>
+      <li>Tìm thiết bị tương ứng trong <code>thietbi_iso</code> để lấy <code>thietbi_id</code>.</li>
+      <li>Tìm bản ghi kế hoạch trong <code>ke_hoach_bao_duong_dinh_ky_iso</code> theo thiết bị; màn hình lấy bản ghi có năm mới nhất.</li>
+    </ol>
+    <p>
+      Chỉ khi tìm được bản ghi kế hoạch BDDK, trang mới hiển thị bảng trạng thái
+      bốn quý và checkbox. Nếu không có kế hoạch, trang hiện thông báo không tìm thấy
+      dữ liệu BDDK và không hiện checkbox.
+    </p>
+  </section>
+
+  <section>
+    <h2>2. Cách xác định quý và trạng thái checkbox</h2>
+    <p>
+      Quý mục tiêu được tính theo <code>ngayth</code> gửi khi lưu. Trạng thái khóa
+      của checkbox được xác định riêng bằng cách kiểm tra cả bốn cột hoàn tất trên
+      kế hoạch BDDK đang hiển thị:
+    </p>
+    <table>
+      <thead>
+        <tr><th>Tháng thực hiện</th><th>Quý</th><th>Cột trạng thái</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1–3</td><td>Quý 1</td><td><code>qui_1_hoantat</code></td></tr>
+        <tr><td>4–6</td><td>Quý 2</td><td><code>qui_2_hoantat</code></td></tr>
+        <tr><td>7–9</td><td>Quý 3</td><td><code>qui_3_hoantat</code></td></tr>
+        <tr><td>10–12</td><td>Quý 4</td><td><code>qui_4_hoantat</code></td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>Nếu ngày thực hiện hợp lệ, backend xác định quý mục tiêu từ tháng của ngày gửi khi lưu.</li>
+      <li>Nếu bất kỳ cột <code>qui_X_hoantat</code> nào đã có giá trị, checkbox hiển thị đã chọn và bị khóa; nhãn cho biết quý đã hoàn tất.</li>
+      <li>Nếu cả bốn cột đều chưa hoàn tất, checkbox hiển thị chưa chọn và có thể bật/tắt.</li>
+      <li>Nếu chưa có ngày thực hiện, hãy nhập ngày trước khi lưu để backend xác định quý cần đánh dấu.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Trạng thái và quy tắc một quý hoàn tất</h2>
+    <p class="notice">
+      Checkbox được bật khi thiết bị chưa có quý nào hoàn tất. Nếu thiết bị đã có
+      bất kỳ cờ <code>qui_X_hoantat</code>, checkbox hiển thị đã chọn và bị khóa;
+      mỗi kế hoạch thiết bị/năm chỉ được đánh dấu hoàn tất một quý.
+    </p>
+    <p>
+      Khi đã hoàn tất, nút <strong>Sửa</strong> mở khóa checkbox và hiện nút
+      <strong>Hủy</strong>. Hủy sẽ khóa lại checkbox đã chọn và thoát chế độ sửa
+      BDDK mà không xóa nội dung các trường khác. Nếu bỏ chọn rồi gửi biểu mẫu,
+      hệ thống tạo yêu cầu xóa cờ hoàn tất. Thao tác này luôn được đưa vào
+      hàng chờ admin duyệt, kể cả với hồ sơ thường được lưu trực tiếp. Khi gửi yêu
+      cầu bỏ dấu, các thay đổi khác trên cùng biểu mẫu cũng chờ duyệt.
+    </p>
+    <p>
+      Checkbox bị khóa hoặc không được chọn thì trình duyệt không gửi
+      <code>bddk_hoantat</code>. Khi được chọn và gửi cùng biểu mẫu, backend đánh dấu
+      quý tương ứng nếu kế hoạch trong năm đó chưa có quý hoàn tất nào.
+    </p>
+    <p>
+      Với yêu cầu bỏ dấu, hệ thống lưu quý và năm hiện đang hoàn tất vào yêu cầu
+      duyệt. Admin duyệt tại <code>hososcbd_pending_review.php</code> sẽ xóa đúng
+      cờ quý/năm đó; nếu từ chối, trạng thái BDDK không thay đổi.
+    </p>
+  </section>
+
+  <section>
+    <h2>4. Luồng xử lý backend khi nhận cờ hoàn tất</h2>
+    <p>
+      Backend vẫn giữ logic xử lý trường <code>bddk_hoantat</code> nếu request có gửi
+      giá trị <code>1</code>:
+    </p>
+    <div class="flow">
+      <div class="step">
+        <strong>Hồ sơ lưu trực tiếp</strong>
+        Sau khi cập nhật hồ sơ, nếu có cờ hoàn tất và ngày thực hiện hợp lệ, backend
+        tính quý/năm từ ngày đó rồi đặt cột <code>qui_X_hoantat = 1</code> cho thiết bị
+        và năm tương ứng.
+      </div>
+      <div class="step">
+        <strong>Hồ sơ cần admin duyệt</strong>
+        Cờ được lưu cùng yêu cầu trong <code>hososcbd_pending_edits</code>.
+        Khi admin duyệt, backend đọc cờ và ngày thực hiện để cập nhật quý BDDK.
+      </div>
+      <div class="step">
+        <strong>Yêu cầu bỏ dấu</strong>
+        Hành động, quý và năm cần bỏ dấu được lưu trong bản ghi pending. Admin duyệt
+        thì backend đặt đúng cột <code>qui_X_hoantat</code> về <code>0</code>; từ chối
+        thì không thay đổi kế hoạch BDDK.
+      </div>
+    </div>
+    <p class="muted">
+      Backend cũng kiểm tra bốn cột hoàn tất đều chưa được đánh dấu trước khi cập
+      nhật, phòng trường hợp trạng thái BDDK thay đổi sau khi người dùng mở trang
+      hoặc một yêu cầu chờ duyệt được gửi trước đó.
+      Yêu cầu bỏ dấu cần migration <code>20261027_add_bddk_reset_review_fields.sql</code>
+      để lưu hành động cùng quý/năm cụ thể.
+    </p>
+  </section>
+
+  <section>
+    <h2>5. Quy tắc quy đổi</h2>
+    <ul>
+      <li>Quý được tính theo tháng của ngày thực hiện: <code>ceil(tháng / 3)</code>.</li>
+      <li>Năm cập nhật BDDK được lấy từ năm của ngày thực hiện.</li>
+      <li>Backend cập nhật cột hoàn tất theo <code>thietbi_id</code> và năm đó, chỉ khi cả bốn cột hoàn tất của kế hoạch đều đang rỗng/0.</li>
+      <li>Ngày rỗng hoặc <code>0000-00-00</code> không đủ điều kiện để cập nhật BDDK.</li>
+    </ul>
+    <p>
+      Lưu ý: bảng BDDK trên trang hiển thị kế hoạch năm mới nhất, còn thao tác cập nhật
+      backend chọn năm theo ngày thực hiện. Nếu ngày thực hiện thuộc năm khác với kế
+      hoạch đang hiển thị, dữ liệu cập nhật và dữ liệu đang xem có thể thuộc hai năm khác nhau.
+    </p>
+  </section>
+
+  <section>
+    <h2>6. Vị trí logic trong mã nguồn</h2>
+    <ul>
+      <li><code>views/hososcbd/repair_details.php</code>: tải kế hoạch BDDK, hiển thị bốn quý, tính quý và render checkbox.</li>
+      <li><code>views/hososcbd/repair_details.php</code>: nhận dữ liệu form, lưu cờ vào yêu cầu chờ duyệt hoặc cập nhật trực tiếp.</li>
+      <li><code>hososcbd_pending_review.php</code>: áp dụng hoặc bỏ cờ hoàn tất BDDK sau khi admin duyệt.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
