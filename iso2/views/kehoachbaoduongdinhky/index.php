@@ -111,7 +111,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <?php $donviChinhFilter = $_GET['donvi_chinh'] ?? ''; ?>
                 <select name="donvi_chinh" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
                     <option value="" <?php echo $donviChinhFilter === '' ? 'selected' : ''; ?>>Tất cả</option>
-                    <?php foreach (['KTKT', 'ĐVLTH', 'CNM', 'RDNGA'] as $dvOpt): ?>
+                    <?php foreach (['KTKT', 'ĐVLTH', 'CNM', 'RDNGA', 'TV'] as $dvOpt): ?>
                         <option value="<?php echo $dvOpt; ?>" <?php echo $donviChinhFilter === $dvOpt ? 'selected' : ''; ?>><?php echo $dvOpt; ?></option>
                     <?php endforeach; ?>
                     <option value="__none__" <?php echo $donviChinhFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
@@ -474,6 +474,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                                         $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                                                     } elseif ($donviChinh === 'RDNGA') {
                                                         $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                                    } elseif ($donviChinh === 'TV') {
+                                                        $colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                                                     }
                                                     echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviChinh) . '</span>';
                                                 } else {
@@ -493,6 +495,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                                 <option value="ĐVLTH" class="bg-green-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'ĐVLTH' ? 'selected' : ''; ?>>⬢ ĐVLTH</option>
                                                 <option value="CNM" class="bg-orange-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'CNM' ? 'selected' : ''; ?>>⬢ CNM</option>
                                                 <option value="RDNGA" class="bg-purple-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>⬢ RDNGA</option>
+                                                <option value="TV" class="bg-yellow-50" <?php echo ($item['donvi_lam_chinh'] ?? '') === 'TV' ? 'selected' : ''; ?>>⬢ TV</option>
                                             </select>
                                         </div>
                                     </div>
@@ -509,6 +512,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                             $colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                                         } elseif ($donviChinh === 'RDNGA') {
                                             $colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                                        } elseif ($donviChinh === 'TV') {
+                                            $colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                                         }
                                         echo '<span class="' . $colorClass . '">' . htmlspecialchars($donviChinh) . '</span>';
                                     }
@@ -1152,6 +1157,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             colorClass = 'bg-orange-100 text-orange-800 px-2 py-1 rounded';
                         } else if (donviLamChinh === 'RDNGA') {
                             colorClass = 'bg-purple-100 text-purple-800 px-2 py-1 rounded';
+                        } else if (donviLamChinh === 'TV') {
+                            colorClass = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded';
                         }
                         htmlContent = '<span class="' + colorClass + '">' + donviLamChinh + '</span>';
                     } else {

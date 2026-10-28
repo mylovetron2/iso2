@@ -104,7 +104,7 @@ class KeHoachBaoDuongDinhKyController
             $sql .= " AND (donvi_lam_chinh IS NULL OR TRIM(donvi_lam_chinh) = '')";
             return;
         }
-        if (!in_array($dv, ['KTKT', 'ĐVLTH', 'CNM', 'RDNGA'], true)) {
+        if (!in_array($dv, ['KTKT', 'ĐVLTH', 'CNM', 'RDNGA', 'TV'], true)) {
             return;
         }
         // ĐVLTH có thể được lưu dưới dạng không dấu
