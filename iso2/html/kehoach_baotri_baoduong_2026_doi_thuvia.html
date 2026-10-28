@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kế hoạch bảo trì bảo dưỡng máy móc thiết bị năm 2026 - Đội Thử vỉa</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      background: #f1f5f9;
+      color: #1e293b;
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.5;
+    }
+    main { max-width: 1250px; margin: 0 auto; }
+    header {
+      padding: 20px 24px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      text-align: center;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+    }
+    header .org { font-weight: 600; color: #475569; text-transform: uppercase; font-size: .85rem; }
+    header h1 { margin: 6px 0 4px; color: #312e81; font-size: 1.5rem; text-transform: uppercase; }
+    header .sub { color: #475569; }
+    .approve { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .approve div { text-align: center; font-size: .9rem; }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 16px 0;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+    }
+    .toolbar input, .toolbar select {
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font: inherit;
+    }
+    .toolbar input { flex: 1 1 260px; }
+    .count { margin-left: auto; color: #475569; font-size: .9rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .stat {
+      flex: 1 1 140px;
+      padding: 10px 14px;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      background: #eef2ff;
+    }
+    .stat b { display: block; font-size: 1.4rem; color: #3730a3; }
+    section {
+      margin: 18px 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+      overflow: hidden;
+    }
+    section > h2 {
+      margin: 0;
+      padding: 12px 18px;
+      background: #4338ca;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { padding: 7px 10px; border: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+    th { background: #e0e7ff; color: #312e81; white-space: nowrap; }
+    tr.group td {
+      background: #f1f5f9;
+      color: #3730a3;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: .8rem;
+    }
+    tbody tr:not(.group):hover { background: #f8fafc; }
+    td.stt, td.center { text-align: center; white-space: nowrap; }
+    td.mono { font-family: Consolas, monospace; font-size: .85rem; overflow-wrap: anywhere; }
+    .muted { color: #94a3b8; }
+    .chip {
+      display: inline-block;
+      min-width: 34px;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .8rem;
+      text-align: center;
+    }
+    .chip.TO { background: #dcfce7; color: #166534; }
+    td.q.on { background: #eef2ff; }
+    .chip.TP { background: #ffedd5; color: #9a3412; }
+    .notice {
+      margin: 16px 0;
+      padding: 12px 16px;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      background: #fffbeb;
+      color: #78350f;
+      font-size: .9rem;
+    }
+    .sign { display: flex; justify-content: space-around; margin: 28px 0 8px; text-align: center; }
+    .sign div { min-width: 200px; }
+    .empty { padding: 20px; text-align: center; color: #64748b; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      section, header { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="org">LD Việt - Nga Vietsovpetro<br>XN Địa Vật Lý GK</div>
+    <h1>Kế hoạch bảo trì bảo dưỡng máy móc thiết bị năm 2026</h1>
+    <div class="sub">Máy giếng - Trạm đo - Thiết bị thử vỉa &nbsp;|&nbsp; Đội Thử vỉa</div>
+    <div class="approve">
+      <div><b>Phê duyệt</b><br>Giám đốc XN Địa Vật Lý GK<br><br><br><b>Phạm Hồng Khanh</b></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <input id="q" type="search" placeholder="Tìm theo tên thiết bị, mã tài sản, S/N...">
+    <select id="fType">
+      <option value="">Tất cả loại BD</option>
+      <option value="TO">TO</option>
+      <option value="TP">TP</option>
+    </select>
+    <select id="fExec">
+      <option value="">Tất cả đơn vị thực hiện</option>
+      <option value="Đội TV">Đội TV</option>
+      <option value="XSCTBĐVL">XSCTBĐVL</option>
+      <option value="Dịch vụ">Dịch vụ</option>
+    </select>
+    <select id="fQ">
+      <option value="">Tất cả quí</option>
+      <option value="1">Quí 1</option><option value="2">Quí 2</option><option value="3">Quí 3</option><option value="4">Quí 4</option>
+      <option value="0">Chưa xác định quí</option>
+    </select>
+    <select id="fGroup"><option value="">Tất cả nhóm thiết bị</option></select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="notice">
+    Ký hiệu <b>TO</b> / <b>TP</b> được giữ nguyên theo file gốc (chú thích "Bảo dưỡng nhỏ / Bảo dưỡng lớn / Đã thực hiện / Không thực hiện" không có ký hiệu đi kèm).
+    Quí của TO/TP lấy theo vị trí cột trong file gốc.
+  </div>
+
+  <section>
+    <h2>1. Đội Thử vỉa</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>STT</th><th>Tên thiết bị</th><th>Mã tài sản</th><th>Số S/N</th><th>Năm SX</th>
+        <th>Thực hiện chính</th><th>Phụ trợ</th><th>Quí 1</th><th>Quí 2</th><th>Quí 3</th><th>Quí 4</th>
+      </tr></thead>
+      <tbody id="body1"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>2. Vỏ trạm - Khung dầm - Container</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>STT</th><th>Tên thiết bị</th><th>Mã tài sản</th><th>Số hiệu</th><th>Năm SX</th>
+        <th>Thực hiện chính</th><th>Phụ trợ</th><th>Quí 1</th><th>Quí 2</th><th>Quí 3</th><th>Quí 4</th>
+      </tr></thead>
+      <tbody id="body2"></tbody>
+    </table></div>
+  </section>
+
+  <div class="sign">
+    <div><b>Lãnh đạo bộ phận</b><br>(Ký, ghi rõ họ tên)</div>
+    <div><b>Xưởng SCTB ĐVL</b><br>(Ký, ghi rõ họ tên)</div>
+    <div><b>VISA</b></div>
+  </div>
+</main>
+
+<script>
+// Mỗi dòng: STT | Tên | Mã tài sản | S/N | Năm SX | Thực hiện (a: Đội TV chính, b: XSCTBĐVL chính, d: Dịch vụ) | Loại BD
+const RAW1 = `
+1.1|WT-ST-01|09E020170000054|WT-ST-01|29/09/2014|a|TO
+1.2|WT-ST-03|09E020170000004|WT-ST-03|30/09/2009|a|TO
+1.3|WT-ST-02|09E020170000001|WT-ST-02|16/09/2002|a|TO
+1.4|WT-FH-02|09E020080000004|A67674|01/10/2009|a|TO
+1.5|WT-FH-03|09E020080000022|A76835|15/02/2012|a|TO
+1.6|Van an toàn bề mặt - SSV01|09E020080000013|SSV01|01/09/2011|a|TO
+1.7|Van an toàn bề mặt - SSV02|09E020080000017|SSV02|27/09/2011|a|TP
+1.8|Van an toàn bề mặt - SSV03|09E020080000072|SSV03|27/05/2015|a|TO
+1.9|WT-M-01|09E020080000095|WT-M-01|30/03/2021|a|TP
+1.10|WT-M-02|09E020080000081|WT-M-02|12/09/2018|a|TO
+1.11|WT-M-03|003.011.00261|WT-M-03|08/11/2025|a|TO
+1.12|WT-M-04|09E020080000019|WT-M-04|27/09/2011|a|TO
+1.13|WT-STG-01|09E020080000010|WT-STG-01|26/09/2011|b|TP
+1.14|WT-STG-03|09E020080000073|WT-STG-03|27/05/2015|b|TP
+1.15|WT-STG-04|09E020080000098|WT-STG-04|19/10/2023|b|TP
+1.16|WT-SP-03|09E020080000005|WT-SP-03|30/06/2009|d|TO
+1.17|WT-SP-04|09E020080000048|WT-SP-04|27/11/2013|d|TO
+1.18|WT-STE-02|09E020080000014|WT-STE-02|27/09/2011|d|TP
+1.19|WT-STE-03|09E020080000070|WT-STE-03|01/03/2015|d|TP
+1.20|WT-STK-01|09E020080000074|WT-STK-01|25/06/2015|a|TO
+1.21|WT-STK-03|09E020080000008|WT-STK-03|17/03/2011|a|TO
+1.22|WT-STK-04|09E020080000009|WT-STK-04|17/03/2011|a|TO
+1.23|Bộ đường ống, đầu nối, đầu nối cong 3" Fig 602 - Số 1||N/A|2006-2015|b|TO
+1.24|Bộ đường ống, đầu nối, đầu nối cong 3" Fig 602 - Số 2||N/A|2006-2015|b|TO
+1.25|Bộ đường ống, đầu nối, đầu nối cong 3" Fig 602 - Số 3||N/A|2006-2015|b|TO
+1.26|Bộ đường ống, đầu nối, đầu nối cong 3" Fig 602 - Số 4||N/A|2006-2015|b|TO
+1.27|Ống mềm cao áp 10K PSI WP|09G020160000213|CFH-02|29/07/2013|a|TO
+1.28|Ống mềm cao áp 10K PSI WP|09G020080000020|CFH-01|27/09/2011|a|TO
+1.29|Bộ đường ống, đầu nối, đầu nối cong, Chicksan 3" Fig1502 - Số 1||N/A|2006-2015|b|TP
+1.30|Bộ đường ống, đầu nối, đầu nối cong, Chicksan 3" Fig1502 - Số 2||N/A|2006-2015|b|TO
+1.31|Máy bơm áp lực cao - 25000 PSI|09C010340000005|HP-01|30/06/2014|a|TO
+1.32|Máy bơm Nitơ|09C010340000006|NP-01|30/06/2014|a|TO
+1.33|Bơm chuyển dầu - Model IFW80X50IF|09C010340000007|WT-P-02|10/09/2014|a|TO
+1.34|Bơm hóa chất - 15.000PSI|09C010340000010|CMP-01|10/02/2017|a|TO
+1.35|Bơm hóa chất - 10.000PSI|09C010340000011|CMP-01|10/02/2017|a|TO
+1.36|Hệ thống đóng khẩn cấp (ESD PANEL)|09E020250000060|ESD-03|25/10/2016|a|TO
+1.37|Máy bơm hóa chất 10K|09E020080000018|CMP-01|27/09/2011|a|TO
+1.38|Máy bơm chuyển chất lỏng|09C010340000013|WT-LHP-01|17/10/2025|a|TO
+1.39|Thiết bị lọc cát|09E020080000071|WT-SFE-01|20/05/2014|a|TO
+1.40|Thiết bị lọc cát kiểu ly tâm|003.011.00260|WT-CYC-01|08/11/2025|a|TO
+1.41|Máy quay li tâm thử vỉa|09E020080000075||04/11/2015|a|TO
+1.42|Máy đo tỷ trọng khí|09E020080000003||18/02/2009|a|TO
+1.43|Máy tính công nghiệp / Industrial Computer SIMATIC IPC547J|09E030020000048||03/10/2023|a|TP
+1.44|Bộ thu thập số liệu thử vỉa|09E020170000047||10/04/2014|a|TO
+1.45|Máy điện tử đo sâu KUSSTER-K177 (Электронный глубинный манометр К177)|09E020160000062||31/05/2019|b|TP
+1.46|Máy điện tử đo sâu KUSSTER-K177|09E020160000063||31/05/2019|b|TO
+1.47|Máy điện tử đo sâu Metrolog (Sercel) QMR6-HT|09E020160000071||13/06/2023|b|TO
+1.48|Van tuần hoàn đĩa nổ 3 7/8"|09E020080000049||30/06/2014|a|TO
+1.49|Van tuần hoàn đĩa nổ 3 7/8"|09E020080000050||30/06/2014|a|TO
+1.50|Van tuần hoàn OMNI 3 7/8"|09E020080000051||30/06/2014|a|TP
+1.51|Van tuần hoàn OMNI 3 7/8"|09E020080000052||30/06/2014|a|TO
+1.52|Van xả 3 7/8"|09E020080000053||30/06/2014|a|TO
+1.53|Van xả 3 7/8"|09E020080000054||30/06/2014|a|TO
+1.54|Van thử vỉa OD – 3 7/8''|09E020080000055||30/06/2014|a|TO
+1.55|Van thử vỉa OD – 3 7/8''|09E020080000056||30/06/2014|a|TO
+1.56|Ống lắp máy đo sâu OD 1.25''|09E020080000057||30/06/2014|a|TP
+1.57|Ống lắp máy đo sâu OD 1.25''|09E020080000058||30/06/2014|a|TO
+1.58|Ống lắp máy đo sâu OD 1.25''|09E020080000059||30/06/2014|a|TO
+1.59|Ống lắp máy đo sâu OD 1.25''|09E020080000060||30/06/2014|a|TO
+1.60|Van tuần hoàn thủy lực 3 7/8"|09E020080000061||30/06/2014|a|TO
+1.61|Van tuần hoàn thủy lực 3 7/8"|09E020080000062||30/06/2014|a|TO
+1.62|Búa thủy lực 3 7/8"|09E020080000063||30/06/2014|a|TP
+1.63|Búa thủy lực 3 7/8"|09E020080000064||30/06/2014|a|TO
+1.64|Đầu nối an toàn 5 ½"|09E020080000065||30/06/2014|a|TO
+1.65|RTTS PAKER – 5 1/2" - 13|09E020080000066||30/06/2014|a|TO
+1.66|RTTS PAKER – 5 1/2" - 20|09E020080000067||30/06/2014|a|TO
+1.67|Van thử vỉa lựa chọn 5"|09E020080000011||01/09/2011|a|TO
+1.68|Paker thử vỉa 9 5/8"|09E020080000012||01/09/2011|a|TO
+1.69|Van thử áp suất bộ cần thả (TST)|09E020080000023||27/12/2012|a|TP
+1.70|Van thử áp suất bộ cần thả (TST)|09E020080000024||27/12/2012|a|TO
+1.71|Paker dùng trong ống chống 7" OD:5.65-ID2.40|09E020080000025||27/12/2012|a|TO
+1.72|Van thử vỉa lựa chọn của bộ DST|09E020080000026||27/12/2012|a|TO
+1.73|Paker dùng trong ống chống 7" OD:5.25", ID2.00"|09E020080000027||27/12/2012|a|TO
+1.74|Paker dùng trong ống chống 9 5/8"|09E020080000028||27/12/2012|a|TO
+1.75|Van tuần hoàn đĩa nổ 5" OD|09E020080000029||27/12/2012|a|TP
+1.76|Van tuần hoàn đĩa nổ 5" OD|09E020080000030||27/12/2012|a|TO
+1.77|Đầu nối an toàn 9 5/8"|09E020080000031||27/12/2012|a|TO
+1.78|Đầu nối an toàn 9 5/8"|09E020080000032||27/12/2012|a|TO
+1.79|Bộ giảm xóc thẳng đứng 5" OD|09E020080000033||27/12/2012|a|TO
+1.80|Bộ giảm xóc thẳng đứng 5" OD|09G020080000053||27/12/2012|a|TO
+1.81|Bộ giảm xóc ngang từ 7" đến 9 5/8"|09E020080000035||27/12/2012|a|TP
+1.82|Bộ giảm xóc ngang từ 7" đến 9 5/8"|09E020080000036||27/12/2012|a|TO
+1.83|Van thử áp suất bộ cần thả TST|09E020080000037||16/08/2013|a|TO
+1.84|Paker dùng trong ống chống 7" OD;5.65"|09E020080000038||16/08/2013|a|TO
+1.85|Paker dùng trong ống chống 7 5/8"|09E020080000039||16/08/2013|a|TO
+1.86|Van tuần hoàn thủy lực 5" OD|09E020080000040||16/08/2013|a|TO
+1.87|Búa thủy lực 5" OD|09E020080000041||16/08/2013|a|TP
+1.88|Đầu nối an toàn 7" của bộ DST|09E020080000042||16/08/2013|a|TO
+1.89|Van xả của bộ DST|09E020080000043||16/08/2013|a|TO
+1.90|Bộ giảm xóc thẳng đứng 5" OD|09E020080000044||16/08/2013|a|TO
+1.91|Bộ giảm xóc thẳng đứng 5" OD|09E020080000045||16/08/2013|a|TO
+1.92|Bộ giảm xóc theo chiều ngang từ 7" đến 9 5/8"|09E020080000046||16/08/2013|a|TO
+1.93|Bộ giảm xóc theo chiều ngang từ 7" đến 9 5/8"|09E020080000047||16/08/2013|a|TP
+1.94|Ống đựng máy Dynastring 5" OD|09E020080000077||22/12/2016|a|TO
+1.95|Ống đựng máy Dynastring 5" OD|09E020080000078||22/12/2016|a|TO
+1.96|Van tuần hoàn cơ học RTTS 7" - 7 5/8"|09E020080000079||22/12/2016|a|TO
+1.97|RTTS SAFETY JOINT - 5 1/2"|09E020080000076||12/12/2016|a|TO
+1.98|Van thử vỉa lựa chọn 5" của bộ DST|09E020080000084||23/05/2019|a|TO
+1.99|Bộ bù trừ cơ học 5" OD của bộ DST|09E020080000082||22/05/2019|a|TP
+1.100|Bộ bù trừ cơ học 5" OD của bộ DST|09E020080000083||22/05/2019|a|TO
+1.101|Ống đựng máy Dynastring 5" OD|09E020080000085||31/05/2019|a|TO
+1.102|Van tuần hoàn nhiều chu kỳ 5" OD của bộ DST|09E020080000086||07/02/2020|a|TO
+1.103|Van tuần hoàn thủy lực 5" OD của bộ DST|09E020080000087||18/06/2020|a|TO
+1.104|Van tuần hoàn đĩa nổ 5" OD của bộ DST|09E020080000088||18/06/2020|a|TO
+1.105|Búa thủy lực Big John 5 in. OD|09E020080000089||18/06/2020|a|TP
+1.106|Đầu nối an toàn RTTS dùng trong ống chống 7"|09E020080000090||18/06/2020|a|TO
+1.107|Packer RTTS dùng trong ống chống 7"|09E020080000091||18/06/2020|a|TO
+1.108|Bộ bù trừ cơ học 5" OD của bộ DST|09E020080000092||08/01/2021|a|TO
+1.109|Van tuần hoàn thủy lực 5" OD của bộ DST|09E020080000096||29/08/2022|a|TO
+1.110|RTTS PACKER - 7 5/8" (Пакер 20-39#, 4 5/32 8N-M Box x 3)|09E020080000097||29/08/2022|a|TO
+1.111|RTTS PACKER - 7 5/8" (Пакер 20-39#, 4 5/32 8N-M Box x 3)|09E020080000099||03/06/2024|a|TP
+1.112|Van tuần hoàn OMNI 5" (Циркуляционный Клапан OMNI)|09E020080000006||30/12/2010|a|TO
+`;
+
+const RAW2 = `
+2.1|Vỏ trạm đo WT-ST-01||WT-ST-01|2014|b|TO
+2.2|Vỏ trạm đo WT-ST-03||WT-ST-03|2009|b|TO
+2.3|Vỏ trạm đo WT-ST-02||WT-ST-02|2009|b|TO
+2.4|Fakel WT-FB-05.1|09E020080000020|WT-FB-05.1|2011|b|TO
+2.5|Fakel WT-FB-05.2|09E020080000021|WT-FB-05.2|2011|b|TO
+2.6|Fakel WT-FB-02.1||WT-FB-02.1|2011|b|TP
+2.7|Fakel WT-FB-02.2||WT-FB-02.2|2011|b|TP
+2.8|Fakel WT-FB-01.1|09E020080000093|WT-FB-01.1|2021|d|TP
+2.9|Fakel WT-FB-01.2|09E020080000094|WT-FB-01.2|2021|d|TP
+2.10|Khung dầm máy nén khí WT-CP-01||WT-CP-01|2006|b|TO
+2.11|Khung dầm máy nén khí WT-CP-02||WT-CP-02|2006|b|TO
+2.12|Khung dầm máy nén khí WT-CP-03||WT-CP-03|2013|b|TO
+2.13|Khung dầm máy nén khí||WT-CP-04|2015|b|TO
+2.14|Khung dầm thùng đo cao áp|09E020080000074|WT-STK-01|2015|b|TO
+2.15|Khung dầm thùng đo cao áp|09E020080000008|WT-STK-03|2011|b|TO
+2.16|Khung dầm thùng đo cao áp|09E020080000009|WT-STK-04|2011|b|TO
+2.17|Khung dầm thiết bị gia nhiệt|09E020080000014|WT-STE-02|2011|b|TO
+2.18|Khung dầm thiết bị gia nhiệt|09E020080000070|WT-STE-03|2015|b|TO
+2.19|Khung dầm máy tạo hơi nước|09E020080000010|WT-STG-01|2011|d|TP
+2.20|Khung dầm máy tạo hơi nước|09E020080000073|WT-STG-03|2015|b|TO
+2.21|Khung dầm máy tạo hơi nước|09E020080000098|WT-STG-04|2023|b|TO
+2.22|Khung dầm bình tách 3 pha|09E020080000005|WT-SP-03|2009|b|TO
+2.23|Khung dầm bình tách 3 pha|09E020080000048|WT-SP-04|2013|b|TO
+2.24|Khung dầm thiết bị lọc cát|09E020080000071|WT-SFE-01|2013|b|TO
+2.25|Vỏ Container 8ft||WT=DH-01|2019|b|TO
+2.26|Vỏ Container 8ft||WT=DH-03|2019|b|TO
+2.27|Vỏ Container 8ft||WT=DH-04|2010|b|TO
+2.28|Vỏ Container 8ft||WT=DH-05|2010|b|TO
+2.29|Vỏ Container 8ft||WT=DH-09|2010|b|TO
+2.30|Vỏ Container 8ft||WT=DH-10|2021|b|TO
+`;
+
+const EXEC = {
+  a: ['Đội TV', 'XSCTBĐVL'],
+  b: ['XSCTBĐVL', 'Đội TV'],
+  d: ['Dịch vụ', '']
+};
+
+// Nhóm thiết bị theo khoảng STT (khoảng cuối: [từ, đến, tên nhóm])
+const GROUPS1 = [
+  [1, 3, 'Trạm thử vỉa'],
+  [4, 5, 'Cây thông thử vỉa'],
+  [6, 8, 'Van an toàn'],
+  [9, 12, 'Cụm phân dòng'],
+  [13, 15, 'Nồi hơi'],
+  [16, 17, 'Bình tách'],
+  [18, 19, 'Bình trao đổi nhiệt'],
+  [20, 22, 'Thùng đo cao áp'],
+  [23, 26, 'Đường ống, đầu nối Fig 602"'],
+  [27, 28, 'Ống mềm cao áp'],
+  [29, 30, 'Đường ống, đầu nối, Chicksan Fig 1502"'],
+  [31, 38, 'Máy bơm'],
+  [39, 40, 'Thiết bị lọc cát'],
+  [41, 44, 'Máy trạm & thiết bị điện tử'],
+  [45, 47, 'Máy điện tử đo sâu'],
+  [48, 79, 'Bộ DST 3 7/8"'],
+  [80, 112, 'Bộ DST 5"']
+];
+
+// Quí theo file gốc: tính theo STT (mục 1 có thể khai báo theo khoảng)
+const QUARTERS = {
+  1: ['1.5', '1.6', '1.8', '1.10', '1.12', '1.14', '1.16', '1.17', '1.18', '1.25', '1.26', '1.30', '1.39',
+      '1.41-1.47', '2.4', '2.5', '2.10', '2.12', '2.20', '2.22', '2.23'],
+  2: ['1.1', '1.19', '1.20', '1.28', '1.29', '1.31-1.33', '1.36', '1.37', '2.11', '2.30'],
+  3: ['1.2', '1.4', '1.9', '1.13', '1.21', '1.23', '1.24', '1.27', '1.38', '1.67-1.112', '2.1', '2.6', '2.7', '2.13', '2.18', '2.19', '2.25', '2.26'],
+  4: ['1.3', '1.7', '1.11', '1.15', '1.22', '1.34', '1.35', '1.40', '1.48-1.66', '2.2', '2.3', '2.8', '2.9', '2.14-2.17', '2.21', '2.24', '2.27-2.29']
+};
+const QMAP = {};
+Object.entries(QUARTERS).forEach(([q, items]) => items.forEach(it => {
+  const [from, to] = it.split('-');
+  const [sec, a] = from.split('.');
+  const b = to ? to.split('.')[1] : a;
+  for (let i = +a; i <= +b; i++) QMAP[`${sec}.${i}`] = +q;
+}));
+
+function parse(raw, groups) {
+  return raw.trim().split('\n').map(line => {
+    const [stt, name, code, sn, year, ex, type] = line.split('|');
+    const [main, aux] = EXEC[ex] || ['', ''];
+    const n = parseInt(stt.split('.')[1], 10);
+    const g = groups ? (groups.find(x => n >= x[0] && n <= x[1]) || [0, 0, ''])[2] : '';
+    const q = QMAP[stt] || 0;
+    return { stt, name, code, sn, year, main, aux, type, group: g, q };
+  });
+}
+
+const DATA1 = parse(RAW1, GROUPS1);
+const DATA2 = parse(RAW2, null);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cell = v => v ? esc(v) : '<span class="muted">—</span>';
+
+[...new Set(DATA1.map(r => r.group))].forEach(g => {
+  $('fGroup').insertAdjacentHTML('beforeend', `<option>${esc(g)}</option>`);
+});
+
+function matches(r) {
+  const q = $('q').value.trim().toLowerCase();
+  const t = $('fType').value, e = $('fExec').value,   g = $('fGroup').value, fq = $('fQ').value;
+    if (fq !== '' && String(r.q) !== fq) return false;
+    if (q && !(`${r.name} ${r.code} ${r.sn} ${r.stt}`.toLowerCase().includes(q))) return false;
+  if (t && r.type !== t) return false;
+  if (e && r.main !== e && r.aux !== e) return false;
+  if (g && r.group !== g) return false;
+  return true;
+}
+
+function rowHtml(r) {
+  return `<tr>
+    <td class="stt">${esc(r.stt)}</td><td>${esc(r.name)}</td>
+    <td class="mono">${cell(r.code)}</td><td class="mono">${cell(r.sn)}</td>
+    <td class="center">${cell(r.year)}</td><td>${cell(r.main)}</td><td>${cell(r.aux)}</td>
+    ${[1, 2, 3, 4].map(q => `<td class="center q${q === r.q ? ' on' : ''}">${q === r.q && r.type ? `<span class="chip ${esc(r.type)}">${esc(r.type)}</span>` : ''}</td>`).join('')}</tr>`;
+}
+
+function render(data, bodyId, withGroups) {
+  const rows = data.filter(matches);
+  let html = '', last = null;
+  rows.forEach(r => {
+    if (withGroups && r.group !== last) {
+      html += `<tr class="group"><td colspan="11">${esc(r.group)}</td></tr>`;
+      last = r.group;
+    }
+    html += rowHtml(r);
+  });
+  $(bodyId).innerHTML = html || '<tr><td colspan="11" class="empty">Không có dữ liệu phù hợp</td></tr>';
+  return rows;
+}
+
+function update() {
+  const g = $('fGroup').value;
+  const r1 = render(DATA1, 'body1', true);
+  const r2 = g ? render([], 'body2', false) : render(DATA2, 'body2', false);
+  const all = r1.concat(r2);
+  $('count').textContent = `Hiển thị ${all.length} / ${DATA1.length + DATA2.length} thiết bị`;
+  const cnt = f => all.filter(f).length;
+  $('stats').innerHTML = [
+    ['Tổng thiết bị', all.length],
+    ['TO', cnt(r => r.type === 'TO')],
+    ['TP', cnt(r => r.type === 'TP')],
+    ['Đội TV chính', cnt(r => r.main === 'Đội TV')],
+    ['XSCTBĐVL chính', cnt(r => r.main === 'XSCTBĐVL')],
+    ['Dịch vụ', cnt(r => r.main === 'Dịch vụ')],
+    ['Quí 1', cnt(r => r.q === 1)],
+    ['Quí 2', cnt(r => r.q === 2)],
+    ['Quí 3', cnt(r => r.q === 3)],
+    ['Quí 4', cnt(r => r.q === 4)]
+  ].map(([k, v]) => `<div class="stat"><b>${v}</b>${k}</div>`).join('');
+}
+
+['q', 'fType', 'fExec', 'fQ', 'fGroup'].forEach(id => $(id).addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
