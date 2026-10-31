@@ -43,7 +43,7 @@ require_once __DIR__ . '/../layouts/header.php';
             $exportUrl = "kehoachbaoduongdinhky.php?action=exportExcel&nam=" . $nam;
             if (!empty($search)) $exportUrl .= "&search=" . urlencode($search);
             if (isset($qui) && $qui > 0) $exportUrl .= "&qui=" . $qui;            if (!empty($nhomsc)) $exportUrl .= "&nhomsc=" . urlencode($nhomsc);            if (!empty($trangthai)) $exportUrl .= "&trangthai=" . urlencode($trangthai);
-            if (!empty($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
+            if (isset($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
             if (!empty($thietbi_id_filter)) $exportUrl .= "&thietbi_id_filter=" . urlencode($thietbi_id_filter);
             if (!empty($_GET['donvi_chinh'])) $exportUrl .= "&donvi_chinh=" . urlencode($_GET['donvi_chinh']);
             ?>
@@ -95,6 +95,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </select>
             </div>
             
+            <?php if (hasRole(ROLE_ADMIN)): ?>
             <div>
                 <label class="block text-sm font-medium mb-1">Nhóm máy:</label>
                 <select name="nhomsc" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -105,16 +106,16 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="TV" <?php echo isset($nhomsc) && $nhomsc == 'TV' ? 'selected' : ''; ?>>TV</option>
                 </select>
             </div>
+            <?php endif; ?>
             
             <div>
                 <label class="block text-sm font-medium mb-1">ĐV chính:</label>
                 <?php $donviChinhFilter = $_GET['donvi_chinh'] ?? ''; ?>
                 <select name="donvi_chinh" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
                     <option value="" <?php echo $donviChinhFilter === '' ? 'selected' : ''; ?>>Tất cả</option>
-                    <?php foreach (['KTKT', 'ĐVLTH', 'CNM', 'RDNGA', 'TV'] as $dvOpt): ?>
-                        <option value="<?php echo $dvOpt; ?>" <?php echo $donviChinhFilter === $dvOpt ? 'selected' : ''; ?>><?php echo $dvOpt; ?></option>
+                    <?php foreach (($donviChinhOptions ?? []) as $dvOpt): ?>
+                        <option value="<?php echo htmlspecialchars($dvOpt); ?>" <?php echo $donviChinhFilter === $dvOpt ? 'selected' : ''; ?>><?php echo htmlspecialchars($dvOpt); ?></option>
                     <?php endforeach; ?>
-                    <option value="__none__" <?php echo $donviChinhFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
                 </select>
             </div>
 
@@ -127,6 +128,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </select>
             </div>
             
+            <?php if (hasRole(ROLE_ADMIN)): ?>
             <div>
                 <label class="block text-sm font-medium mb-1">Thiết bị ID:</label>
                 <select name="thietbi_id_filter" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -135,6 +137,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="notnull" <?php echo isset($thietbi_id_filter) && $thietbi_id_filter == 'notnull' ? 'selected' : ''; ?>>Đã có ID</option>
                 </select>
             </div>
+            <?php endif; ?>
             
             <div>
                 <label class="block text-sm font-medium mb-1">Sắp xếp theo:</label>
@@ -288,6 +291,16 @@ require_once __DIR__ . '/../layouts/header.php';
                 line-height: 1;
                 overflow-wrap: anywhere;
             }
+            #kehoach-table .device-name-column {
+                box-sizing: border-box;
+                width: 260px !important;
+                min-width: 260px;
+                max-width: 260px;
+            }
+            #kehoach-table td.device-name-column {
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
             #kehoach-table td.execution-people {
                 white-space: normal;
                 overflow-wrap: anywhere;
@@ -308,7 +321,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">STT</th>
                         <th class="plan-id-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:3%;display:none">ID</th>
                         <th class="equipment-id-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:7%;display:none">ID TB</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:8%">Tên thiết bị</th>
+                        <th class="device-name-column px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tên thiết bị</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="width:10%">Số S/N</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase" style="display:none">Nhóm SC</th>
                         <th class="qui-column text-center text-xs font-medium text-gray-500 uppercase border-l border-r border-gray-300">Q1</th>
@@ -380,7 +393,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-2 py-1 text-xs" title="<?php echo htmlspecialchars($item['ten_thietbi']); ?>">
+                            <td class="device-name-column px-2 py-1 text-xs" title="<?php echo htmlspecialchars($item['ten_thietbi']); ?>">
                                 <?php if (!empty($item['thietbi_id'])): ?>
                                 <a href="/iso2/thietbi.php?action=view&id=<?php echo (int)$item['thietbi_id']; ?>"
                                    class="font-medium text-blue-700 hover:text-blue-800 hover:underline"
@@ -405,7 +418,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <?php echo htmlspecialchars($item['nhomsc'] ?? ''); ?>
                             </td>
                             <td class="qui-cell text-center border-l border-r border-gray-300 <?php echo strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <div class="qui-cell-inner <?php echo !empty($item['qui_1_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_1_hoantat']) ? '' : (strtoupper(trim($item['qui_1'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
                                     <?php if (!empty($item['qui_1_hoantat'])): ?>
                                         <i class="fas fa-check text-blue-600 text-lg"></i>
                                     <?php elseif (!empty($item['qui_1']) && strtoupper(trim($item['qui_1'])) !== 'TO'): ?>
@@ -418,7 +431,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                 </div>
                             </td>
                             <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <div class="qui-cell-inner <?php echo !empty($item['qui_2_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_2_hoantat']) ? '' : (strtoupper(trim($item['qui_2'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
                                     <?php if (!empty($item['qui_2_hoantat'])): ?>
                                         <i class="fas fa-check text-blue-600 text-lg"></i>
                                     <?php elseif (!empty($item['qui_2']) && strtoupper(trim($item['qui_2'])) !== 'TO'): ?>
@@ -431,7 +444,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                 </div>
                             </td>
                             <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <div class="qui-cell-inner <?php echo !empty($item['qui_3_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_3_hoantat']) ? '' : (strtoupper(trim($item['qui_3'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
                                     <?php if (!empty($item['qui_3_hoantat'])): ?>
                                         <i class="fas fa-check text-blue-600 text-lg"></i>
                                     <?php elseif (!empty($item['qui_3']) && strtoupper(trim($item['qui_3'])) !== 'TO'): ?>
@@ -444,7 +457,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                 </div>
                             </td>
                             <td class="qui-cell text-center border-r border-gray-300 <?php echo strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''; ?>">
-                                <div class="qui-cell-inner <?php echo !empty($item['qui_4_hoantat']) ? 'bg-blue-50' : (strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
+                                <div class="qui-cell-inner <?php echo !empty($item['qui_4_hoantat']) ? '' : (strtoupper(trim($item['qui_4'] ?? '')) === 'TO' ? 'bg-green-100' : ''); ?>">
                                     <?php if (!empty($item['qui_4_hoantat'])): ?>
                                         <i class="fas fa-check text-blue-600 text-lg"></i>
                                     <?php elseif (!empty($item['qui_4']) && strtoupper(trim($item['qui_4'])) !== 'TO'): ?>

@@ -104,10 +104,6 @@ class KeHoachBaoDuongDinhKyController
             $sql .= " AND (donvi_lam_chinh IS NULL OR TRIM(donvi_lam_chinh) = '')";
             return;
         }
-        if (!in_array($dv, ['KTKT', 'ĐVLTH', 'CNM', 'RDNGA', 'TV'], true)) {
-            return;
-        }
-        // ĐVLTH có thể được lưu dưới dạng không dấu
         $values = $dv === 'ĐVLTH' ? ['ĐVLTH', 'DVLTH'] : [$dv];
         $in = [];
         foreach ($values as $i => $value) {
@@ -131,7 +127,7 @@ class KeHoachBaoDuongDinhKyController
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
             $nhomsc = $_GET['nhomsc'] ?? ''; // 'RDNGA', 'CNC', 'KTKT', 'TV', 'CNC+RDNGA', ''
             $trangthai = $_GET['trangthai'] ?? ''; // 'hoantat', 'chuahoantat', ''
-            $sapxep = $_GET['sapxep'] ?? ''; // '', 'qui_1', 'qui_2', 'qui_3', 'qui_4'
+            $sapxep = trim((string)($_GET['sapxep'] ?? '')) ?: 'qui_tangdan'; // mặc định: quý tăng dần; 'id' = theo ID
             $thietbi_id = isset($_GET['thietbi_id']) ? (int)$_GET['thietbi_id'] : 0;
             $thietbi_id_filter = $_GET['thietbi_id_filter'] ?? ''; // '', 'null', 'notnull'
             
@@ -151,6 +147,7 @@ class KeHoachBaoDuongDinhKyController
 
             // Lấy danh sách các năm có dữ liệu
             $years = $this->getAvailableYears();
+            $donviChinhOptions = $this->getAvailableDonViChinh($nam);
             
             require_once __DIR__ . '/../views/kehoachbaoduongdinhky/index.php';
         } catch (Exception $e) {
@@ -910,7 +907,7 @@ class KeHoachBaoDuongDinhKyController
             $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
             $nhomsc = $_GET['nhomsc'] ?? '';
             $trangthai = $_GET['trangthai'] ?? '';
-            $sapxep = $_GET['sapxep'] ?? '';
+            $sapxep = trim((string)($_GET['sapxep'] ?? '')) ?: 'qui_tangdan';
             $thietbi_id_filter = $_GET['thietbi_id_filter'] ?? '';
             $items = $this->getAll($nam, $search, $qui, $nhomsc, $trangthai, $sapxep, 0, $thietbi_id_filter);
 
@@ -1483,6 +1480,26 @@ class KeHoachBaoDuongDinhKyController
         $sql = "SELECT DISTINCT nam FROM ke_hoach_bao_duong_dinh_ky_iso ORDER BY nam DESC";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Các giá trị ĐV chính đang có trong dữ liệu của năm (DVLTH gộp vào ĐVLTH)
+     */
+    private function getAvailableDonViChinh(int $nam): array
+    {
+        $sql = "SELECT DISTINCT TRIM(donvi_lam_chinh) FROM ke_hoach_bao_duong_dinh_ky_iso
+                WHERE nam = :nam AND donvi_lam_chinh IS NOT NULL AND TRIM(donvi_lam_chinh) <> ''";
+        $params = [':nam' => $nam];
+        $this->applyDonViFilter($sql, $params);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $values = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
+            $values[] = $value === 'DVLTH' ? 'ĐVLTH' : $value;
+        }
+        $values = array_values(array_unique($values));
+        sort($values, SORT_NATURAL | SORT_FLAG_CASE);
+        return $values;
     }
 
     /**
