@@ -5,6 +5,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../includes/doi_execution.php';
 require_once __DIR__ . '/../includes/bao_duong_activity.php';
+require_once __DIR__ . '/../includes/bao_duong_report.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -111,6 +112,12 @@ class KeHoachBaoDuongDinhKyController
             $params[':donvi_chinh' . $i] = $value;
         }
         $sql .= " AND TRIM(donvi_lam_chinh) IN (" . implode(',', $in) . ")";
+    }
+
+    private function getDonViChinhLabel(): string
+    {
+        $value = trim((string)($_GET['donvi_chinh'] ?? ''));
+        return $value === '__none__' ? 'Chưa chọn' : $value;
     }
 
     /**
@@ -1502,6 +1509,13 @@ class KeHoachBaoDuongDinhKyController
         return $values;
     }
 
+    private function getStatisticsQuarter(): string
+    {
+        $currentQuarter = (string)(int)ceil((int)date('n') / 3);
+        $quarter = $_GET['qui'] ?? $currentQuarter;
+        return in_array($quarter, ['1', '2', '3', '4'], true) ? $quarter : $currentQuarter;
+    }
+
     /**
      * Thống kê bảo dưỡng định kỳ
      */
@@ -1511,11 +1525,7 @@ class KeHoachBaoDuongDinhKyController
             $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
             $search = $_GET['search'] ?? '';
             $nhomsc = $_GET['nhomsc'] ?? '';
-            // Mặc định quý theo ngày hiện tại nếu chưa chọn.
-            $qui = $_GET['qui'] ?? (string)(int)ceil((int)date('n') / 3);
-            if (!in_array($qui, ['1','2','3','4'], true)) {
-                $qui = (string)(int)ceil((int)date('n') / 3);
-            }
+            $qui = $this->getStatisticsQuarter();
             $_GET['qui'] = $qui;
             
             $availableYears = $this->getAvailableYears();
@@ -1523,7 +1533,7 @@ class KeHoachBaoDuongDinhKyController
             if (empty($availableYears)) {
                 $availableYears = [(int)date('Y')];
             }
-            
+            $donviChinhOptions = $this->getAvailableDonViChinh($nam);
             $statistics = $this->getStatistics($nam, $search, $nhomsc, $qui);
             
             require_once __DIR__ . '/../views/kehoachbaoduongdinhky/thongke.php';
@@ -1532,6 +1542,54 @@ class KeHoachBaoDuongDinhKyController
             $_SESSION['error'] = 'Có lỗi xảy ra khi tải thống kê';
             header('Location: /iso2/kehoachbaoduongdinhky.php');
             exit;
+        }
+    }
+
+    public function inThongKe(): void
+    {
+        try {
+            $nam = isset($_GET['nam']) ? (int)$_GET['nam'] : (int)date('Y');
+            $search = $_GET['search'] ?? '';
+            $nhomsc = $_GET['nhomsc'] ?? '';
+            $qui = $this->getStatisticsQuarter();
+            $statistics = $this->getStatistics($nam, $search, $nhomsc, $qui);
+
+            $plans = [];
+            foreach ($statistics['details'] as $group) {
+                foreach ($group as $plan) {
+                    $plans[] = $plan;
+                }
+            }
+            usort($plans, static function (array $a, array $b): int {
+                return (int)$a['id'] <=> (int)$b['id'];
+            });
+
+            $plansWithExecution = [];
+            foreach (array_chunk($plans, 500) as $chunk) {
+                foreach ($this->loadHoSoExecutionInfo($chunk) as $plan) {
+                    $plansWithExecution[] = $plan;
+                }
+            }
+            $report = buildBaoDuongReport($plansWithExecution, (int)$qui);
+
+            if ($this->isAdmin()) {
+                $reportUnit = 'Tất cả bộ phận';
+            } else {
+                $scope = $this->getMadvScope();
+                $reportUnit = $scope === [] ? 'Chưa xác định' : implode(', ', $scope);
+            }
+            $donviChinh = $this->getDonViChinhLabel();
+            if ($donviChinh !== '') {
+                $reportUnit .= ' - Bộ phận thực hiện chính: ' . $donviChinh;
+            }
+
+            require __DIR__ . '/../views/kehoachbaoduongdinhky/print_thongke.php';
+        } catch (Exception $e) {
+            error_log('Error in KeHoachBaoDuongDinhKyController::inThongKe: ' . $e->getMessage());
+            http_response_code(500);
+            echo '<!doctype html><html lang="vi"><meta charset="utf-8"><title>Lỗi in báo cáo</title>'
+                . '<body><h1>Không tải được báo cáo bảo dưỡng</h1>'
+                . '<p>Vui lòng kiểm tra nhật ký lỗi máy chủ và thử lại.</p></body></html>';
         }
     }
 
@@ -1724,6 +1782,7 @@ class KeHoachBaoDuongDinhKyController
         $search = $_GET['search'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
         $qui = $_GET['qui'] ?? '';
+        $donviChinh = $this->getDonViChinhLabel();
         
         $statistics = $this->getStatistics($nam, $search, $nhomsc, $qui);
         
@@ -1770,6 +1829,9 @@ class KeHoachBaoDuongDinhKyController
             <p style="font-size: 12pt; font-style: italic; margin: 10px 0;">Năm <?php echo $nam; ?></p>
             <?php if (!empty($qui)): ?>
                 <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Từ đầu năm tới Quý <?php echo $qui; ?></p>
+            <?php endif; ?>
+            <?php if ($donviChinh !== ''): ?>
+                <p style="font-size: 11pt;">Bộ phận thực hiện chính: <?php echo htmlspecialchars($donviChinh, ENT_QUOTES, 'UTF-8'); ?></p>
             <?php endif; ?>
         </div>
 
@@ -1950,6 +2012,7 @@ class KeHoachBaoDuongDinhKyController
         $search = $_GET['search'] ?? '';
         $nhomsc = $_GET['nhomsc'] ?? '';
         $qui = isset($_GET['qui']) ? (int)$_GET['qui'] : 0;
+        $donviChinh = $this->getDonViChinhLabel();
 
         if ($qui < 1 || $qui > 4) {
             $_SESSION['error'] = 'Vui lòng chọn quý (1-4) trước khi xuất danh sách.';
@@ -2032,6 +2095,9 @@ class KeHoachBaoDuongDinhKyController
             <h2 style="font-size: 16pt; font-weight: bold; color: #1e40af; margin: 0;">DANH SÁCH BẢO DƯỠNG ĐỊNH KỲ<?php if (!empty($doiName)): ?><br/><?php echo strtoupper($doiName); ?><?php endif; ?></h2>
             <p style="font-size: 12pt; font-style: italic; margin: 10px 0;">Năm <?php echo $nam; ?></p>
             <p style="font-size: 11pt; font-weight: bold; color: #2563eb;">Quý <?php echo $qui; ?></p>
+            <?php if ($donviChinh !== ''): ?>
+                <p style="font-size: 11pt;">Bộ phận thực hiện chính: <?php echo htmlspecialchars($donviChinh, ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php endif; ?>
         </div>
 
         <div style="border: 2px solid #2563eb; padding: 10px; margin: 15px 0; background-color: #eff6ff;">

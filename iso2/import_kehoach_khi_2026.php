@@ -1,0 +1,440 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Import kế hoạch bảo trì/bảo dưỡng Đội Carota Khí (nhập từ 2 hình bảng kế hoạch) vào:
+ *   1. thietbi_iso                        (danh mục thiết bị - trang thietbi.php)
+ *   2. ke_hoach_bao_duong_dinh_ky_iso     (kế hoạch bảo dưỡng - trang kehoachbaoduongdinhky.php)
+ *
+ * Chạy trên hosting: đăng nhập admin rồi mở /iso2/import_kehoach_khi_2026.php
+ *   - "Chạy thử": hiển thị kết quả, không ghi DB.
+ *   - "Ghi vào DB": thực hiện import (một transaction).
+ * Chạy bằng dòng lệnh: php import_kehoach_khi_2026.php [--apply] [--nam=2026] [--madv=KHI]
+ *
+ * Quy tắc:
+ *   - Tất cả thiết bị thuộc đơn vị Đội Carota Khí (madv = KHI).
+ *   - Thiết bị: mavt = Ký mã hiệu (thiếu thì S/N, thiếu nữa thì tên), somay = S/N (thiếu thì lấy Ký mã hiệu, thiếu nữa thì 'N/A'), model = ''.
+ *   - Kế hoạch: đơn vị làm chính = KHI, đơn vị làm phụ để trống, nhomsc để trống.
+ *     Quí được suy ra từ tháng được tô màu (T1-3 -> qui_1, T4-6 -> qui_2, T7-9 -> qui_3, T10-12 -> qui_4),
+ *     mỗi quí có ít nhất một tháng được đánh dấu lưu 'TO'. Dòng "Kiểm định khi cần thiết" không có quí.
+ *   - Chạy lại an toàn: thiết bị đã có thì dùng lại, dòng kế hoạch đã có (cùng năm + thiết bị) thì bỏ qua.
+ *
+ * Xóa file này khỏi hosting sau khi import xong.
+ */
+
+$isCli = PHP_SAPI === 'cli';
+
+if (!$isCli && session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/config/database.php';
+if (!$isCli) {
+    require_once __DIR__ . '/config/constants.php';
+    require_once __DIR__ . '/includes/auth.php';
+    require_once __DIR__ . '/includes/permissions.php';
+    requireAuth();
+    if (!hasRole(ROLE_ADMIN)) {
+        http_response_code(403);
+        exit('Chỉ admin mới được chạy import này.');
+    }
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
+mb_internal_encoding('UTF-8');
+
+const UNIT_NAME = 'Đội Carota Khí';
+const DEFAULT_MADV = 'KHI';
+const CREATED_BY = 'import_kehoach_khi_2026';
+
+/**
+ * Dữ liệu đọc từ hình: [STT, tên thiết bị, ký mã hiệu, số máy, các tháng được tô màu, ghi chú]
+ *
+ * @return array<int, array{stt: string, ten: string, code: string, sn: string, months: int[], note: string}>
+ */
+function planData(): array
+{
+    $raw = [
+        // I. TRẠM CAROTA KHÍ
+        ['I.1', 'Trạm carota khí', 'ML-MLU-04', '1010778', [], 'Kiểm định khi cần thiết'],
+        ['I.2', 'Trạm carota khí', 'ML-MLU-05', '1010836', [12], ''],
+        ['I.3', 'Trạm carota khí', 'ML-MLU-06', '1010879', [10], ''],
+        ['I.4', 'Trạm carota khí', 'ML-MLU-08', '1010933', [8], ''],
+        ['I.5', 'Trạm carota khí', 'ML-MLU-09', '1010905', [5], ''],
+        ['I.6', 'Trạm carota khí', 'ML-MLU-10', '1010898', [9], ''],
+        ['I.7', 'Trạm carota khí', 'ML-MLU-11', 'PTPS-14215', [8], ''],
+        ['I.8', 'Trạm carota khí', 'ML-MLU-12', 'PTPS-15123', [4], ''],
+        // II. CONTAINER
+        ['II.1', 'Container đựng vật tư', 'ML-CON-03', '', [5, 11], ''],
+        ['II.2', 'Container đựng vật tư', 'ML-CON-04', '', [3, 9], ''],
+        ['II.3', 'Container đựng vật tư', 'ML-CON-05', '', [4, 10], ''],
+        ['II.4', 'Container đựng vật tư', 'ML-CON-01', '', [3, 9], ''],
+        // III. CÁP CẦU TRẠM
+        ['III.1', 'Cáp cầu trạm', 'ML-MLU-08S', '', [3], ''],
+        ['III.2', 'Cáp cầu trạm', 'ML-MLU-09S', '', [10], ''],
+        ['III.3', 'Cáp cầu trạm', 'ML-MLU-10S', '', [9], ''],
+        ['III.4', 'Cáp cầu trạm', 'ML-MLU-11S', '', [10], ''],
+        ['III.5', 'Cáp cầu trạm', 'ML-MLU-12S', '', [4], ''],
+        // IV. DÂY AT LÀM VIỆC TRÊN CAO
+        ['IV.1', 'Dây AT làm việc trên cao', '', '', [2, 8], ''],
+        // V. MÁY NÉN KHÍ
+        ['V.1', 'Máy nén khí', 'AEROTEC EXT/25L', '382655', [3], ''],
+        ['V.1.1', 'Bình khí nén', '', '', [3], ''],
+        ['V.1.2', 'Đồng hồ đi kèm', '', '', [3], ''],
+        ['V.1.3', 'Van an toàn đi kèm', '', '', [3], ''],
+        // VI. ĐỒNG HỒ ĐO ÁP SUẤT
+        ['VI.1', 'Đồng hồ đo áp suất 0-2.5 bar (3 cái)', '0-2.5 bar', '', [6, 12], ''],
+        ['VI.2', 'Đồng hồ đo áp suất 0-6 bar (6 cái)', '0-6 bar', '', [6, 12], ''],
+        ['VI.3', 'Đồng hồ đo áp suất 0-12 bar (3 cái)', '0-12 bar', '', [6, 12], ''],
+    ];
+
+    $rows = [];
+    foreach ($raw as [$stt, $ten, $code, $sn, $months, $note]) {
+        $rows[] = ['stt' => $stt, 'ten' => $ten, 'code' => $code, 'sn' => $sn, 'months' => $months, 'note' => $note];
+    }
+    return $rows;
+}
+
+/** Suy ra các quí (1-4) từ danh sách tháng. */
+function quartersFromMonths(array $months): array
+{
+    $quarters = [];
+    foreach ($months as $m) {
+        if ($m >= 1 && $m <= 12) {
+            $quarters[(int)ceil($m / 3)] = true;
+        }
+    }
+    $quarters = array_keys($quarters);
+    sort($quarters);
+    return $quarters;
+}
+
+function fitLength(string $value, int $max): string
+{
+    return ($max > 0 && strlen($value) > $max) ? mb_strcut($value, 0, $max) : $value;
+}
+
+// ---------------------------------------------------------------- db helpers
+function columnLength(PDO $db, string $table, string $column): int
+{
+    $stmt = $db->prepare('SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $stmt->execute([$table, $column]);
+    return (int)($stmt->fetchColumn() ?: 0);
+}
+
+// ---------------------------------------------------------------- import
+/**
+ * @param array{apply: bool, nam: int, madv: string} $opts
+ * @return array{before: string[], tables: array<string, array{head: string[], rows: array<int, array>}>, after: string[]}
+ */
+function runImport(array $opts): array
+{
+    $out = [];
+    $tables = [];
+    $rows = planData();
+    $nam = (int)$opts['nam'];
+    $apply = (bool)$opts['apply'];
+    $madv = trim((string)$opts['madv']) !== '' ? trim((string)$opts['madv']) : DEFAULT_MADV;
+
+    $db = getDBConnection();
+    $db->exec('SET NAMES latin1');
+
+    $warnings = [];
+    $checkUnit = $db->prepare('SELECT COUNT(*) FROM donvi_iso WHERE TRIM(madv) = ?');
+    $checkUnit->execute([$madv]);
+    if ((int)$checkUnit->fetchColumn() === 0) {
+        $warnings[] = "madv \"$madv\" chưa có trong donvi_iso";
+    }
+
+    $len = [];
+    foreach (['mavt', 'tenvt', 'somay', 'model', 'mamay'] as $c) {
+        $len[$c] = columnLength($db, 'thietbi_iso', $c);
+    }
+    $planLen = [
+        'ten_thietbi' => columnLength($db, 'ke_hoach_bao_duong_dinh_ky_iso', 'ten_thietbi'),
+        'so_serial' => columnLength($db, 'ke_hoach_bao_duong_dinh_ky_iso', 'so_serial'),
+        'ghi_chu' => columnLength($db, 'ke_hoach_bao_duong_dinh_ky_iso', 'ghi_chu'),
+    ];
+
+    $out[] = ($apply ? '=== GHI DỮ LIỆU ===' : '=== CHẠY THỬ (không ghi DB) ===');
+    $out[] = "Năm kế hoạch: $nam | " . UNIT_NAME . " | madv: $madv | donvi_lam_chinh: $madv | donvi_lam_phu: (trống)";
+
+    $findDevice = $db->prepare('SELECT stt, tenvt, madv FROM thietbi_iso WHERE mavt = ? AND somay = ? AND model = ?');
+    $insertDevice = $db->prepare(
+        'INSERT INTO thietbi_iso (mavt, tenvt, somay, model, homay, dienap, thongtincb, loaidau, mucdau, madv, bdtime, ngayktsd, tlkt, hosomay, mamay)
+         VALUES (:mavt, :tenvt, :somay, :model, :homay, :dienap, :thongtincb, :loaidau, :mucdau, :madv, :bdtime, :ngayktsd, :tlkt, :hosomay, :mamay)'
+    );
+    $findPlan = $db->prepare('SELECT id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = ? AND thietbi_id = ?');
+    $insertPlan = $db->prepare(
+        'INSERT INTO ke_hoach_bao_duong_dinh_ky_iso
+         (thietbi_id, nam, ten_thietbi, so_serial, nhomsc, qui_1, qui_2, qui_3, qui_4, donvi_lam_chinh, donvi_lam_phu, ghi_chu, created_by)
+         VALUES (:thietbi_id, :nam, :ten_thietbi, :so_serial, :nhomsc, :qui_1, :qui_2, :qui_3, :qui_4, :donvi_lam_chinh, :donvi_lam_phu, :ghi_chu, :created_by)'
+    );
+
+    $stat = ['device_new' => 0, 'device_reuse' => 0, 'plan_new' => 0, 'plan_skip' => 0];
+    $usedKeys = [];
+
+    $db->beginTransaction();
+    try {
+        foreach ($rows as $r) {
+            $tenvt = $r['ten'];
+            if ($r['sn'] !== '' && mb_stripos($tenvt, $r['sn']) === false) {
+                $tenvt .= ' ' . $r['sn'];
+            }
+            $tenvt = fitLength($tenvt, $len['tenvt']);
+            $legacySomay = $r['sn'] === '';
+            $somay = fitLength($r['sn'] !== '' ? $r['sn'] : ($r['code'] !== '' ? $r['code'] : 'N/A'), $len['somay']);
+            $model = '';
+
+            $base = $r['code'] !== '' ? $r['code'] : ($r['sn'] !== '' ? $r['sn'] : $r['ten']);
+            $suffix = '-' . $r['stt'];
+            $mavt = strlen($base) > $len['mavt'] && $len['mavt'] > 0
+                ? mb_strcut($base, 0, $len['mavt'] - strlen($suffix)) . $suffix
+                : $base;
+
+            $find = function (string $key) use ($findDevice, $somay, $model, $legacySomay, $madv) {
+                $findDevice->execute([$key, $somay, $model]);
+                $row = $findDevice->fetch();
+                if (!$row && $legacySomay) {
+                    // Bản import trước để trống số máy -> tìm lại để cập nhật
+                    $findDevice->execute([$key, '', $model]);
+                    $row = $findDevice->fetch();
+                    if ($row && trim((string)$row['madv']) === $madv) {
+                        $row['legacy'] = true;
+                    } else {
+                        $row = false;
+                    }
+                }
+                return $row;
+            };
+            $existing = $find($mavt);
+            $conflict = (isset($usedKeys["$mavt|$somay|$model"]) && $usedKeys["$mavt|$somay|$model"] !== $tenvt)
+                || ($existing && ($existing['tenvt'] !== $tenvt || trim((string)$existing['madv']) !== $madv));
+            if ($conflict) {
+                // Trùng khóa với thiết bị khác (VD cùng tên với thiết bị của đơn vị khác) -> thêm hậu tố STT
+                $mavt = ($len['mavt'] > 0 ? mb_strcut($base, 0, $len['mavt'] - strlen($suffix)) : $base) . $suffix;
+                $existing = $find($mavt);
+                $warnings[] = "{$r['stt']}: trùng khóa thiết bị, dùng mavt = $mavt";
+            }
+            $usedKeys["$mavt|$somay|$model"] = $tenvt;
+
+            $mamay = fitLength(implode('-', array_filter([$mavt, $model, $somay !== $mavt && $somay !== 'N/A' ? $somay : ''], fn($p) => $p !== '')), $len['mamay']);
+            $deviceParams = [
+                'mavt' => $mavt, 'tenvt' => $tenvt, 'somay' => $somay, 'model' => $model,
+                'homay' => '', 'dienap' => '', 'thongtincb' => '', 'loaidau' => '', 'mucdau' => '',
+                'madv' => $madv, 'bdtime' => 0, 'ngayktsd' => date('Y-m-d'),
+                'tlkt' => '', 'hosomay' => '', 'mamay' => $mamay,
+            ];
+
+            $legacy = !empty($existing['legacy']);
+            if ($existing) {
+                $stt = (int)$existing['stt'];
+                $stat['device_reuse']++;
+                if ($legacy) {
+                    if ($apply) {
+                        $db->prepare('UPDATE thietbi_iso SET somay = ?, mamay = ? WHERE stt = ?')->execute([$somay, $mamay, $stt]);
+                    }
+                    $deviceNote = "cập nhật somay = $somay (stt=$stt)";
+                } else {
+                    $deviceNote = "dùng lại (stt=$stt), không ghi";
+                }
+            } else {
+                $stt = 0;
+                if ($apply) {
+                    $insertDevice->execute(array_combine(array_map(fn($k) => ":$k", array_keys($deviceParams)), $deviceParams));
+                    $stt = (int)$db->lastInsertId();
+                }
+                $stat['device_new']++;
+                $deviceNote = $apply ? "thêm mới (stt=$stt)" : 'sẽ thêm mới';
+            }
+
+            $qui = ['', '', '', ''];
+            foreach (quartersFromMonths($r['months']) as $q) {
+                $qui[$q - 1] = 'TO';
+            }
+            $planParams = [
+                'thietbi_id' => $stt, 'nam' => $nam,
+                'ten_thietbi' => fitLength($tenvt, $planLen['ten_thietbi']),
+                'so_serial' => fitLength($somay, $planLen['so_serial']),
+                'nhomsc' => '',
+                'qui_1' => $qui[0], 'qui_2' => $qui[1], 'qui_3' => $qui[2], 'qui_4' => $qui[3],
+                'donvi_lam_chinh' => $madv, 'donvi_lam_phu' => '',
+                'ghi_chu' => fitLength($r['note'], $planLen['ghi_chu']), 'created_by' => CREATED_BY,
+            ];
+            $planExists = false;
+            if ($stt > 0) {
+                $findPlan->execute([$nam, $stt]);
+                $planExists = (bool)$findPlan->fetchColumn();
+            }
+            if ($planExists) {
+                $stat['plan_skip']++;
+                $planNote = 'đã có trong kế hoạch, bỏ qua';
+                if ($legacy) {
+                    if ($apply) {
+                        $db->prepare('UPDATE ke_hoach_bao_duong_dinh_ky_iso SET so_serial = ? WHERE nam = ? AND thietbi_id = ?')
+                            ->execute([$planParams['so_serial'], $nam, $stt]);
+                    }
+                    $planNote = 'đã có trong kế hoạch, cập nhật so_serial';
+                }
+            } else {
+                if ($apply) {
+                    $insertPlan->execute(array_combine(array_map(fn($k) => ":$k", array_keys($planParams)), $planParams));
+                }
+                $stat['plan_new']++;
+                $planNote = $apply ? 'đã thêm' : 'sẽ thêm mới';
+            }
+
+            // Khóa liên kết: ke_hoach_bao_duong_dinh_ky_iso.thietbi_id = thietbi_iso.stt (thiết bị mới chưa có stt khi chạy thử)
+            $link = $stt > 0 ? (string)$stt : 'mới #' . $r['stt'];
+            $monthText = $r['months'] ? implode(',', $r['months']) : '-';
+            $tables['thietbi_iso']['rows'][] = array_merge([$r['stt'], $link], array_values($deviceParams), [$deviceNote]);
+            $planParams['thietbi_id'] = $link;
+            $tables['ke_hoach_bao_duong_dinh_ky_iso']['rows'][] = array_merge([$r['stt'], $monthText], array_values($planParams), [$planNote]);
+            $tables['thietbi_iso']['head'] ??= array_merge(['STT (bảng)', 'stt'], array_keys($deviceParams), ['Kết quả']);
+            $tables['ke_hoach_bao_duong_dinh_ky_iso']['head'] ??= array_merge(['STT (bảng)', 'Tháng'], array_keys($planParams), ['Kết quả']);
+        }
+
+        $apply ? $db->commit() : $db->rollBack();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        throw $e;
+    }
+
+    $after = [];
+    $after[] = 'Tổng: ' . count($rows) . " dòng | thiết bị mới: {$stat['device_new']}, dùng lại: {$stat['device_reuse']}"
+        . " | kế hoạch mới: {$stat['plan_new']}, bỏ qua: {$stat['plan_skip']}";
+    foreach ($warnings as $w) {
+        $after[] = "Cảnh báo - $w";
+    }
+    $after[] = $apply ? 'ĐÃ GHI VÀO DB. Hãy xóa file import_kehoach_khi_2026.php khỏi hosting.' : 'Chưa ghi gì vào DB.';
+    return ['before' => $out, 'tables' => $tables, 'after' => $after];
+}
+
+// ---------------------------------------------------------------- CLI
+if ($isCli) {
+    $opts = ['apply' => false, 'nam' => 2026, 'madv' => DEFAULT_MADV];
+    foreach (array_slice($argv, 1) as $arg) {
+        if ($arg === '--apply') {
+            $opts['apply'] = true;
+        } elseif (preg_match('/^--(nam|madv)=(.+)$/', $arg, $m)) {
+            $opts[$m[1]] = $m[1] === 'nam' ? (int)$m[2] : $m[2];
+        } else {
+            fwrite(STDERR, "Tham số không hợp lệ: $arg\n");
+            exit(2);
+        }
+    }
+    try {
+        $res = runImport($opts);
+        echo implode("\n", $res['before']), "\n";
+        foreach ($res['tables'] as $name => $t) {
+            echo "\n--- $name ---\n", implode("\t", $t['head']), "\n";
+            foreach ($t['rows'] as $row) {
+                echo implode("\t", $row), "\n";
+            }
+        }
+        echo "\n", implode("\n", $res['after']), "\n";
+    } catch (Throwable $e) {
+        fwrite(STDERR, 'Lỗi: ' . $e->getMessage() . "\n");
+        exit(1);
+    }
+    exit(0);
+}
+
+// ---------------------------------------------------------------- Web
+$h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+if (empty($_SESSION['import_khi_csrf'])) {
+    $_SESSION['import_khi_csrf'] = bin2hex(random_bytes(16));
+}
+
+$result = null;
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        if (!hash_equals($_SESSION['import_khi_csrf'], (string)($_POST['csrf'] ?? ''))) {
+            throw new RuntimeException('Phiên không hợp lệ, hãy tải lại trang.');
+        }
+        set_time_limit(180);
+
+        $nam = (int)($_POST['nam'] ?? 2026);
+        if ($nam < 2000 || $nam > 2100) {
+            throw new RuntimeException('Năm không hợp lệ.');
+        }
+        $result = runImport([
+            'apply' => ($_POST['mode'] ?? '') === 'apply',
+            'nam' => $nam,
+            'madv' => trim((string)($_POST['madv'] ?? '')),
+        ]);
+    } catch (Throwable $e) {
+        $error = $e->getMessage();
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Import kế hoạch bảo dưỡng 2026 - Đội Carota Khí</title>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; padding: 24px 16px; }
+    main { max-width: 98vw; margin: 0 auto; background: #fff; padding: 20px 24px; border-radius: 10px; border: 1px solid #e2e8f0; }
+    h1 { margin-top: 0; font-size: 1.3rem; color: #312e81; }
+    label { display: block; margin: 12px 0 4px; font-weight: 600; }
+    input[type=number], input[type=text] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    button { padding: 8px 18px; border: 0; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; margin-right: 8px; }
+    .preview { background: #4338ca; } .apply { background: #dc2626; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: .8rem; line-height: 1.5; }
+    .err { padding: 10px 14px; background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; margin: 12px 0; }
+    .note { color: #475569; font-size: .9rem; }
+    .tbl { overflow-x: auto; margin: 12px 0; }
+    h2 { font-size: 1.05rem; color: #4338ca; margin: 20px 0 4px; }
+    th.lnk, td.lnk { background: #fef08a; font-weight: 700; }
+    table { border-collapse: collapse; font-size: .78rem; white-space: nowrap; }
+    th, td { border: 1px solid #cbd5e1; padding: 4px 8px; text-align: left; }
+    th { background: #e0e7ff; color: #312e81; position: sticky; top: 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Import thiết bị &amp; kế hoạch bảo dưỡng định kỳ - Đội Carota Khí</h1>
+  <p class="note">Nguồn: bảng kế hoạch Đội Carota Khí (dữ liệu nhúng trong file). Thiết bị &rarr; thietbi_iso (madv KHI); kế hoạch &rarr; ke_hoach_bao_duong_dinh_ky_iso
+     (ĐV làm chính = KHI, ĐV làm phụ để trống, quí suy ra từ tháng). Hãy bấm "Chạy thử" trước để xem kết quả.</p>
+
+  <?php if ($error !== ''): ?><div class="err"><?= $h($error) ?></div><?php endif; ?>
+
+  <form method="post">
+    <input type="hidden" name="csrf" value="<?= $h($_SESSION['import_khi_csrf']) ?>">
+    <label for="nam">Năm kế hoạch</label>
+    <input type="number" id="nam" name="nam" value="<?= $h((string)($_POST['nam'] ?? 2026)) ?>">
+    <label for="madv">Mã đơn vị Đội Carota Khí (để trống = <?= $h(DEFAULT_MADV) ?>)</label>
+    <input type="text" id="madv" name="madv" value="<?= $h((string)($_POST['madv'] ?? '')) ?>">
+    <p>
+      <button class="preview" type="submit" name="mode" value="preview">Chạy thử</button>
+      <button class="apply" type="submit" name="mode" value="apply"
+              onclick="return confirm('Ghi dữ liệu vào DB? Bạn đã xem kết quả chạy thử chưa?');">Ghi vào DB</button>
+    </p>
+  </form>
+
+  <?php if ($result !== null): ?>
+    <pre><?= $h(implode("\n", $result['before'])) ?></pre>
+    <p class="note">Liên kết giữa hai bảng: <b>ke_hoach_bao_duong_dinh_ky_iso.thietbi_id</b> = <b>thietbi_iso.stt</b> (hai cột được tô vàng). Thiết bị mới hiện "mới #STT" khi chạy thử, sẽ được thay bằng stt thật khi ghi.</p>
+    <?php foreach ($result['tables'] as $name => $t): ?>
+      <?php $linkCol = array_search($name === 'thietbi_iso' ? 'stt' : 'thietbi_id', $t['head'], true); ?>
+      <h2><?= $h($name) ?> (<?= count($t['rows']) ?> dòng)</h2>
+      <div class="tbl"><table>
+        <thead><tr><?php foreach ($t['head'] as $i => $col): ?><th<?= $i === $linkCol ? ' class="lnk"' : '' ?>><?= $h($col) ?></th><?php endforeach; ?></tr></thead>
+        <tbody>
+          <?php foreach ($t['rows'] as $row): ?>
+            <tr><?php foreach ($row as $i => $cell): ?><td<?= $i === $linkCol ? ' class="lnk"' : '' ?>><?= $h((string)$cell) ?></td><?php endforeach; ?></tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table></div>
+    <?php endforeach; ?>
+    <pre><?= $h(implode("\n", $result['after'])) ?></pre>
+  <?php endif; ?>
+</main>
+</body>
+</html>

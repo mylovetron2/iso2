@@ -95,22 +95,23 @@
 <nav class="toc" aria-label="Mục lục">
     <h2>Mục lục</h2>
     <ul>
-        <li><a href="#hoso">3. Hồ sơ Sửa chữa Bảo dưỡng</a></li>
-        <li class="sub"><a href="#hoso-tao">3.1 Thêm hồ sơ mới</a></li>
-        <li class="sub"><a href="#hoso-sua">3.2 Xem / Sửa / Xóa</a></li>
-        <li class="sub"><a href="#hoso-nut">3.3 Cập nhật thực hiện công việc</a></li>
-        <li class="sub"><a href="#hoso-in">3.4 In &amp; xuất file</a></li>
-        <li><a href="#pbg">4. Phiếu bàn giao</a></li>
-        <li class="sub"><a href="#pbg-ds">4.1 Danh sách phiếu</a></li>
-        <li class="sub"><a href="#pbg-tao">4.2 Tạo phiếu</a></li>
-        <li class="sub"><a href="#pbg-xem">4.3 Xem, in, xuất Word</a></li>
-        <li><a href="#kh">5. Kế hoạch bảo dưỡng định kỳ</a></li>
-        <li class="sub"><a href="#kh-loc">5.1 Bộ lọc &amp; thống kê</a></li>
-        <li class="sub"><a href="#kh-bang">5.2 Đọc bảng kế hoạch</a></li>
-        <li class="sub"><a href="#kh-khoa">5.3 Cập nhật thông tin kế hoạch</a></li>
-        <li class="sub"><a href="#kh-them">5.4 Thêm thiết bị vào kế hoạch</a></li>
-        <li class="sub"><a href="#kh-nhaplieu">5.5 Nhập liệu bảo dưỡng</a></li>
-        <li class="sub"><a href="#kh-thongke">5.6 Thống kê &amp; xuất báo cáo</a></li>
+        <li><a href="#hoso">1. Hồ sơ Sửa chữa Bảo dưỡng</a></li>
+        <li class="sub"><a href="#hoso-tao">1.1 Thêm hồ sơ mới</a></li>
+        <li class="sub"><a href="#hoso-sua">1.2 Xem / Sửa / Xóa</a></li>
+        <li class="sub"><a href="#hoso-nut">1.3 Cập nhật thực hiện công việc</a></li>
+        <li class="sub"><a href="#hoso-bddk">1.4 Bảo dưỡng định kỳ</a></li>
+        <li class="sub"><a href="#hoso-bddk-in">1.4 In báo cáo bảo dưỡng</a></li>
+        <li class="sub"><a href="#hoso-phieuyc">1.5 In phiếu yêu cầu dịch vụ</a></li>
+        <li class="sub"><a href="#hoso-themtb">1.6 Thêm thiết bị</a></li>
+        <li class="sub"><a href="#hoso-phieuth">1.7 In phiếu thực hiện, phiếu kiểm tra sau SC</a></li>
+        <li><a href="#pbg">2. Phiếu bàn giao</a></li>
+        <li class="sub"><a href="#pbg-ds">2.1 Danh sách phiếu</a></li>
+        <li class="sub"><a href="#pbg-tao">2.2 Tạo phiếu</a></li>
+        <li class="sub"><a href="#pbg-xem">2.3 Xem, in, xuất Word</a></li>
+        <li><a href="#quytrinh-gopy">3. Nội dung quy trình ISO và gửi góp ý</a></li>
+        <li><a href="#yeucau-muavattu">4. Yêu cầu mua vật tư</a></li>
+        <li><a href="#admin">5. Admin</a></li>
+        <li class="sub"><a href="#admin-phanquyen">5.1 Phân quyền User và quản lý quyền</a></li>
     </ul>
 </nav>
 
@@ -118,9 +119,9 @@
 
 <!-- ===================== 3. HỒ SƠ SCBĐ ===================== -->
 <section class="card" id="hoso">
-    <h2>3. Hồ sơ Sửa chữa Bảo dưỡng</h2>
+    <h2>1. Hồ sơ Sửa chữa Bảo dưỡng</h2>
 
-    <h3 id="hoso-tao">3.1 Thêm hồ sơ mới</h3>
+    <h3 id="hoso-tao">1.1 Thêm hồ sơ mới</h3>
     <ol class="steps">
         <li>Bấm <span class="btn green">+ Thêm hồ sơ</span> ở phía trên danh sách.</li>
         <li><strong>Thông tin cơ bản:</strong> để trống <em>Số phiếu</em> để hệ thống tự điền số tiếp theo; chọn <em>Ngày yêu cầu</em>. Mã quản lý và số hồ sơ được tạo tự động khi lưu.</li>
@@ -132,7 +133,9 @@
         </li>
         <li>Bấm <span class="btn blue">Lưu hồ sơ</span> (thanh cố định phía trên) hoặc <span class="btn gray">Hủy</span> để thoát.</li>
     </ol>
-    <h3 id="hoso-sua">3.2 Xem, sửa, xóa hồ sơ</h3>
+    <iframe src="https://drive.google.com/file/d/1PHcqTOu6KhqG2ey1TehFBYM52_5uusYO/preview" width="640" height="480"></iframe>
+
+    <h3 id="hoso-sua">1.2 Xem, sửa, xóa hồ sơ</h3>
     <table>
         <thead><tr><th>Biểu tượng</th><th>Chức năng</th></tr></thead>
         <tbody>
@@ -145,7 +148,7 @@
         Nhập <strong>Ngày thực hiện</strong> khi bắt đầu xử lý và <strong>Ngày kết thúc</strong> khi công việc đã hoàn tất. Thiết bị chỉ có thể được chọn lập phiếu bàn giao sau khi có ngày kết thúc.
     </div>
 
-    <h3 id="hoso-nut">3.3 Cập nhật thực hiện công việc</h3>
+    <h3 id="hoso-nut">1.3 Cập nhật thực hiện công việc</h3>
     <p>Các nút này nằm ở cột “Chi tiết” trong danh sách hồ sơ.</p>
     <table>
         <thead><tr><th>Nút</th><th>Mục đích</th></tr></thead>
@@ -156,28 +159,47 @@
     </table>
     <p>Nếu cần tạm dừng công việc, hãy ghi nhận lý do theo quy trình của đơn vị trước khi bấm tạm dừng.</p>
 
-    <h3 id="hoso-in">3.4 In và xuất file</h3>
-    <table>
-        <thead><tr><th>Vị trí</th><th>Nút</th><th>Kết quả</th></tr></thead>
-        <tbody>
-            <tr><td>Danh sách</td><td><span class="btn red">In PDF</span></td><td>Danh sách hồ sơ theo bộ lọc đang áp dụng.</td></tr>
-            <tr><td>Danh sách</td><td><span class="btn green">In Excel</span></td><td>Danh sách hồ sơ theo bộ lọc đang áp dụng (file Excel).</td></tr>
-            <tr><td>Chi tiết hồ sơ</td><td><span class="btn red">PDF</span></td><td>Hồ sơ dạng PDF.</td></tr>
-            <tr><td>Chi tiết hồ sơ</td><td><span class="btn" style="background:#3b82f6">Phiếu SC</span></td><td>Phiếu sửa chữa.</td></tr>
-            <tr><td>Chi tiết hồ sơ</td><td><span class="btn green">Phiếu kiểm tra</span></td><td>Phiếu kiểm tra sau BD/SC.</td></tr>
-            <tr><td>Chi tiết hồ sơ</td><td><span class="btn green">Phiếu YC</span></td><td>Phiếu yêu cầu (Word).</td></tr>
-        </tbody>
-    </table>
-    <div class="tip">Hãy đặt bộ lọc trước rồi mới bấm In PDF / In Excel để file chỉ chứa dữ liệu cần thiết.</div>
-    <iframe src="https://drive.google.com/file/d/1PHcqTOu6KhqG2ey1TehFBYM52_5uusYO/preview" width="640" height="480"></iframe>
+    <h3 id="hoso-bddk">1.4 Bảo dưỡng định kỳ</h3>
+    <p>Với thiết bị đã có trong kế hoạch bảo dưỡng định kỳ, trang ghi nội dung sửa chữa (nút <span class="btn orange">🔧 SC</span>) hiển thị thêm thông tin kế hoạch và ô đánh dấu hoàn thành.</p>
+    <ol class="steps">
+        <li>Bấm <strong>🔧 SC</strong> ở hồ sơ cần cập nhật. Phía trên trang có thanh <strong>BDDK</strong> cho biết năm, nhóm SC và tình trạng 4 quý: <span class="badge b-green">✓</span> đã hoàn tất, ô màu cam là quý có kế hoạch, ô xám là quý không có kế hoạch.</li>
+        <li>Nhập <strong>Ngày thực hiện</strong> của hồ sơ. Hệ thống dựa vào tháng của ngày này để xác định quý (tháng 1–3: Q1, 4–6: Q2, 7–9: Q3, 10–12: Q4).</li>
+        <li>Tích ô <strong>Đánh dấu hoàn thành BDDK</strong>. Dòng mô tả bên dưới cho biết quý nào sẽ được đánh dấu.</li>
+        <li>Bấm lưu. Quý tương ứng trong bảng kế hoạch bảo dưỡng định kỳ sẽ chuyển sang trạng thái hoàn tất.</li>
+    </ol>
+    <div class="note"><strong>Lưu ý:</strong>
+        <ul>
+            <li>Mỗi thiết bị chỉ được đánh dấu hoàn tất <strong>một quý</strong> trong năm. Khi đã đánh dấu, ô được khóa và hiển thị “Đã hoàn thành BDDK (Quý …)”.</li>
+            <li>Nếu chưa nhập ngày thực hiện, hệ thống nhắc nhập ngày để xác định quý.</li>
+            <li>Nếu thiết bị chưa có trong kế hoạch, trang hiển thị thông báo “Không tìm thấy kế hoạch bảo dưỡng định kỳ” và không có ô đánh dấu. Hãy thêm thiết bị vào kế hoạch bảo dưỡng định kỳ trước.</li>
+        </ul>
+    </div>
+    <div class="warn">Để bỏ đánh dấu, bấm nút <strong>Sửa</strong> cạnh ô đã khóa, bỏ tích rồi lưu. Với hồ sơ đã có ngày kết thúc (người dùng thường), thay đổi này được gửi đến admin để duyệt.</div>
+
+    <h4 id="hoso-bddk-in">In báo cáo kết quả bảo dưỡng định kỳ</h4>
+    <ol class="steps">
+        <li>Ở trang <strong>Kế hoạch bảo dưỡng định kỳ</strong>, mở <strong>Thống kê</strong>; chọn năm, quý và các bộ lọc tìm kiếm, nhóm máy hoặc bộ phận thực hiện chính nếu cần.</li>
+        <li>Bấm <span class="btn blue">In báo cáo Tổng hợp</span>. Báo cáo mở ở tab mới và hiển thị hộp thoại in của trình duyệt; có thể in giấy hoặc chọn lưu PDF.</li>
+    </ol>
+    <div class="note">Báo cáo gồm các thiết bị có kế hoạch lũy kế từ quý 1 đến quý đã chọn, trong phạm vi tài khoản được phép xem. Trạng thái dùng dữ liệu hiện tại, kể cả các quý thực hiện sau kỳ báo cáo, và so sánh quý được đánh dấu hoàn thành với quý kế hoạch gần nhất trong kỳ; nếu khoảng cách bằng nhau, chọn quý kế hoạch sớm hơn. Thiết bị chưa đánh dấu hoàn thành được tính là chưa thực hiện, kể cả khi đã nhập ngày bắt đầu. Do cách phân loại này, số trước/đúng/sau có thể khác các thẻ thống kê hiện tại. Thông tin hồ sơ đang chờ duyệt không được dùng trong bản in.</div>
+        <iframe src="https://drive.google.com/file/d/1DKjUUyU0GVMInqOkZA8W9wKthhaAOVl1/preview" width="640" height="480"></iframe>
+
+        <h3 id="hoso-phieuyc">1.5 In phiếu yêu cầu dịch vụ</h3>
+    <iframe src="https://drive.google.com/file/d/1fuN-uKSFI_G43K5Gu3xaybA5sAEt1sb6/preview" width="640" height="480"></iframe>
+
+    <h3 id="hoso-themtb">1.6 Thêm thiết bị</h3>
+    <iframe src="https://drive.google.com/file/d/1nwM3eg_UmOMDS0XuKPblLOWVsge_DAEi/preview" width="640" height="480"></iframe>
+
+    <h3 id="hoso-phieuth">1.7 In phiếu thực hiện, phiếu kiểm tra sau sửa chữa</h3>
+    <iframe src="https://drive.google.com/file/d/1xwffda2W_svLr-PY0EsSR6rhmUgv1NVo/preview" width="640" height="480"></iframe>
 </section>
 
 <!-- ===================== 4. PHIẾU BÀN GIAO ===================== -->
 <section class="card" id="pbg">
-    <h2>4. Phiếu bàn giao</h2>
+    <h2>2. Phiếu bàn giao</h2>
     <p>Phiếu bàn giao ghi nhận việc Xưởng SCTBĐVL giao lại thiết bị đã sửa chữa/bảo dưỡng cho đơn vị yêu cầu.</p>
 
-    <h3 id="pbg-ds">4.1 Danh sách phiếu</h3>
+    <h3 id="pbg-ds">2.1 Danh sách phiếu</h3>
     <ul>
         <li>Tìm kiếm theo số phiếu, phiếu YC, mã VT, số máy, người giao/nhận; lọc theo <em>Đơn vị</em>; bấm <span class="btn blue">Tìm kiếm</span> hoặc <kbd>Enter</kbd>. <span class="btn gray">Reset</span> để xóa lọc.</li>
         <li>Các cột: <strong>Số phiếu</strong> · Phiếu YC · Ngày BG · Người giao · Người nhận · Danh sách thiết bị (Mã VT – Số máy, kèm số lượng) · Thao tác.</li>
@@ -185,7 +207,7 @@
         <li>Số phiếu được tạo tự động từ số phiếu yêu cầu và lần bàn giao, ví dụ <strong>1984-1</strong>, <strong>1984-2</strong>.</li>
     </ul>
 
-    <h3 id="pbg-tao">4.2 Tạo phiếu bàn giao mới</h3>
+    <h3 id="pbg-tao">2.2 Tạo phiếu bàn giao mới</h3>
     <p>Bấm <span class="btn green">+ Tạo Phiếu Bàn Giao Mới</span>.</p>
 
     <h4>Chọn thiết bị</h4>
@@ -196,7 +218,7 @@
     </ol>
     <div class="note">Thiết bị chỉ xuất hiện khi hồ sơ SCBĐ đã có <strong>ngày kết thúc</strong> và chưa bàn giao. Nếu thiếu thiết bị, kiểm tra lại hồ sơ SCBĐ tương ứng.</div>
 
-    <h3 id="pbg-xem">4.3 Xem, in và xuất Word</h3>
+    <h3 id="pbg-xem">2.3 Xem, in và xuất Word</h3>
     <ul>
         <li>Bấm 👁 để xem chi tiết phiếu và kiểm tra danh sách thiết bị, tình trạng bàn giao, người giao/nhận và đơn vị nhận.</li>
         <li><span class="btn blue">In phiếu</span> in trực tiếp từ trình duyệt (bản in tự ẩn các nút và hiện tiêu đề “PHIẾU BÀN GIAO THIẾT BỊ”).</li>
@@ -207,80 +229,41 @@
 
 </section>
 
-<!-- ===================== 5. KẾ HOẠCH ===================== -->
-<section class="card" id="kh">
-    <h2>5. Kế hoạch bảo dưỡng thiết bị định kỳ</h2>
-    <p>Trang liệt kê thiết bị cần bảo dưỡng theo năm và theo quý (Q1–Q4), đơn vị thực hiện, và kết quả thực hiện.</p>
-
-    <h3 id="kh-loc">5.1 Bộ lọc và thống kê nhanh</h3>
-    <table>
-        <thead><tr><th>Bộ lọc</th><th>Giá trị</th></tr></thead>
-        <tbody>
-            <tr><td>Năm</td><td>Chọn năm cần xem trong danh sách.</td></tr>
-            <tr><td>Quý</td><td>Tất cả, Quý 1–4.</td></tr>
-            <tr><td>Nhóm máy</td><td>RDNGA, CNC, KTKT, TV.</td></tr>
-            <tr><td>ĐV chính</td><td>KTKT, ĐVLTH, CNM, RDNGA hoặc “Chưa chọn”.</td></tr>
-            <tr><td>Trạng thái</td><td>Tất cả · Đã hoàn thành · Chưa TH.</td></tr>
-            <tr><td>Thiết bị</td><td>Lọc thiết bị đã được liên kết hoặc chưa được liên kết.</td></tr>
-            <tr><td>Sắp xếp theo</td><td>Mặc định hoặc “Quý tăng dần”.</td></tr>
-            <tr><td>Tìm kiếm</td><td>Tên thiết bị hoặc số S/N.</td></tr>
-        </tbody>
-    </table>
-    <p>Chọn năm, quý, nhóm máy, đơn vị hoặc trạng thái để thu hẹp danh sách; nhập tên thiết bị hoặc số sê-ri để tìm nhanh. Bấm <em>Tìm</em> để áp dụng và <em>Reset</em> để xóa các tiêu chí tìm kiếm. Khi mở kế hoạch từ hồ sơ thiết bị, có thể bấm <em>Xóa bộ lọc</em> để xem lại toàn bộ danh sách. Các ô thống kê cho biết tổng số thiết bị trong từng quý.</p>
-
-    <h3 id="kh-bang">5.2 Đọc bảng kế hoạch</h3>
-    <table>
-        <thead><tr><th>Cột</th><th>Ý nghĩa</th></tr></thead>
-        <tbody>
-            <tr><td>Tên thiết bị / Số S/N</td><td>Tên, mã nhận dạng hoặc số sê-ri của thiết bị. Bấm tên nếu muốn xem thông tin thiết bị.</td></tr>
-            <tr><td>Q1 – Q4</td><td>Mỗi cột là một quý. Nội dung trong ô cho biết công việc dự kiến; dấu <span style="color:#2563eb;font-weight:700">✓</span> cho biết đã hoàn thành; “-” là quý đó không có kế hoạch.</td></tr>
-            <tr><td>ĐV Chính / ĐV Phụ</td><td>Đơn vị làm chính/phụ, hiển thị bằng màu: <span class="badge b-blue">KTKT</span> <span class="badge b-green">ĐVLTH</span> <span class="badge b-orange">CNM</span> <span class="badge b-purple">RDNGA</span> <span class="badge b-yellow">TV</span> (chỉ ĐV phụ).</td></tr>
-            <tr><td>Ngày</td><td><span style="color:#f97316;font-weight:600">▶ ngày thực hiện</span> và <span style="color:#16a34a;font-weight:600">→ ngày kết thúc</span>. Khung vàng <span class="badge b-yellow">Chờ duyệt</span> là thông tin đang chờ người phụ trách xác nhận.</td></tr>
-            <tr><td>Người thực hiện</td><td>Mỗi người một dòng.</td></tr>
-            <tr><td>Nhập liệu</td><td>Nút <em>✎ Nhập liệu</em> để ghi ngày và người thực hiện (xem 5.5).</td></tr>
-        </tbody>
-    </table>
-    <p>Nếu không thấy hết các cột, kéo thanh cuộn ngang bên dưới bảng. Dùng các nút ở cuối bảng để chuyển trang.</p>
-
-    <h3 id="kh-khoa">5.3 Cập nhật thông tin kế hoạch</h3>
-    <p>Một số thông tin kế hoạch như đơn vị thực hiện hoặc liên kết thiết bị được bảo vệ để tránh sửa nhầm. Nếu bạn được giao cập nhật, nút mở khóa sẽ nằm ở đầu trang.</p>
-    <ol class="steps">
-        <li>Bấm <span class="btn" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5">🔒 Mở khóa sửa</span>. Nếu được yêu cầu, nhập mật khẩu mở khóa do người phụ trách cung cấp.</li>
-        <li>Khi trang cho phép chỉnh sửa, bấm biểu tượng bút chì cạnh thông tin muốn thay đổi.</li>
-        <li>Chọn hoặc nhập thông tin chính xác, bấm ✓ để lưu; bấm ✗ nếu muốn hủy.</li>
-        <li>Sau khi cập nhật xong, bấm lại nút để khóa trang.</li>
-    </ol>
-    <div class="note">Chỉ thay đổi thông tin liên kết thiết bị hoặc đơn vị khi đã đối chiếu với hồ sơ thực tế. Nếu không có nút sửa hoặc không biết thông tin cần nhập, hãy hỏi người phụ trách kế hoạch trước khi thao tác.</div>
-
-    <h3 id="kh-them">5.4 Thêm thiết bị vào kế hoạch</h3>
-    <ol class="steps">
-        <li>Bấm <span class="btn emerald">+ Thêm từ danh sách thiết bị</span>.</li>
-        <li>Tìm theo tên, mã vật tư, số máy hoặc model. Nếu cần, chọn nhóm sửa chữa. Tích <em>“Ẩn thiết bị đã có trong kế hoạch”</em> để dễ tìm thiết bị chưa có.</li>
-        <li>Tích chọn từng dòng hoặc chọn tất cả (ô đầu bảng). Cột <em>Trong KH</em> cho biết thiết bị đã có trong kế hoạch.</li>
-        <li>Bấm <span class="btn emerald">Thêm thiết bị đã chọn</span>.</li>
-    </ol>
-
-    <h3 id="kh-nhaplieu">5.5 Ghi nhận kết quả bảo dưỡng</h3>
-    <p>Ở những dòng có nút <em>Nhập liệu</em>, dùng nút này để ghi nhận ngày và người đã thực hiện bảo dưỡng.</p>
-    <ol class="steps">
-        <li>Bấm <strong>Nhập liệu</strong> tại đúng dòng thiết bị để mở cửa sổ thông tin.</li>
-        <li>Nhập <strong>Ngày thực hiện</strong>, <strong>Ngày kết thúc</strong> nếu công việc đã xong và <strong>Người thực hiện</strong>. Ghi mỗi người trên một dòng.</li>
-        <li>Kiểm tra ngày kết thúc không sớm hơn ngày thực hiện, rồi bấm lưu.</li>
-    </ol>
-    <div class="warn">
-        Nếu thông tin đã ghi nhận cần thay đổi, hãy nhập thông tin đề nghị cập nhật. Thay đổi có thể cần người phụ trách duyệt trước khi được áp dụng; trong thời gian chờ, nội dung đề nghị hiển thị với nhãn <span class="badge b-yellow">Chờ duyệt</span>.
-    </div>
-    <div class="note">Nếu ở dòng thiết bị không có nút <em>Nhập liệu</em>, thông tin thực hiện có thể được cập nhật trong Hồ sơ Sửa chữa Bảo dưỡng. Mở hồ sơ liên quan và cập nhật ngày thực hiện, ngày kết thúc tại đó.</div>
-
-    <h3 id="kh-thongke">5.6 Thống kê và xuất báo cáo</h3>
-    <ul>
-        <li>Bấm <span class="btn purple">Thống kê</span> để xem tình hình thực hiện theo năm/quý.</li>
-        <li>Bấm nút xuất báo cáo để tải danh sách theo các tiêu chí đang chọn hoặc in báo cáo thống kê.</li>
-        <li>Nếu thấy thao tác xóa kế hoạch, không sử dụng nếu chưa được người phụ trách yêu cầu; việc xóa có thể ảnh hưởng đến toàn bộ kế hoạch năm.</li>
-    </ul>
+<section class="card" id="quytrinh-gopy">
+    <h2>3. Nội dung quy trình ISO và gửi góp ý</h2>
+    <iframe src="https://drive.google.com/file/d/1_AkegPKfcxqIEr2rdchZQBre-WFjobbL/preview" width="640" height="480"></iframe>
 </section>
 
-<footer>Hướng dẫn sử dụng · Hồ sơ Sửa chữa Bảo dưỡng, Phiếu Bàn giao, Kế hoạch Bảo dưỡng định kỳ</footer>
+<section class="card" id="yeucau-muavattu">
+    <h2>4. Yêu cầu mua vật tư</h2>
+    <iframe src="https://drive.google.com/file/d/1_AkegPKfcxqIEr2rdchZQBre-WFjobbL/preview" width="640" height="480"></iframe>
+</section>
+
+<section class="card" id="admin">
+    <h2>5. Admin</h2>
+    <h3 id="admin-phanquyen">5.1 Phân quyền User và quản lý quyền</h3>
+    <p>Chức năng này dành cho tài khoản <strong>Admin</strong>, giúp quản lý người dùng và quy định những chức năng mỗi nhóm người dùng được phép sử dụng.</p>
+    <ul>
+        <li><strong>Phân quyền User:</strong> tạo tài khoản và gán <em>role</em> (vai trò) cho từng người dùng.</li>
+        <li><strong>Quản lý quyền:</strong> thiết lập các quyền của từng role, chẳng hạn xem, tạo, sửa, xóa hoặc duyệt dữ liệu theo từng chức năng.</li>
+    </ul>
+    <p><strong>Gán role cho người dùng:</strong></p>
+    <ol class="steps">
+        <li>Mở trang <strong>Phân quyền User</strong>, tìm tài khoản theo tên đăng nhập hoặc lọc theo đơn vị.</li>
+        <li>Bấm <strong>Phân quyền</strong> tại dòng người dùng cần cập nhật.</li>
+        <li>Chọn role phù hợp với nhiệm vụ của người dùng rồi bấm <strong>Lưu quyền</strong>.</li>
+    </ol>
+    <p><strong>Thiết lập quyền cho role:</strong></p>
+    <ol class="steps">
+        <li>Bấm <strong>Quản lý quyền</strong> trên trang Phân quyền User.</li>
+        <li>Tìm role cần điều chỉnh. Tích các quyền cần cấp hoặc bỏ tích các quyền không cho phép trong từng nhóm chức năng.</li>
+        <li>Bấm <strong>Lưu quyền</strong> của role đó và kiểm tra thông báo cập nhật thành công.</li>
+    </ol>
+    <div class="warn"><strong>Lưu ý:</strong> Thay đổi quyền của một role ảnh hưởng đến tất cả người dùng được gán role đó. Chỉ cấp các quyền cần thiết cho công việc; kiểm tra kỹ trước khi cấp quyền xóa, duyệt hoặc quản lý.</div>
+    <iframe src="https://drive.google.com/file/d/1GIWPVZxbJbRabtP8WdxQtzkLdXqvOZYm/preview" width="640" height="480"></iframe>
+</section>
+
+<footer>Hướng dẫn sử dụng · Hồ sơ Sửa chữa Bảo dưỡng, Phiếu Bàn giao, Nội dung quy trình ISO và gửi góp ý, Yêu cầu mua vật tư, Admin</footer>
 </main>
 </div>
 </body>

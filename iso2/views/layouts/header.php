@@ -572,6 +572,13 @@ if (file_exists($dbSelectionFile)) {
                     </ul>
                 </li>
                 <?php endif; ?>
+                <?php if (isLoggedIn()): ?>
+                <li>
+                    <a href="<?php echo appUrl('docs/huong_dan_hososcbd_phieubangiao_kehoach.html'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-question-circle mr-2"></i> Hướng dẫn sử dụng ISO2
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
         </nav>
         <div class="mt-8 border-t border-blue-600 pt-4">

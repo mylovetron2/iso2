@@ -6,6 +6,7 @@ session_start();
 header('Content-Type: text/html; charset=UTF-8');
 mb_internal_encoding('UTF-8');
 
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config/constants.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/permissions.php';
@@ -154,6 +155,15 @@ switch ($action) {
             exit;
         }
         $controller->thongke();
+        break;
+
+    case 'inThongKe':
+        if (!hasPermission('kehoachbaoduong.view')) {
+            $_SESSION['error'] = 'Bạn không có quyền in thống kê';
+            header('Location: /iso2/index.php');
+            exit;
+        }
+        $controller->inThongKe();
         break;
         
     case 'exportPdf':
