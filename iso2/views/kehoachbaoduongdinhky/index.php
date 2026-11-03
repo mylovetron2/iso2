@@ -160,13 +160,16 @@ require_once __DIR__ . '/../layouts/header.php';
                 </select>
             </div>
             
-            <div>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-4 md:flex-row md:items-end">
+            <div class="flex-1 min-w-0">
                 <label class="block text-sm font-medium mb-1">Tìm kiếm:</label>
                 <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
                        placeholder="Tên thiết bị hoặc số S/N..." class="w-full border rounded px-3 py-2">
             </div>
             
-            <div class="flex items-end">
+            <div class="flex items-end shrink-0">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mr-2">
                     <i class="fas fa-search mr-1"></i> Tìm
                 </button>

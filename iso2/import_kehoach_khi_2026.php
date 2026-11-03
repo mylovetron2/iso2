@@ -2,19 +2,19 @@
 declare(strict_types=1);
 
 /**
- * Import kế hoạch bảo trì/bảo dưỡng Đội Carota Khí (nhập từ 2 hình bảng kế hoạch) vào:
+ * Import 21 dòng kế hoạch bảo trì/bảo dưỡng Đội Carota Khí từ hình bảng kế hoạch vào:
  *   1. thietbi_iso                        (danh mục thiết bị - trang thietbi.php)
  *   2. ke_hoach_bao_duong_dinh_ky_iso     (kế hoạch bảo dưỡng - trang kehoachbaoduongdinhky.php)
  *
  * Chạy trên hosting: đăng nhập admin rồi mở /iso2/import_kehoach_khi_2026.php
  *   - "Chạy thử": hiển thị kết quả, không ghi DB.
  *   - "Ghi vào DB": thực hiện import (một transaction).
- * Chạy bằng dòng lệnh: php import_kehoach_khi_2026.php [--apply] [--nam=2026] [--madv=KHI]
+ * Chạy bằng dòng lệnh: php import_kehoach_khi_2026.php [--apply] [--nam=2026]
  *
  * Quy tắc:
- *   - Tất cả thiết bị thuộc đơn vị Đội Carota Khí (madv = KHI).
+ *   - Tất cả thiết bị được gán đơn vị quản lý madv = KTKT (thiết bị import cũ madv = KHI sẽ được cập nhật khi chạy lại).
  *   - Thiết bị: mavt = Ký mã hiệu (thiếu thì S/N, thiếu nữa thì tên), somay = S/N (thiếu thì lấy Ký mã hiệu, thiếu nữa thì 'N/A'), model = ''.
- *   - Kế hoạch: đơn vị làm chính = KHI, đơn vị làm phụ để trống, nhomsc để trống.
+ *   - Kế hoạch: đơn vị chính/phụ lấy theo từng dòng trong bảng, nhomsc để trống.
  *     Quí được suy ra từ tháng được tô màu (T1-3 -> qui_1, T4-6 -> qui_2, T7-9 -> qui_3, T10-12 -> qui_4),
  *     mỗi quí có ít nhất một tháng được đánh dấu là một dòng kế hoạch riêng (lưu 'TO'), nên thiết bị có 2 đợt trong
  *     năm sẽ có 2 dòng. Dòng "Kiểm định khi cần thiết" không có quí.
@@ -46,53 +46,54 @@ if (!$isCli) {
 mb_internal_encoding('UTF-8');
 
 const UNIT_NAME = 'Đội Carota Khí';
-const DEFAULT_MADV = 'KHI';
+const DEFAULT_MADV = 'KTKT';
+const LEGACY_MADV = 'KHI';
 const CREATED_BY = 'import_kehoach_khi_2026';
 
 /**
- * Dữ liệu đọc từ hình: [STT, tên thiết bị, ký mã hiệu, số máy, các tháng được tô màu, ghi chú]
+ * 21 dòng đọc từ hình: [STT, tên thiết bị, ký mã hiệu, số máy, các tháng được tô màu, ghi chú, ĐV chính, ĐV phụ]
  *
- * @return array<int, array{stt: string, ten: string, code: string, sn: string, months: int[], note: string}>
+ * @return array<int, array{stt: string, ten: string, code: string, sn: string, months: int[], note: string, main: string, aux: string}>
  */
 function planData(): array
 {
     $raw = [
-        // I. TRẠM CAROTA KHÍ
-        ['I.1', 'Trạm carota khí', 'ML-MLU-04', '1010778', [], 'Kiểm định khi cần thiết'],
-        ['I.2', 'Trạm carota khí', 'ML-MLU-05', '1010836', [12], ''],
-        ['I.3', 'Trạm carota khí', 'ML-MLU-06', '1010879', [10], ''],
-        ['I.4', 'Trạm carota khí', 'ML-MLU-08', '1010933', [8], ''],
-        ['I.5', 'Trạm carota khí', 'ML-MLU-09', '1010905', [5], ''],
-        ['I.6', 'Trạm carota khí', 'ML-MLU-10', '1010898', [9], ''],
-        ['I.7', 'Trạm carota khí', 'ML-MLU-11', 'PTPS-14215', [8], ''],
-        ['I.8', 'Trạm carota khí', 'ML-MLU-12', 'PTPS-15123', [4], ''],
-        // II. CONTAINER
-        ['II.1', 'Container đựng vật tư', 'ML-CON-03', '', [5, 11], ''],
-        ['II.2', 'Container đựng vật tư', 'ML-CON-04', '', [3, 9], ''],
-        ['II.3', 'Container đựng vật tư', 'ML-CON-05', '', [4, 10], ''],
-        ['II.4', 'Container đựng vật tư', 'ML-CON-01', '', [3, 9], ''],
-        // III. CÁP CẦU TRẠM
-        ['III.1', 'Cáp cầu trạm', 'ML-MLU-08S', '', [3], ''],
-        ['III.2', 'Cáp cầu trạm', 'ML-MLU-09S', '', [10], ''],
-        ['III.3', 'Cáp cầu trạm', 'ML-MLU-10S', '', [9], ''],
-        ['III.4', 'Cáp cầu trạm', 'ML-MLU-11S', '', [10], ''],
-        ['III.5', 'Cáp cầu trạm', 'ML-MLU-12S', '', [4], ''],
-        // IV. DÂY AT LÀM VIỆC TRÊN CAO
-        ['IV.1', 'Dây AT làm việc trên cao', '', '', [2, 8], ''],
-        // V. MÁY NÉN KHÍ
-        ['V.1', 'Máy nén khí', 'AEROTEC EXT/25L', '382655', [3], ''],
-        ['V.1.1', 'Bình khí nén', '', '', [3], ''],
-        ['V.1.2', 'Đồng hồ đi kèm', '', '', [3], ''],
-        ['V.1.3', 'Van an toàn đi kèm', '', '', [3], ''],
-        // VI. ĐỒNG HỒ ĐO ÁP SUẤT
-        ['VI.1', 'Đồng hồ đo áp suất 0-2.5 bar (3 cái)', '0-2.5 bar', '', [6, 12], ''],
-        ['VI.2', 'Đồng hồ đo áp suất 0-6 bar (6 cái)', '0-6 bar', '', [6, 12], ''],
-        ['VI.3', 'Đồng hồ đo áp suất 0-12 bar (3 cái)', '0-12 bar', '', [6, 12], ''],
+        // 2. THIẾT BỊ KHỐNG CHẾ ÁP SUẤT
+        ['2.1', 'TBMG', 'CH-PCE-02', '', [4], '', 'XSCTBĐVL', 'KTKT'],
+        ['2.2', 'TBMG', 'CH-PCE-07', '', [10], '', 'XSCTBĐVL', 'KTKT'],
+        ['2.3', 'Bơm mỡ TBMG', 'CH-GIU-05', '', [7], '', 'XSCTBĐVL', 'KTKT'],
+        ['2.4', 'Bộ khống chế áp suất 4" LW Siva', '4" Lightweight Siva', '', [1], 'Kiểm tra MPI test sau 5 năm sử dụng', 'Dịch vụ', 'KTKT'],
+        // 3. VỎ TRẠM, KHUNG DẦM
+        ['3.1', 'Vỏ trạm đo', 'CH-LGU-02', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        ['3.2', 'Vỏ trạm đo', 'CH-LGU-07', '', [7], '', 'KTKT', 'XSCTBĐVL'],
+        ['3.3', 'Vỏ trạm đo', 'CH-LGU-08', '', [10], '', 'KTKT', 'XSCTBĐVL'],
+        ['3.4', 'Vỏ trạm đo', 'CH-LGU-10', '', [7], '', 'KTKT', 'XSCTBĐVL'],
+        ['3.5', 'Vỏ trạm đo', 'CH-LGU-12', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        // 4. VỎ TRẠM TỜI
+        ['4.1', 'Vỏ trạm tời', 'WLU-04', '', [7], '', 'KTKT', 'XSCTBĐVL'],
+        ['4.2', 'Vỏ trạm tời', 'WLU-05', '', [10], '', 'KTKT', 'XSCTBĐVL'],
+        ['4.3', 'Vỏ trạm tời', 'WLU-15', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        ['4.4', 'Vỏ phụ tùng tời', 'CH-DH-03', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        // 5. GIÁ TANG CÁP
+        ['5.1', 'Giá tang cáp', 'CH-DR-01', '', [4], '', 'KTKT', 'XSCTBĐVL'],
+        ['5.2', 'Giá tang cáp', 'CH-DR-03', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        ['5.3', 'Giá tang cáp', 'CH-DR-06', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        // 6. CONTAINER THIẾT BỊ
+        ['6.1', 'Container', 'CH-CON-02', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        ['6.2', 'Container', 'CH-CON-04', '', [4], '', 'KTKT', 'XSCTBĐVL'],
+        ['6.3', 'Container', 'CH-CON-07', '', [1], '', 'KTKT', 'XSCTBĐVL'],
+        ['6.4', 'Container', 'CH-CON-11', '', [10], '', 'KTKT', 'XSCTBĐVL'],
+        ['6.5', 'Container', 'CH-CON-16', '', [7], '', 'KTKT', 'XSCTBĐVL'],
     ];
 
     $rows = [];
-    foreach ($raw as [$stt, $ten, $code, $sn, $months, $note]) {
-        $rows[] = ['stt' => $stt, 'ten' => $ten, 'code' => $code, 'sn' => $sn, 'months' => $months, 'note' => $note];
+    foreach ($raw as $item) {
+        [$stt, $ten, $code, $sn, $months, $note] = $item;
+        $rows[] = [
+            'stt' => $stt, 'ten' => $ten, 'code' => $code, 'sn' => $sn,
+            'months' => $months, 'note' => $note,
+            'main' => $item[6] ?? '', 'aux' => $item[7] ?? '',
+        ];
     }
     return $rows;
 }
@@ -139,7 +140,7 @@ function columnLength(PDO $db, string $table, string $column): int
 
 // ---------------------------------------------------------------- import
 /**
- * @param array{apply: bool, nam: int, madv: string} $opts
+ * @param array{apply: bool, nam: int} $opts
  * @return array{before: string[], tables: array<string, array{head: string[], rows: array<int, array>}>, after: string[]}
  */
 function runImport(array $opts): array
@@ -149,7 +150,7 @@ function runImport(array $opts): array
     $rows = planData();
     $nam = (int)$opts['nam'];
     $apply = (bool)$opts['apply'];
-    $madv = trim((string)$opts['madv']) !== '' ? trim((string)$opts['madv']) : DEFAULT_MADV;
+    $madv = DEFAULT_MADV;
 
     $db = getDBConnection();
     $db->exec('SET NAMES latin1');
@@ -172,7 +173,7 @@ function runImport(array $opts): array
     ];
 
     $out[] = ($apply ? '=== GHI DỮ LIỆU ===' : '=== CHẠY THỬ (không ghi DB) ===');
-    $out[] = "Năm kế hoạch: $nam | " . UNIT_NAME . " | madv: $madv | donvi_lam_chinh: $madv | donvi_lam_phu: (trống)";
+    $out[] = "Số dòng: " . count($rows) . " | Năm kế hoạch: $nam | " . UNIT_NAME . " | madv thiết bị: $madv | đơn vị kế hoạch theo từng dòng";
 
     $findDevice = $db->prepare('SELECT stt, tenvt, madv FROM thietbi_iso WHERE mavt = ? AND somay = ? AND model = ?');
     $insertDevice = $db->prepare(
@@ -214,7 +215,7 @@ function runImport(array $opts): array
                     // Bản import trước để trống số máy -> tìm lại để cập nhật
                     $findDevice->execute([$key, '', $model]);
                     $row = $findDevice->fetch();
-                    if ($row && trim((string)$row['madv']) === $madv) {
+                    if ($row && in_array(trim((string)$row['madv']), [$madv, LEGACY_MADV], true)) {
                         $row['legacy'] = true;
                     } else {
                         $row = false;
@@ -223,12 +224,21 @@ function runImport(array $opts): array
                 return $row;
             };
             $existing = $find($mavt);
+            $migrateLegacyUnit = $existing
+                && $madv === DEFAULT_MADV
+                && trim((string)$existing['madv']) === LEGACY_MADV
+                && $existing['tenvt'] === $tenvt;
             $conflict = (isset($usedKeys["$mavt|$somay|$model"]) && $usedKeys["$mavt|$somay|$model"] !== $tenvt)
-                || ($existing && ($existing['tenvt'] !== $tenvt || trim((string)$existing['madv']) !== $madv));
+                || ($existing && ($existing['tenvt'] !== $tenvt
+                    || (trim((string)$existing['madv']) !== $madv && !$migrateLegacyUnit)));
             if ($conflict) {
                 // Trùng khóa với thiết bị khác (VD cùng tên với thiết bị của đơn vị khác) -> thêm hậu tố STT
                 $mavt = ($len['mavt'] > 0 ? mb_strcut($base, 0, $len['mavt'] - strlen($suffix)) : $base) . $suffix;
                 $existing = $find($mavt);
+                $migrateLegacyUnit = $existing
+                    && $madv === DEFAULT_MADV
+                    && trim((string)$existing['madv']) === LEGACY_MADV
+                    && $existing['tenvt'] === $tenvt;
                 $warnings[] = "{$r['stt']}: trùng khóa thiết bị, dùng mavt = $mavt";
             }
             $usedKeys["$mavt|$somay|$model"] = $tenvt;
@@ -245,11 +255,14 @@ function runImport(array $opts): array
             if ($existing) {
                 $stt = (int)$existing['stt'];
                 $stat['device_reuse']++;
-                if ($legacy) {
+                if ($legacy || $migrateLegacyUnit) {
                     if ($apply) {
-                        $db->prepare('UPDATE thietbi_iso SET somay = ?, mamay = ? WHERE stt = ?')->execute([$somay, $mamay, $stt]);
+                        $db->prepare('UPDATE thietbi_iso SET somay = ?, mamay = ?, madv = ? WHERE stt = ?')
+                            ->execute([$somay, $mamay, $madv, $stt]);
                     }
-                    $deviceNote = "cập nhật somay = $somay (stt=$stt)";
+                    $deviceNote = $migrateLegacyUnit
+                        ? "cập nhật madv = $madv (stt=$stt)"
+                        : "cập nhật somay = $somay (stt=$stt)";
                 } else {
                     $deviceNote = "dùng lại (stt=$stt), không ghi";
                 }
@@ -270,7 +283,8 @@ function runImport(array $opts): array
                 'so_serial' => fitLength($somay, $planLen['so_serial']),
                 'nhomsc' => '',
             ], $quiBlank, [
-                'donvi_lam_chinh' => $madv, 'donvi_lam_phu' => '',
+                'donvi_lam_chinh' => $r['main'] !== '' ? $r['main'] : $madv,
+                'donvi_lam_phu' => $r['aux'],
                 'ghi_chu' => fitLength($r['note'], $planLen['ghi_chu']), 'created_by' => CREATED_BY,
             ]);
             $bind = fn(array $params): array => array_combine(array_map(fn($k) => ":$k", array_keys($params)), $params);
@@ -384,12 +398,12 @@ function runImport(array $opts): array
 
 // ---------------------------------------------------------------- CLI
 if ($isCli) {
-    $opts = ['apply' => false, 'nam' => 2026, 'madv' => DEFAULT_MADV];
+    $opts = ['apply' => false, 'nam' => 2026];
     foreach (array_slice($argv, 1) as $arg) {
         if ($arg === '--apply') {
             $opts['apply'] = true;
-        } elseif (preg_match('/^--(nam|madv)=(.+)$/', $arg, $m)) {
-            $opts[$m[1]] = $m[1] === 'nam' ? (int)$m[2] : $m[2];
+        } elseif (preg_match('/^--nam=(.+)$/', $arg, $m)) {
+            $opts['nam'] = (int)$m[1];
         } else {
             fwrite(STDERR, "Tham số không hợp lệ: $arg\n");
             exit(2);
@@ -431,10 +445,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($nam < 2000 || $nam > 2100) {
             throw new RuntimeException('Năm không hợp lệ.');
         }
+        $mode = (string)($_POST['mode'] ?? '');
         $result = runImport([
-            'apply' => ($_POST['mode'] ?? '') === 'apply',
+            'apply' => $mode === 'apply',
             'nam' => $nam,
-            'madv' => trim((string)($_POST['madv'] ?? '')),
         ]);
     } catch (Throwable $e) {
         $error = $e->getMessage();
@@ -446,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Import kế hoạch bảo dưỡng 2026 - Đội Carota Khí</title>
+  <title>Import kế hoạch bảo dưỡng - Đội Carota Khí</title>
   <style>
     body { font-family: "Segoe UI", Arial, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; padding: 24px 16px; }
     main { max-width: 98vw; margin: 0 auto; background: #fff; padding: 20px 24px; border-radius: 10px; border: 1px solid #e2e8f0; }
@@ -455,6 +469,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     input[type=number], input[type=text] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
     button { padding: 8px 18px; border: 0; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; margin-right: 8px; }
     .preview { background: #4338ca; } .apply { background: #dc2626; }
+    fieldset { margin: 20px 0; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 16px 16px; }
     pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: .8rem; line-height: 1.5; }
     .err { padding: 10px 14px; background: #fef2f2; border-left: 4px solid #dc2626; color: #991b1b; margin: 12px 0; }
     .note { color: #475569; font-size: .9rem; }
@@ -469,8 +484,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <main>
   <h1>Import thiết bị &amp; kế hoạch bảo dưỡng định kỳ - Đội Carota Khí</h1>
-  <p class="note">Nguồn: bảng kế hoạch Đội Carota Khí (dữ liệu nhúng trong file). Thiết bị &rarr; thietbi_iso (madv KHI); kế hoạch &rarr; ke_hoach_bao_duong_dinh_ky_iso
-     (ĐV làm chính = KHI, ĐV làm phụ để trống, quí suy ra từ tháng). Hãy bấm "Chạy thử" trước để xem kết quả.</p>
+  <p class="note">Nguồn: 17 dòng đã có và 4 dòng bổ sung từ bảng kế hoạch Đội Carota Khí. Thiết bị &rarr; thietbi_iso (madv KTKT); kế hoạch &rarr; ke_hoach_bao_duong_dinh_ky_iso
+     (ĐV chính/phụ theo từng dòng; TP được nhập thành TO). Khi ghi lại, thiết bị trùng khớp đã nhập trước đó với madv KHI sẽ được chuyển sang KTKT. Nhập một dòng mới tại import_kehoach_khi_mot_dong.php.</p>
 
   <?php if ($error !== ''): ?><div class="err"><?= $h($error) ?></div><?php endif; ?>
 
@@ -478,13 +493,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input type="hidden" name="csrf" value="<?= $h($_SESSION['import_khi_csrf']) ?>">
     <label for="nam">Năm kế hoạch</label>
     <input type="number" id="nam" name="nam" value="<?= $h((string)($_POST['nam'] ?? 2026)) ?>">
-    <label for="madv">Mã đơn vị Đội Carota Khí (để trống = <?= $h(DEFAULT_MADV) ?>)</label>
-    <input type="text" id="madv" name="madv" value="<?= $h((string)($_POST['madv'] ?? '')) ?>">
-    <p>
-      <button class="preview" type="submit" name="mode" value="preview">Chạy thử</button>
-      <button class="apply" type="submit" name="mode" value="apply"
-              onclick="return confirm('Ghi dữ liệu vào DB? Bạn đã xem kết quả chạy thử chưa?');">Ghi vào DB</button>
-    </p>
+    <p class="note">Mã đơn vị thiết bị cố định: <b><?= $h(DEFAULT_MADV) ?></b></p>
+    <button class="preview" type="submit" name="mode" value="preview">Chạy thử 21 dòng</button>
+    <button class="apply" type="submit" name="mode" value="apply"
+            onclick="return confirm('Ghi 21 dòng vào DB? Bạn đã xem kết quả chạy thử chưa?');">Ghi 21 dòng vào DB</button>
   </form>
 
   <?php if ($result !== null): ?>
