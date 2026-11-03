@@ -41,6 +41,7 @@ define('PERMISSION_HOSOSCBD_VIEW', 'hososcbd.view');
 define('PERMISSION_HOSOSCBD_CREATE', 'hososcbd.create');
 define('PERMISSION_HOSOSCBD_EDIT', 'hososcbd.edit');
 define('PERMISSION_HOSOSCBD_DELETE', 'hososcbd.delete');
+define('PERMISSION_HOSOSCBD_PAUSE', 'hososcbd.pause');
 
 // Giao viec KPI permissions
 define('PERMISSION_GIAOVIEC_KPI_VIEW', 'giaoviec_kpi.view');

@@ -21,7 +21,7 @@ class UserProfileController {
         
         if (!$user) {
             $_SESSION['error'] = 'Không tìm thấy thông tin người dùng';
-            header('Location: /iso2/index.php');
+            header('Location: ' . appUrl('index.php'));
             exit;
         }
         
@@ -40,7 +40,7 @@ class UserProfileController {
         
         if (!$user) {
             $_SESSION['error'] = 'Không tìm thấy thông tin người dùng';
-            header('Location: /iso2/index.php');
+            header('Location: ' . appUrl('index.php'));
             exit;
         }
         
@@ -55,7 +55,7 @@ class UserProfileController {
         requireAuth();
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /iso2/profile.php');
+            header('Location: ' . appUrl('profile.php'));
             exit;
         }
         
@@ -64,7 +64,7 @@ class UserProfileController {
         
         if (!$user) {
             $_SESSION['error'] = 'Không tìm thấy thông tin người dùng';
-            header('Location: /iso2/index.php');
+            header('Location: ' . appUrl('index.php'));
             exit;
         }
         
@@ -85,7 +85,7 @@ class UserProfileController {
         
         if (!empty($errors)) {
             $_SESSION['errors'] = $errors;
-            header('Location: /iso2/profile.php?action=edit');
+            header('Location: ' . appUrl('profile.php?action=edit'));
             exit;
         }
         
@@ -103,7 +103,7 @@ class UserProfileController {
             $_SESSION['error'] = 'Có lỗi khi cập nhật thông tin';
         }
         
-        header('Location: /iso2/profile.php');
+        header('Location: ' . appUrl('profile.php'));
         exit;
     }
     
@@ -114,7 +114,7 @@ class UserProfileController {
         requireAuth();
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /iso2/profile.php');
+            header('Location: ' . appUrl('profile.php'));
             exit;
         }
         
@@ -123,7 +123,7 @@ class UserProfileController {
         
         if (!$user) {
             $_SESSION['error'] = 'Không tìm thấy thông tin người dùng';
-            header('Location: /iso2/index.php');
+            header('Location: ' . appUrl('index.php'));
             exit;
         }
         
@@ -160,18 +160,21 @@ class UserProfileController {
         
         if (!empty($errors)) {
             $_SESSION['errors'] = $errors;
-            header('Location: /iso2/profile.php?action=edit');
+            header('Location: ' . appUrl('profile.php?action=edit'));
             exit;
         }
         
         // Cập nhật mật khẩu (lưu plaintext)
         if ($this->userModel->updatePassword($userId, $newPassword)) {
+            // Vô hiệu hóa các phiên "ghi nhớ đăng nhập" cũ
+            $this->userModel->clearRememberToken((int)$userId);
+            setRememberCookie('', time() - 3600);
             $_SESSION['success'] = 'Thay đổi mật khẩu thành công';
         } else {
             $_SESSION['error'] = 'Có lỗi khi thay đổi mật khẩu';
         }
         
-        header('Location: /iso2/profile.php');
+        header('Location: ' . appUrl('profile.php'));
         exit;
     }
 }

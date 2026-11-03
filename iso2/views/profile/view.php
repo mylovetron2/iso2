@@ -20,7 +20,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         </p>
                     </div>
                 </div>
-                <a href="/iso2/profile.php?action=edit" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition-colors">
+                <a href="<?php echo appUrl('profile.php?action=edit'); ?>" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition-colors">
                     <i class="fas fa-edit mr-2"></i>Chỉnh sửa
                 </a>
             </div>
@@ -122,7 +122,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <p class="font-semibold text-gray-900">Mật khẩu</p>
                     <p class="text-sm text-gray-500 mt-1">••••••••</p>
                 </div>
-                <a href="/iso2/profile.php?action=edit#change-password" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                <a href="<?php echo appUrl('profile.php?action=edit#change-password'); ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
                     <i class="fas fa-key mr-2"></i>Đổi mật khẩu
                 </a>
             </div>
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Footer Actions -->
         <div class="border-t border-gray-200 px-6 py-4 bg-gray-50">
-            <a href="/iso2/index.php" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-semibold">
+            <a href="<?php echo appUrl('index.php'); ?>" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-semibold">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại trang chủ
             </a>
         </div>

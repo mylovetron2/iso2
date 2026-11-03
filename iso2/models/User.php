@@ -55,9 +55,10 @@ class User extends BaseModel {
             // Nếu lỗi thì bỏ qua, có thể cột đã tồn tại
         }
         
+        // Chỉ lưu hash của token; token gốc nằm trong cookie của trình duyệt
         $sql = "UPDATE users SET remember_token = ? WHERE stt = ?";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$token, $userStt]);
+        return $stmt->execute([hash('sha256', $token), $userStt]);
     }
     
     public function findByRememberToken(string $token): array|false {
@@ -71,7 +72,11 @@ class User extends BaseModel {
             return false;
         }
         
-        $stmt = $this->query("SELECT * FROM users WHERE remember_token = ?", [$token]);
+        if ($token === '') {
+            return false;
+        }
+        
+        $stmt = $this->query("SELECT * FROM users WHERE remember_token = ?", [hash('sha256', $token)]);
         return $stmt->fetch();
     }
     

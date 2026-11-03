@@ -25,7 +25,7 @@ try {
                 throw new Exception('Method not allowed');
             }
 
-            if (!hasPermission('hososcbd.edit')) {
+            if (!hasPermission(PERMISSION_HOSOSCBD_PAUSE)) {
                 throw new Exception('Không có quyền thực hiện');
             }
 
@@ -66,7 +66,7 @@ try {
                 throw new Exception('Method not allowed');
             }
 
-            if (!hasPermission('hososcbd.edit')) {
+            if (!hasPermission(PERMISSION_HOSOSCBD_PAUSE)) {
                 throw new Exception('Không có quyền thực hiện');
             }
 

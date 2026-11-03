@@ -33,7 +33,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-info-circle mr-2 text-blue-600"></i>Thông tin cơ bản
                 </h2>
                 
-                <form method="POST" action="/iso2/profile.php?action=update" class="space-y-4">
+                <form method="POST" action="<?php echo appUrl('profile.php?action=update'); ?>" class="space-y-4">
                     <!-- Username (Read-only) -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -71,7 +71,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                             <i class="fas fa-save mr-2"></i>Lưu thay đổi
                         </button>
-                        <a href="/iso2/profile.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-center transition-colors">
+                        <a href="<?php echo appUrl('profile.php'); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-center transition-colors">
                             <i class="fas fa-times mr-2"></i>Hủy
                         </a>
                     </div>
@@ -84,7 +84,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-key mr-2 text-blue-600"></i>Đổi mật khẩu
                 </h2>
                 
-                <form method="POST" action="/iso2/profile.php?action=change_password" class="space-y-4">
+                <form method="POST" action="<?php echo appUrl('profile.php?action=change_password'); ?>" class="space-y-4">
                     <!-- Current Password -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -127,7 +127,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                             <i class="fas fa-key mr-2"></i>Đổi mật khẩu
                         </button>
-                        <a href="/iso2/profile.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-center transition-colors">
+                        <a href="<?php echo appUrl('profile.php'); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-center transition-colors">
                             <i class="fas fa-times mr-2"></i>Hủy
                         </a>
                     </div>
@@ -137,7 +137,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
         <!-- Footer -->
         <div class="border-t border-gray-200 px-6 py-4 bg-gray-50">
-            <a href="/iso2/profile.php" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-semibold">
+            <a href="<?php echo appUrl('profile.php'); ?>" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-semibold">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại trang profile
             </a>
         </div>

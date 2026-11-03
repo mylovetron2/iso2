@@ -7,22 +7,10 @@ require_once '../../config/constants.php';
 $title = 'Login';
 $error = '';
 
-// Kiểm tra remember me cookie khi load trang
-if (!isLoggedIn() && isset($_COOKIE['remember_me'])) {
-    $token = $_COOKIE['remember_me'];
-    require_once '../../models/User.php';
-    $userModel = new User();
-    $user = $userModel->findByRememberToken($token);
-    if ($user) {
-        $_SESSION['user_id'] = $user['stt'];
-        $_SESSION['user_stt'] = $user['stt'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['user_name'] = $user['username'];
-        $_SESSION['user_email'] = $user['email'] ?? '';
-        $_SESSION['role'] = $user['role'] ?? 'user';
-        header('Location: ' . appUrl('kehoachbaoduongdinhky.php'));
-        exit;
-    }
+// Cookie "ghi nhớ đăng nhập" được isLoggedIn() tự khôi phục
+if (isLoggedIn()) {
+    header('Location: ' . getHomeUrl());
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,21 +22,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
     } else {
         if (login($username, $password)) {
-            // Xử lý remember me
             if ($remember) {
-                require_once '../../models/User.php';
                 $userModel = new User();
                 $user = $userModel->findByUsername($username);
                 if ($user) {
-                    // Tạo token ngẫu nhiên
-                    $token = bin2hex(random_bytes(32));
-                    // Lưu token vào database
-                    $userModel->saveRememberToken($user['stt'], $token);
-                    // Lưu cookie 30 ngày
-                    setcookie('remember_me', $token, time() + (30 * 24 * 60 * 60), '/', '', false, true);
+                    issueRememberToken($user);
                 }
             }
-            header('Location: ' . appUrl('kehoachbaoduongdinhky.php'));
+            header('Location: ' . getHomeUrl());
             exit;
         } else {
             $error = 'Tên đăng nhập hoặc mật khẩu không đúng!';

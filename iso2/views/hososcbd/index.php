@@ -375,31 +375,26 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php endif; ?>
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-center">
-                        <?php if (hasPermission('hososcbd.edit')): ?>
-                        <?php
-                        // Build URLs with current filter params
-                        $currentFilters = [];
-                        foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
-                            if (isset($_GET[$key]) && $_GET[$key] !== '') {
-                                $currentFilters[$key] = $_GET[$key];
-                            }
-                        }
-                        $filterQuery = !empty($currentFilters) ? '&' . http_build_query($currentFilters) : '';
-                        ?>
                         <div class="flex flex-wrap gap-1 justify-center">
+                            <?php if (hasPermission(PERMISSION_HOSOSCBD_EDIT)): ?>
+                            <?php
+                            // Build URLs with current filter params
+                            $currentFilters = [];
+                            foreach (['search', 'madv', 'nhomsc', 'trangthai', 'page'] as $key) {
+                                if (isset($_GET[$key]) && $_GET[$key] !== '') {
+                                    $currentFilters[$key] = $_GET[$key];
+                                }
+                            }
+                            $filterQuery = !empty($currentFilters) ? '&' . http_build_query($currentFilters) : '';
+                            ?>
                             <a href="hososcbd_repair_details.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
                                class="inline-flex items-center bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs" 
                                title="Thông tin sửa chữa & Thiết bị đo">
                                 <i class="fas fa-wrench mr-1"></i>
                                 <span class="hidden sm:inline">SC</span>
                             </a>
-                            <a href="hososcbd_congviec.php?id=<?php echo $item['stt']; ?><?php echo $filterQuery; ?>" 
-                               class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" 
-                               title="Công việc sửa chữa">
-                                <i class="fas fa-tasks mr-1"></i>
-                                <span class="hidden sm:inline">CV</span>
-                            </a>
-                            
+                            <?php endif; ?>
+                            <?php if (hasPermission(PERMISSION_HOSOSCBD_PAUSE)): ?>
                             <!-- Nút quản lý tạm dừng (gom tạm dừng/tiếp tục + lịch sử) -->
                             <?php
                             $isTamDung = !empty($item['is_tamdung']) && $item['is_tamdung'] == 1;
@@ -414,8 +409,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <i class="fas <?php echo $btnIcon; ?> mr-1"></i>
                                 <span class="hidden sm:inline"><?php echo $btnText; ?></span>
                             </button>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
