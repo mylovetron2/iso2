@@ -105,7 +105,12 @@ class KeHoachBaoDuongDinhKyController
             $sql .= " AND (donvi_lam_chinh IS NULL OR TRIM(donvi_lam_chinh) = '')";
             return;
         }
-        $values = $dv === 'ĐVLTH' ? ['ĐVLTH', 'DVLTH'] : [$dv];
+        $values = [$dv];
+        if ($dv === 'ĐVLTH') {
+            $values = ['ĐVLTH', 'DVLTH'];
+        } elseif ($dv === 'XSCTBĐVL') {
+            $values = ['XSCTBĐVL', 'XSCTBDVL', 'CNM', 'RDNGA'];
+        }
         $in = [];
         foreach ($values as $i => $value) {
             $in[] = ':donvi_chinh' . $i;
@@ -114,10 +119,40 @@ class KeHoachBaoDuongDinhKyController
         $sql .= " AND TRIM(donvi_lam_chinh) IN (" . implode(',', $in) . ")";
     }
 
+    /**
+     * Lọc theo đơn vị làm phụ (GET donvi_phu). '__none__' = chưa chọn đơn vị.
+     */
+    private function applyDonViPhuFilter(string &$sql, array &$params): void
+    {
+        $dv = trim((string)($_GET['donvi_phu'] ?? ''));
+        if ($dv === '') {
+            return;
+        }
+        if ($dv === '__none__') {
+            $sql .= " AND (donvi_lam_phu IS NULL OR TRIM(donvi_lam_phu) = '')";
+            return;
+        }
+        $values = [$dv];
+        if ($dv === 'ĐVLTH') {
+            $values = ['ĐVLTH', 'DVLTH'];
+        } elseif ($dv === 'XSCTBĐVL') {
+            $values = ['XSCTBĐVL', 'XSCTBDVL', 'CNM', 'RDNGA'];
+        }
+        $in = [];
+        foreach ($values as $i => $value) {
+            $in[] = ':donvi_phu' . $i;
+            $params[':donvi_phu' . $i] = $value;
+        }
+        $sql .= " AND TRIM(donvi_lam_phu) IN (" . implode(',', $in) . ")";
+    }
+
     private function getDonViChinhLabel(): string
     {
         $value = trim((string)($_GET['donvi_chinh'] ?? ''));
-        return $value === '__none__' ? 'Chưa chọn' : $value;
+        if ($value === '__none__') {
+            return 'Chưa chọn';
+        }
+        return in_array(mb_strtoupper($value, 'UTF-8'), ['CNM', 'RDNGA'], true) ? 'XSCTBĐVL' : $value;
     }
 
     /**
@@ -155,6 +190,7 @@ class KeHoachBaoDuongDinhKyController
             // Lấy danh sách các năm có dữ liệu
             $years = $this->getAvailableYears();
             $donviChinhOptions = $this->getAvailableDonViChinh($nam);
+            $donviPhuOptions = $this->getAvailableDonViChinh($nam, 'donvi_lam_phu');
             
             require_once __DIR__ . '/../views/kehoachbaoduongdinhky/index.php';
         } catch (Exception $e) {
@@ -1079,6 +1115,7 @@ class KeHoachBaoDuongDinhKyController
         $params = [':nam' => $nam];
         $this->applyDonViFilter($sql, $params);
         $this->applyDonViChinhFilter($sql, $params);
+        $this->applyDonViPhuFilter($sql, $params);
 
         // Lọc theo thiết bị ID cụ thể
         if ($thietbi_id > 0) {
@@ -1197,6 +1234,7 @@ class KeHoachBaoDuongDinhKyController
         $params = [':nam' => $nam];
         $this->applyDonViFilter($sql, $params);
         $this->applyDonViChinhFilter($sql, $params);
+        $this->applyDonViPhuFilter($sql, $params);
 
         if ($thietbi_id > 0) {
             $sql .= " AND thietbi_id = :thietbi_id";
@@ -1259,6 +1297,7 @@ class KeHoachBaoDuongDinhKyController
         $params = [':nam' => $nam];
         $this->applyDonViFilter($baseWhere, $params);
         $this->applyDonViChinhFilter($baseWhere, $params);
+        $this->applyDonViPhuFilter($baseWhere, $params);
 
         if ($thietbi_id > 0) {
             $baseWhere .=  " AND thietbi_id = :thietbi_id";
@@ -1490,19 +1529,27 @@ class KeHoachBaoDuongDinhKyController
     }
 
     /**
-     * Các giá trị ĐV chính đang có trong dữ liệu của năm (DVLTH gộp vào ĐVLTH)
+     * Các giá trị ĐV chính đang có trong dữ liệu của năm (DVLTH gộp vào ĐVLTH; CNM, RDNGA gộp vào XSCTBĐVL)
      */
-    private function getAvailableDonViChinh(int $nam): array
+    private function getAvailableDonViChinh(int $nam, string $column = 'donvi_lam_chinh'): array
     {
-        $sql = "SELECT DISTINCT TRIM(donvi_lam_chinh) FROM ke_hoach_bao_duong_dinh_ky_iso
-                WHERE nam = :nam AND donvi_lam_chinh IS NOT NULL AND TRIM(donvi_lam_chinh) <> ''";
+        if (!in_array($column, ['donvi_lam_chinh', 'donvi_lam_phu'], true)) {
+            $column = 'donvi_lam_chinh';
+        }
+        $sql = "SELECT DISTINCT TRIM($column) FROM ke_hoach_bao_duong_dinh_ky_iso
+                WHERE nam = :nam AND $column IS NOT NULL AND TRIM($column) <> ''";
         $params = [':nam' => $nam];
         $this->applyDonViFilter($sql, $params);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $values = [];
         foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $value) {
-            $values[] = $value === 'DVLTH' ? 'ĐVLTH' : $value;
+            if ($value === 'DVLTH') {
+                $value = 'ĐVLTH';
+            } elseif (in_array(mb_strtoupper($value, 'UTF-8'), ['CNM', 'RDNGA', 'XSCTBDVL'], true)) {
+                $value = 'XSCTBĐVL';
+            }
+            $values[] = $value;
         }
         $values = array_values(array_unique($values));
         sort($values, SORT_NATURAL | SORT_FLAG_CASE);
@@ -1572,15 +1619,15 @@ class KeHoachBaoDuongDinhKyController
             }
             $report = buildBaoDuongReport($plansWithExecution, (int)$qui);
 
+            $donviChinh = $this->getDonViChinhLabel();
             if ($this->isAdmin()) {
-                $reportUnit = 'Tất cả bộ phận';
+                $reportUnit = $donviChinh !== '' ? $donviChinh : 'Tất cả bộ phận';
             } else {
                 $scope = $this->getMadvScope();
                 $reportUnit = $scope === [] ? 'Chưa xác định' : implode(', ', $scope);
-            }
-            $donviChinh = $this->getDonViChinhLabel();
-            if ($donviChinh !== '') {
-                $reportUnit .= ' - Bộ phận thực hiện chính: ' . $donviChinh;
+                if ($donviChinh !== '') {
+                    $reportUnit .= ' - Bộ phận thực hiện chính: ' . $donviChinh;
+                }
             }
 
             require __DIR__ . '/../views/kehoachbaoduongdinhky/print_thongke.php';

@@ -348,6 +348,19 @@ function getPrefillValue($field, $default = '') {
     background-color: #f9fafb;
 }
 
+/* Tránh dropdown tìm kiếm của Choices.js bị cắt bởi vùng cuộn của bảng */
+#deviceContainer > .overflow-x-auto {
+    overflow: visible;
+}
+.device-item .choices {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+.device-item .choices__list--dropdown {
+    z-index: 50;
+    min-width: 220px;
+}
+
 @media print {
     .border-gray-300 {
         border-color: #000 !important;
@@ -618,6 +631,7 @@ function populateVitriSelect() {
     console.log('Found vitri selects:', vitriSelects.length);
     
     vitriSelects.forEach((select, index) => {
+        if (select._choices) return;
         console.log(`Populating select #${index + 1}`);
         // Save current value
         const currentValue = select.value;
@@ -641,7 +655,47 @@ function populateVitriSelect() {
         if (currentValue) {
             select.value = currentValue;
         }
+
+        initVitriChoices(select);
     });
+}
+
+function removeAccents(str) {
+    return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+}
+
+// Cho phép gõ nhiều ký tự để tìm trong combobox "Máy từ đâu về xưởng" (không phân biệt dấu)
+function initVitriChoices(select) {
+    if (typeof Choices === 'undefined' || select._choices) return;
+
+    const options = Array.from(select.options)
+        .filter(o => o.value !== '')
+        .map(o => ({
+            value: o.value,
+            label: o.textContent,
+            selected: o.selected,
+            customProperties: { search: removeAccents(o.textContent) }
+        }));
+
+    const choices = new Choices(select, {
+        searchEnabled: true,
+        searchPlaceholderValue: 'Gõ để tìm...',
+        itemSelectText: '',
+        noResultsText: 'Không tìm thấy kết quả',
+        noChoicesText: 'Không có lựa chọn nào',
+        shouldSort: false,
+        searchResultLimit: 50,
+        searchFields: ['label', 'customProperties.search'],
+        fuseOptions: { includeScore: true, ignoreLocation: true, threshold: 0.3 },
+        position: 'bottom'
+    });
+
+    choices.setChoices(
+        [{ value: '', label: '-- Chọn --', placeholder: true, selected: !select.value }].concat(options),
+        'value', 'label', true
+    );
+
+    select._choices = choices;
 }
 
 // Load lo from lo_iso table

@@ -135,19 +135,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         $quarterField = "qui_{$quarter}_hoantat";
-                        $planStmt = $db->prepare("SELECT {$quarterField}
+                        // Thiết bị có nhiều dòng kế hoạch trong năm: ưu tiên dòng đang đánh dấu hoàn tất quí này
+                        $planStmt = $db->prepare("SELECT id, {$quarterField} AS completed
                             FROM ke_hoach_bao_duong_dinh_ky_iso
-                            WHERE thietbi_id = :tid AND nam = :nam");
+                            WHERE thietbi_id = :tid AND nam = :nam
+                            ORDER BY ({$quarterField} = 1) DESC, id
+                            LIMIT 1");
                         $planStmt->execute([':tid' => $tb['thietbi_id'], ':nam' => $year]);
-                        $quarterCompleted = $planStmt->fetchColumn();
-                        if ($quarterCompleted === false) {
+                        $plan = $planStmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$plan) {
                             throw new RuntimeException('Không tìm thấy kế hoạch BDDK cần bỏ đánh dấu.');
                         }
-                        if (!empty($quarterCompleted)) {
+                        if (!empty($plan['completed'])) {
                             $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso
                                 SET {$quarterField} = 0
-                                WHERE thietbi_id = :tid AND nam = :nam")
-                               ->execute([':tid' => $tb['thietbi_id'], ':nam' => $year]);
+                                WHERE id = :id")
+                               ->execute([':id' => $plan['id']]);
                         }
                     } elseif (!empty($pending['bddk_hoantat'])) {
                         $ngayth = $data['ngayth'] ?? '';
@@ -165,13 +168,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $quarter = (int)ceil($month / 3);
                                     $nam     = (int)date('Y', strtotime($ngayth));
                                     $hf      = "qui_{$quarter}_hoantat";
+                                    // Thiết bị có nhiều dòng kế hoạch trong năm: chỉ đánh dấu một dòng, ưu tiên dòng có kế hoạch ở quí này
                                     $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso
                                         SET $hf=1
                                         WHERE thietbi_id=:tid AND nam=:nam
                                           AND COALESCE(qui_1_hoantat, 0)=0
                                           AND COALESCE(qui_2_hoantat, 0)=0
                                           AND COALESCE(qui_3_hoantat, 0)=0
-                                          AND COALESCE(qui_4_hoantat, 0)=0")
+                                          AND COALESCE(qui_4_hoantat, 0)=0
+                                        ORDER BY (COALESCE(qui_{$quarter}, '') <> '') DESC, id
+                                        LIMIT 1")
                                        ->execute([':tid' => $tb['thietbi_id'], ':nam' => $nam]);
                                 }
                             }

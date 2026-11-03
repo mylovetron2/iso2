@@ -323,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                             $db = getDBConnection();
                             $hoantat_field = "qui_{$quarter}_hoantat";
                             
+                            // Thiết bị có nhiều dòng kế hoạch trong năm: chỉ đánh dấu một dòng, ưu tiên dòng có kế hoạch ở quí này
                             $sqlUpdate = "UPDATE ke_hoach_bao_duong_dinh_ky_iso 
                                           SET $hoantat_field = 1
                                           WHERE thietbi_id = :thietbi_id 
@@ -330,7 +331,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
                                             AND COALESCE(qui_1_hoantat, 0) = 0
                                             AND COALESCE(qui_2_hoantat, 0) = 0
                                             AND COALESCE(qui_3_hoantat, 0) = 0
-                                            AND COALESCE(qui_4_hoantat, 0) = 0";
+                                            AND COALESCE(qui_4_hoantat, 0) = 0
+                                          ORDER BY (COALESCE(qui_{$quarter}, '') <> '') DESC, id
+                                          LIMIT 1";
                             $stmtUpdate = $db->prepare($sqlUpdate);
                             $stmtUpdate->execute([
                                 ':thietbi_id' => $thietbi['thietbi_id'],

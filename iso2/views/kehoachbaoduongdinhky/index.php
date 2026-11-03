@@ -46,6 +46,7 @@ require_once __DIR__ . '/../layouts/header.php';
             if (isset($sapxep)) $exportUrl .= "&sapxep=" . urlencode($sapxep);
             if (!empty($thietbi_id_filter)) $exportUrl .= "&thietbi_id_filter=" . urlencode($thietbi_id_filter);
             if (!empty($_GET['donvi_chinh'])) $exportUrl .= "&donvi_chinh=" . urlencode($_GET['donvi_chinh']);
+            if (!empty($_GET['donvi_phu'])) $exportUrl .= "&donvi_phu=" . urlencode($_GET['donvi_phu']);
             ?>
             <a href="<?php echo $exportUrl; ?>" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-file-excel mr-1"></i> Xuất Excel
@@ -75,7 +76,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 </a>
             </div>
         <?php endif; ?>
-        <div class="grid grid-cols-1 md:grid-cols-9 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-10 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">Năm:</label>
                 <select name="nam" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
@@ -115,6 +116,18 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="" <?php echo $donviChinhFilter === '' ? 'selected' : ''; ?>>Tất cả</option>
                     <?php foreach (($donviChinhOptions ?? []) as $dvOpt): ?>
                         <option value="<?php echo htmlspecialchars($dvOpt); ?>" <?php echo $donviChinhFilter === $dvOpt ? 'selected' : ''; ?>><?php echo htmlspecialchars($dvOpt); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">ĐV phụ:</label>
+                <?php $donviPhuFilter = $_GET['donvi_phu'] ?? ''; ?>
+                <select name="donvi_phu" class="w-full border rounded px-3 py-2" onchange="this.form.submit()">
+                    <option value="" <?php echo $donviPhuFilter === '' ? 'selected' : ''; ?>>Tất cả</option>
+                    <option value="__none__" <?php echo $donviPhuFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
+                    <?php foreach (($donviPhuOptions ?? []) as $dvOpt): ?>
+                        <option value="<?php echo htmlspecialchars($dvOpt); ?>" <?php echo $donviPhuFilter === $dvOpt ? 'selected' : ''; ?>><?php echo htmlspecialchars($dvOpt); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

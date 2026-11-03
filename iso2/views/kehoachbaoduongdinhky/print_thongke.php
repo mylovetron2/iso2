@@ -14,6 +14,10 @@ $formatDate = static function ($value): string {
 $formatPercent = static function (int $count, int $total): string {
     return number_format($total > 0 ? $count * 100 / $total : 0, 2, ',', '.') . '%';
 };
+$displayDonVi = static function ($value): string {
+    $value = trim((string)$value);
+    return in_array(mb_strtoupper($value, 'UTF-8'), ['CNM', 'RDNGA'], true) ? 'XSCTBĐVL' : $value;
+};
 $statusInfo = [
     'truoc_han' => ['label' => 'Trước kế hoạch', 'color' => '#0d756b'],
     'dung_han' => ['label' => 'Đúng kế hoạch', 'color' => '#287c38'],
@@ -173,7 +177,7 @@ $total = $summary['total_plans'];
                     <td class="center"><?php echo $index + 1; ?></td>
                     <td><?php echo $escape($item['ten_thietbi'] ?? ''); ?></td>
                     <td class="center"><?php echo $escape($item['so_serial'] ?? ''); ?></td>
-                    <td class="center"><?php echo $escape($item['donvi_lam_chinh'] ?? ''); ?></td>
+                    <td class="center"><?php echo $escape($displayDonVi($item['donvi_lam_chinh'] ?? '')); ?></td>
                     <td class="center">
                         <?php echo $escape(implode(', ', $plannedLabels)); ?>
                         <?php if (count($plannedLabels) > 1 && $item['report_reference_quarter'] !== null): ?>
@@ -198,10 +202,5 @@ $total = $summary['total_plans'];
 </main>
 </td></tr></tbody>
 </table>
-<script>
-    window.addEventListener('load', function () {
-        window.print();
-    });
-</script>
 </body>
 </html>

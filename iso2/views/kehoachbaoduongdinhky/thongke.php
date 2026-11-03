@@ -24,33 +24,23 @@ require_once __DIR__ . '/../layouts/header.php';
                 </select>
             </form>
             
-            <!-- Export PDF Button -->
-            <a href="kehoachbaoduongdinhky.php?action=exportPdf&nam=<?php echo $nam; ?><?php 
-                echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '';
-                echo !empty($_GET['qui']) ? '&qui=' . urlencode($_GET['qui']) : '';
-                echo !empty($_GET['nhomsc']) ? '&nhomsc=' . urlencode($_GET['nhomsc']) : '';
-                echo isset($_GET['donvi_chinh']) && $_GET['donvi_chinh'] !== '' ? '&donvi_chinh=' . urlencode($_GET['donvi_chinh']) : '';
-            ?>" 
-               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
+            <!-- Export PDF Button (tạm vô hiệu hóa) -->
+            <span aria-disabled="true" title="Tính năng tạm thời vô hiệu hóa"
+               class="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm opacity-50 cursor-not-allowed select-none">
                 <i class="fas fa-file-pdf"></i>
                 <?php if (!empty($_GET['qui']) && in_array($_GET['qui'], ['1','2','3','4'], true)): ?>
                     PDF Từ đầu năm tới Q<?php echo (int)$_GET['qui']; ?>
                 <?php else: ?>
                     Xuất PDF
                 <?php endif; ?>
-            </a>
+            </span>
 
             <?php if (!empty($_GET['qui']) && in_array($_GET['qui'], ['1','2','3','4'], true)): ?>
-            <!-- Xuất PDF danh sách theo quý (không cộng dồn) -->
-            <a href="kehoachbaoduongdinhky.php?action=exportPdfDanhSachQuy&nam=<?php echo $nam; ?>&qui=<?php echo urlencode($_GET['qui']); ?><?php
-                echo !empty($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '';
-                echo !empty($_GET['nhomsc']) ? '&nhomsc=' . urlencode($_GET['nhomsc']) : '';
-                echo isset($_GET['donvi_chinh']) && $_GET['donvi_chinh'] !== '' ? '&donvi_chinh=' . urlencode($_GET['donvi_chinh']) : '';
-            ?>"
-               title="Chỉ liệt kê thiết bị có kế hoạch trong quý đã chọn (Trước hạn / Đúng hạn / Sau hạn / Chưa thực hiện)"
-               class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded flex items-center gap-2 text-sm">
+            <!-- Xuất PDF danh sách theo quý (tạm vô hiệu hóa) -->
+            <span aria-disabled="true" title="Tính năng tạm thời vô hiệu hóa"
+               class="bg-orange-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm opacity-50 cursor-not-allowed select-none">
                 <i class="fas fa-file-pdf"></i> PDF riêng Q<?php echo (int)$_GET['qui']; ?>
-            </a>
+            </span>
             <?php endif; ?>
 
             <?php
@@ -99,7 +89,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-calendar-alt text-blue-600"></i> Quý
                 </label>
-                <select name="qui" class="border rounded px-3 py-2 w-full">
+                <select name="qui" onchange="this.form.submit()" class="border rounded px-3 py-2 w-full">
                     <option value="1" <?php echo ($_GET['qui'] ?? '') === '1' ? 'selected' : ''; ?>>Quý 1</option>
                     <option value="2" <?php echo ($_GET['qui'] ?? '') === '2' ? 'selected' : ''; ?>>Quý 2</option>
                     <option value="3" <?php echo ($_GET['qui'] ?? '') === '3' ? 'selected' : ''; ?>>Quý 3</option>
@@ -111,13 +101,10 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-cogs text-blue-600"></i> Nhóm máy
                 </label>
-                <select name="nhomsc" class="border rounded px-3 py-2 w-full">
+                <select name="nhomsc" onchange="this.form.submit()" class="border rounded px-3 py-2 w-full">
                     <option value="">-- Tất cả --</option>
                     <option value="RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'RDNGA' ? 'selected' : ''; ?>>RDNGA</option>
                     <option value="CNC" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC' ? 'selected' : ''; ?>>CNM</option>
-                    <option value="CNC+RDNGA" <?php echo ($_GET['nhomsc'] ?? '') === 'CNC+RDNGA' ? 'selected' : ''; ?>>CNM + RDNGA</option>
-                    <option value="KTKT" <?php echo ($_GET['nhomsc'] ?? '') === 'KTKT' ? 'selected' : ''; ?>>KTKT</option>
-                    <option value="TV" <?php echo ($_GET['nhomsc'] ?? '') === 'TV' ? 'selected' : ''; ?>>TV</option>
                 </select>
             </div>
 
@@ -126,7 +113,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <i class="fas fa-users text-blue-600"></i> Bộ phận thực hiện chính
                 </label>
                 <?php $donviChinhFilter = $_GET['donvi_chinh'] ?? ''; ?>
-                <select name="donvi_chinh" class="border rounded px-3 py-2 w-full">
+                <select name="donvi_chinh" onchange="this.form.submit()" class="border rounded px-3 py-2 w-full">
                     <option value="">-- Tất cả --</option>
                     <?php foreach ($donviChinhOptions as $donviOption): ?>
                         <option value="<?php echo htmlspecialchars($donviOption, ENT_QUOTES, 'UTF-8'); ?>"

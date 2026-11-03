@@ -260,10 +260,6 @@ if (!empty($item['hoso'])) {
                         <p class="font-semibold mt-1 text-gray-900"><?php echo htmlspecialchars($item['nhomsc']); ?></p>
                     </div>
                     <div>
-                        <label class="text-gray-600 text-sm font-semibold">Ngày bắt đầu TT:</label>
-                        <p class="font-semibold mt-1 text-gray-900"><?php echo $item['ngaybdtt'] ? date('d/m/Y', strtotime($item['ngaybdtt'])) : '-'; ?></p>
-                    </div>
-                    <div>
                         <label class="text-gray-600 text-sm font-semibold">Ngày thực hiện:</label>
                         <p class="font-semibold mt-1 text-gray-900"><?php echo $item['ngayth'] ? date('d/m/Y', strtotime($item['ngayth'])) : '-'; ?></p>
                     </div>

@@ -16,8 +16,10 @@ declare(strict_types=1);
  *   - Thiết bị: mavt = Ký mã hiệu (thiếu thì S/N, thiếu nữa thì tên), somay = S/N (thiếu thì lấy Ký mã hiệu, thiếu nữa thì 'N/A'), model = ''.
  *   - Kế hoạch: đơn vị làm chính = KHI, đơn vị làm phụ để trống, nhomsc để trống.
  *     Quí được suy ra từ tháng được tô màu (T1-3 -> qui_1, T4-6 -> qui_2, T7-9 -> qui_3, T10-12 -> qui_4),
- *     mỗi quí có ít nhất một tháng được đánh dấu lưu 'TO'. Dòng "Kiểm định khi cần thiết" không có quí.
- *   - Chạy lại an toàn: thiết bị đã có thì dùng lại, dòng kế hoạch đã có (cùng năm + thiết bị) thì bỏ qua.
+ *     mỗi quí có ít nhất một tháng được đánh dấu là một dòng kế hoạch riêng (lưu 'TO'), nên thiết bị có 2 đợt trong
+ *     năm sẽ có 2 dòng. Dòng "Kiểm định khi cần thiết" không có quí.
+ *   - Chạy lại an toàn: thiết bị đã có thì dùng lại, quí đã có dòng kế hoạch (cùng năm + thiết bị) thì bỏ qua.
+ *     Dòng cũ do chính import này tạo mà gộp nhiều quí sẽ được tách thành mỗi quí một dòng.
  *
  * Xóa file này khỏi hosting sau khi import xong.
  */
@@ -109,6 +111,18 @@ function quartersFromMonths(array $months): array
     return $quarters;
 }
 
+/** Các quí (1-4) đang có kế hoạch trong một dòng kế hoạch. */
+function plannedQuarters(array $plan): array
+{
+    $quarters = [];
+    for ($q = 1; $q <= 4; $q++) {
+        if (trim((string)($plan["qui_$q"] ?? '')) !== '') {
+            $quarters[] = $q;
+        }
+    }
+    return $quarters;
+}
+
 function fitLength(string $value, int $max): string
 {
     return ($max > 0 && strlen($value) > $max) ? mb_strcut($value, 0, $max) : $value;
@@ -165,14 +179,14 @@ function runImport(array $opts): array
         'INSERT INTO thietbi_iso (mavt, tenvt, somay, model, homay, dienap, thongtincb, loaidau, mucdau, madv, bdtime, ngayktsd, tlkt, hosomay, mamay)
          VALUES (:mavt, :tenvt, :somay, :model, :homay, :dienap, :thongtincb, :loaidau, :mucdau, :madv, :bdtime, :ngayktsd, :tlkt, :hosomay, :mamay)'
     );
-    $findPlan = $db->prepare('SELECT id FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = ? AND thietbi_id = ?');
+    $findPlans = $db->prepare('SELECT * FROM ke_hoach_bao_duong_dinh_ky_iso WHERE nam = ? AND thietbi_id = ? ORDER BY id');
     $insertPlan = $db->prepare(
         'INSERT INTO ke_hoach_bao_duong_dinh_ky_iso
          (thietbi_id, nam, ten_thietbi, so_serial, nhomsc, qui_1, qui_2, qui_3, qui_4, donvi_lam_chinh, donvi_lam_phu, ghi_chu, created_by)
          VALUES (:thietbi_id, :nam, :ten_thietbi, :so_serial, :nhomsc, :qui_1, :qui_2, :qui_3, :qui_4, :donvi_lam_chinh, :donvi_lam_phu, :ghi_chu, :created_by)'
     );
 
-    $stat = ['device_new' => 0, 'device_reuse' => 0, 'plan_new' => 0, 'plan_skip' => 0];
+    $stat = ['device_new' => 0, 'device_reuse' => 0, 'plan_new' => 0, 'plan_skip' => 0, 'plan_split' => 0];
     $usedKeys = [];
 
     $db->beginTransaction();
@@ -249,50 +263,105 @@ function runImport(array $opts): array
                 $deviceNote = $apply ? "thêm mới (stt=$stt)" : 'sẽ thêm mới';
             }
 
-            $qui = ['', '', '', ''];
-            foreach (quartersFromMonths($r['months']) as $q) {
-                $qui[$q - 1] = 'TO';
-            }
-            $planParams = [
+            $quiBlank = ['qui_1' => '', 'qui_2' => '', 'qui_3' => '', 'qui_4' => ''];
+            $planBase = array_merge([
                 'thietbi_id' => $stt, 'nam' => $nam,
                 'ten_thietbi' => fitLength($tenvt, $planLen['ten_thietbi']),
                 'so_serial' => fitLength($somay, $planLen['so_serial']),
                 'nhomsc' => '',
-                'qui_1' => $qui[0], 'qui_2' => $qui[1], 'qui_3' => $qui[2], 'qui_4' => $qui[3],
+            ], $quiBlank, [
                 'donvi_lam_chinh' => $madv, 'donvi_lam_phu' => '',
                 'ghi_chu' => fitLength($r['note'], $planLen['ghi_chu']), 'created_by' => CREATED_BY,
-            ];
-            $planExists = false;
+            ]);
+            $bind = fn(array $params): array => array_combine(array_map(fn($k) => ":$k", array_keys($params)), $params);
+
+            $existingPlans = [];
             if ($stt > 0) {
-                $findPlan->execute([$nam, $stt]);
-                $planExists = (bool)$findPlan->fetchColumn();
-            }
-            if ($planExists) {
-                $stat['plan_skip']++;
-                $planNote = 'đã có trong kế hoạch, bỏ qua';
-                if ($legacy) {
-                    if ($apply) {
-                        $db->prepare('UPDATE ke_hoach_bao_duong_dinh_ky_iso SET so_serial = ? WHERE nam = ? AND thietbi_id = ?')
-                            ->execute([$planParams['so_serial'], $nam, $stt]);
-                    }
-                    $planNote = 'đã có trong kế hoạch, cập nhật so_serial';
+                if ($legacy && $apply) {
+                    $db->prepare('UPDATE ke_hoach_bao_duong_dinh_ky_iso SET so_serial = ? WHERE nam = ? AND thietbi_id = ?')
+                        ->execute([$planBase['so_serial'], $nam, $stt]);
                 }
-            } else {
+                $findPlans->execute([$nam, $stt]);
+                $existingPlans = $findPlans->fetchAll();
+            }
+
+            // Mỗi quí là một kế hoạch riêng: [quí, tham số hiển thị, ghi chú kết quả]
+            $planOut = [];
+            $covered = [];
+            foreach ($existingPlans as $p) {
+                $planned = plannedQuarters($p);
+                $shown = fn(array $row, ?int $q): array => array_merge(
+                    $planBase, array_intersect_key($row, $planBase), $quiBlank, $q ? ["qui_$q" => (string)$row["qui_$q"]] : [],
+                    $legacy ? ['so_serial' => $planBase['so_serial']] : []
+                );
+                if (count($planned) <= 1) {
+                    foreach ($planned as $q) {
+                        $covered[$q] = true;
+                    }
+                    $stat['plan_skip']++;
+                    $planOut[] = [$planned[0] ?? 0, $shown($p, $planned[0] ?? null), 'đã có trong kế hoạch, bỏ qua'];
+                    continue;
+                }
+                if ($p['created_by'] !== CREATED_BY) {
+                    foreach ($planned as $q) {
+                        $covered[$q] = true;
+                    }
+                    $warnings[] = "{$r['stt']}: kế hoạch id={$p['id']} có nhiều quí nhưng không do import này tạo, không tách";
+                    continue;
+                }
+
+                // Dòng import cũ gộp nhiều quí -> giữ quí đã hoàn tất (hoặc quí nhỏ nhất), tách các quí còn lại thành dòng mới
+                $flagged = array_values(array_filter($planned, fn($q) => !empty($p["qui_{$q}_hoantat"])));
+                $keep = $flagged[0] ?? $planned[0];
+                $covered[$keep] = true;
+                $stat['plan_skip']++;
+                $planOut[] = [$keep, $shown($p, $keep), "giữ quí $keep (id={$p['id']}), tách các quí còn lại"];
+                foreach ($planned as $q) {
+                    if ($q === $keep) {
+                        continue;
+                    }
+                    $covered[$q] = true;
+                    $split = array_merge($shown($p, $q), ['created_by' => CREATED_BY]);
+                    if ($apply) {
+                        $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso SET qui_$q = '', qui_{$q}_hoantat = 0 WHERE id = ?")->execute([$p['id']]);
+                        $insertPlan->execute($bind($split));
+                        if (!empty($p["qui_{$q}_hoantat"])) {
+                            $db->prepare("UPDATE ke_hoach_bao_duong_dinh_ky_iso SET qui_{$q}_hoantat = 1 WHERE id = ?")->execute([(int)$db->lastInsertId()]);
+                        }
+                    }
+                    $stat['plan_split']++;
+                    $planOut[] = [$q, $split, $apply ? "đã tách từ id={$p['id']}" : "sẽ tách từ id={$p['id']}"];
+                }
+            }
+
+            $wanted = quartersFromMonths($r['months']);
+            if ($wanted === [] && $existingPlans === []) {
+                $wanted = [0];
+            }
+            foreach ($wanted as $q) {
+                if ($q > 0 && isset($covered[$q])) {
+                    continue;
+                }
+                $params = $q > 0 ? array_merge($planBase, ["qui_$q" => 'TO']) : $planBase;
                 if ($apply) {
-                    $insertPlan->execute(array_combine(array_map(fn($k) => ":$k", array_keys($planParams)), $planParams));
+                    $insertPlan->execute($bind($params));
                 }
                 $stat['plan_new']++;
-                $planNote = $apply ? 'đã thêm' : 'sẽ thêm mới';
+                $planOut[] = [$q, $params, $apply ? 'đã thêm' : 'sẽ thêm mới'];
             }
 
             // Khóa liên kết: ke_hoach_bao_duong_dinh_ky_iso.thietbi_id = thietbi_iso.stt (thiết bị mới chưa có stt khi chạy thử)
             $link = $stt > 0 ? (string)$stt : 'mới #' . $r['stt'];
-            $monthText = $r['months'] ? implode(',', $r['months']) : '-';
             $tables['thietbi_iso']['rows'][] = array_merge([$r['stt'], $link], array_values($deviceParams), [$deviceNote]);
-            $planParams['thietbi_id'] = $link;
-            $tables['ke_hoach_bao_duong_dinh_ky_iso']['rows'][] = array_merge([$r['stt'], $monthText], array_values($planParams), [$planNote]);
             $tables['thietbi_iso']['head'] ??= array_merge(['STT (bảng)', 'stt'], array_keys($deviceParams), ['Kết quả']);
-            $tables['ke_hoach_bao_duong_dinh_ky_iso']['head'] ??= array_merge(['STT (bảng)', 'Tháng'], array_keys($planParams), ['Kết quả']);
+            foreach ($planOut as [$q, $params, $note]) {
+                $params['thietbi_id'] = $link;
+                $months = array_filter($r['months'], fn($m) => $q > 0 && (int)ceil($m / 3) === $q);
+                $tables['ke_hoach_bao_duong_dinh_ky_iso']['rows'][] = array_merge(
+                    [$r['stt'], $months ? implode(',', $months) : '-'], array_values($params), [$note]
+                );
+                $tables['ke_hoach_bao_duong_dinh_ky_iso']['head'] ??= array_merge(['STT (bảng)', 'Tháng'], array_keys($params), ['Kết quả']);
+            }
         }
 
         $apply ? $db->commit() : $db->rollBack();
@@ -305,7 +374,7 @@ function runImport(array $opts): array
 
     $after = [];
     $after[] = 'Tổng: ' . count($rows) . " dòng | thiết bị mới: {$stat['device_new']}, dùng lại: {$stat['device_reuse']}"
-        . " | kế hoạch mới: {$stat['plan_new']}, bỏ qua: {$stat['plan_skip']}";
+        . " | kế hoạch mới: {$stat['plan_new']}, tách: {$stat['plan_split']}, bỏ qua: {$stat['plan_skip']}";
     foreach ($warnings as $w) {
         $after[] = "Cảnh báo - $w";
     }
