@@ -85,18 +85,19 @@ function getPrefillValue($field, $default = '') {
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">
                         Số phiếu
-                        <?php if (!empty($prefillPhieuValue)): ?>
-                            <span class="text-green-600 text-xs"><i class="fas fa-lock"></i> Đang thêm vào phiếu này</span>
-                        <?php endif; ?>
+                        <span class="text-gray-500 text-xs"><i class="fas fa-lock"></i> Không thể chỉnh sửa</span>
                     </label>
+                    <?php if (empty($prefillPhieuValue)): ?>
+                        <input type="hidden" name="phieu_mode" value="new">
+                        <input type="hidden" name="phieu_suggested" value="<?php echo htmlspecialchars($_POST['phieu_suggested'] ?? $nextPhieu); ?>">
+                    <?php endif; ?>
                     <input type="text" name="phieu" value="<?php echo isset($_POST['phieu']) ? htmlspecialchars($_POST['phieu']) : htmlspecialchars(!empty($prefillPhieuValue) ? $prefillPhieuValue : $nextPhieu); ?>"
-                           placeholder="Tự động: <?php echo $nextPhieu; ?>"
-                           <?php echo !empty($prefillPhieuValue) ? 'readonly' : ''; ?>
-                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo !empty($prefillPhieuValue) ? 'bg-green-50 border-green-400 font-semibold text-green-800' : ''; ?>">
+                           readonly
+                           class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-700 cursor-not-allowed <?php echo !empty($prefillPhieuValue) ? 'border-green-400 font-semibold text-green-800' : ''; ?>">
                     <?php if (!empty($prefillPhieuValue)): ?>
                         <p class="text-xs text-green-600 mt-1"><i class="fas fa-check-circle"></i> Thiết bị sẽ được thêm vào phiếu <strong><?php echo htmlspecialchars($prefillPhieuValue); ?></strong></p>
                     <?php else: ?>
-                        <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Để trống sẽ tự động sinh số tiếp theo</p>
+                        <p class="text-xs text-gray-500 mt-1"><i class="fas fa-info-circle"></i> Số phiếu được hệ thống tự động cấp khi lưu</p>
                     <?php endif; ?>
                 </div>
                 <div>

@@ -476,6 +476,26 @@ class HoSoSCBD extends BaseModel
         return str_pad((string)$nextNumber, 4, '0', STR_PAD_LEFT);
     }
     
+    public function phieuExists(string $phieu): bool
+    {
+        $stmt = $this->query("SELECT 1 FROM {$this->table} WHERE phieu = ? LIMIT 1", [$phieu]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Khóa tuần tự hóa việc cấp số phiếu giữa các phiên (MySQL named lock, theo connection)
+     */
+    public function acquirePhieuLock(int $timeoutSeconds = 10): bool
+    {
+        $stmt = $this->query("SELECT GET_LOCK('hososcbd_phieu_number', ?)", [$timeoutSeconds]);
+        return (int)$stmt->fetchColumn() === 1;
+    }
+
+    public function releasePhieuLock(): void
+    {
+        $this->query("SELECT RELEASE_LOCK('hososcbd_phieu_number')");
+    }
+
     /**
      * Lấy index lớn nhất của hồ sơ trong một phiếu
      * Dùng để tính số thứ tự tiếp theo khi thêm thiết bị vào phiếu có sẵn

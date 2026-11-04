@@ -190,8 +190,30 @@ class HoSoScBdController
             }
 
             if (empty($errors)) {
+                $db = $this->model->getDb();
+                $phieuLocked = false;
+
+                // Khóa cấp số phiếu: tránh 2 người cùng lấy một số phiếu khi lưu đồng thời.
+                // Chỉ áp dụng cho phiếu mới (không phải thêm thiết bị vào phiếu có sẵn).
+                $isNewPhieuForm = ($_POST['phieu_mode'] ?? '') === 'new';
+                if (empty($commonData['phieu']) || $isNewPhieuForm) {
+                    $phieuLocked = $this->model->acquirePhieuLock();
+                    if (!$phieuLocked) {
+                        $errors[] = 'Hệ thống đang bận cấp số phiếu, vui lòng thử lại sau vài giây';
+                    }
+                }
+            }
+
+            if (empty($errors)) {
                 // Auto generate phieu number
                 if (empty($commonData['phieu'])) {
+                    $commonData['phieu'] = $this->model->getNextPhieuNumber();
+                } elseif (
+                    $isNewPhieuForm
+                    && $commonData['phieu'] === trim($_POST['phieu_suggested'] ?? '')
+                    && $this->model->phieuExists($commonData['phieu'])
+                ) {
+                    // Số gợi ý lúc mở form đã bị người khác dùng -> cấp số mới
                     $commonData['phieu'] = $this->model->getNextPhieuNumber();
                 }
                 
@@ -204,7 +226,6 @@ class HoSoScBdController
                 // Insert each device
                 $successCount = 0;
                 $createdDevices = []; // Store created devices info for batch logging
-                $db = $this->model->getDb();
 
                 // DDL (ALTER TABLE) gây implicit commit ở MySQL nên phải chạy trước khi mở transaction
                 $this->ensureGiaoViecKpiSchema($db);
@@ -250,7 +271,11 @@ class HoSoScBdController
                     }
 
                     $db->commit();
-                    
+                    if ($phieuLocked) {
+                        $this->model->releasePhieuLock();
+                        $phieuLocked = false;
+                    }
+
                     // Batch log after all devices created (much faster than logging each device)
                     if ($successCount > 0) {
                         $deviceList = array_map(function($d) {
@@ -276,6 +301,10 @@ class HoSoScBdController
                     error_log("HoSoScBd create error: " . $e->getMessage());
                     error_log("Data: " . print_r($data ?? [], true));
                     $errors[] = 'Lỗi cơ sở dữ liệu: ' . $e->getMessage();
+                } finally {
+                    if ($phieuLocked) {
+                        $this->model->releasePhieuLock();
+                    }
                 }
             }
 

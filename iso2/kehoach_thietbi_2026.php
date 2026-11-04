@@ -45,6 +45,153 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_toggle_lock'])) 
     exit;
 }
 
+// === HỒ SƠ ĐÍNH KÈM (ảnh, PDF) - lưu trong thư mục KDHC<năm kế hoạch> ===
+const KEHOACH_NAM = 2026;
+const KEHOACH_FILE_MAX_SIZE = 20 * 1024 * 1024;
+const KEHOACH_FILE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+
+function kehoachFileDir(): string {
+    return __DIR__ . '/uploads/KDHC' . KEHOACH_NAM;
+}
+
+function kehoachFileUrl(string $storedName): string {
+    return '/iso2/uploads/KDHC' . KEHOACH_NAM . '/' . rawurlencode($storedName);
+}
+
+// Tên file lưu: <stt>_<timestamp>_<tên gốc đã làm sạch>
+function kehoachListFiles(int $stt): array {
+    $files = [];
+    foreach (glob(kehoachFileDir() . '/' . $stt . '_*') ?: [] as $path) {
+        $base = basename($path);
+        if (!preg_match('/^' . $stt . '_(\d+)_(.+)$/', $base, $m)) {
+            continue;
+        }
+        $files[] = [
+            'name' => $base,
+            'original' => $m[2],
+            'url' => kehoachFileUrl($base),
+            'is_pdf' => strtolower(pathinfo($base, PATHINFO_EXTENSION)) === 'pdf',
+            'size' => filesize($path),
+            'time' => (int)$m[1],
+        ];
+    }
+    usort($files, fn($a, $b) => $a['time'] <=> $b['time']);
+    return $files;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_file_action'])) {
+    if (ob_get_level()) ob_clean();
+    header('Content-Type: application/json');
+
+    $fileAction = $_POST['ajax_file_action'];
+    $stt = (int)($_POST['stt'] ?? 0);
+    if ($stt <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Thiếu STT thiết bị']);
+        exit;
+    }
+
+    if ($fileAction === 'list') {
+        echo json_encode(['success' => true, 'files' => kehoachListFiles($stt)]);
+        exit;
+    }
+
+    if ($isLocked) {
+        echo json_encode(['success' => false, 'message' => 'Kế hoạch đang bị khóa!']);
+        exit;
+    }
+
+    if ($fileAction === 'upload') {
+        $dir = kehoachFileDir();
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+            echo json_encode(['success' => false, 'message' => 'Không tạo được thư mục lưu file']);
+            exit;
+        }
+
+        $uploaded = $_FILES['files'] ?? null;
+        if (!$uploaded || !is_array($uploaded['name'])) {
+            echo json_encode(['success' => false, 'message' => 'Chưa chọn file']);
+            exit;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $allowedMime = [
+            'jpg' => ['image/jpeg'], 'jpeg' => ['image/jpeg'], 'png' => ['image/png'],
+            'gif' => ['image/gif'], 'webp' => ['image/webp'], 'pdf' => ['application/pdf'],
+        ];
+        $saved = 0;
+        $errors = [];
+        foreach ($uploaded['name'] as $i => $origName) {
+            if ($uploaded['error'][$i] === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            if ($uploaded['error'][$i] !== UPLOAD_ERR_OK) {
+                $errors[] = "$origName: lỗi upload";
+                continue;
+            }
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+            if (!in_array($ext, KEHOACH_FILE_EXT, true)) {
+                $errors[] = "$origName: chỉ cho phép ảnh (jpg, png, gif, webp) và PDF";
+                continue;
+            }
+            if ($uploaded['size'][$i] > KEHOACH_FILE_MAX_SIZE) {
+                $errors[] = "$origName: vượt quá 20MB";
+                continue;
+            }
+            if (!in_array($finfo->file($uploaded['tmp_name'][$i]), $allowedMime[$ext], true)) {
+                $errors[] = "$origName: nội dung file không hợp lệ";
+                continue;
+            }
+            if ($ext !== 'pdf') {
+                try {
+                    $imageHelper = __DIR__ . '/includes/kehoach_image.php';
+                    if (!is_readable($imageHelper)) {
+                        throw new RuntimeException('Thiếu bộ xử lý ảnh. Vui lòng tải file includes/kehoach_image.php lên máy chủ.');
+                    }
+                    require_once $imageHelper;
+                    resizeKehoachImage($uploaded['tmp_name'][$i], $ext);
+                } catch (RuntimeException $e) {
+                    error_log('Plan image upload: ' . $e->getMessage());
+                    $errors[] = "$origName: " . $e->getMessage();
+                    continue;
+                }
+            }
+            $baseName = preg_replace('/[^A-Za-z0-9_.-]+/', '_', pathinfo($origName, PATHINFO_FILENAME));
+            $baseName = trim(substr($baseName, 0, 80), '._') ?: 'file';
+            $stored = $stt . '_' . time() . sprintf('%02d', $i) . '_' . $baseName . '.' . $ext;
+            if (move_uploaded_file($uploaded['tmp_name'][$i], $dir . '/' . $stored)) {
+                $saved++;
+                $logger->log('kehoach_kiemdinh_2026_files', 'INSERT', null, null,
+                    ['stt' => $stt, 'file' => $stored, 'nam_kehoach' => KEHOACH_NAM]);
+            } else {
+                $errors[] = "$origName: không lưu được file";
+            }
+        }
+        echo json_encode([
+            'success' => $saved > 0,
+            'message' => $saved > 0 ? "Đã tải lên $saved file" . ($errors ? '. Lỗi: ' . implode('; ', $errors) : '') : implode('; ', $errors ?: ['Chưa chọn file']),
+            'files' => kehoachListFiles($stt),
+        ]);
+        exit;
+    }
+
+    if ($fileAction === 'delete') {
+        $name = basename((string)($_POST['name'] ?? ''));
+        $path = kehoachFileDir() . '/' . $name;
+        if (!preg_match('/^' . $stt . '_\d+_[^\/\\\\]+$/', $name) || !is_file($path)) {
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy file']);
+            exit;
+        }
+        unlink($path);
+        $logger->log('kehoach_kiemdinh_2026_files', 'DELETE', null, null,
+            ['stt' => $stt, 'file' => $name, 'nam_kehoach' => KEHOACH_NAM]);
+        echo json_encode(['success' => true, 'message' => 'Đã xóa file', 'files' => kehoachListFiles($stt)]);
+        exit;
+    }
+
+    echo json_encode(['success' => false, 'message' => 'Hành động không hợp lệ']);
+    exit;
+}
+
 // Xử lý AJAX - Lưu từng thiết bị
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_save'])) {
     ob_clean();
@@ -659,6 +806,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             <th colspan="12" style="width: 30%;">Tháng</th>
                             <th rowspan="2" style="width: 6%;">Chủ sở hữu</th>
                             <th rowspan="2" style="width: 5%;">Đã KĐ</th>
+                            <th rowspan="2" style="width: 5%;">Hồ sơ</th>
                             <th rowspan="2" style="width: 5%; display: none;">Lưu</th>
                             <th rowspan="2" style="width: 4%; <?= $isLocked ? 'display:none;' : '' ?>" id="thDeleteCol">Xóa</th>
                         </tr>
@@ -671,7 +819,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                     <tbody>
                         <?php if (empty($thietbiList)): ?>
                             <tr>
-                                <td colspan="22" style="text-align: center; padding: 20px;">
+                                <td colspan="23" style="text-align: center; padding: 20px;">
                                     Không có thiết bị nào. Vui lòng thêm thiết bị vào hệ thống trước.
                                 </td>
                             </tr>
@@ -734,6 +882,17 @@ require_once __DIR__ . '/views/layouts/header.php';
                                     <?php else: ?>
                                         <span style="color: #999;">-</span>
                                     <?php endif; ?>
+                                </td>
+                                <td style="text-align: center;">
+                                    <?php $fileCount = count(kehoachListFiles((int)$tb['stt'])); ?>
+                                    <button type="button"
+                                            class="btn-files"
+                                            data-stt="<?= (int)$tb['stt'] ?>"
+                                            data-ten="<?= htmlspecialchars($tb['tenthietbi']) ?>"
+                                            onclick="openFilesModal(this)"
+                                            title="Hồ sơ đính kèm (ảnh, PDF)">
+                                        📎 <span class="file-count"><?= $fileCount ?></span>
+                                    </button>
                                 </td>
                                 <td style="text-align: center; display: none;">
                                     <button type="button" 
@@ -800,6 +959,114 @@ require_once __DIR__ . '/views/layouts/header.php';
         <?php endif; ?>
     </div>
     
+    <div id="filesModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:8px; padding:20px; width:640px; max-width:95vw; max-height:90vh; overflow:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:16px;">📎 Hồ sơ KDHC<?= 2026 ?>: <span id="filesModalTitle"></span></h3>
+                <button type="button" onclick="closeFilesModal()" style="border:none; background:none; font-size:22px; cursor:pointer;">×</button>
+            </div>
+            <div id="filesUploadBox" style="margin-bottom:12px; <?= $isLocked ? 'display:none;' : '' ?>">
+                <input type="file" id="filesInput" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,image/*,application/pdf">
+                <button type="button" onclick="uploadFiles()" style="padding:6px 14px; background:#28a745; color:#fff; border:none; border-radius:4px; cursor:pointer;">⬆ Tải lên</button>
+                <div style="font-size:12px; color:#666; margin-top:4px;">Ảnh (jpg, png, gif, webp) hoặc PDF, tối đa 20MB/file. Ảnh tự giảm cạnh dài tối đa 1920 px, không phóng to; JPEG/WebP nén chất lượng 85%, PNG/GIF giữ định dạng (GIF lưu ảnh tĩnh). PDF giữ nguyên.</div>
+            </div>
+            <div id="filesList"></div>
+        </div>
+    </div>
+
+    <script>
+        const FILES_LOCKED = <?= $isLocked ? 'true' : 'false' ?>;
+        let currentFilesStt = null;
+        let currentFilesBtn = null;
+
+        function filesRequest(formData) {
+            return fetch(window.location.pathname, { method: 'POST', body: formData }).then(r => r.json());
+        }
+
+        function openFilesModal(btn) {
+            currentFilesBtn = btn;
+            currentFilesStt = btn.getAttribute('data-stt');
+            document.getElementById('filesModalTitle').textContent = btn.getAttribute('data-ten');
+            document.getElementById('filesInput').value = '';
+            document.getElementById('filesList').textContent = 'Đang tải...';
+            document.getElementById('filesModal').style.display = 'flex';
+            const fd = new FormData();
+            fd.append('ajax_file_action', 'list');
+            fd.append('stt', currentFilesStt);
+            filesRequest(fd).then(d => renderFiles(d.files || []))
+                .catch(() => { document.getElementById('filesList').textContent = 'Lỗi tải danh sách file'; });
+        }
+
+        function closeFilesModal() {
+            document.getElementById('filesModal').style.display = 'none';
+        }
+
+        function renderFiles(files) {
+            const box = document.getElementById('filesList');
+            box.textContent = '';
+            if (currentFilesBtn) currentFilesBtn.querySelector('.file-count').textContent = files.length;
+            if (!files.length) {
+                box.textContent = 'Chưa có file nào.';
+                return;
+            }
+            files.forEach(f => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid #eee;';
+                const link = document.createElement('a');
+                link.href = f.url;
+                link.target = '_blank';
+                link.style.cssText = 'display:flex; align-items:center; gap:8px; flex:1; text-decoration:none; color:#1565c0; word-break:break-all;';
+                if (f.is_pdf) {
+                    link.append('📄 ' + f.original);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = f.url;
+                    img.style.cssText = 'width:48px; height:48px; object-fit:cover; border:1px solid #ddd;';
+                    link.append(img, f.original);
+                }
+                row.appendChild(link);
+                if (!FILES_LOCKED) {
+                    const del = document.createElement('button');
+                    del.type = 'button';
+                    del.textContent = '🗑️';
+                    del.style.cssText = 'border:none; background:none; cursor:pointer;';
+                    del.onclick = () => deleteFile(f.name, f.original);
+                    row.appendChild(del);
+                }
+                box.appendChild(row);
+            });
+        }
+
+        function uploadFiles() {
+            const input = document.getElementById('filesInput');
+            if (!input.files.length) {
+                alert('Vui lòng chọn file!');
+                return;
+            }
+            const fd = new FormData();
+            fd.append('ajax_file_action', 'upload');
+            fd.append('stt', currentFilesStt);
+            Array.from(input.files).forEach(f => fd.append('files[]', f));
+            filesRequest(fd).then(d => {
+                showToast(d.message, d.success ? 'success' : 'error');
+                if (d.files) renderFiles(d.files);
+                if (d.success) input.value = '';
+            }).catch(() => showToast('Lỗi tải file lên', 'error'));
+        }
+
+        function deleteFile(name, original) {
+            if (!confirm('Xóa file "' + original + '"?')) return;
+            const fd = new FormData();
+            fd.append('ajax_file_action', 'delete');
+            fd.append('stt', currentFilesStt);
+            fd.append('name', name);
+            filesRequest(fd).then(d => {
+                showToast(d.message, d.success ? 'success' : 'error');
+                if (d.files) renderFiles(d.files);
+            }).catch(() => showToast('Lỗi xóa file', 'error'));
+        }
+    </script>
+
     <script>
         // Save single equipment via AJAX
         function saveSingleEquipment(button) {
