@@ -23,6 +23,15 @@ Dựa trên file mô tả `hososcbd_iso_description.html` và code legacy `forms
 **Model:** `models/HoSoSCBD.php`
 **Routes:** `/hososcbd.php`
 
+**Ảnh/PDF đính kèm hồ sơ sửa chữa:**
+- Trên `hososcbd_repair_details.php?id=<ID>`, khu vực **Ảnh & PDF của hồ sơ** cho phép chọn nhiều file, xem ảnh/PDF và xóa từng file, độc lập với biểu mẫu lưu sửa chữa.
+- Lưu tại `uploads/SCBD/<ID hồ sơ>/`, không đổi thư mục khi sửa ngày thực hiện. Không cần bảng DB hoặc migration.
+- Cần quyền `hososcbd.view` để xem; quyền `hososcbd.edit` để thêm/xóa hồ sơ đang thực hiện. Hồ sơ có ngày kết thúc chỉ admin được thêm/xóa file.
+- Nhận JPG/JPEG, PNG, GIF, WebP, PDF tối đa 20MB/file. Ảnh giảm cạnh dài tối đa 1920 px, không phóng to; JPEG/WebP chất lượng 85%, PNG giữ trong suốt, GIF lưu ảnh tĩnh. PDF giữ nguyên.
+- Khi triển khai, tải cùng `hososcbd_repair_details.php`, `views/hososcbd/repair_details.php`, `includes/repair_attachments.php` và `includes/kehoach_image.php`. PHP cần GD/Fileinfo, quyền ghi thư mục upload và giới hạn `upload_max_filesize`/`post_max_size` phù hợp cho tổng dung lượng nhiều file.
+- Upload/xóa được ghi qua `ActivityLogger`; lỗi từng file được báo rõ, các file tải lên thành công vẫn được liệt kê.
+- Trên `thietbi.php?action=view&id=<ID thiết bị>`, các mục lịch sử sửa chữa/bảo dưỡng và kiểm định hiển thị ảnh thu nhỏ, liên kết PDF theo đúng ID hồ sơ. Cần quyền `hososcbd.view`; mở file qua trang hồ sơ có kiểm tra đăng nhập/quyền xem. Triển khai cùng `controllers/ThietBiController.php`, `views/thietbi/view.php`, `views/thietbi/history_attachments.php`.
+
 **Tìm kiếm và dữ liệu liên quan:**
 - Hồ sơ chưa liên kết với danh mục `thietbi_iso` vẫn được hiển thị trong kết quả tìm kiếm.
 - Chỉ truy vấn kế hoạch bảo dưỡng định kỳ khi kết quả có ID thiết bị liên kết, tránh SQL `IN ()` gây lỗi 500.

@@ -107,6 +107,11 @@ $allPermissions = [
     'mo.edit' => 'Sửa mỏ',
     'mo.delete' => 'Xóa mỏ',
     
+    'vitri.view' => 'Xem vị trí',
+    'vitri.create' => 'Tạo vị trí',
+    'vitri.edit' => 'Sửa vị trí',
+    'vitri.delete' => 'Xóa vị trí',
+    
     'hieuchuan.view' => 'Xem hiệu chuẩn/kiểm định',
     'hieuchuan.create' => 'Tạo hồ sơ hiệu chuẩn',
     'hieuchuan.edit' => 'Sửa hồ sơ hiệu chuẩn',
@@ -184,6 +189,7 @@ $permissionGroups = [
     'Phiếu bàn giao' => ['phieubangiao.view', 'phieubangiao.create', 'phieubangiao.edit', 'phieubangiao.delete', 'phieubangiao.approve'],
     'Quản lý Lô' => ['lo.view', 'lo.create', 'lo.edit', 'lo.delete'],
     'Quản lý Mỏ' => ['mo.view', 'mo.create', 'mo.edit', 'mo.delete'],
+    'Quản lý Vị trí' => ['vitri.view', 'vitri.create', 'vitri.edit', 'vitri.delete'],
     'Hiệu Chuẩn/Kiểm Định' => ['hieuchuan.view', 'hieuchuan.create', 'hieuchuan.edit', 'hieuchuan.delete'],
     'Kế hoạch Kiểm Định' => ['kehoach_kiemdinh.view', 'kehoach_kiemdinh.edit', 'kehoach_kiemdinh.export'],
     'Bảo dưỡng định kỳ' => ['kehoachbaoduong.view', 'kehoachbaoduong.create', 'kehoachbaoduong.edit', 'kehoachbaoduong.delete'],

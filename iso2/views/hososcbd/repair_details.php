@@ -35,6 +35,109 @@ if (!$item) {
     exit;
 }
 
+require_once __DIR__ . '/../../config/constants.php';
+$attachmentsError = '';
+$attachmentFiles = [];
+$canEditAttachments = false;
+$attachmentStore = null;
+$attachmentHelper = __DIR__ . '/../../includes/repair_attachments.php';
+$isAttachmentPost = $_SERVER['REQUEST_METHOD'] === 'POST'
+    && (isset($_GET['repair_attachment_api']) || isset($_POST['repair_attachment_action']));
+$isAttachmentRequest = $isAttachmentPost || isset($_GET['repair_attachment']);
+try {
+    if (!is_readable($attachmentHelper)) {
+        throw new RuntimeException('Thiếu file includes/repair_attachments.php trên máy chủ.');
+    }
+    require_once $attachmentHelper;
+    $attachmentStore = new RepairAttachments(__DIR__ . '/../../uploads/SCBD', $stt);
+    $canEditAttachments = canEditRepairAttachments($item, hasRole(ROLE_ADMIN), hasPermission('hososcbd.edit'));
+    if (isset($_GET['repair_attachment'])) {
+        $name = (string)$_GET['repair_attachment'];
+        $path = $attachmentStore->filePath($name);
+        header('Content-Type: ' . $attachmentStore->mimeType($name));
+        header('Content-Disposition: inline; filename="' . explode('_', $name, 3)[2] . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, no-store');
+        if (readfile($path) === false) {
+            error_log('Repair attachment: failed to stream file for dossier ' . $stt);
+        }
+        exit;
+    }
+    if ($isAttachmentPost) {
+        header('Content-Type: application/json; charset=UTF-8');
+        $action = $_POST['repair_attachment_action'] ?? '';
+        if ($action === '') {
+            throw new InvalidArgumentException('Không nhận được dữ liệu tải lên. Kiểm tra giới hạn post_max_size trên máy chủ.');
+        }
+        if (!$canEditAttachments) {
+            http_response_code(403);
+            throw new RuntimeException('Không có quyền thêm/xóa file. Hồ sơ đã kết thúc chỉ admin được thay đổi file.');
+        }
+        if (!is_string($_POST['attachment_token'] ?? null)
+            || empty($_SESSION['repair_attachment_token'])
+            || !hash_equals($_SESSION['repair_attachment_token'], $_POST['attachment_token'])) {
+            http_response_code(403);
+            throw new RuntimeException('Phiên xác nhận không hợp lệ. Vui lòng tải lại trang.');
+        }
+        require_once __DIR__ . '/../../includes/ActivityLogger.php';
+        $attachmentLogger = new ActivityLogger(getDBConnection());
+        $uploadErrors = [];
+        $savedCount = 0;
+        if ($action === 'upload') {
+            $uploaded = $_FILES['repair_files'] ?? null;
+            if (!$uploaded || !is_array($uploaded['name'] ?? null) || !$uploaded['name']) {
+                throw new InvalidArgumentException('Không nhận được file. Kiểm tra giới hạn post_max_size/upload_max_filesize trên máy chủ.');
+            }
+            foreach ($uploaded['name'] as $index => $original) {
+                try {
+                    $file = [];
+                    foreach (['name', 'tmp_name', 'size', 'error'] as $key) {
+                        $file[$key] = $uploaded[$key][$index] ?? null;
+                    }
+                    $stored = $attachmentStore->upload($file);
+                    $savedCount++;
+                    $attachmentLogger->log('hososcbd_attachments', 'INSERT', $stt, null, ['file' => $stored]);
+                } catch (RuntimeException | InvalidArgumentException $e) {
+                    error_log('Repair attachment upload, dossier ' . $stt . ': ' . $e->getMessage());
+                    $uploadErrors[] = (is_string($original) ? $original : 'File') . ': ' . $e->getMessage();
+                }
+            }
+            $message = 'Đã tải lên ' . $savedCount . ' file.';
+        } elseif ($action === 'delete') {
+            $name = $_POST['name'] ?? '';
+            if (!is_string($name)) {
+                throw new InvalidArgumentException('Tên file không hợp lệ.');
+            }
+            $attachmentStore->delete($name);
+            $attachmentLogger->log('hososcbd_attachments', 'DELETE', $stt, ['file' => $name], null);
+            $message = 'Đã xóa file.';
+        } else {
+            throw new InvalidArgumentException('Hành động file không hợp lệ.');
+        }
+        echo json_encode([
+            'success' => !$uploadErrors,
+            'message' => $message . ($uploadErrors ? ' ' . implode('; ', $uploadErrors) : ''),
+            'files' => $attachmentStore->listFiles(),
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $attachmentFiles = $attachmentStore->listFiles();
+} catch (RuntimeException | InvalidArgumentException $e) {
+    error_log('Repair attachments, dossier ' . $stt . ': ' . $e->getMessage());
+    if ($isAttachmentRequest) {
+        if (http_response_code() < 400) {
+            http_response_code(isset($_GET['repair_attachment']) ? 404 : 400);
+        }
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $attachmentsError = $e->getMessage();
+}
+if (empty($_SESSION['repair_attachment_token'])) {
+    $_SESSION['repair_attachment_token'] = bin2hex(random_bytes(32));
+}
+
 // Load thông tin bảo dưỡng định kỳ (BDDK) nếu có
 $bddkInfo = null;
 $thietbi = null;
@@ -1155,6 +1258,140 @@ require_once __DIR__ . '/../layouts/header.php';
         }
     }
     </script>
+
+    <section class="border-l-4 border-blue-500 pl-4 mb-6">
+        <h2 class="text-lg font-bold text-blue-700 mb-3">
+            <i class="fas fa-paperclip mr-2"></i>Ảnh &amp; PDF của hồ sơ
+            <span id="repair-attachment-count"></span>
+        </h2>
+        <?php if ($attachmentsError): ?>
+            <p class="text-red-700" role="alert"><?= htmlspecialchars($attachmentsError) ?></p>
+        <?php else: ?>
+            <?php if ($canEditAttachments): ?>
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                    <input type="file" id="repair-attachment-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" class="max-w-full">
+                    <button type="button" id="repair-attachment-upload" class="px-3 py-2 bg-blue-600 text-white rounded">
+                        <i class="fas fa-upload mr-1"></i>Tải lên
+                    </button>
+                </div>
+            <?php else: ?>
+                <p class="text-sm text-gray-600 mb-2">Chỉ xem file. Hồ sơ đã kết thúc chỉ admin được thêm/xóa; hồ sơ đang thực hiện cần quyền sửa.</p>
+            <?php endif; ?>
+            <p id="repair-attachment-status" role="status" aria-live="polite" class="text-sm mb-2"></p>
+            <div id="repair-attachment-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            <script>
+            (() => {
+                const canEdit = <?= $canEditAttachments ? 'true' : 'false' ?>;
+                const token = <?= json_encode($_SESSION['repair_attachment_token']) ?>;
+                const list = document.getElementById('repair-attachment-list');
+                const status = document.getElementById('repair-attachment-status');
+                const input = document.getElementById('repair-attachment-input');
+                const upload = document.getElementById('repair-attachment-upload');
+                let busy = false;
+
+                function notify(message, error = false) {
+                    status.textContent = message;
+                    status.className = 'text-sm mb-2 ' + (error ? 'text-red-700' : 'text-green-700');
+                }
+
+                function render(files) {
+                    list.replaceChildren();
+                    document.getElementById('repair-attachment-count').textContent = '(' + files.length + ')';
+                    if (!files.length) {
+                        list.textContent = 'Chưa có file đính kèm.';
+                    }
+                    files.forEach(file => {
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center gap-3 border rounded p-2';
+                        const url = new URL(window.location.href);
+                        url.search = '';
+                        url.searchParams.set('id', <?= json_encode($stt) ?>);
+                        url.searchParams.set('repair_attachment', file.name);
+                        const link = document.createElement('a');
+                        link.href = url.href;
+                        link.target = '_blank';
+                        link.rel = 'noopener';
+                        link.className = 'flex items-center gap-2 text-blue-700 flex-1 min-w-0';
+                        if (!file.is_pdf) {
+                            const image = document.createElement('img');
+                            image.src = url.href;
+                            image.alt = file.original;
+                            image.loading = 'lazy';
+                            image.className = 'w-16 h-16 object-cover rounded';
+                            link.appendChild(image);
+                        }
+                        const label = document.createElement('span');
+                        label.className = 'break-all text-sm';
+                        label.textContent = (file.is_pdf ? 'PDF: ' : '') + file.original
+                            + ' (' + Math.ceil(file.size / 1024) + ' KB)';
+                        link.appendChild(label);
+                        row.appendChild(link);
+                        if (canEdit) {
+                            const remove = document.createElement('button');
+                            remove.type = 'button';
+                            remove.className = 'text-red-600 repair-attachment-delete';
+                            remove.textContent = 'Xóa';
+                            remove.disabled = busy;
+                            remove.onclick = () => {
+                                if (busy || !confirm('Xóa file "' + file.original + '"?')) return;
+                                const form = new FormData();
+                                form.append('repair_attachment_action', 'delete');
+                                form.append('name', file.name);
+                                request(form);
+                            };
+                            row.appendChild(remove);
+                        }
+                        list.appendChild(row);
+                    });
+                }
+
+                async function request(form) {
+                    if (busy) return;
+                    busy = true;
+                    if (upload) upload.disabled = true;
+                    if (input) input.disabled = true;
+                    list.querySelectorAll('button').forEach(button => button.disabled = true);
+                    notify('Đang xử lý...');
+                    form.append('attachment_token', token);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('repair_attachment_api', '1');
+                    try {
+                        const response = await fetch(url.href, {method: 'POST', body: form});
+                        const data = await response.json();
+                        if (data.files) render(data.files);
+                        notify(data.message || 'Yêu cầu thất bại.', !response.ok || !data.success);
+                        if (response.ok && data.success && input) input.value = '';
+                    } catch (error) {
+                        console.error('Repair attachments:', error);
+                        notify('Không xử lý được yêu cầu. Kiểm tra kết nối, phiên đăng nhập và giới hạn upload trên máy chủ.', true);
+                    } finally {
+                        busy = false;
+                        if (upload) upload.disabled = false;
+                        if (input) input.disabled = false;
+                        list.querySelectorAll('button').forEach(button => button.disabled = false);
+                    }
+                }
+
+                if (upload) upload.onclick = () => {
+                    if (!input.files.length) {
+                        notify('Vui lòng chọn ảnh hoặc PDF.', true);
+                        return;
+                    }
+                    const files = Array.from(input.files);
+                    if (files.some(file => file.size === 0 || file.size > 20 * 1024 * 1024)) {
+                        notify('Mỗi file phải có nội dung và không vượt quá 20MB.', true);
+                        return;
+                    }
+                    const form = new FormData();
+                    form.append('repair_attachment_action', 'upload');
+                    files.forEach(file => form.append('repair_files[]', file));
+                    request(form);
+                };
+                render(<?= json_encode($attachmentFiles, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+            })();
+            </script>
+        <?php endif; ?>
+    </section>
 
     <form method="POST" class="space-y-6" id="repair-form" onsubmit="return validateFormBeforeSubmit()">
         <input type="hidden" name="bddk_edit" id="bddk-edit-flag" value="0">

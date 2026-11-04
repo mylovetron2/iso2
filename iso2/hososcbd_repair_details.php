@@ -9,5 +9,8 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/includes/permissions.php';
 
+requireAuth();
+requirePermission('hososcbd.view');
+
 // Include the repair details view
 require_once __DIR__ . '/views/hososcbd/repair_details.php';

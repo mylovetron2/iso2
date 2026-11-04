@@ -204,6 +204,10 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     </div>
 
+    <?php if ($historyAttachmentsError): ?>
+        <p role="alert" class="text-red-700 mb-4"><?= htmlspecialchars($historyAttachmentsError, ENT_QUOTES, 'UTF-8') ?></p>
+    <?php endif; ?>
+
     <!-- Tab content: Lịch sử Sửa chữa -->
     <div id="content-suachua" class="tab-content">
         <h3 class="text-xl font-semibold mb-4 text-blue-700">
@@ -289,6 +293,10 @@ require_once __DIR__ . '/../layouts/header.php';
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php
+                    $historyDossierId = (int)($ls['stt'] ?? 0);
+                    require __DIR__ . '/history_attachments.php';
+                    ?>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -380,6 +388,10 @@ require_once __DIR__ . '/../layouts/header.php';
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php
+                    $historyDossierId = (int)($ld['stt'] ?? 0);
+                    require __DIR__ . '/history_attachments.php';
+                    ?>
                 </div>
                 <?php endforeach; ?>
             </div>

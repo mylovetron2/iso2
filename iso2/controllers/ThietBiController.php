@@ -300,6 +300,30 @@ class ThietBiController
             error_log("Error fetching history: " . $e->getMessage());
         }
 
+        $historyAttachments = [];
+        $historyAttachmentsError = '';
+        $canViewHistoryAttachments = hasPermission('hososcbd.view');
+        if ($canViewHistoryAttachments && ($lichSuSuaChua || $lichSuKiemDinh)) {
+            try {
+                $attachmentHelper = __DIR__ . '/../includes/repair_attachments.php';
+                if (!is_readable($attachmentHelper)) {
+                    throw new RuntimeException('Thiếu file includes/repair_attachments.php trên máy chủ.');
+                }
+                require_once $attachmentHelper;
+                foreach (array_merge($lichSuSuaChua, $lichSuKiemDinh) as $history) {
+                    $dossierId = (int)($history['stt'] ?? 0);
+                    if ($dossierId <= 0 || isset($historyAttachments[$dossierId])) {
+                        continue;
+                    }
+                    $store = new RepairAttachments(__DIR__ . '/../uploads/SCBD', $dossierId);
+                    $historyAttachments[$dossierId] = $store->listFiles();
+                }
+            } catch (RuntimeException $e) {
+                error_log('Device history attachments: ' . $e->getMessage());
+                $historyAttachmentsError = $e->getMessage();
+            }
+        }
+
         // Lấy thông tin đơn vị
         try {
             $donVi = null;

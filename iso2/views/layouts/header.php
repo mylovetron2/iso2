@@ -375,7 +375,7 @@ if (file_exists($dbSelectionFile)) {
                 <?php endif; ?>
 
                 <!-- 5. Quản lý Lô & Mỏ -->
-                <?php if (isLoggedIn() && (hasPermission('lo.view') || hasPermission('mo.view'))): ?>
+                <?php if (isLoggedIn() && (hasPermission('lo.view') || hasPermission('mo.view') || hasPermission('vitri.view'))): ?>
                 <li>
                     <div id="loMoMenuBtn" class="flex items-center px-3 py-2 rounded hover:bg-blue-600 cursor-pointer select-none">
                         <i class="fas fa-industry mr-2"></i> Quản lý Lô & Mỏ
@@ -393,6 +393,13 @@ if (file_exists($dbSelectionFile)) {
                         <li>
                             <a href="<?php echo appUrl('mo.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
                                 <i class="fas fa-mountain mr-2"></i> Quản lý Mỏ
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('vitri.view')): ?>
+                        <li>
+                            <a href="<?php echo appUrl('vitri.php'); ?>" class="flex items-center px-3 py-2 rounded hover:bg-blue-500 bg-blue-800/80">
+                                <i class="fas fa-map-marker-alt mr-2"></i> Quản lý vị trí
                             </a>
                         </li>
                         <?php endif; ?>
