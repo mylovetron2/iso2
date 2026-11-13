@@ -704,6 +704,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                             data-date-start="<?php echo htmlspecialchars($dateStart, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-date-end="<?php echo htmlspecialchars($dateEnd, ENT_QUOTES, 'UTF-8'); ?>"
                                             data-person="<?php echo htmlspecialchars((string)($item['nguoi_thuc_hien_nhap'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-ttktafter="<?php echo htmlspecialchars((string)($item['ttktafter'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-ghichufinal="<?php echo htmlspecialchars((string)($item['ghichufinal'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                             data-create="<?php echo ($item['hososcbd_doi_id'] ?? null) === null ? '1' : '0'; ?>">
                                         <i class="fas fa-pen mr-1"></i>Nhập liệu
                                     </button>
@@ -1379,18 +1381,26 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<div id="doiExecutionModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog" aria-labelledby="doiExecutionModalTitle">
-    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDoiExecutionModal()"></div>
-    <div class="relative mx-auto mt-20 w-full max-w-lg rounded-lg bg-white shadow-xl">
+<div id="doiExecutionModal" class="fixed inset-0 z-[80] hidden overflow-y-auto" aria-modal="true" role="dialog" aria-labelledby="doiExecutionModalTitle">
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeDoiExecutionModal()"></div>
+    <div class="relative z-10 mx-auto my-6 w-full max-w-lg rounded-lg bg-white shadow-xl">
         <form id="doiExecutionForm" class="p-6">
-            <div class="mb-5 flex items-center justify-between">
-                <div>
+            <div class="sticky top-0 z-20 -mx-6 -mt-6 mb-5 bg-white px-6 pt-6 pb-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
                     <h2 id="doiExecutionModalTitle" class="text-lg font-bold text-gray-900">Thông tin bảo dưỡng hồ sơ đội</h2>
                     <p id="doiExecutionModalHint" class="mt-1 text-sm text-gray-600"></p>
+                    </div>
+                    <button type="button" onclick="closeDoiExecutionModal()" class="text-gray-400 hover:text-gray-600" aria-label="Đóng">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button type="button" onclick="closeDoiExecutionModal()" class="text-gray-400 hover:text-gray-600" aria-label="Đóng">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="mt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeDoiExecutionModal()" class="rounded bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Đóng</button>
+                    <button type="submit" id="doiExecutionSubmit" class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">
+                        <span id="doiExecutionSubmitLabel">Lưu</span>
+                    </button>
+                </div>
             </div>
             <input type="hidden" id="doiExecutionPlanId">
             <div class="space-y-4">
@@ -1406,12 +1416,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label for="doiExecutionPerson" class="mb-1 block text-sm font-medium text-gray-700">Người thực hiện <span class="text-red-500">*</span></label>
                     <textarea id="doiExecutionPerson" rows="4" maxlength="255" required class="w-full rounded border px-3 py-2" placeholder="Mỗi người một dòng"></textarea>
                 </div>
-            </div>
-            <div class="mt-6 flex justify-end gap-2">
-                <button type="button" onclick="closeDoiExecutionModal()" class="rounded bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300">Đóng</button>
-                <button type="submit" id="doiExecutionSubmit" class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">
-                    <span id="doiExecutionSubmitLabel">Lưu</span>
-                </button>
+                <div>
+                    <label for="doiExecutionConditionAfter" class="mb-1 block text-sm font-medium text-gray-700">Tình trạng TB sau bảo dưỡng</label>
+                    <select id="doiExecutionConditionAfter" class="w-full rounded border px-3 py-2">
+                        <option value="">-- Chọn trạng thái --</option>
+                        <option value="Đạt">Đạt</option>
+                        <option value="Hỏng">Hỏng (Không khắc phục được)</option>
+                        <option value="Chờ vật tư thay thế">Chờ vật tư thay thế</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="doiExecutionFinalNote" class="mb-1 block text-sm font-medium text-gray-700">Ghi chú</label>
+                    <textarea id="doiExecutionFinalNote" rows="3" class="w-full rounded border px-3 py-2"></textarea>
+                </div>
             </div>
         </form>
     </div>
@@ -1465,13 +1482,15 @@ doiExecutionForm.addEventListener('submit', async event => {
     const performedOn = document.getElementById('doiExecutionStart');
     const endedOn = document.getElementById('doiExecutionEnd');
     const person = document.getElementById('doiExecutionPerson');
+    const conditionAfter = document.getElementById('doiExecutionConditionAfter');
+    const finalNote = document.getElementById('doiExecutionFinalNote');
     if (endedOn.value && endedOn.value < performedOn.value) {
         alert('Ngày kết thúc không được trước ngày thực hiện.');
         return;
     }
 
     const submit = document.getElementById('doiExecutionSubmit');
-    const inputs = doiExecutionForm.querySelectorAll('input:not([type="hidden"]), textarea');
+    const inputs = doiExecutionForm.querySelectorAll('input:not([type="hidden"]), textarea, select');
     submit.disabled = true;
     inputs.forEach(input => input.disabled = true);
     try {
@@ -1483,6 +1502,8 @@ doiExecutionForm.addEventListener('submit', async event => {
                 ngay_thuc_hien: performedOn.value,
                 ngay_ket_thuc: endedOn.value,
                 nguoi_thuc_hien: person.value,
+                ttktafter: conditionAfter.value,
+                ghichufinal: finalNote.value,
                 csrf: <?php echo json_encode($_SESSION['kehoach_hoso_csrf'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
             })
         });
@@ -1503,6 +1524,8 @@ function openDoiExecutionModal(button) {
     document.getElementById('doiExecutionStart').value = button.dataset.dateStart || '';
     document.getElementById('doiExecutionEnd').value = button.dataset.dateEnd || '';
     document.getElementById('doiExecutionPerson').value = button.dataset.person || '';
+    document.getElementById('doiExecutionConditionAfter').value = button.dataset.ttktafter || '';
+    document.getElementById('doiExecutionFinalNote').value = button.dataset.ghichufinal || '';
     document.getElementById('doiExecutionModalHint').textContent = button.dataset.create === '1'
         ? `Kế hoạch #${button.dataset.id}: lưu sẽ tạo hồ sơ đội mới và liên kết vào kế hoạch.`
         : `Kế hoạch #${button.dataset.id}: cập nhật thông tin bảo dưỡng hồ sơ đội.`;

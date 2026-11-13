@@ -94,21 +94,38 @@ final class RepairAttachmentsTest extends TestCase
     }
 
     /**
-     * @dataProvider editPermissions
+     * @dataProvider uploadPermissions
      */
-    public function testEditPermissions(array $item, bool $admin, bool $edit, bool $expected): void
+    public function testUploadPermissions(bool $admin, bool $edit, bool $expected): void
     {
-        $this->assertSame($expected, canEditRepairAttachments($item, $admin, $edit));
+        $this->assertSame($expected, canUploadRepairAttachments($admin, $edit));
     }
 
-    public static function editPermissions(): array
+    public static function uploadPermissions(): array
+    {
+        return [
+            'editor' => [false, true, true],
+            'viewer' => [false, false, false],
+            'admin' => [true, false, true],
+        ];
+    }
+
+    /**
+     * @dataProvider deletePermissions
+     */
+    public function testDeletePermissions(array $item, bool $admin, bool $edit, bool $expected): void
+    {
+        $this->assertSame($expected, canDeleteRepairAttachments($item, $admin, $edit));
+    }
+
+    public static function deletePermissions(): array
     {
         return [
             'ongoing editor' => [['ngaykt' => '0000-00-00'], false, true, true],
             'empty end date editor' => [['ngaykt' => null], false, true, true],
             'viewer' => [['ngaykt' => null], false, false, false],
             'completed editor' => [['ngaykt' => '2026-11-04'], false, true, false],
-            'completed admin' => [['ngaykt' => '2026-11-04'], true, false, true],
+            'completed admin' => [['ngaykt' => '2026-11-04'], true, false, false],
         ];
     }
 

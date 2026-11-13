@@ -31,9 +31,9 @@ final class KeHoachExecutionInfoTest extends TestCase
         $main = $this->createMock(PDOStatement::class);
         $main->expects($this->once())->method('execute')->with([11, 12, 13]);
         $main->method('fetch')->willReturnOnConsecutiveCalls(
-            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'nguoi_thuc_hien' => ' A '],
-            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'nguoi_thuc_hien' => 'B'],
-            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'nguoi_thuc_hien' => 'A'],
+            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'ttktafter' => 'Đạt', 'ghichufinal' => 'Ghi chú hồ sơ chính', 'nguoi_thuc_hien' => ' A '],
+            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'ttktafter' => 'Đạt', 'ghichufinal' => 'Ghi chú hồ sơ chính', 'nguoi_thuc_hien' => 'B'],
+            ['id' => 11, 'ngayth' => '2026-01-15', 'ngaykt' => '2026-01-20', 'ttktafter' => 'Đạt', 'ghichufinal' => 'Ghi chú hồ sơ chính', 'nguoi_thuc_hien' => 'A'],
             false
         );
         $team = $this->createMock(PDOStatement::class);
@@ -43,6 +43,8 @@ final class KeHoachExecutionInfoTest extends TestCase
                 'id' => 12,
                 'ngayth' => '2026-03-01',
                 'ngaykt' => null,
+                'ttktafter' => 'Chờ vật tư thay thế',
+                'ghichufinal' => 'Chờ thay thế',
                 'nguoi_thuc_hien' => "C\nD",
                 'pending_review_data' => json_encode([
                     'ngayth' => '2026-03-02',
@@ -50,7 +52,7 @@ final class KeHoachExecutionInfoTest extends TestCase
                     'nguoi_thuc_hien_iso' => "Nguyễn Văn B\nTrần Văn C",
                 ]),
             ],
-            ['id' => 12, 'ngayth' => '2026-03-01', 'ngaykt' => null, 'nguoi_thuc_hien' => ''],
+            ['id' => 12, 'ngayth' => '2026-03-01', 'ngaykt' => null, 'ttktafter' => 'Chờ vật tư thay thế', 'ghichufinal' => 'Chờ thay thế', 'nguoi_thuc_hien' => ''],
             false
         );
         $db = $this->createMock(PDO::class);
@@ -66,19 +68,27 @@ final class KeHoachExecutionInfoTest extends TestCase
         $this->assertSame(['A', 'B'], $items[0]['cac_nguoi_thuc_hien']);
         $this->assertSame('2026-01-15', $items[0]['ngay_thuc_hien']);
         $this->assertSame('2026-01-20', $items[0]['ngay_ket_thuc']);
+        $this->assertSame('Đạt', $items[0]['ttktafter']);
+        $this->assertSame('Ghi chú hồ sơ chính', $items[0]['ghichufinal']);
         $this->assertSame(["C\nD"], $items[1]['cac_nguoi_thuc_hien']);
         $this->assertNull($items[1]['ngay_ket_thuc']);
+        $this->assertSame('Chờ vật tư thay thế', $items[1]['ttktafter']);
+        $this->assertSame('Chờ thay thế', $items[1]['ghichufinal']);
         $this->assertTrue($items[1]['pending_review']);
         $this->assertSame('2026-03-02', $items[1]['pending_review_ngayth']);
         $this->assertSame('2026-03-03', $items[1]['pending_review_ngaykt']);
         $this->assertSame("Nguyễn Văn B\nTrần Văn C", $items[1]['pending_review_person']);
         $this->assertNull($items[2]['ngay_thuc_hien']);
+        $this->assertSame('', $items[2]['ttktafter']);
+        $this->assertSame('', $items[2]['ghichufinal']);
         $this->assertSame([], $items[2]['cac_nguoi_thuc_hien']);
         $this->assertStringContainsString('n.mahoso = h.hoso', $queries[0]);
+        $this->assertStringContainsString('h.ttktafter', $queries[0]);
         $this->assertStringContainsString("k.nguon_hoso = 'hososcbd_iso'", $queries[0]);
         $this->assertStringNotContainsString('ngthuchien_iso', $queries[1]);
         $this->assertStringContainsString("k.nguon_hoso = 'hososcbd_doi_iso'", $queries[1]);
         $this->assertStringContainsString('h.stt = k.hososcbd_doi_id', $queries[1]);
+        $this->assertStringContainsString('h.ttktafter', $queries[1]);
         $this->assertStringContainsString("pe_pending.record_type = 'hososcbd_doi_iso'", $queries[1]);
     }
 }

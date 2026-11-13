@@ -892,13 +892,15 @@ class HoSoScBdController
         }
 
         $stmt = $this->model->getDb()->prepare(
-            'SELECT dienap FROM thietbi_iso WHERE mavt = :mavt AND somay = :somay LIMIT 1'
+            'SELECT homay, model, dienap FROM thietbi_iso WHERE mavt = :mavt AND somay = :somay LIMIT 1'
         );
         $stmt->execute([
             ':mavt' => $item['mavt'],
             ':somay' => $item['somay'],
         ]);
         $thietBi = $stmt->fetch(PDO::FETCH_ASSOC);
+        $item['homay'] = $thietBi['homay'] ?? '';
+        $item['model'] = $thietBi['model'] ?? '';
         $item['dienap'] = $thietBi['dienap'] ?? '';
 
         require_once __DIR__ . '/../views/hososcbd/export_phieu_kiem_tra.php';

@@ -1,10 +1,15 @@
 <?php
 declare(strict_types=1);
 
-function canEditRepairAttachments(array $item, bool $isAdmin, bool $canEdit): bool
+function canUploadRepairAttachments(bool $isAdmin, bool $canEdit): bool
+{
+    return $isAdmin || $canEdit;
+}
+
+function canDeleteRepairAttachments(array $item, bool $isAdmin, bool $canEdit): bool
 {
     $completed = !empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00';
-    return $isAdmin || ($canEdit && !$completed);
+    return ($isAdmin || $canEdit) && !$completed;
 }
 
 final class RepairAttachments

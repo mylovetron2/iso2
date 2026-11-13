@@ -518,7 +518,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             </div>
                             <?php if (!empty($hs['lydo_tamdung'])): ?>
                             <div class="mt-0.5 text-[10px] text-red-600 italic truncate">
-                                Lý do: <?php echo htmlspecialchars($hs['lydo_tamdung']); ?>
+                                Lý do: <?php echo str_replace("\n", ' ', HoSoScBdTamDung::plainText($hs['lydo_tamdung'])); ?>
                             </div>
                             <?php endif; ?>
                         </a>

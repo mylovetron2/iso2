@@ -19,6 +19,19 @@ class HoSoScBdTamDung extends BaseModel
     }
 
     /**
+     * Chuyển lý do/ghi chú có thể chứa HTML (từ trình soạn thảo) thành văn bản thuần, đã escape an toàn để in ra
+     */
+    public static function plainText(?string $html): string
+    {
+        $text = (string)$html;
+        $text = preg_replace('~<\s*(br\s*/?|/p|/div|/li)\s*>~i', "\n", $text);
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/[ \t\x{00A0}]+/u', ' ', $text);
+        $text = preg_replace('/\s*\n\s*/', "\n", trim($text));
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
      * Tạm dừng hồ sơ
      * @param string $hoso Mã hồ sơ
      * @param string $nguoiThucHien Người thực hiện

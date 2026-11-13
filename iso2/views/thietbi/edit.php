@@ -68,7 +68,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm md:text-base">
-                    Hộp máy
+                    Họ máy
                 </label>
                 <input type="text" name="homay"
                        value="<?php echo isset($_POST['homay']) ? htmlspecialchars($_POST['homay']) : htmlspecialchars($item['homay']); ?>"

@@ -80,7 +80,7 @@ table#hrdftrtbl { margin: 0in 0in 0in 9in; }
 <table class="header" width="100%">
 <tr>
 <td class="unit">XN Địa vật lý GK<br>Xưởng SCTBĐVL</td>
-<td class="title">PHIẾU KIỂM TRA TÌNH TRẠNG KỸ<br>THUẬT THIẾT BỊ SAU KHI BD/SC<br><br><span class="file-number">Số hồ sơ: <b><?php echo kiemTraText($item['hoso'] ?? $item['phieu'] ?? ''); ?></b></span></td>
+<td class="title">PHIẾU KIỂM TRA TÌNH TRẠNG KỸ<br>THUẬT THIẾT BỊ SAU KHI KT/BD/SC<br><br><span class="file-number">Số hồ sơ: <b><?php echo kiemTraText($item['hoso'] ?? $item['phieu'] ?? ''); ?></b></span></td>
 </tr>
 </table>
 
@@ -90,7 +90,7 @@ table#hrdftrtbl { margin: 0in 0in 0in 9in; }
 <td>Số máy: <b><?php echo kiemTraText($item['somay'] ?? ''); ?></b></td>
 </tr>
 <tr>
-<td>2. Họ máy: <b><?php echo kiemTraText($item['model'] ?? ''); ?></b></td>
+<td>2. Họ máy: <b><?php echo kiemTraText($item['homay'] ?? ''); ?></b></td>
 <td>Model: <b><?php echo kiemTraText($item['model'] ?? ''); ?></b></td>
 </tr>
 <tr>

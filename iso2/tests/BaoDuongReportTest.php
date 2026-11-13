@@ -81,6 +81,37 @@ final class BaoDuongReportTest extends TestCase
         $this->assertStringNotContainsString('NaN', $html);
     }
 
+    public function testPrintsConditionAfterMaintenanceBeforeNotes(): void
+    {
+        $report = buildBaoDuongReport([[
+            'id' => 1,
+            'qui_1' => 'TO',
+            'qui_1_hoantat' => 1,
+            'ttktafter' => 'Đạt',
+            'cac_nguoi_thuc_hien' => ['Nguyễn Văn A'],
+            'ghi_chu' => 'Ghi chú kế hoạch cũ',
+            'ghichufinal' => 'Ghi chú hoàn thành',
+        ]], 1);
+        $nam = 2026;
+        $qui = '1';
+        $reportUnit = 'Tất cả bộ phận';
+        $search = '';
+        $nhomsc = '';
+
+        ob_start();
+        require __DIR__ . '/../views/kehoachbaoduongdinhky/print_thongke.php';
+        $html = ob_get_clean();
+
+        $conditionHeader = strpos($html, '<th scope="col">Tình trạng TB sau bảo dưỡng</th>');
+        $notesHeader = strpos($html, '<th scope="col">Ghi chú</th>');
+        $this->assertNotFalse($conditionHeader);
+        $this->assertNotFalse($notesHeader);
+        $this->assertLessThan($notesHeader, $conditionHeader);
+        $this->assertStringContainsString('<td class="center">Đạt</td>', $html);
+        $this->assertStringContainsString('<td>Ghi chú hoàn thành</td>', $html);
+        $this->assertStringNotContainsString('Ghi chú kế hoạch cũ', $html);
+    }
+
     public function testInvalidQuarterIsRejected(): void
     {
         $this->expectException(InvalidArgumentException::class);

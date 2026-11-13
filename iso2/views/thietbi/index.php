@@ -74,7 +74,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Tên VT</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Model</th>
-                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Hộp máy</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Họ máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden xl:table-cell">Lịch sử sửa chữa</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">Thao tác</th>

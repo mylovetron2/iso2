@@ -79,6 +79,16 @@ function kehoachListFiles(int $stt): array {
     return $files;
 }
 
+function kehoachEquipmentSttsWithFiles(): array {
+    $stts = [];
+    foreach (glob(kehoachFileDir() . '/*') ?: [] as $path) {
+        if (is_file($path) && preg_match('/^(\d+)_\d+_.+$/', basename($path), $matches)) {
+            $stts[] = (int)$matches[1];
+        }
+    }
+    return array_values(array_unique($stts));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_file_action'])) {
     if (ob_get_level()) ob_clean();
     header('Content-Type: application/json');
@@ -464,6 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_plan'])) {
 $search = $_GET['search'] ?? '';
 $loaitb = $_GET['loaitb'] ?? '';
 $bophansh = $_GET['bophansh'] ?? '';
+$hosoFilter = ($_GET['hoso'] ?? '') === 'co' ? 'co' : '';
 $kehoachFilter = $_GET['kehoach'] ?? ''; // 'all', 'co', 'chua'
 $sortOrder = $_GET['sort'] ?? 'default'; // 'default', 'doith'
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -507,6 +518,13 @@ if ($bophansh === '__dvl_tonghop__') {
 } elseif ($bophansh) {
     $where[] = "bophansh = :bophansh";
     $params[':bophansh'] = $bophansh;
+}
+
+if ($hosoFilter === 'co') {
+    $sttsWithFiles = kehoachEquipmentSttsWithFiles();
+    $where[] = $sttsWithFiles
+        ? 't.stt IN (' . implode(',', $sttsWithFiles) . ')'
+        : '1 = 0';
 }
 
 $whereClause = implode(' AND ', $where);
@@ -629,6 +647,51 @@ require_once __DIR__ . '/views/layouts/header.php';
         .month-cell input[type="checkbox"] { opacity: 0; position: absolute; pointer-events: none; }
         .row-checkbox { cursor: pointer; width: 18px; height: 18px; }
         #selectAllCheckbox { cursor: pointer; width: 18px; height: 18px; }
+        .btn-files {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 34px;
+            padding: 0;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: #2563eb;
+            font-size: 17px;
+            cursor: pointer;
+            transition: background .2s, border-color .2s, box-shadow .2s, transform .2s;
+        }
+        .btn-files:hover {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-color: #60a5fa;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, .2);
+            transform: translateY(-1px);
+        }
+        .btn-files:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, .35);
+            outline-offset: 2px;
+        }
+        .btn-files .file-count {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            background: #f59e0b;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            box-sizing: content-box;
+        }
         input[type="text"].small { width: 150px; padding: 4px; font-size: 12px; white-space: nowrap; }
         .month-tooltip {
             position: fixed;
@@ -727,6 +790,11 @@ require_once __DIR__ . '/views/layouts/header.php';
                 <option value="co" <?= $kehoachFilter === 'co' ? 'selected' : '' ?>>Đã có kế hoạch</option>
                 <option value="chua" <?= $kehoachFilter === 'chua' ? 'selected' : '' ?>>Chưa có kế hoạch</option>
                 <option value="co_chua_th" <?= $kehoachFilter === 'co_chua_th' ? 'selected' : '' ?>>Đã có kế hoạch và chưa thực hiện</option>
+            </select>
+
+            <select name="hoso" onchange="this.form.submit()">
+                <option value="">-- Tất cả hồ sơ --</option>
+                <option value="co" <?= $hosoFilter === 'co' ? 'selected' : '' ?>>Có hồ sơ (&gt;0)</option>
             </select>
             
             <select name="sort" onchange="this.form.submit()">
@@ -890,8 +958,10 @@ require_once __DIR__ . '/views/layouts/header.php';
                                             data-stt="<?= (int)$tb['stt'] ?>"
                                             data-ten="<?= htmlspecialchars($tb['tenthietbi']) ?>"
                                             onclick="openFilesModal(this)"
+                                            aria-label="Mở hồ sơ đính kèm, <?= $fileCount ?> tệp"
                                             title="Hồ sơ đính kèm (ảnh, PDF)">
-                                        📎 <span class="file-count"><?= $fileCount ?></span>
+                                        <i class="fas fa-folder-open" aria-hidden="true"></i>
+                                        <span class="file-count" aria-hidden="true"><?= $fileCount ?></span>
                                     </button>
                                 </td>
                                 <td style="text-align: center; display: none;">
@@ -938,9 +1008,9 @@ require_once __DIR__ . '/views/layouts/header.php';
         <div style="margin-top: 20px; padding: 15px; text-align: center;">
             <div style="display: inline-flex; gap: 5px; align-items: center;">
                 <?php if ($page > 1): ?>
-                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
+                    <a href="?page=1<?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $hosoFilter ? '&hoso='.urlencode($hosoFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>"
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">« Đầu</a>
-                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
+                    <a href="?page=<?= $page - 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $hosoFilter ? '&hoso='.urlencode($hosoFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>"
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">‹ Trước</a>
                 <?php endif; ?>
                 
@@ -949,9 +1019,9 @@ require_once __DIR__ . '/views/layouts/header.php';
                 </span>
                 
                 <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
+                    <a href="?page=<?= $page + 1 ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $hosoFilter ? '&hoso='.urlencode($hosoFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>"
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Sau ›</a>
-                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>" 
+                    <a href="?page=<?= $totalPages ?><?= $loaitb ? '&loaitb='.urlencode($loaitb) : '' ?><?= $bophansh ? '&bophansh='.urlencode($bophansh) : '' ?><?= $kehoachFilter ? '&kehoach='.urlencode($kehoachFilter) : '' ?><?= $hosoFilter ? '&hoso='.urlencode($hosoFilter) : '' ?><?= $sortOrder !== 'default' ? '&sort='.urlencode($sortOrder) : '' ?>"
                        style="padding: 8px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px;">Cuối »</a>
                 <?php endif; ?>
             </div>
@@ -1004,7 +1074,10 @@ require_once __DIR__ . '/views/layouts/header.php';
         function renderFiles(files) {
             const box = document.getElementById('filesList');
             box.textContent = '';
-            if (currentFilesBtn) currentFilesBtn.querySelector('.file-count').textContent = files.length;
+            if (currentFilesBtn) {
+                currentFilesBtn.querySelector('.file-count').textContent = files.length;
+                currentFilesBtn.setAttribute('aria-label', `Mở hồ sơ đính kèm, ${files.length} tệp`);
+            }
             if (!files.length) {
                 box.textContent = 'Chưa có file nào.';
                 return;

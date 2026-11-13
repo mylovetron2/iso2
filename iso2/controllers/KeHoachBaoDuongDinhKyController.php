@@ -212,17 +212,18 @@ class KeHoachBaoDuongDinhKyController
         $ids = array_column($items, 'id');
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $queries = [
-            "SELECT k.id, h.ngayth, h.ngaykt, n.hoten AS nguoi_thuc_hien,
+            "SELECT k.id, h.ngayth, h.ngaykt, h.ttktafter, h.ghichufinal, n.hoten AS nguoi_thuc_hien,
                     NULL AS nguoi_thuc_hien_nhap
              FROM ke_hoach_bao_duong_dinh_ky_iso k
              INNER JOIN hososcbd_iso h ON h.stt = k.hososcbd_id
              LEFT JOIN ngthuchien_iso n ON n.mahoso = h.hoso
              WHERE k.nguon_hoso = 'hososcbd_iso' AND k.id IN ($placeholders)
              ORDER BY k.id, n.stt",
-            "SELECT k.id, h.ngayth, h.ngaykt,
+            "SELECT k.id, h.ngayth, h.ngaykt, h.ghichufinal,
                     COALESCE(NULLIF(h.nguoi_thuc_hien_iso, ''), c.nguoi_thuc_hien) AS nguoi_thuc_hien,
                     h.nguoi_thuc_hien_iso AS nguoi_thuc_hien_nhap,
-                    pe.data_json AS pending_review_data
+                   h.ttktafter,
+                   pe.data_json AS pending_review_data
              FROM ke_hoach_bao_duong_dinh_ky_iso k
              INNER JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
              LEFT JOIN baoduong_dinhky_chitiet_iso c ON c.kehoach_id = k.id
@@ -258,6 +259,8 @@ class KeHoachBaoDuongDinhKyController
                     $execution[$id] = [
                         'ngay_thuc_hien' => $row['ngayth'],
                         'ngay_ket_thuc' => $row['ngaykt'],
+                        'ttktafter' => $row['ttktafter'] ?? '',
+                        'ghichufinal' => $row['ghichufinal'] ?? '',
                         'cac_nguoi_thuc_hien' => [],
                         'nguoi_thuc_hien_nhap' => $row['nguoi_thuc_hien_nhap'] ?? null,
                         'pending_review' => $pendingReviewData !== null,
@@ -276,6 +279,8 @@ class KeHoachBaoDuongDinhKyController
             $info = $execution[$item['id']] ?? [
                 'ngay_thuc_hien' => null,
                 'ngay_ket_thuc' => null,
+                'ttktafter' => '',
+                'ghichufinal' => '',
                 'cac_nguoi_thuc_hien' => [],
                 'nguoi_thuc_hien_nhap' => null,
                 'pending_review' => false,
@@ -645,7 +650,21 @@ class KeHoachBaoDuongDinhKyController
             if ($person === '' || mb_strlen($person, 'UTF-8') > 255) {
                 throw new InvalidArgumentException('Người thực hiện là bắt buộc và không được vượt quá 255 ký tự.');
             }
-            $pendingReview = $this->saveDoiExecution($planId, $performedOn, $endedOn, $person);
+            $conditionValue = $input['ttktafter'] ?? '';
+            if (!is_string($conditionValue)) {
+                throw new InvalidArgumentException('Tình trạng thiết bị sau bảo dưỡng không hợp lệ.');
+            }
+            $conditionAfter = trim($conditionValue);
+            $allowedConditions = ['', 'Đạt', 'Hỏng', 'Chờ vật tư thay thế', 'Chưa kết luận', 'Đang sửa chữa', 'TTKTDB'];
+            if (!in_array($conditionAfter, $allowedConditions, true)) {
+                throw new InvalidArgumentException('Tình trạng thiết bị sau bảo dưỡng không hợp lệ.');
+            }
+            $noteValue = $input['ghichufinal'] ?? '';
+            if (!is_string($noteValue)) {
+                throw new InvalidArgumentException('Ghi chú không hợp lệ.');
+            }
+            $note = trim($noteValue);
+            $pendingReview = $this->saveDoiExecution($planId, $performedOn, $endedOn, $person, $conditionAfter, $note);
             $message = $pendingReview
                 ? 'Hồ sơ đã có ngày thực hiện. Yêu cầu sửa đổi đã được gửi đến admin để duyệt.'
                 : 'Đã lưu thông tin bảo dưỡng hồ sơ đội.';
@@ -682,14 +701,22 @@ class KeHoachBaoDuongDinhKyController
         return $value;
     }
 
-    private function saveDoiExecution(int $planId, string $performedOn, ?string $endedOn, string $person): bool
+    private function saveDoiExecution(
+        int $planId,
+        string $performedOn,
+        ?string $endedOn,
+        string $person,
+        string $conditionAfter = '',
+        string $note = ''
+    ): bool
     {
         $this->db->beginTransaction();
         try {
             $sql = "SELECT k.hososcbd_id, k.hososcbd_doi_id, k.nguon_hoso,
                            k.donvi_lam_chinh, k.nam, t.mavt, t.somay, t.model, t.madv,
                            h.ngayth AS dossier_ngayth, h.ngaykt AS dossier_ngaykt,
-                           h.nguoi_thuc_hien_iso AS dossier_person
+                           h.nguoi_thuc_hien_iso AS dossier_person,
+                           h.ghichufinal AS dossier_note
                 FROM ke_hoach_bao_duong_dinh_ky_iso k
                 INNER JOIN thietbi_iso t ON t.stt = k.thietbi_id
                 LEFT JOIN hososcbd_doi_iso h ON h.stt = k.hososcbd_doi_id
@@ -734,29 +761,36 @@ class KeHoachBaoDuongDinhKyController
                                 'ngayth' => $performedOn,
                                 'ngaykt' => $endDate,
                                 'nguoi_thuc_hien_iso' => $person,
+                                'ttktafter' => $conditionAfter,
+                                'ghichufinal' => $note,
                             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
                         ]);
                     logBaoDuongActivity($this->db, 'UPDATE', $planId, [
                         'ngayth' => $plan['dossier_ngayth'], 'ngaykt' => $plan['dossier_ngaykt'],
                         'nguoi_thuc_hien_iso' => $plan['dossier_person'] ?? null,
+                        'ghichufinal' => $plan['dossier_note'] ?? null,
                     ], [
                         'operation' => 'submit_review', 'status' => 'pending',
                         'pending_id' => (int)$this->db->lastInsertId(),
                         'hososcbd_doi_id' => $dossierId,
                         'ngayth' => $performedOn, 'ngaykt' => $endDate,
-                        'nguoi_thuc_hien_iso' => $person,
+                        'nguoi_thuc_hien_iso' => $person, 'ttktafter' => $conditionAfter,
+                        'ghichufinal' => $note,
                     ]);
                     $this->db->commit();
                     return true;
                 }
 
                 $stmt = $this->db->prepare('UPDATE hososcbd_doi_iso
-                    SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien
+                    SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien,
+                        ttktafter = :ttktafter, ghichufinal = :ghichufinal
                     WHERE stt = :stt');
                 $stmt->execute([
                     ':ngayth' => $performedOn,
                     ':ngaykt' => $endDate,
                     ':nguoi_thuc_hien' => $person,
+                    ':ttktafter' => $conditionAfter,
+                    ':ghichufinal' => $note,
                     ':stt' => $dossierId,
                 ]);
             } else {
@@ -774,10 +808,10 @@ class KeHoachBaoDuongDinhKyController
                 $maql = $performedOn . '-' . trim((string)$plan['madv']) . '-' . $phieu;
                 $stmt = $this->db->prepare('INSERT INTO hososcbd_doi_iso
                     (maql, phieu, hoso, ngayyc, madv, cv, mavt, somay, model,
-                     ngayth, ngaykt, nguoi_thuc_hien_iso)
+                     ngayth, ngaykt, nguoi_thuc_hien_iso, ttktafter, ghichufinal)
                     VALUES
                     (:maql, :phieu, :hoso, :ngayyc, :madv, :cv, :mavt, :somay, :model,
-                     :ngayth, :ngaykt, :nguoi_thuc_hien)');
+                     :ngayth, :ngaykt, :nguoi_thuc_hien, :ttktafter, :ghichufinal)');
                 $stmt->execute([
                     ':maql' => $maql,
                     ':phieu' => $phieu,
@@ -791,6 +825,8 @@ class KeHoachBaoDuongDinhKyController
                     ':ngayth' => $performedOn,
                     ':ngaykt' => $endDate,
                     ':nguoi_thuc_hien' => $person,
+                    ':ttktafter' => $conditionAfter,
+                    ':ghichufinal' => $note,
                 ]);
                 $dossierId = (int)$this->db->lastInsertId();
                 if ($dossierId <= 0) {
@@ -812,11 +848,13 @@ class KeHoachBaoDuongDinhKyController
                 'ngayth' => $plan['dossier_ngayth'] ?? null,
                 'ngaykt' => $plan['dossier_ngaykt'] ?? null,
                 'nguoi_thuc_hien_iso' => $plan['dossier_person'] ?? null,
+                'ghichufinal' => $plan['dossier_note'] ?? null,
             ], [
                 'operation' => 'save_execution', 'hososcbd_doi_id' => $dossierId,
                 'nguon_hoso' => 'hososcbd_doi_iso',
                 'ngayth' => $performedOn, 'ngaykt' => $endDate,
-                'nguoi_thuc_hien_iso' => $person,
+                'nguoi_thuc_hien_iso' => $person, 'ttktafter' => $conditionAfter,
+                'ghichufinal' => $note,
             ]);
             markDoiExecutionQuarterComplete($this->db, (int)$dossierId, $performedOn);
             $this->db->commit();

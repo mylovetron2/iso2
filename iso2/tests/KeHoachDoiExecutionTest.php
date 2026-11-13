@@ -33,6 +33,8 @@ final class KeHoachDoiExecutionTest extends TestCase
             ':ngayth' => '2026-10-01',
             ':ngaykt' => '2026-10-02',
             ':nguoi_thuc_hien' => 'Nguyễn Văn A',
+            ':ttktafter' => 'Đạt',
+            ':ghichufinal' => 'Đã bảo dưỡng xong',
             ':stt' => 82,
         ]);
         $completion = $this->createMock(PDOStatement::class);
@@ -64,14 +66,14 @@ final class KeHoachDoiExecutionTest extends TestCase
 
         $method = $class->getMethod('saveDoiExecution');
         $method->setAccessible(true);
-        $method->invoke($controller, 17, '2026-10-01', '2026-10-02', 'Nguyễn Văn A');
+        $method->invoke($controller, 17, '2026-10-01', '2026-10-02', 'Nguyễn Văn A', 'Đạt', 'Đã bảo dưỡng xong');
 
         $this->assertStringContainsString("k.nguon_hoso IS NULL OR k.nguon_hoso = 'hososcbd_doi_iso'", $queries[0]);
         $this->assertStringContainsString('INNER JOIN thietbi_iso t ON t.stt = k.thietbi_id', $queries[0]);
         $this->assertStringContainsString('t.stt = k.thietbi_id', $queries[0]);
         $this->assertStringNotContainsString('ke_hoach_bao_duong_dinh_ky_iso.thietbi_id', $queries[0]);
         $this->assertStringContainsString('UPDATE hososcbd_doi_iso', $queries[1]);
-        $this->assertStringContainsString('SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :nguoi_thuc_hien', $queries[1]);
+        $this->assertStringContainsString('ttktafter = :ttktafter', $queries[1]);
         $this->assertStringNotContainsString('hososcbd_iso', $queries[1]);
         $this->assertStringContainsString('SET qui_4_hoantat = 1', $queries[2]);
     }
@@ -113,6 +115,8 @@ final class KeHoachDoiExecutionTest extends TestCase
                         'ngayth' => '2026-10-01',
                         'ngaykt' => '2026-10-02',
                         'nguoi_thuc_hien_iso' => "Nguyễn Văn A\nTrần Văn B",
+                        'ttktafter' => 'Đạt',
+                        'ghichufinal' => 'Đã bảo dưỡng xong',
                     ];
             }
         ));
@@ -157,7 +161,7 @@ final class KeHoachDoiExecutionTest extends TestCase
         try {
             $method = $class->getMethod('saveDoiExecution');
             $method->setAccessible(true);
-            $this->assertTrue($method->invoke($controller, 17, '2026-10-01', '2026-10-02', "Nguyễn Văn A\nTrần Văn B"));
+            $this->assertTrue($method->invoke($controller, 17, '2026-10-01', '2026-10-02', "Nguyễn Văn A\nTrần Văn B", 'Đạt', 'Đã bảo dưỡng xong'));
         } finally {
             if ($previousSession === null) {
                 unset($_SESSION);
@@ -204,6 +208,8 @@ final class KeHoachDoiExecutionTest extends TestCase
             ':ngayth' => '2026-10-01',
             ':ngaykt' => null,
             ':nguoi_thuc_hien' => 'Nguyễn Văn A',
+            ':ttktafter' => 'Đạt',
+            ':ghichufinal' => 'Đã bảo dưỡng xong',
         ]);
 
         $link = $this->createMock(PDOStatement::class);
@@ -240,9 +246,10 @@ final class KeHoachDoiExecutionTest extends TestCase
 
         $method = $class->getMethod('saveDoiExecution');
         $method->setAccessible(true);
-        $method->invoke($controller, 17, '2026-10-01', null, 'Nguyễn Văn A');
+        $method->invoke($controller, 17, '2026-10-01', null, 'Nguyễn Văn A', 'Đạt', 'Đã bảo dưỡng xong');
 
         $this->assertStringContainsString('INSERT INTO hososcbd_doi_iso', $queries[1]);
+        $this->assertStringContainsString('ttktafter', $queries[1]);
         $this->assertStringContainsString("SET hososcbd_doi_id = :dossier_id, nguon_hoso = 'hososcbd_doi_iso'", $queries[2]);
         $this->assertStringContainsString('SET qui_4_hoantat = 1', $queries[3]);
     }

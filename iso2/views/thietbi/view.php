@@ -63,7 +63,7 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
             
             <div class="border-l-2 border-yellow-500 pl-3">
-                <div class="text-sm text-gray-600">Hộp máy</div>
+                <div class="text-sm text-gray-600">Họ máy</div>
                 <div class="text-base font-semibold">
                     <?php echo htmlspecialchars($item['homay'] ?? ''); ?>
                 </div>

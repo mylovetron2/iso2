@@ -46,12 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->beginTransaction();
                     try {
                         $db->prepare("UPDATE hososcbd_doi_iso
-                            SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :person
+                            SET ngayth = :ngayth, ngaykt = :ngaykt, nguoi_thuc_hien_iso = :person,
+                                ttktafter = COALESCE(:ttktafter, ttktafter),
+                                ghichufinal = COALESCE(:ghichufinal, ghichufinal)
                             WHERE stt = :stt")
                             ->execute([
                                 ':ngayth' => $data['ngayth'],
                                 ':ngaykt' => $data['ngaykt'] ?? null,
                                 ':person' => $data['nguoi_thuc_hien_iso'],
+                                ':ttktafter' => array_key_exists('ttktafter', $data) ? $data['ttktafter'] : null,
+                                ':ghichufinal' => array_key_exists('ghichufinal', $data) ? $data['ghichufinal'] : null,
                                 ':stt' => $hososcbd_stt,
                             ]);
                         markDoiExecutionQuarterComplete($db, $hososcbd_stt, $data['ngayth']);

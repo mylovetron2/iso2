@@ -198,12 +198,12 @@ require_once __DIR__ . '/views/layouts/header.php';
                         if ($isTamDung && !empty($item['lydo_tamdung'])) {
                             echo '<div class="text-orange-800">';
                             echo '<strong class="text-orange-600">Lý do:</strong> ';
-                            echo htmlspecialchars($item['lydo_tamdung']);
+                            echo nl2br(HoSoScBdTamDung::plainText($item['lydo_tamdung']));
                             echo '</div>';
                         } elseif (!$isTamDung && !empty($item['ghichu_tieptuc'])) {
                             echo '<div class="text-green-800">';
                             echo '<strong class="text-green-600">Ghi chú:</strong> ';
-                            echo htmlspecialchars($item['ghichu_tieptuc']);
+                            echo nl2br(HoSoScBdTamDung::plainText($item['ghichu_tieptuc']));
                             echo '</div>';
                         } else {
                             echo '<span class="text-gray-400">-</span>';

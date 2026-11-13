@@ -38,7 +38,8 @@ if (!$item) {
 require_once __DIR__ . '/../../config/constants.php';
 $attachmentsError = '';
 $attachmentFiles = [];
-$canEditAttachments = false;
+$canUploadAttachments = false;
+$canDeleteAttachments = false;
 $attachmentStore = null;
 $attachmentHelper = __DIR__ . '/../../includes/repair_attachments.php';
 $isAttachmentPost = $_SERVER['REQUEST_METHOD'] === 'POST'
@@ -50,7 +51,10 @@ try {
     }
     require_once $attachmentHelper;
     $attachmentStore = new RepairAttachments(__DIR__ . '/../../uploads/SCBD', $stt);
-    $canEditAttachments = canEditRepairAttachments($item, hasRole(ROLE_ADMIN), hasPermission('hososcbd.edit'));
+    $isAdmin = hasRole(ROLE_ADMIN);
+    $canEdit = hasPermission('hososcbd.edit');
+    $canUploadAttachments = canUploadRepairAttachments($isAdmin, $canEdit);
+    $canDeleteAttachments = canDeleteRepairAttachments($item, $isAdmin, $canEdit);
     if (isset($_GET['repair_attachment'])) {
         $name = (string)$_GET['repair_attachment'];
         $path = $attachmentStore->filePath($name);
@@ -69,9 +73,17 @@ try {
         if ($action === '') {
             throw new InvalidArgumentException('Không nhận được dữ liệu tải lên. Kiểm tra giới hạn post_max_size trên máy chủ.');
         }
-        if (!$canEditAttachments) {
+        if (($action === 'upload' && !$canUploadAttachments)
+            || ($action === 'delete' && !$canDeleteAttachments)) {
             http_response_code(403);
-            throw new RuntimeException('Không có quyền thêm/xóa file. Hồ sơ đã kết thúc chỉ admin được thay đổi file.');
+            $completed = !empty($item['ngaykt']) && $item['ngaykt'] !== '0000-00-00';
+            throw new RuntimeException(
+                $action === 'upload'
+                    ? 'Không có quyền tải file lên. Cần quyền sửa hồ sơ.'
+                    : ($completed
+                        ? 'Hồ sơ đã kết thúc không thể xóa file.'
+                        : 'Không có quyền xóa file. Cần quyền sửa hồ sơ.')
+            );
         }
         if (!is_string($_POST['attachment_token'] ?? null)
             || empty($_SESSION['repair_attachment_token'])
@@ -1267,7 +1279,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php if ($attachmentsError): ?>
             <p class="text-red-700" role="alert"><?= htmlspecialchars($attachmentsError) ?></p>
         <?php else: ?>
-            <?php if ($canEditAttachments): ?>
+            <?php if ($canUploadAttachments): ?>
                 <div class="flex flex-wrap items-center gap-3 mb-2">
                     <input type="file" id="repair-attachment-input" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" class="max-w-full">
                     <button type="button" id="repair-attachment-upload" class="px-3 py-2 bg-blue-600 text-white rounded">
@@ -1275,13 +1287,16 @@ require_once __DIR__ . '/../layouts/header.php';
                     </button>
                 </div>
             <?php else: ?>
-                <p class="text-sm text-gray-600 mb-2">Chỉ xem file. Hồ sơ đã kết thúc chỉ admin được thêm/xóa; hồ sơ đang thực hiện cần quyền sửa.</p>
+                <p class="text-sm text-gray-600 mb-2">Chỉ xem file. Cần quyền sửa hồ sơ để tải file lên.</p>
+            <?php endif; ?>
+            <?php if ($hasNgaykt): ?>
+                <p class="text-sm text-gray-600 mb-2">Hồ sơ đã kết thúc: có thể tải thêm file nếu có quyền sửa, nhưng không thể xóa file.</p>
             <?php endif; ?>
             <p id="repair-attachment-status" role="status" aria-live="polite" class="text-sm mb-2"></p>
             <div id="repair-attachment-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             <script>
             (() => {
-                const canEdit = <?= $canEditAttachments ? 'true' : 'false' ?>;
+                const canDelete = <?= $canDeleteAttachments ? 'true' : 'false' ?>;
                 const token = <?= json_encode($_SESSION['repair_attachment_token']) ?>;
                 const list = document.getElementById('repair-attachment-list');
                 const status = document.getElementById('repair-attachment-status');
@@ -1326,7 +1341,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             + ' (' + Math.ceil(file.size / 1024) + ' KB)';
                         link.appendChild(label);
                         row.appendChild(link);
-                        if (canEdit) {
+                        if (canDelete) {
                             const remove = document.createElement('button');
                             remove.type = 'button';
                             remove.className = 'text-red-600 repair-attachment-delete';

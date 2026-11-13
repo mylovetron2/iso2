@@ -147,7 +147,7 @@ $total = $summary['total_plans'];
         <colgroup>
             <col style="width: 4%"><col style="width: 12%"><col style="width: 8%"><col style="width: 12%">
             <col style="width: 8%"><col style="width: 8%"><col style="width: 8%"><col style="width: 10%">
-            <col style="width: 15%"><col style="width: 15%">
+            <col style="width: 13%"><col style="width: 8%"><col style="width: 9%">
         </colgroup>
         <thead>
             <tr>
@@ -160,12 +160,13 @@ $total = $summary['total_plans'];
                 <th scope="col">Ngày kết thúc</th>
                 <th scope="col">Đáp ứng kế hoạch</th>
                 <th scope="col">Người thực hiện</th>
+                <th scope="col">Tình trạng TB sau bảo dưỡng</th>
                 <th scope="col">Ghi chú</th>
             </tr>
         </thead>
         <tbody>
         <?php if ($report['items'] === []): ?>
-            <tr><td colspan="10" class="center">Không có thiết bị phù hợp với bộ lọc.</td></tr>
+            <tr><td colspan="11" class="center">Không có thiết bị phù hợp với bộ lọc.</td></tr>
         <?php else: ?>
             <?php foreach ($report['items'] as $index => $item): ?>
                 <?php
@@ -188,7 +189,8 @@ $total = $summary['total_plans'];
                     <td class="center date"><?php echo $escape($formatDate($item['ngay_ket_thuc'] ?? null)); ?></td>
                     <td class="center"><?php echo $statusInfo[$item['report_status']]['label']; ?></td>
                     <td><?php echo nl2br($escape(implode("\n", $item['cac_nguoi_thuc_hien'] ?? []))); ?></td>
-                    <td><?php echo nl2br($escape($item['ghi_chu'] ?? '')); ?></td>
+                    <td class="center"><?php echo $escape($item['ttktafter'] ?? ''); ?></td>
+                    <td><?php echo nl2br($escape($item['ghichufinal'] ?? '')); ?></td>
                 </tr>
             <?php endforeach; ?>
         <?php endif; ?>

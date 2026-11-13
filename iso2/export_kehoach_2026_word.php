@@ -72,7 +72,14 @@ $sql = "SELECT t.*,
         MIN(CAST(k.thang_thuchien AS UNSIGNED)) as first_month,
         MAX(k.donvi_thuchien) as donvi_thuchien,
         GROUP_CONCAT(DISTINCT MONTH(h.ngayhc) ORDER BY h.ngayhc) as inspected_months,
-        COUNT(DISTINCT h.stt) as inspection_count
+        COUNT(DISTINCT h.stt) as inspection_count,
+        (
+            SELECT MAX(h_latest.ngayhc)
+            FROM hosohckd_iso h_latest
+            WHERE (h_latest.thietbi_stt = t.stt
+                OR (h_latest.thietbi_stt IS NULL AND h_latest.tenmay = t.mavattu))
+                AND h_latest.ngayhc IS NOT NULL
+        ) as latest_inspection_date
         FROM thietbihckd_iso t
         INNER JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
         LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
@@ -161,7 +168,7 @@ header('Cache-Control: max-age=0');
                 <col style="width: 60px;"> <!-- Tháng <?= $i ?> -->
             <?php endfor; ?>
             <col style="width: 120px;"> <!-- Chủ sở hữu -->
-            <col style="width: 100px;"> <!-- Đã KĐ -->
+            <col style="width: 120px;"> <!-- Ngày KĐ gần nhất -->
         </colgroup>
         <thead>
             <tr>
@@ -173,7 +180,7 @@ header('Cache-Control: max-age=0');
                 <th rowspan="2">Nơi thực hiện</th>
                 <th colspan="12">Tháng</th>
                 <th rowspan="2">Chủ sở hữu</th>
-                <th rowspan="2">Đã KĐ</th>
+                <th rowspan="2">Ngày KĐ gần nhất</th>
             </tr>
             <tr>
                 <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -189,6 +196,9 @@ header('Cache-Control: max-age=0');
                 $selectedMonths2 = !empty($item['thang_dot2']) ? explode(',', $item['thang_dot2']) : [];
                 $inspectedMonths = !empty($item['inspected_months']) ? explode(',', $item['inspected_months']) : [];
                 $hasInspection = (int)($item['inspection_count'] ?? 0) > 0;
+                $latestInspectionDate = $hasInspection && !empty($item['latest_inspection_date'])
+                    ? date('d/m/Y', strtotime($item['latest_inspection_date']))
+                    : '-';
             ?>
             <tr>
                 <td><?= $displaySTT++ ?></td>
@@ -296,13 +306,7 @@ header('Cache-Control: max-age=0');
                 }
                 ?>
                 <td><?= htmlspecialchars($chusohuuValue) ?></td>
-                <td style="<?= $hasInspection ? 'background-color: #d4edda; color: #28a745; font-weight: bold;' : '' ?>">
-                    <?php if ($hasInspection): ?>
-                        ✓ (T: <?= implode(', ', $inspectedMonths) ?>)
-                    <?php else: ?>
-                        -
-                    <?php endif; ?>
-                </td>
+                <td><?= htmlspecialchars($latestInspectionDate) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
