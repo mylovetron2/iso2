@@ -355,6 +355,11 @@ button.text-red-600:hover {
                 case 'created': echo 'Tạo vật tư thành công!'; break;
                 case 'updated': echo 'Cập nhật vật tư thành công!'; break;
                 case 'deleted': echo 'Xóa vật tư thành công!'; break;
+                case 'deleted_multi':
+                    $delCount = (int)($_GET['count'] ?? 0);
+                    $delTotal = (int)($_GET['total'] ?? $delCount);
+                    echo "Đã xóa {$delCount}/{$delTotal} vật tư đã chọn!";
+                    break;
             }
             ?>
         </div>
@@ -465,12 +470,31 @@ button.text-red-600:hover {
         <h3 class="text-lg font-semibold mb-3">
             <i class="fas fa-list"></i> Danh sách vật tư (<?php echo $total; ?>)
         </h3>
+        <?php
+        $keepQuery = http_build_query(array_filter(
+            array_intersect_key($_GET, array_flip(['search', 'phanloai_id', 'page'])),
+            fn($v) => $v !== ''
+        ));
+        $keepQuery = $keepQuery ? '&' . $keepQuery : '';
+        ?>
+        <?php if (hasPermission('vattu.delete')): ?>
+        <form id="bulkDeleteForm" method="POST" action="vattuthanhly.php?action=deleteMultiple<?php echo htmlspecialchars($keepQuery); ?>" onsubmit="return handleBulkDelete(event);" class="mb-3">
+            <button type="submit" id="bulkDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fas fa-trash mr-1"></i> Xóa đã chọn (<span id="bulkDeleteCount">0</span>)
+            </button>
+        </form>
+        <?php endif; ?>
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white border" id="masterTable">
                 <thead class="bg-gray-100">
                     <tr>
+                        <?php if (hasPermission('vattu.delete')): ?>
+                        <th class="px-2 py-2 border text-center" style="width: 40px;">
+                            <input type="checkbox" id="selectAllVatTu" title="Chọn tất cả">
+                        </th>
+                        <?php endif; ?>
                         <th class="px-4 py-2 border text-left">Mã VT</th>
-                        <th class="px-4 py-2 border text-left">Số serial</th>
+                        <th class="px-4 py-2 border text-left">Số serial / P/N</th>
                         <th class="px-4 py-2 border text-left" style="display: none;">Phân loại</th>
                         <th class="px-4 py-2 border text-left">Tên (TA/Nga/Việt)</th>
                         <th class="px-4 py-2 border text-center">ĐVT</th>
@@ -487,7 +511,7 @@ button.text-red-600:hover {
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="12" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="13" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>Không có vật tư nào</p>
                         </td>
@@ -497,6 +521,11 @@ button.text-red-600:hover {
                     <tr class="master-row" data-vattu-stt="<?php echo $item['stt']; ?>" 
                         data-mavattu="<?php echo htmlspecialchars($item['mavattu']); ?>"
                         data-tenkyhieu="<?php echo htmlspecialchars($item['ten_tiengviet'] ?? $item['ten_tienganh'] ?? ''); ?>">
+                        <?php if (hasPermission('vattu.delete')): ?>
+                        <td class="px-2 py-2 border text-center">
+                            <input type="checkbox" class="vattu-checkbox" name="ids[]" form="bulkDeleteForm" value="<?php echo (int)$item['stt']; ?>">
+                        </td>
+                        <?php endif; ?>
                         <td class="px-4 py-2 border">
                             <a href="vattuthanhly.php?action=view&id=<?php echo $item['stt']; ?>" class="text-decoration-none">
                                 <code class="rounded font-semibold <?php echo htmlspecialchars($item['phanloai_mau_sac'] ?? 'bg-blue-100 text-blue-800'); ?>" style="font-size: 14px; padding: 6px 12px; display: inline-block; min-width: 140px; text-align: center; line-height: 1.4; cursor: pointer;">
@@ -516,6 +545,9 @@ button.text-red-600:hover {
                                 </span>
                             <?php else: ?>
                                 <span class="text-gray-400">-</span>
+                            <?php endif; ?>
+                            <?php if (!empty($item['so_pn'])): ?>
+                                <div class="text-xs text-gray-600 mt-1">P/N: <span class="font-mono"><?php echo htmlspecialchars($item['so_pn']); ?></span></div>
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-2 border text-center" style="display: none;">
@@ -543,7 +575,7 @@ button.text-red-600:hover {
                         <td class="px-4 py-2 border text-center">
                             <?php echo htmlspecialchars($item['dvt_tiengviet'] ?? $item['dvt_tiengnga'] ?? '-'); ?>
                         </td>
-                        <td class="px-4 py-2 border text-right font-semibold">
+                        <td class="px-4 py-2 border text-right font-semibold cell-qty">
                             <?php echo number_format($item['soluong_conlai'] ?? 0, 0); ?>
                         </td>
                         <td class="px-4 py-2 border text-right">
@@ -561,7 +593,7 @@ button.text-red-600:hover {
                         <td class="px-4 py-2 border">
                             <?php echo !empty($item['nguoiquanly']) ? htmlspecialchars($item['nguoiquanly']) : '-'; ?>
                         </td>
-                        <td class="px-4 py-2 border text-center">
+                        <td class="px-4 py-2 border text-center cell-count">
                             <span class="badge badge-<?php echo ($item['so_lan_sudung'] ?? 0) > 0 ? 'success' : 'warning'; ?>">
                                 <?php echo $item['so_lan_sudung'] ?? 0; ?> lần
                             </span>
@@ -583,7 +615,7 @@ button.text-red-600:hover {
                             </a>
                             <?php endif; ?>
                             <?php if (hasPermission('vattu.delete')): ?>
-                            <form method="POST" action="vattuthanhly.php?action=delete" 
+                            <form method="POST" action="vattuthanhly.php?action=delete<?php echo htmlspecialchars($keepQuery); ?>" 
                                   onsubmit="return handleDeleteVatTu(event);" 
                                   class="inline">
                                 <input type="hidden" name="id" value="<?php echo $item['stt']; ?>">
@@ -667,11 +699,69 @@ function handleDeleteVatTu(event) {
     return true;
 }
 
+// Giữ vị trí cuộn sau khi xóa
+document.addEventListener('submit', function(e) {
+    if (e.defaultPrevented) return;
+    const action = e.target.getAttribute('action') || '';
+    if (action.includes('action=delete')) {
+        sessionStorage.setItem('vattuScrollY', String(window.scrollY));
+    }
+}, false);
+window.addEventListener('load', function() {
+    const y = sessionStorage.getItem('vattuScrollY');
+    if (y !== null) {
+        sessionStorage.removeItem('vattuScrollY');
+        window.scrollTo(0, parseInt(y, 10) || 0);
+    }
+});
+
+// Chọn nhiều dòng để xóa
+function updateBulkDeleteState() {
+    const boxes = document.querySelectorAll('.vattu-checkbox');
+    const checked = document.querySelectorAll('.vattu-checkbox:checked');
+    const btn = document.getElementById('bulkDeleteBtn');
+    const countEl = document.getElementById('bulkDeleteCount');
+    const selectAll = document.getElementById('selectAllVatTu');
+    if (countEl) countEl.textContent = checked.length;
+    if (btn) btn.disabled = checked.length === 0;
+    if (selectAll) {
+        selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
+    }
+}
+
+function handleBulkDelete(event) {
+    const count = document.querySelectorAll('.vattu-checkbox:checked').length;
+    if (count === 0 || !confirm(`Bạn có chắc muốn xóa ${count} vật tư đã chọn?`)) {
+        event.preventDefault();
+        return false;
+    }
+    const btn = document.getElementById('bulkDeleteBtn');
+    if (btn) {
+        // Disable sau khi form đã gửi để không mất dữ liệu checkbox
+        setTimeout(() => { btn.disabled = true; }, 0);
+    }
+    return true;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAllVatTu');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.vattu-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+            updateBulkDeleteState();
+        });
+    }
+    document.querySelectorAll('.vattu-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateBulkDeleteState);
+    });
+});
+
 // Click vào master row để toggle detail
 document.querySelectorAll('.master-row').forEach(row => {
     row.addEventListener('click', function(e) {
         // Prevent toggle when clicking on action buttons
-        if (e.target.closest('a, button, form')) {
+        if (e.target.closest('a, button, form, input')) {
             return;
         }
         
@@ -701,8 +791,8 @@ document.querySelectorAll('.master-row').forEach(row => {
 });
 
 function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
-    // Get available quantity from master row (column 6: SL còn lại)
-    const qtyCell = masterRow.querySelector('td:nth-child(6)');
+    // Get available quantity from master row (SL còn lại)
+    const qtyCell = masterRow.querySelector('.cell-qty');
     const availableQty = qtyCell ? qtyCell.textContent.trim().replace(/,/g, '') : '0';
     
     // Create detail row
@@ -710,7 +800,7 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
     detailRow.id = `detail-row-${vattuStt}`;
     detailRow.className = 'detail-row active';
     detailRow.innerHTML = `
-        <td colspan="11">
+        <td colspan="${masterRow.cells.length}">
             <div class="detail-content">
 
                 <div class="bg-white rounded-lg p-4 shadow">
@@ -867,15 +957,15 @@ function createDetailRow(masterRow, vattuStt, mavattu, tenkyhieu) {
                 // Cập nhật số lượng còn lại trên master row
                 if (data.soluong_conlai_moi !== undefined) {
                     const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
-                    const qtyCell = masterRow.querySelector('td:nth-child(6)');
+                    const qtyCell = masterRow.querySelector('.cell-qty');
                     if (qtyCell) {
                         const formatted = Math.round(parseFloat(data.soluong_conlai_moi)).toLocaleString('en-US');
                         qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
                     }
                     
-                    // Cập nhật số lần thanh lý (cột 11)
+                    // Cập nhật số lần thanh lý
                     if (data.so_lan_sudung !== undefined) {
-                        const countCell = masterRow.querySelector('td:nth-child(11)');
+                        const countCell = masterRow.querySelector('.cell-count');
                         if (countCell) {
                             const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
                             countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;
@@ -1104,15 +1194,15 @@ function deleteChiTiet(id, vattuStt) {
             // Cập nhật lại số lượng còn lại sau khi xóa (cộng lại)
             if (data.soluong_conlai_moi !== undefined) {
                 const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
-                const qtyCell = masterRow.querySelector('td:nth-child(6)');
+                const qtyCell = masterRow.querySelector('.cell-qty');
                 if (qtyCell) {
                     const formatted = Math.round(parseFloat(data.soluong_conlai_moi)).toLocaleString('en-US');
                     qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
                 }
                 
-                // Cập nhật số lần thanh lý (cột 11)
+                // Cập nhật số lần thanh lý
                 if (data.so_lan_sudung !== undefined) {
-                    const countCell = masterRow.querySelector('td:nth-child(11)');
+                    const countCell = masterRow.querySelector('.cell-count');
                     if (countCell) {
                         const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
                         countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;

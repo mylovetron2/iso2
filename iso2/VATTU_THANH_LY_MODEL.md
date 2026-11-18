@@ -17,6 +17,7 @@ CREATE TABLE `vattu_thanh_ly_iso` (
   `stt` int(11) PRIMARY KEY AUTO_INCREMENT,
   `mavattu` varchar(50) -- Mã vật tư
   `so_serial` varchar(100) -- Số serial (thêm sau)
+  `so_pn` varchar(100) -- Số Part Number (P/N)
   `phanloai_id` int(11) DEFAULT 1 -- FK -> phanloai_vattu_thanh_ly_iso
   `vi_tri_sap_xep` int(11) DEFAULT 999 -- Thứ tự sắp xếp
   

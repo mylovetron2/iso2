@@ -36,6 +36,7 @@ class VatTuThanhLyController
                 
                 $conditions[] = "(
                     v.mavattu LIKE :search1a OR v.mavattu LIKE :search1b OR
+                    v.so_pn LIKE :search6a OR v.so_pn LIKE :search6b OR
                     v.ten_tienganh LIKE :search2a OR v.ten_tienganh LIKE :search2b OR
                     v.ten_tiengnga LIKE :search3a OR v.ten_tiengnga LIKE :search3b OR
                     v.ten_tiengviet LIKE :search4a OR v.ten_tiengviet LIKE :search4b OR
@@ -52,6 +53,8 @@ class VatTuThanhLyController
                 $params[':search4b'] = "%$searchCap%";
                 $params[':search5a'] = "%$searchLower%";
                 $params[':search5b'] = "%$searchCap%";
+                $params[':search6a'] = "%$searchLower%";
+                $params[':search6b'] = "%$searchCap%";
             }
             
             if ($phanloai_id) {
@@ -61,9 +64,16 @@ class VatTuThanhLyController
 
             $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
             
-            $items = $this->model->getAllWithStats($where, $params, $limit, $offset);
             $total = $this->model->count($where, $params);
-            $totalPages = ceil($total / $limit);
+            $totalPages = (int)ceil($total / $limit);
+
+            // Sau khi xóa, trang hiện tại có thể không còn dữ liệu -> lùi về trang cuối
+            if ($totalPages > 0 && $page > $totalPages) {
+                $page = $totalPages;
+                $offset = ($page - 1) * $limit;
+            }
+
+            $items = $this->model->getAllWithStats($where, $params, $limit, $offset);
             
             // Load danh sách đơn vị
             $db = getDBConnection();
@@ -97,6 +107,7 @@ class VatTuThanhLyController
             $data = [
                 'mavattu' => $_POST['mavattu'] ?? null,
                 'so_serial' => $_POST['so_serial'] ?? null,
+                'so_pn' => trim($_POST['so_pn'] ?? '') ?: null,
                 'phanloai_id' => !empty($_POST['phanloai_id']) ? (int)$_POST['phanloai_id'] : 1,
                 'vi_tri_sap_xep' => !empty($_POST['vi_tri_sap_xep']) ? (int)$_POST['vi_tri_sap_xep'] : 999,
                 'ten_tienganh' => $_POST['ten_tienganh'] ?? null,
@@ -169,6 +180,7 @@ class VatTuThanhLyController
                 $data = [
                     'mavattu' => $_POST['mavattu'] ?? null,
                     'so_serial' => $_POST['so_serial'] ?? null,
+                    'so_pn' => trim($_POST['so_pn'] ?? '') ?: null,
                     'phanloai_id' => !empty($_POST['phanloai_id']) ? (int)$_POST['phanloai_id'] : 1,
                     'vi_tri_sap_xep' => !empty($_POST['vi_tri_sap_xep']) ? (int)$_POST['vi_tri_sap_xep'] : 999,
                     'ten_tienganh' => $_POST['ten_tienganh'] ?? null,
@@ -271,13 +283,75 @@ class VatTuThanhLyController
                 );
             }
             
-            header('Location: /iso2/vattuthanhly.php?success=deleted');
+            header('Location: ' . $this->listUrl(['success' => 'deleted']));
         } else {
-            header('Location: /iso2/vattuthanhly.php?error=delete_failed');
+            header('Location: ' . $this->listUrl(['error' => 'delete_failed']));
         }
         exit;
     }
+
+    /**
+     * URL danh sách giữ lại bộ lọc và trang hiện tại (truyền qua query string của form xóa)
+     */
+    private function listUrl(array $extra = []): string
+    {
+        $params = [];
+        foreach (['search', 'phanloai_id', 'page'] as $key) {
+            if (isset($_GET[$key]) && $_GET[$key] !== '') {
+                $params[$key] = $_GET[$key];
+            }
+        }
+        return '/iso2/vattuthanhly.php?' . http_build_query($params + $extra);
+    }
     
+    public function deleteMultiple(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /iso2/vattuthanhly.php');
+            exit;
+        }
+
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', (array)($_POST['ids'] ?? [])),
+            fn(int $id): bool => $id > 0
+        )));
+
+        if (!$ids) {
+            header('Location: /iso2/vattuthanhly.php?error=missing_id');
+            exit;
+        }
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            try {
+                $oldData = $this->model->findById($id);
+                if ($oldData && $this->model->delete($id)) {
+                    $deleted++;
+                    $this->logger->log(
+                        'vattu_thanh_ly_iso',
+                        'DELETE',
+                        $id,
+                        [
+                            'mavattu' => $oldData['mavattu'] ?? null,
+                            'ten_tiengviet' => $oldData['ten_tiengviet'] ?? null,
+                            'soluong_conlai' => $oldData['soluong_conlai'] ?? null
+                        ],
+                        null
+                    );
+                }
+            } catch (Exception $e) {
+                error_log("Error deleting vattu {$id}: " . $e->getMessage());
+            }
+        }
+
+        if ($deleted === 0) {
+            header('Location: ' . $this->listUrl(['error' => 'delete_failed']));
+        } else {
+            header('Location: ' . $this->listUrl(['success' => 'deleted_multi', 'count' => $deleted, 'total' => count($ids)]));
+        }
+        exit;
+    }
+
     /**
      * API: Lấy chi tiết sử dụng của vật tư
      */

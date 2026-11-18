@@ -41,6 +41,14 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
+                <label class="block font-medium mb-2">Số P/N (Part Number)</label>
+                <input type="text" name="so_pn" maxlength="100"
+                       value="<?php echo htmlspecialchars($item['so_pn'] ?? ''); ?>"
+                       class="w-full border rounded px-3 py-2" 
+                       placeholder="Ví dụ: PN-12345">
+            </div>
+
+            <div>
                 <label class="block font-medium mb-2">Phân loại <span class="text-red-500">*</span></label>
                 <select name="phanloai_id" required class="w-full border rounded px-3 py-2">
                     <?php foreach ($phanLoaiList as $pl): ?>

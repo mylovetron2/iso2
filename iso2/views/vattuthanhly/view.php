@@ -109,6 +109,16 @@ h6 {
                                 </td>
                             </tr>
                             <?php endif; ?>
+                            <?php if (!empty($vattu['so_pn'])): ?>
+                            <tr class="border-b">
+                                <th class="bg-gray-100 px-4 py-2 text-left">Số P/N</th>
+                                <td class="px-4 py-2">
+                                    <span class="bg-gray-200 px-3 py-1 rounded text-sm font-mono">
+                                        <?php echo htmlspecialchars($vattu['so_pn']); ?>
+                                    </span>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
                             <tr class="border-b">
                                 <th class="bg-gray-100 px-4 py-2 text-left">Phân loại</th>
                                 <td class="px-4 py-2">

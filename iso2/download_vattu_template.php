@@ -49,18 +49,19 @@ try {
         'E1' => 'Tên tiếng Việt',
         'F1' => 'Đặc tính kỹ thuật tiếng Nga',
         'G1' => 'Đặc tính kỹ thuật tiếng Việt',
-        'H1' => 'ĐVT tiếng Nga',
-        'I1' => 'ĐVT tiếng Việt',
-        'J1' => 'Số lượng tồn',
-        'K1' => 'Đơn giá (VNĐ)',
-        'L1' => 'Đơn giá (USD)',
-        'M1' => 'Ngày nhận',
-        'N1' => 'Số HĐ',
-        'O1' => 'Ngày ký HĐ',
-        'P1' => 'Người quản lý',
-        'Q1' => 'Vị trí bảo quản',
-        'R1' => 'Phân loại',
-        'S1' => 'Số Serial',
+        'H1' => 'Số P/N',
+        'I1' => 'ĐVT tiếng Nga',
+        'J1' => 'ĐVT tiếng Việt',
+        'K1' => 'Số lượng tồn',
+        'L1' => 'Đơn giá (VNĐ)',
+        'M1' => 'Đơn giá (USD)',
+        'N1' => 'Ngày nhận',
+        'O1' => 'Số HĐ',
+        'P1' => 'Ngày ký HĐ',
+        'Q1' => 'Người quản lý',
+        'R1' => 'Vị trí bảo quản',
+        'S1' => 'Phân loại',
+        'T1' => 'Số Serial',
     ];
 
     foreach ($headers as $cell => $value) {
@@ -90,12 +91,12 @@ try {
         ],
     ];
 
-    $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+    $sheet->getStyle('A1:T1')->applyFromArray($headerStyle);
 
     // Column widths
     $widths = ['A' => 8, 'B' => 20, 'C' => 30, 'D' => 30, 'E' => 30, 'F' => 35, 'G' => 35,
-               'H' => 15, 'I' => 15, 'J' => 12, 'K' => 15, 'L' => 15, 'M' => 15, 'N' => 18,
-               'O' => 15, 'P' => 20, 'Q' => 20, 'R' => 15, 'S' => 15];
+               'H' => 20, 'I' => 15, 'J' => 15, 'K' => 12, 'L' => 15, 'M' => 15, 'N' => 15, 'O' => 18,
+               'P' => 15, 'Q' => 20, 'R' => 20, 'S' => 15, 'T' => 15];
     
     foreach ($widths as $col => $width) {
         $sheet->getColumnDimension($col)->setWidth($width);
@@ -109,13 +110,13 @@ try {
          'Tụ điện ALUM 22UF 20% 450V RADIAL TH', 
          'Конденсатор ALUM 22мкФ 20% 450V RADIAL Размер: max Φ 20.00mm Kích thước: max Φ 20.00mm',
          'Tụ điện ALUM 22UF 20% 450V RADIAL Kích thước: max Φ 20.00mm',
-         'Cái', 'Cái', 50, 50500, 2.15, '20/11/2025', '0044/25/DV-LSTE', 
+         'PN-0001', 'Cái', 'Cái', 50, 50500, 2.15, '20/11/2025', '0044/25/DV-LSTE',
          '20/07/2025', 'T.N Sang', 'P1. Nga', 'Vật tư', ''],
         [2, '011.002.00859', 'RES 1K OHM 1W 1% AXIAL', 'Резистор 1K OHM 1W 1% AXIAL', 
          'Điện trở 1K OHM 1W 1% AXIAL',
          'Резистор 1K OHM, 1W, ±0.1%, ≥50ppm/°C, AXIAL, термостойкий ≥ 175°C',
          'Điện trở 1K OHM, 1W, ±0.1%, ≥50ppm/°C, AXIAL',
-         'Cái', 'Cái', 8, 295000, 12.55, '20/11/2025', '0044/25/DV-LSTE', 
+         'PN-0002', 'Cái', 'Cái', 8, 295000, 12.55, '20/11/2025', '0044/25/DV-LSTE',
          '20/07/2025', 'T.N Sang', 'P1. Nga', 'Vật tư', ''],
     ];
 
@@ -142,7 +143,7 @@ try {
         ],
     ];
 
-    $sheet->getStyle('A2:S' . ($row - 1))->applyFromArray($dataStyle);
+    $sheet->getStyle('A2:T' . ($row - 1))->applyFromArray($dataStyle);
 
     // Notes
     $noteRow = $row + 2;

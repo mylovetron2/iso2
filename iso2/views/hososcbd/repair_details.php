@@ -610,6 +610,12 @@ require_once __DIR__ . '/../layouts/header.php';
                 <span class="hidden sm:inline">Công việc</span>
                 <span class="sm:hidden">CV</span>
             </a>
+            <a href="hososcbd_machine_history.php<?= $filterQuery ? '?' . ltrim($filterQuery, '&') : '' ?>"
+               class="inline-flex items-center px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-sm">
+                <i class="fas fa-history mr-1"></i>
+                <span class="hidden sm:inline">Danh sách hồ sơ</span>
+                <span class="sm:hidden">HS</span>
+            </a>
             <?php /* Ẩn nút bàn giao
             <a href="hososcbd_handover_details.php?id=<?= $stt ?><?= $filterQuery ?>" 
                class="inline-flex items-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm">
@@ -1427,7 +1433,6 @@ require_once __DIR__ . '/../layouts/header.php';
                         <option value="SC" <?php echo ($item['cv'] ?? 'SC') === 'SC' ? 'selected' : ''; ?>>SC - Sửa chữa</option>
                         <option value="BD" <?php echo ($item['cv'] ?? '') === 'BD' ? 'selected' : ''; ?>>BD - Bảo dưỡng</option>
                         <option value="KT" <?php echo ($item['cv'] ?? '') === 'KT' ? 'selected' : ''; ?>>KT - Kiểm tra</option>
-                        <option value="BDDK" <?php echo ($item['cv'] ?? '') === 'BDDK' ? 'selected' : ''; ?>>BDDK - Bảo dưỡng định kỳ</option>
                     </select>
                 </div>
                 <div>

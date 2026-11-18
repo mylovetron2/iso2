@@ -45,6 +45,14 @@ switch ($action) {
         $controller->delete();
         break;
         
+    case 'deleteMultiple':
+        if (!hasPermission('vattu.delete')) {
+            header('Location: /iso2/vattuthanhly.php?error=permission_denied');
+            exit;
+        }
+        $controller->deleteMultiple();
+        break;
+
     case 'getChiTiet':
         $controller->getChiTiet();
         break;

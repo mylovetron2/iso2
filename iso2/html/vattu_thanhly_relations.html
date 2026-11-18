@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Vật tư thanh lý — Quan hệ bảng (giỏ hàng, phiếu đặt hàng, phân loại, thống kê)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default', er: { useMaxWidth: true }, flowchart: { useMaxWidth: true } });</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; }
+  h1,h2,h3 { color:#1e3a8a; }
+  code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:0.9em; }
+  table { border-collapse: collapse; width:100%; max-width:100%; margin: 8px 0 20px; font-size: 14px; table-layout: fixed; }
+  th, td { border:1px solid #e5e7eb; padding:6px 10px; vertical-align: top; overflow-wrap:anywhere; word-break:break-word; }
+  th { background:#f8fafc; text-align:left; }
+  .pk { color:#b45309; font-weight:600; }
+  .fk { color:#0369a1; font-weight:600; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .b-gray{background:#e5e7eb;color:#374151}
+  .b-yel{background:#fef3c7;color:#92400e}
+  .b-org{background:#ffedd5;color:#9a3412}
+  .b-red{background:#fee2e2;color:#b91c1c}
+  .b-blue{background:#dbeafe;color:#1e40af}
+  .b-green{background:#dcfce7;color:#166534}
+  .b-purple{background:#f3e8ff;color:#6b21a8}
+  section { width:100%; max-width:100%; background:#fff; padding: 20px 24px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; overflow-x:auto; }
+  .mermaid { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; }
+  pre { max-width:100%; overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:#f8fafc; padding:10px 14px; border-radius:6px; font-size:13px; }
+</style>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 w-full max-w-none">
+
+<h1 class="text-3xl font-bold mb-1">Vật tư thanh lý — Quan hệ bảng &amp; luồng dữ liệu</h1>
+<p class="text-gray-600 mb-6">Mô tả quan hệ giữa các bảng của module <code>vattuthanhly.php</code>, <code>giohang.php</code>, <code>phieudathang.php</code>, <code>phanloaivattu.php</code>, <code>phieu kiểm soát vật tư</code> và <code>thongke_vattu_thanh_ly.php</code>.</p>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">1. Tổng quan</h2>
+  <p>Bảng trung tâm là <code>vattu_thanh_ly_iso</code> (danh mục + tồn kho). Mọi chức năng đều xoay quanh bảng này:</p>
+  <table>
+    <thead><tr><th>Nhóm chức năng</th><th>Bảng chính</th><th>Tác động lên tồn kho <code>soluong_conlai</code></th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-blue">Danh mục</span> Vật tư &amp; phân loại</td><td><code>vattu_thanh_ly_iso</code>, <code>phanloai_vattu_thanh_ly_iso</code></td><td>Lưu tồn kho hiện tại</td></tr>
+      <tr><td><span class="badge b-red">Xuất / thanh lý</span></td><td><code>vattu_thanh_ly_sudung_iso</code>, <code>vattu_thanh_ly_lichsu_iso</code></td><td><b>Trừ</b> khi thêm chi tiết, <b>cộng lại</b> khi xoá chi tiết</td></tr>
+      <tr><td><span class="badge b-purple">Giỏ hàng</span></td><td><code>cart_vattu_thanh_ly</code></td><td>Không đổi (chỉ lưu tạm vật tư muốn đặt)</td></tr>
+      <tr><td><span class="badge b-green">Đặt hàng / nhập kho</span></td><td><code>phieu_dat_hang</code>, <code>phieu_dat_hang_chi_tiet</code>, <code>lich_su_nhap_kho</code></td><td><b>Cộng</b> khi nhận hàng / nhập kho</td></tr>
+      <tr><td><span class="badge b-org">Phiếu kiểm soát vật tư</span></td><td><code>phieu_kiem_soat_vattu_iso</code>, <code>phieu_kiem_soat_vattu_chitiet_iso</code></td><td><b>Trừ</b> theo <code>soluong_tieuhao</code> (đồng thời tạo bản ghi sử dụng)</td></tr>
+      <tr><td><span class="badge b-yel">Thống kê</span></td><td>(chỉ đọc) <code>vattu_thanh_ly_sudung_iso</code> ⨝ <code>vattu_thanh_ly_iso</code> ⨝ <code>phanloai_vattu_thanh_ly_iso</code>, <code>donvi_iso</code></td><td>Không đổi</td></tr>
+      <tr><td><span class="badge b-gray">Nhật ký</span></td><td><code>activity_logs</code> (qua <code>ActivityLogger</code>)</td><td>Ghi log INSERT/UPDATE/DELETE của các bảng trên</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">2. Sơ đồ quan hệ bảng (ERD)</h2>
+  <div class="mermaid">
+  erDiagram
+    phanloai_vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_iso : "1 phân loại → n vật tư (phanloai_id)"
+    vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_sudung_iso : "1 vật tư → n lần xuất/thanh lý (vattu_stt)"
+    vattu_thanh_ly_iso ||--o{ vattu_thanh_ly_lichsu_iso : "1 vật tư → n log thay đổi SL (vattu_stt)"
+
+    users ||--o{ cart_vattu_thanh_ly : "user_id"
+    vattu_thanh_ly_iso ||--o{ cart_vattu_thanh_ly : "vattu_stt"
+
+    users ||--o{ phieu_dat_hang : "nguoi_lap / duyet / nhan_hang / nhap_kho"
+    phieu_dat_hang ||--|{ phieu_dat_hang_chi_tiet : "1 phiếu → n dòng (phieu_id)"
+    vattu_thanh_ly_iso ||--o{ phieu_dat_hang_chi_tiet : "vattu_stt (kèm snapshot tên)"
+    phieu_dat_hang ||--o{ lich_su_nhap_kho : "phieu_dat_hang_id"
+    phieu_dat_hang_chi_tiet ||--o{ lich_su_nhap_kho : "phieu_chi_tiet_id"
+    vattu_thanh_ly_iso ||--o{ lich_su_nhap_kho : "vattu_stt"
+    users ||--o{ lich_su_nhap_kho : "nguoi_nhap"
+
+    phieu_kiem_soat_vattu_iso ||--|{ phieu_kiem_soat_vattu_chitiet_iso : "phieu_id"
+    vattu_thanh_ly_iso ||--o{ phieu_kiem_soat_vattu_chitiet_iso : "vattu_stt"
+
+    donvi_iso ||..o{ vattu_thanh_ly_sudung_iso : "bophan = madv (lọc thống kê, không FK)"
+
+    phanloai_vattu_thanh_ly_iso {
+      INT id PK
+      VARCHAR ma_phanloai UK
+      VARCHAR ten_phanloai
+      VARCHAR mau_sac
+      INT thu_tu
+      TEXT mo_ta
+    }
+    vattu_thanh_ly_iso {
+      INT stt PK
+      VARCHAR mavattu
+      VARCHAR so_serial
+      VARCHAR so_pn
+      INT phanloai_id FK
+      INT vi_tri_sap_xep
+      TEXT ten_tiengviet
+      TEXT ten_tienganh
+      TEXT ten_tiengnga
+      TEXT dactinhkt_tiengviet
+      VARCHAR dvt_tiengviet
+      DECIMAL soluong_conlai
+      DECIMAL dongia
+      DATE ngaynhan
+      VARCHAR sohd
+      VARCHAR nguoiquanly
+      VARCHAR vitribaoquan
+    }
+    vattu_thanh_ly_sudung_iso {
+      INT id PK
+      INT vattu_stt FK
+      VARCHAR nguoisudung
+      DATE ngaysd_nhan
+      DECIMAL soluong
+      VARCHAR bophan
+      TEXT mucdich_sudung
+      VARCHAR trangthai
+      DATE ngayhoanthanh
+      TEXT ghichu
+    }
+    vattu_thanh_ly_lichsu_iso {
+      INT id PK
+      INT vattu_stt FK
+      ENUM loai_thaydoi
+      DECIMAL soluong_truoc
+      DECIMAL soluong_thaydoi
+      DECIMAL soluong_sau
+      VARCHAR nguoi_thuchien
+      DATETIME ngay_thuchien
+    }
+    cart_vattu_thanh_ly {
+      INT id PK
+      INT user_id FK
+      INT vattu_stt FK
+      DECIMAL so_luong
+      TEXT ghi_chu
+      DATETIME ngay_them
+      DATETIME updated_at
+    }
+    phieu_dat_hang {
+      INT id PK
+      VARCHAR ma_phieu UK
+      INT nguoi_lap FK
+      INT nguoi_duyet FK
+      INT nguoi_nhan_hang FK
+      INT nguoi_nhap_kho FK
+      VARCHAR trang_thai
+      VARCHAR nha_cung_cap
+      VARCHAR so_hd_ncc
+      DATE ngay_du_kien_nhan
+      DATETIME ngay_duyet
+      DATETIME ngay_nhan_hang
+      DATETIME ngay_nhap_kho
+    }
+    phieu_dat_hang_chi_tiet {
+      INT id PK
+      INT phieu_id FK
+      INT vattu_stt FK
+      TEXT ten_tieng_viet
+      TEXT ten_tieng_anh
+      TEXT ten_tieng_nga
+      TEXT dac_tinh_ky_thuat
+      VARCHAR don_vi
+      DECIMAL so_luong_dat
+      DECIMAL so_luong_nhan
+      DECIMAL don_gia
+      DECIMAL thanh_tien
+    }
+    lich_su_nhap_kho {
+      INT id PK
+      INT phieu_dat_hang_id FK
+      INT phieu_chi_tiet_id FK
+      INT vattu_stt FK
+      DECIMAL so_luong
+      DECIMAL so_luong_truoc
+      DECIMAL so_luong_sau
+      INT nguoi_nhap FK
+      VARCHAR vi_tri_kho
+    }
+    phieu_kiem_soat_vattu_iso {
+      INT id PK
+      VARCHAR so_phieu UK
+      VARCHAR loai_congviec
+      VARCHAR bophan_dathang
+      VARCHAR ten_thietbi
+      VARCHAR ky_mahieu
+      VARCHAR nguoi_lap_phieu
+      VARCHAR bophan_nguoilap
+      VARCHAR phieu_xuat_kho_so
+      DATE ngay_xuat_kho
+      VARCHAR trangthai
+      VARCHAR created_by
+    }
+    phieu_kiem_soat_vattu_chitiet_iso {
+      INT id PK
+      INT phieu_id FK
+      INT vattu_stt FK
+      DECIMAL soluong_nhan
+      DECIMAL soluong_tieuhao
+      TEXT ghichu
+    }
+    users { INT stt PK VARCHAR username VARCHAR hoten VARCHAR madv }
+    donvi_iso { VARCHAR madv PK VARCHAR tendv }
+  </div>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">3. Chi tiết quan hệ</h2>
+  <table>
+    <thead><tr><th>Bảng cha (1)</th><th>Bảng con (n)</th><th>Khoá</th><th>Ghi chú</th></tr></thead>
+    <tbody>
+      <tr><td><code>phanloai_vattu_thanh_ly_iso</code></td><td><code>vattu_thanh_ly_iso</code></td><td>phanloai_id → id</td><td>Không cho xoá phân loại đang được dùng (<code>isUsedInVatTu</code>). Mặc định: VATTU, CONGCU_DUNGCU, TAISAN, PHELIEU.</td></tr>
+      <tr><td><code>vattu_thanh_ly_iso</code></td><td><code>vattu_thanh_ly_sudung_iso</code></td><td>vattu_stt → stt</td><td>FK <b>ON DELETE CASCADE</b>. Mỗi lần xuất/thanh lý là 1 dòng; <code>trangthai</code>: <code>dangdung</code> | <code>dahoan</code> | <code>thanh_ly</code>.</td></tr>
+      <tr><td><code>vattu_thanh_ly_iso</code></td><td><code>vattu_thanh_ly_lichsu_iso</code></td><td>vattu_stt → stt</td><td>Audit log số lượng (<code>nhap</code>, <code>xuat</code>, <code>dieu_chinh</code>, <code>thanh_ly</code>).</td></tr>
+      <tr><td><code>users</code></td><td><code>cart_vattu_thanh_ly</code></td><td>user_id → stt</td><td>Giỏ hàng riêng cho từng user; cặp (user_id, vattu_stt) là duy nhất theo logic code (thêm trùng ⇒ cộng/ghi đè số lượng).</td></tr>
+      <tr><td><code>vattu_thanh_ly_iso</code></td><td><code>cart_vattu_thanh_ly</code></td><td>vattu_stt → stt</td><td>Giỏ hàng chỉ giữ tham chiếu, giá/tên lấy JOIN trực tiếp từ vật tư.</td></tr>
+      <tr><td><code>phieu_dat_hang</code></td><td><code>phieu_dat_hang_chi_tiet</code></td><td>phieu_id → id</td><td>Xoá phiếu ⇒ xoá chi tiết (CASCADE). Chi tiết lưu <b>snapshot</b> tên/đặc tính/đơn vị/đơn giá tại thời điểm đặt.</td></tr>
+      <tr><td><code>vattu_thanh_ly_iso</code></td><td><code>phieu_dat_hang_chi_tiet</code></td><td>vattu_stt → stt</td><td>RESTRICT: không xoá vật tư đang nằm trong phiếu.</td></tr>
+      <tr><td><code>phieu_dat_hang</code> / <code>phieu_dat_hang_chi_tiet</code></td><td><code>lich_su_nhap_kho</code></td><td>phieu_dat_hang_id, phieu_chi_tiet_id</td><td>Mỗi lần nhận hàng/nhập kho ghi 1 dòng gồm <code>so_luong_truoc</code> → <code>so_luong_sau</code>.</td></tr>
+      <tr><td><code>users</code></td><td><code>phieu_dat_hang</code></td><td>nguoi_lap, nguoi_duyet, nguoi_nhan_hang, nguoi_nhap_kho → stt</td><td>4 vai trò trong workflow.</td></tr>
+      <tr><td><code>phieu_kiem_soat_vattu_iso</code></td><td><code>phieu_kiem_soat_vattu_chitiet_iso</code></td><td>phieu_id → id</td><td>Phiếu KSV: <code>PKSV-YYYYMM-XXX</code>; <code>trangthai</code>: <code>dang_thuc_hien</code> | <code>hoan_thanh</code> | <code>huy</code>.</td></tr>
+      <tr><td><code>vattu_thanh_ly_iso</code></td><td><code>phieu_kiem_soat_vattu_chitiet_iso</code></td><td>vattu_stt → stt</td><td>Có <code>soluong_tieuhao</code> &gt; 0 ⇒ tự tạo thêm dòng trong <code>vattu_thanh_ly_sudung_iso</code> (ghi chú "Phiếu KSV: …", không có FK ngược).</td></tr>
+      <tr><td><code>donvi_iso</code></td><td><code>vattu_thanh_ly_sudung_iso</code></td><td>madv ~ bophan (không FK)</td><td>Dùng để lọc thống kê; chọn <code>DVLTH</code> ⇒ lọc <code>bophan IN ('TH','CNC')</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">4. Chi tiết các bảng</h2>
+
+  <h3 class="text-xl font-semibold mt-4">4.1. <code>vattu_thanh_ly_iso</code> — Vật tư (master + tồn kho)</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">stt</td><td>INT PK AI</td><td>Khoá chính, được các bảng khác tham chiếu qua <code>vattu_stt</code></td></tr>
+      <tr><td>mavattu, so_serial</td><td>VARCHAR</td><td>Mã vật tư, số serial</td></tr>
+      <tr><td>so_pn</td><td>VARCHAR(100) NULL</td><td>Số Part Number (P/N)</td></tr>
+      <tr><td class="fk">phanloai_id</td><td>INT (default 1)</td><td>FK → <code>phanloai_vattu_thanh_ly_iso.id</code></td></tr>
+      <tr><td>vi_tri_sap_xep</td><td>INT (default 999)</td><td>Thứ tự hiển thị</td></tr>
+      <tr><td>ten_tiengviet / ten_tienganh / ten_tiengnga</td><td>TEXT</td><td>Tên đa ngôn ngữ</td></tr>
+      <tr><td>dactinhkt_tiengviet / dactinhkt_tiengnga</td><td>TEXT</td><td>Đặc tính kỹ thuật</td></tr>
+      <tr><td>dvt_tiengviet / dvt_tiengnga</td><td>VARCHAR</td><td>Đơn vị tính</td></tr>
+      <tr><td><b>soluong_conlai</b></td><td>DECIMAL(10,2)</td><td><b>Tồn kho</b> — chỉ thay đổi qua các luồng ở mục 5</td></tr>
+      <tr><td>dongia (và đơn giá USD)</td><td>DECIMAL(15,2)</td><td>Đơn giá; dùng tính thành tiền ở giỏ hàng, phiếu đặt hàng và thống kê</td></tr>
+      <tr><td>ngaynhan, sohd, ngaykyhd</td><td>DATE / VARCHAR</td><td>Thông tin nhận &amp; hợp đồng</td></tr>
+      <tr><td>nguoiquanly, vitribaoquan, ghichu</td><td>VARCHAR / TEXT</td><td>Quản lý, bảo quản</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">4.2. <code>phanloai_vattu_thanh_ly_iso</code> — Phân loại vật tư</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td>INT PK AI</td><td>Khoá chính</td></tr>
+      <tr><td>ma_phanloai</td><td>VARCHAR(50) UNIQUE</td><td>VATTU, CONGCU_DUNGCU, TAISAN, PHELIEU…</td></tr>
+      <tr><td>ten_phanloai</td><td>VARCHAR(100)</td><td>Tên hiển thị (dùng làm tiêu đề thống kê khi lọc theo loại)</td></tr>
+      <tr><td>mau_sac</td><td>VARCHAR(50)</td><td>Class Tailwind (vd <code>bg-blue-100 text-blue-800</code>)</td></tr>
+      <tr><td>thu_tu, mo_ta</td><td>INT / TEXT</td><td>Thứ tự &amp; mô tả</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">4.3. <code>vattu_thanh_ly_sudung_iso</code> — Chi tiết xuất dùng / thanh lý</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td>INT PK AI</td><td></td></tr>
+      <tr><td class="fk">vattu_stt</td><td>INT</td><td>FK → <code>vattu_thanh_ly_iso.stt</code> (CASCADE)</td></tr>
+      <tr><td>nguoisudung, bophan</td><td>VARCHAR</td><td>Người &amp; bộ phận nhận (bophan ~ <code>donvi_iso.madv</code>)</td></tr>
+      <tr><td>ngaysd_nhan, ngayhoanthanh</td><td>DATE</td><td>Ngày nhận / hoàn thành. Thống kê dùng <code>COALESCE(ngayhoanthanh, ngaysd_nhan, DATE(updated_at))</code></td></tr>
+      <tr><td>soluong</td><td>DECIMAL(10,2)</td><td>Số lượng xuất</td></tr>
+      <tr><td>mucdich_sudung</td><td>TEXT</td><td>Mục đích / nguyên nhân (hiển thị "nguyên nhân" trong thống kê)</td></tr>
+      <tr><td>trangthai</td><td>VARCHAR(20)</td><td><code>dangdung</code>, <code>dahoan</code>, <code>thanh_ly</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">4.4. <code>cart_vattu_thanh_ly</code> — Giỏ hàng</h3>
+  <table>
+    <thead><tr><th>Cột</th><th>Kiểu</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td>INT PK AI</td><td></td></tr>
+      <tr><td class="fk">user_id</td><td>INT</td><td>FK → <code>users.stt</code></td></tr>
+      <tr><td class="fk">vattu_stt</td><td>INT</td><td>FK → <code>vattu_thanh_ly_iso.stt</code></td></tr>
+      <tr><td>so_luong, ghi_chu</td><td>DECIMAL / TEXT</td><td>Số lượng muốn đặt, ghi chú</td></tr>
+      <tr><td>ngay_them, updated_at</td><td>DATETIME</td><td>Thời điểm thêm / sửa</td></tr>
+    </tbody>
+  </table>
+  <p class="text-sm text-gray-600">Giỏ hàng được <b>xoá sạch</b> (theo <code>user_id</code>) ngay sau khi tạo phiếu đặt hàng thành công.</p>
+
+  <h3 class="text-xl font-semibold mt-4">4.5. <code>phieu_dat_hang</code> / <code>phieu_dat_hang_chi_tiet</code> / <code>lich_su_nhap_kho</code></h3>
+  <table>
+    <thead><tr><th>Bảng</th><th>Cột chính</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td><code>phieu_dat_hang</code></td><td>ma_phieu, nguoi_lap, nguoi_duyet, nguoi_nhan_hang, nguoi_nhap_kho, trang_thai, nha_cung_cap, so_hd_ncc, ngay_du_kien_nhan, ngay_duyet, ngay_nhan_hang, ngay_nhap_kho, ghi_chu</td><td>Header phiếu; mã <code>PDH-YYYYMMDD-XXX</code>. <code>trang_thai</code>: <code>draft</code>, <code>ordered</code>, <code>partial_received</code>, <code>received</code>, <code>stocked</code>, <code>cancelled</code></td></tr>
+      <tr><td><code>phieu_dat_hang_chi_tiet</code></td><td>phieu_id, vattu_stt, ten_tieng_viet/anh/nga, dac_tinh_ky_thuat, don_vi, so_luong_dat, so_luong_nhan, don_gia, thanh_tien, ghi_chu</td><td>Dòng vật tư; <code>thanh_tien = so_luong_dat × don_gia</code>; <code>so_luong_nhan</code> cộng dồn khi nhận từng phần</td></tr>
+      <tr><td><code>lich_su_nhap_kho</code></td><td>phieu_dat_hang_id, phieu_chi_tiet_id, vattu_stt, so_luong, so_luong_truoc, so_luong_sau, nguoi_nhap, vi_tri_kho, ghi_chu</td><td>Log mỗi lần cộng tồn kho (trước/sau)</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="text-xl font-semibold mt-4">4.6. <code>phieu_kiem_soat_vattu_iso</code> / <code>phieu_kiem_soat_vattu_chitiet_iso</code></h3>
+  <table>
+    <thead><tr><th>Bảng</th><th>Cột chính</th><th>Ý nghĩa</th></tr></thead>
+    <tbody>
+      <tr><td><code>phieu_kiem_soat_vattu_iso</code></td><td>so_phieu, loai_congviec, bophan_dathang, ten_thietbi, ky_mahieu, nguoi_lap_phieu, bophan_nguoilap, phieu_xuat_kho_so, ngay_xuat_kho, trangthai, ghi_chu, created_by</td><td>Phiếu kiểm soát vật tư theo công việc / thiết bị</td></tr>
+      <tr><td><code>phieu_kiem_soat_vattu_chitiet_iso</code></td><td>phieu_id, vattu_stt, soluong_nhan, soluong_tieuhao, ghichu</td><td>Vật tư nhận &amp; tiêu hao trên phiếu</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">5. Luồng dữ liệu ảnh hưởng tồn kho</h2>
+  <div class="mermaid">
+  flowchart LR
+    GH["🛒 Giỏ hàng<br/>cart_vattu_thanh_ly"] -- "Tạo phiếu (xoá giỏ)" --> PDH["📄 phieu_dat_hang<br/>+ chi_tiet (snapshot)"]
+    VT["📦 vattu_thanh_ly_iso<br/>soluong_conlai"] -- "Chọn vật tư" --> GH
+    PDH -- "Nhận hàng / Nhập kho<br/>(+ so_luong_nhan)" --> VT
+    PDH -- "ghi log trước/sau" --> LS["lich_su_nhap_kho"]
+    KSV["📝 Phiếu kiểm soát VT<br/>chitiet.soluong_tieuhao"] -- "tiêu hao > 0:<br/>tạo dòng sử dụng, trừ tồn" --> SD["vattu_thanh_ly_sudung_iso"]
+    SD -- "− soluong" --> VT
+    XOA["Xoá chi tiết sử dụng"] -- "+ soluong (cộng lại)" --> VT
+    PL["phanloai_vattu_thanh_ly_iso"] -- "phanloai_id" --> VT
+    SD -- "JOIN vật tư + phân loại" --> TK["📊 Thống kê thanh lý"]
+    DV["donvi_iso"] -. "lọc bophan" .-> TK
+  </div>
+  <ul class="list-disc pl-6 mt-3 space-y-1">
+    <li><b>Xuất / thanh lý</b>: INSERT <code>vattu_thanh_ly_sudung_iso</code> + <code>UPDATE vattu_thanh_ly_iso SET soluong_conlai = soluong_conlai − soluong</code> (trong transaction).</li>
+    <li><b>Xoá chi tiết sử dụng</b>: DELETE dòng sử dụng + cộng lại <code>soluong_conlai</code>.</li>
+    <li><b>Nhập kho từ phiếu đặt hàng</b>: UPDATE <code>so_luong_nhan</code>, <code>soluong_conlai += so_luong_nhan</code>, INSERT <code>lich_su_nhap_kho</code>, cập nhật <code>trang_thai</code> phiếu.</li>
+    <li><b>Phiếu kiểm soát</b>: <code>soluong_tieuhao &gt; 0</code> ⇒ INSERT sử dụng (<code>trangthai='dangdung'</code>) + trừ tồn. Huỷ phiếu và xoá dòng sử dụng sẽ hoàn lại số lượng.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">6. Workflow trạng thái phiếu đặt hàng</h2>
+  <div class="mermaid">
+  stateDiagram-v2
+    [*] --> draft : tạo (luồng cũ)
+    [*] --> ordered : tạo từ giỏ hàng (tự duyệt)
+    draft --> ordered : Duyệt
+    ordered --> partial_received : Nhận một phần
+    partial_received --> partial_received : Nhận tiếp
+    partial_received --> stocked : Nhận đủ
+    ordered --> received : Nhận hàng
+    received --> stocked : Nhập kho
+    ordered --> stocked : Nhận đủ + nhập kho
+    draft --> cancelled : Hủy
+    ordered --> cancelled : Hủy
+    stocked --> [*]
+    cancelled --> [*]
+  </div>
+  <table>
+    <thead><tr><th>Trạng thái</th><th>Nhãn</th><th>Người / cột liên quan</th></tr></thead>
+    <tbody>
+      <tr><td><code>draft</code></td><td><span class="badge b-gray">Nháp</span></td><td><code>nguoi_lap</code></td></tr>
+      <tr><td><code>ordered</code></td><td><span class="badge b-blue">Đã đặt hàng</span></td><td><code>nguoi_duyet</code>, <code>ngay_duyet</code></td></tr>
+      <tr><td><code>partial_received</code></td><td><span class="badge b-org">Nhận một phần</span></td><td><code>nguoi_nhan_hang</code>, <code>ngay_nhan_hang</code></td></tr>
+      <tr><td><code>received</code></td><td><span class="badge b-yel">Đã nhận đủ</span></td><td><code>nguoi_nhan_hang</code></td></tr>
+      <tr><td><code>stocked</code></td><td><span class="badge b-green">Đã nhập kho</span></td><td><code>nguoi_nhap_kho</code>, <code>ngay_nhap_kho</code></td></tr>
+      <tr><td><code>cancelled</code></td><td><span class="badge b-red">Đã hủy</span></td><td>Lý do nối vào <code>ghi_chu</code> với tiền tố <code>[HỦY]</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">7. Thống kê vật tư thanh lý</h2>
+  <p>Trang <code>thongke_vattu_thanh_ly.php</code> (<code>ThongKeVatTuThanhLyController::getThanhLyByDateRange</code>) chỉ đọc dữ liệu, truy vấn theo khoảng ngày:</p>
+<pre>FROM vattu_thanh_ly_sudung_iso s
+INNER JOIN vattu_thanh_ly_iso v           ON s.vattu_stt = v.stt
+LEFT  JOIN phanloai_vattu_thanh_ly_iso pl ON v.phanloai_id = pl.id
+WHERE DATE(COALESCE(s.ngayhoanthanh, s.ngaysd_nhan, s.updated_at)) BETWEEN :tungay AND :denngay
+  [AND v.phanloai_id = :phanloai_id]
+  [AND s.bophan = :bophan   -- DVLTH ⇒ s.bophan IN ('TH','CNC')]
+  [AND (v.mavattu / ten_* / s.ghichu / s.bophan / s.nguoisudung LIKE :search)]
+ORDER BY ngay_thuchien, v.mavattu</pre>
+  <table>
+    <thead><tr><th>Cột thống kê</th><th>Nguồn</th></tr></thead>
+    <tbody>
+      <tr><td>Mã, tên (Việt/Anh/Nga), đặc tính, ĐVT, đơn giá</td><td><code>vattu_thanh_ly_iso</code></td></tr>
+      <tr><td>Phân loại</td><td><code>phanloai_vattu_thanh_ly_iso.ten_phanloai / ma_phanloai</code></td></tr>
+      <tr><td>Số lượng</td><td><code>vattu_thanh_ly_sudung_iso.soluong</code></td></tr>
+      <tr><td>Thành tiền</td><td><code>s.soluong × v.dongia</code></td></tr>
+      <tr><td>Ngày thực hiện</td><td><code>COALESCE(ngayhoanthanh, ngaysd_nhan, DATE(updated_at))</code></td></tr>
+      <tr><td>Nguyên nhân / người thực hiện / bộ phận / trạng thái</td><td><code>mucdich_sudung</code>, <code>nguoisudung</code>, <code>bophan</code>, <code>trangthai</code></td></tr>
+      <tr><td>Danh sách bộ lọc: phân loại, đơn vị</td><td><code>phanloai_vattu_thanh_ly_iso</code> (ORDER BY thu_tu), <code>donvi_iso</code> (madv, tendv)</td></tr>
+    </tbody>
+  </table>
+  <p class="text-sm text-gray-600">Trang danh sách vật tư (<code>VatTuThanhLy::getAllWithStats</code>) cũng tính thống kê bằng JOIN phân loại + sử dụng: số lần dùng (<code>COUNT</code>), số lượng đang dùng (<code>SUM</code> với <code>trangthai='dangdung'</code>), tổng giá trị (<code>soluong_conlai × dongia</code>).</p>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">8. Phân quyền &amp; nhật ký</h2>
+  <ul class="list-disc pl-6 space-y-1">
+    <li><code>vattu.view / create / edit / delete</code> — vật tư và chi tiết sử dụng.</li>
+    <li><code>giohang.view / add / edit / delete</code> — giỏ hàng.</li>
+    <li><code>phieudathang.view / create / approve / receive / stock / cancel / export</code> — phiếu đặt hàng.</li>
+    <li>Mọi thao tác thêm/sửa/xoá trên các bảng trên được ghi vào <code>activity_logs</code> qua <code>ActivityLogger::log(bảng, hành động, id, dữ liệu cũ, dữ liệu mới)</code>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 class="text-2xl font-semibold mb-2">9. Tài liệu / mã nguồn liên quan</h2>
+  <ul class="list-disc pl-6 space-y-1">
+    <li><code>VATTU_THANH_LY_MODEL.md</code>, <code>VATTU_THANH_LY_ERD.html</code> — mô hình bảng vật tư.</li>
+    <li><code>GIOHANG_PHIEUDATHANG_README.md</code> — giỏ hàng &amp; phiếu đặt hàng.</li>
+    <li><code>PHIEU_KIEM_SOAT_VATTU_README.md</code> — phiếu kiểm soát vật tư.</li>
+    <li><code>controllers/</code>: <code>VatTuThanhLyController</code>, <code>PhanLoaiVatTuController</code>, <code>GioHangController</code>, <code>PhieuDatHangController</code>, <code>PhieuKiemSoatVatTuController</code>, <code>ThongKeVatTuThanhLyController</code>.</li>
+  </ul>
+</section>
+
+</body>
+</html>
