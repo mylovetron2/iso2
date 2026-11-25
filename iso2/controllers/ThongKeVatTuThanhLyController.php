@@ -268,9 +268,9 @@ class ThongKeVatTuThanhLyController
                 $sheet->setCellValue('C' . $row, $tenvattu);
                 $sheet->setCellValue('D' . $row, $item['donvi'] ?: $item['dvt_tiengnga']);
                 $sheet->setCellValue('E' . $row, $item['namsd']);
-                $sheet->setCellValue('F' . $row, number_format($soluong, 2, ',', '.'));
-                $sheet->setCellValue('G' . $row, number_format($item['dongia'], 2, ',', '.'));
-                $sheet->setCellValue('H' . $row, number_format($thanhtien, 2, ',', '.'));
+                $sheet->setCellValue('F' . $row, preg_replace('/,00$/', '', number_format($soluong, 2, ',', '.')));
+                $sheet->setCellValue('G' . $row, preg_replace('/,00$/', '', number_format($item['dongia'], 2, ',', '.')));
+                $sheet->setCellValue('H' . $row, preg_replace('/,00$/', '', number_format($thanhtien, 2, ',', '.')));
                 $sheet->setCellValue('I' . $row, $item['nguyennhan']);
                 
                 // Center alignment for certain columns
@@ -295,9 +295,9 @@ class ThongKeVatTuThanhLyController
                 $sheet->mergeCells('A' . $row . ':E' . $row);
                 $sheet->getStyle('A' . $row)->getFont()->setBold(true);
                 $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->setCellValue('F' . $row, number_format($totalQuantity, 2, ',', '.'));
+                $sheet->setCellValue('F' . $row, preg_replace('/,00$/', '', number_format($totalQuantity, 2, ',', '.')));
                 $sheet->setCellValue('G' . $row, '');
-                $sheet->setCellValue('H' . $row, number_format($totalAmount, 2, ',', '.'));
+                $sheet->setCellValue('H' . $row, preg_replace('/,00$/', '', number_format($totalAmount, 2, ',', '.')));
                 $sheet->setCellValue('I' . $row, '');
                 
                 $sheet->getStyle('F' . $row)->getFont()->setBold(true);
@@ -449,13 +449,13 @@ class ThongKeVatTuThanhLyController
             
             // Title
             $sheet->setCellValue('A1', 'РАСЧЁТ СТОИМОСТИ');
-            $sheet->mergeCells('A1:K1');
+            $sheet->mergeCells('A1:L1');
             $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             
             // Subtitle
             $sheet->setCellValue('A2', "Hа закупку измерительных приборов в {$year} г");
-            $sheet->mergeCells('A2:K2');
+            $sheet->mergeCells('A2:L2');
             $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             
             // Exchange rate
@@ -495,6 +495,9 @@ class ThongKeVatTuThanhLyController
             $sheet->setCellValue('K' . $row, 'Vật tư/Công cụ');
             $sheet->mergeCells('K' . $row . ':K' . ($row + 1));
             
+            $sheet->setCellValue('L' . $row, 'Người sử dụng');
+            $sheet->mergeCells('L' . $row . ':L' . ($row + 1));
+            
             // Headers row 2
             $row++;
             $sheet->setCellValue('B' . $row, "На Русс. языке\n(Tiếng Nga)");
@@ -514,11 +517,11 @@ class ThongKeVatTuThanhLyController
             
             // Style headers
             for ($i = 5; $i <= $row; $i++) {
-                $sheet->getStyle('A' . $i . ':K' . $i)->getFont()->setBold(true);
-                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle('A' . $i . ':K' . $i)->getAlignment()->setWrapText(true);
-                $sheet->getStyle('A' . $i . ':K' . $i)->getFill()
+                $sheet->getStyle('A' . $i . ':L' . $i)->getFont()->setBold(true);
+                $sheet->getStyle('A' . $i . ':L' . $i)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A' . $i . ':L' . $i)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle('A' . $i . ':L' . $i)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('A' . $i . ':L' . $i)->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('FFD9D9D9');
             }
@@ -535,6 +538,7 @@ class ThongKeVatTuThanhLyController
             $sheet->getColumnDimension('I')->setWidth(25);
             $sheet->getColumnDimension('J')->setWidth(15);
             $sheet->getColumnDimension('K')->setWidth(12);
+            $sheet->getColumnDimension('L')->setWidth(20);
             
             // Data rows
             $row++;
@@ -568,6 +572,7 @@ class ThongKeVatTuThanhLyController
                 $sheet->setCellValue('I' . $row, $ghichu);
                 $sheet->setCellValue('J' . $row, $mavattu);
                 $sheet->setCellValue('K' . $row, $loai);
+                $sheet->setCellValue('L' . $row, $item['nguoi_thuchien'] ?? '');
                 
                 // Format numbers
                 $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0');
@@ -666,7 +671,7 @@ class ThongKeVatTuThanhLyController
             
             // Borders for data area
             $lastDataRow = $row - 8; // Before totals
-            $sheet->getStyle('A5:K' . $lastDataRow)->getBorders()->getAllBorders()
+            $sheet->getStyle('A5:L' . $lastDataRow)->getBorders()->getAllBorders()
                 ->setBorderStyle(Border::BORDER_THIN);
             
             // Clean output buffer before download

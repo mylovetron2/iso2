@@ -643,6 +643,12 @@ button.text-red-600:hover {
                                     title="Thêm vào giỏ hàng">
                                 <i class="fas fa-cart-plus"></i>
                             </button>
+                            <?php if (hasPermission('vattu.create')): ?>
+                            <a href="vattuthanhly.php?action=create&amp;copy_from=<?php echo (int)$item['stt']; ?><?php echo htmlspecialchars($keepQuery, ENT_QUOTES, 'UTF-8'); ?>"
+                               class="text-indigo-600 hover:text-indigo-800 mx-1" title="Sao chép" onclick="event.stopPropagation();">
+                                <i class="fas fa-copy"></i>
+                            </a>
+                            <?php endif; ?>
                             <?php if (hasPermission('vattu.edit')): ?>
                             <a href="vattuthanhly.php?                            action=edit&id=<?php echo $item['stt']; ?><?php echo htmlspecialchars($keepQuery); ?>" 
                                class="text-green-600 hover:text-green-800 mx-1" title="Sửa" onclick="event.stopPropagation();">

@@ -230,13 +230,13 @@ require_once __DIR__ . '/../layouts/header.php';
                         <?php echo htmlspecialchars($item['namsd'] ?? ''); ?>
                     </td>
                     <td class="px-3 py-2 border text-right">
-                        <?php echo number_format($soluong, 2, ',', '.'); ?>
+                        <?php echo preg_replace('/,00$/', '', number_format((float)$soluong, 2, ',', '.')); ?>
                     </td>
                     <td class="px-3 py-2 border text-right">
-                        <?php echo number_format($dongia, 2, ',', '.'); ?>
+                        <?php echo preg_replace('/,00$/', '', number_format((float)$dongia, 2, ',', '.')); ?>
                     </td>
                     <td class="px-3 py-2 border text-right font-semibold">
-                        <?php echo number_format($thanhtien, 2, ',', '.'); ?>
+                        <?php echo preg_replace('/,00$/', '', number_format((float)$thanhtien, 2, ',', '.')); ?>
                     </td>
                     <td class="px-3 py-2 border">
                         <?php echo htmlspecialchars($item['nguyennhan'] ?? ''); ?>
@@ -252,11 +252,11 @@ require_once __DIR__ . '/../layouts/header.php';
                         TỔNG CỘNG / ИТОГО
                     </td>
                     <td class="px-3 py-3 border text-right text-lg">
-                        <?php echo number_format($totalQuantity, 2, ',', '.'); ?>
+                        <?php echo preg_replace('/,00$/', '', number_format((float)$totalQuantity, 2, ',', '.')); ?>
                     </td>
                     <td class="px-3 py-3 border"></td>
                     <td class="px-3 py-3 border text-right text-lg text-red-700">
-                        <?php echo number_format($totalAmount, 2, ',', '.'); ?>
+                        <?php echo preg_replace('/,00$/', '', number_format((float)$totalAmount, 2, ',', '.')); ?>
                     </td>
                     <td class="px-3 py-3 border"></td>
                 </tr>

@@ -267,6 +267,7 @@ table#hrdftrtbl {
         <?php foreach ($items as $index => $item): 
             $tenvattu = $item['ten_tiengviet'] ?: $item['ten_tienganh'] ?: $item['ten_tiengnga'];
             $soluong = $item['soluong_thaydoi'];
+            $soluongText = preg_replace('/,00$/', '', number_format((float)$soluong, 2, ',', '.'));
             $donvi = $item['donvi'] ?: $item['dvt_tiengnga'];
             $ghichu = $item['nguyennhan'] ?? '';
         ?>
@@ -275,8 +276,8 @@ table#hrdftrtbl {
             <td><?php echo escapeWordText($item['mavattu']); ?></td>
             <td><?php echo escapeWordText($tenvattu); ?></td>
             <td class="center"><?php echo escapeWordText($donvi); ?></td>
-            <td class="center"><?php echo number_format($soluong, 2, ',', '.'); ?></td>
-            <td class="center"><?php echo number_format($soluong, 2, ',', '.'); ?></td>
+            <td class="center"><?php echo $soluongText; ?></td>
+            <td class="center"><?php echo $soluongText; ?></td>
             <td><?php echo escapeWordText($ghichu); ?></td>
         </tr>
         <?php endforeach; ?>

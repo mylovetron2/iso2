@@ -181,7 +181,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Phiếu</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Số hồ sơ</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Mã VT</th>
-                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Số máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Ngày YC</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-center text-xs md:text-sm">CV</th>
@@ -239,7 +239,7 @@ require_once __DIR__ . '/../layouts/header.php';
                             <?php echo htmlspecialchars($item['mavt']); ?>
                         <?php endif; ?>
                     </td>
-                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($item['somay']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['somay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell">
                         <?php 
                         if ($item['ngayyc'] && $item['ngayyc'] != '0000-00-00') {

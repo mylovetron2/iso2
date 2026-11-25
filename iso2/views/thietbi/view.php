@@ -170,7 +170,11 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php
     $ghiChuTtkt = [];
     foreach ($lichSuSuaChua as $ls) {
-        $note = trim((string)($ls['ghichufinal'] ?? ''));
+        $note = (string)($ls['ghichufinal'] ?? '');
+        // Ghi chú có thể chứa HTML đã mã hóa (từ trình soạn thảo): chuyển về văn bản thuần
+        $note = preg_replace('~<\s*br\s*/?>|</\s*(p|div|li)\s*>~i', "\n", $note);
+        $note = html_entity_decode(strip_tags($note), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $note = trim(preg_replace("~[ \t\x{00A0}]+~u", ' ', preg_replace("~\s*\n\s*~", "\n", $note)));
         if ($note !== '') {
             $ngay = !empty($ls['ngaykt']) && $ls['ngaykt'] !== '0000-00-00' ? date('d/m/Y', strtotime($ls['ngaykt'])) : 'N/A';
             $ghiChuTtkt[] = $ngay . ': ' . $note;

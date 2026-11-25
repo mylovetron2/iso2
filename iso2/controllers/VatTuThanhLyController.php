@@ -287,6 +287,27 @@ class VatTuThanhLyController
     
     public function create(): void
     {
+        $copyId = isset($_GET['copy_from']) ? (int)$_GET['copy_from'] : 0;
+        $copySourceData = [];
+
+        if ($copyId > 0) {
+            $source = $this->model->findById($copyId);
+            if (!$source) {
+                header('Location: /iso2/vattuthanhly.php?error=not_found');
+                exit;
+            }
+
+            $copyFields = [
+                'mavattu', 'so_serial', 'so_pn', 'phanloai_id', 'vi_tri_sap_xep',
+                'ten_tienganh', 'ten_tiengnga', 'ten_tiengviet',
+                'dactinhkt_tiengnga', 'dactinhkt_tiengviet',
+                'dvt_tiengnga', 'dvt_tiengviet', 'soluong_conlai',
+                'dongia', 'dongia_usd', 'ngaynhan', 'sohd', 'ngaykyhd',
+                'nguoiquanly', 'vitribaoquan', 'ghichu',
+            ];
+            $copySourceData = array_intersect_key($source, array_flip($copyFields));
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Xử lý dữ liệu, convert empty string thành NULL cho các trường số
             $data = [
@@ -331,10 +352,10 @@ class VatTuThanhLyController
                     ]
                 );
                 
-                header('Location: /iso2/vattuthanhly.php?success=created');
+                header('Location: ' . $this->listUrl(['success' => 'created']));
                 exit;
             } else {
-                header('Location: /iso2/vattuthanhly.php?error=create_failed');
+                header('Location: ' . $this->listUrl(['error' => 'create_failed']));
                 exit;
             }
         }
