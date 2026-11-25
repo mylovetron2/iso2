@@ -20,6 +20,10 @@ switch ($action) {
     case 'view':
         $controller->view();
         break;
+
+    case 'exportExcel':
+        $controller->exportExcel();
+        break;
         
     case 'create':
         if (!hasPermission('vattu.create')) {

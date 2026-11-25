@@ -177,21 +177,6 @@ function getPrefillValue($field, $default = '') {
                     <input type="text" name="ngnhyeucau" value="<?php echo htmlspecialchars(getPrefillValue('ngnhyeucau')); ?>"
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['ngnhyeucau'])) ? 'bg-green-50 border-green-300' : ''; ?>">
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">
-                        Công việc <span class="text-red-500">*</span>
-                        <?php if (!empty($prefillData) && !empty($prefillData['cv'])): ?>
-                            <span class="text-green-600 text-xs ml-2"><i class="fas fa-check-circle"></i> Tự động</span>
-                        <?php endif; ?>
-                    </label>
-                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500 <?php echo (!empty($prefillData) && !empty($prefillData['cv'])) ? 'bg-green-50 border-green-300' : ''; ?>">
-                        <?php $currentCv = getPrefillValue('cv', 'SC'); ?>
-                        <option value="KT" <?php echo ($currentCv === 'KT') ? 'selected' : ''; ?>>KT - Kiểm Tra</option>
-                        <option value="BD" <?php echo ($currentCv === 'BD') ? 'selected' : ''; ?>>BD - Bảo Dưỡng</option>
-                        <option value="SC" <?php echo ($currentCv === 'SC') ? 'selected' : ''; ?>>SC - Sửa Chữa</option>
-                        <option value="BDDK" <?php echo ($currentCv === 'BDDK') ? 'selected' : ''; ?>>BDDK - Bảo Dưỡng Định Kỳ</option>
-                    </select>
-                </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">
                         Nhóm SC <span class="text-red-500">*</span>
@@ -445,6 +430,7 @@ function addDevice() {
         container.style.display = 'block';
     }
     
+    const defaultCv = <?php echo json_encode(in_array(($prefillData['cv'] ?? ''), ['KT', 'BD', 'SC'], true) ? $prefillData['cv'] : 'SC'); ?>;
     const deviceRow = `
         <tr class="device-item hover:bg-gray-50 transition-colors" data-device-index="${deviceIndex}">
             <td class="border border-gray-300 px-2 py-2 text-center">
@@ -464,9 +450,10 @@ function addDevice() {
                           placeholder="Nhập tình trạng..."></textarea>
             </td>
             <td class="border border-gray-300 px-2 py-2">
-                <textarea name="devices[${deviceIndex}][noidungyc]" rows="2"
-                          class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:border-blue-500 resize-none text-sm"
-                          placeholder="Nhập nội dung yêu cầu..."></textarea>
+                <select name="devices[${deviceIndex}][cv]"
+                        class="cv-select w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:border-blue-500 text-sm">
+                    ${['KT', 'BD', 'SC'].map(v => `<option value="${v}"${v === defaultCv ? ' selected' : ''}>${v}</option>`).join('')}
+                </select>
             </td>
             <td class="border border-gray-300 px-2 py-2">
                 <select name="devices[${deviceIndex}][vitrimaybd]"

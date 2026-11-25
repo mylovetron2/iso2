@@ -387,12 +387,33 @@ button.text-red-600:hover {
                     </option>
                 <?php endforeach; ?>
             </select>
+
+            <input type="text" name="nguoiquanly" list="nguoiquanlyList"
+                   value="<?php echo htmlspecialchars($_GET['nguoiquanly'] ?? ''); ?>"
+                   placeholder="Lọc người quản lý..."
+                   class="border rounded px-3 py-2" style="min-width: 180px;">
+            <datalist id="nguoiquanlyList">
+                <?php foreach ($nguoiQuanLyList ?? [] as $nql): ?>
+                    <option value="<?php echo htmlspecialchars($nql); ?>"></option>
+                <?php endforeach; ?>
+            </datalist>
             
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-search mr-1"></i> Tìm
             </button>
             <a href="vattuthanhly.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
                 <i class="fas fa-redo mr-1"></i> Xóa lọc
+            </a>
+
+            <?php
+            $exportQuery = http_build_query(array_filter(
+                ['search' => $_GET['search'] ?? '', 'phanloai_id' => $_GET['phanloai_id'] ?? '', 'nguoiquanly' => $_GET['nguoiquanly'] ?? ''],
+                fn($value) => $value !== ''
+            ));
+            ?>
+            <a href="vattuthanhly.php?action=exportExcel<?php echo $exportQuery ? '&' . htmlspecialchars($exportQuery, ENT_QUOTES, 'UTF-8') : ''; ?>"
+               class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">
+                <i class="fas fa-file-excel mr-1"></i> Xuất Excel
             </a>
             
             <?php if (hasPermission('vattu.create')): ?>
@@ -429,6 +450,20 @@ button.text-red-600:hover {
                     <a href="import_vattu_compare.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
                         <i class="fas fa-file-import mr-3 text-teal-600 w-5"></i>
                         <span>Import Excel (So sánh mã)</span>
+                    </a>
+                    <?php endif; ?>
+                    <?php if (hasPermission('vattu.edit')): ?>
+                    <a href="import_update_vattu_thanh_ly.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-file-upload mr-3 text-blue-600 w-5"></i>
+                        <span>Import cập nhật vật tư</span>
+                    </a>
+                    <a href="import_vattu_so_luong_dongia_usd.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-balance-scale mr-3 text-amber-600 w-5"></i>
+                        <span>Cập nhật số lượng và giá USD</span>
+                    </a>
+                    <a href="import_vattu_bo_sung.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                        <i class="fas fa-file-import mr-3 text-blue-600 w-5"></i>
+                        <span>Import bổ sung thông tin</span>
                     </a>
                     <?php endif; ?>
                     <a href="thongke_vattu_thanh_ly.php" class="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
@@ -472,7 +507,7 @@ button.text-red-600:hover {
         </h3>
         <?php
         $keepQuery = http_build_query(array_filter(
-            array_intersect_key($_GET, array_flip(['search', 'phanloai_id', 'page'])),
+            array_intersect_key($_GET, array_flip(['search', 'phanloai_id', 'nguoiquanly', 'page'])),
             fn($v) => $v !== ''
         ));
         $keepQuery = $keepQuery ? '&' . $keepQuery : '';
@@ -609,7 +644,7 @@ button.text-red-600:hover {
                                 <i class="fas fa-cart-plus"></i>
                             </button>
                             <?php if (hasPermission('vattu.edit')): ?>
-                            <a href="vattuthanhly.php?action=edit&id=<?php echo $item['stt']; ?>" 
+                            <a href="vattuthanhly.php?                            action=edit&id=<?php echo $item['stt']; ?><?php echo htmlspecialchars($keepQuery); ?>" 
                                class="text-green-600 hover:text-green-800 mx-1" title="Sửa" onclick="event.stopPropagation();">
                                 <i class="fas fa-edit"></i>
                             </a>

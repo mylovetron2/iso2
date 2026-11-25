@@ -150,13 +150,6 @@ $devices = $detail['devices'];
         
         <!-- Actions -->
         <div class="mt-4 pt-4 border-t flex gap-2">
-            <?php if (hasPermission('phieuyeucau.edit')): ?>
-            <a href="phieuyeucau.php?action=edit&phieu=<?php echo urlencode($summary['phieu']); ?>" 
-               class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
-                <i class="fas fa-edit mr-1"></i> Sửa thông tin phiếu
-            </a>
-            <?php endif; ?>
-            
             <?php if (hasPermission('hososcbd.create')): ?>
             <a href="hososcbd.php?action=create&phieu=<?php echo urlencode($summary['phieu']); ?>" 
                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">

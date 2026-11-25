@@ -26,24 +26,10 @@ switch ($action) {
         break;
         
     case 'create':
-        // Tạo phiếu mới
-        if (!hasPermission('phieuyeucau.create')) {
-            $_SESSION['error'] = 'Bạn không có quyền tạo phiếu';
-            header('Location: /iso2/phieuyeucau.php');
-            exit;
-        }
-        $controller->create();
-        break;
-
     case 'edit':
-        // Sửa thông tin phiếu
-        if (!hasPermission('phieuyeucau.edit')) {
-            $_SESSION['error'] = 'Bạn không có quyền sửa phiếu';
-            header('Location: /iso2/phieuyeucau.php');
-            exit;
-        }
-        $controller->edit();
-        break;
+        // Đã ẩn chức năng tạo/sửa phiếu: tạo phiếu thực hiện ở hososcbd.php?action=create
+        header('Location: /iso2/phieuyeucau.php');
+        exit;
 
     case 'delete':
         // Xóa phiếu

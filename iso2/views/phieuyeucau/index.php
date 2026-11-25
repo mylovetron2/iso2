@@ -70,12 +70,6 @@ require_once __DIR__ . '/../layouts/header.php';
             <a href="phieuyeucau.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm md:text-base text-center">
                 <i class="fas fa-redo mr-1"></i> Xóa lọc
             </a>
-            
-            <?php if (hasPermission('phieuyeucau.create')): ?>
-            <a href="phieuyeucau.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm md:text-base text-center ml-auto">
-                <i class="fas fa-plus mr-1"></i> Tạo phiếu mới
-            </a>
-            <?php endif; ?>
         </div>
     </form>
 
@@ -173,13 +167,6 @@ require_once __DIR__ . '/../layouts/header.php';
                                        class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    
-                                    <?php if (hasPermission('phieuyeucau.edit')): ?>
-                                    <a href="phieuyeucau.php?action=edit&phieu=<?php echo urlencode($phieu['phieu']); ?>" 
-                                       class="text-orange-600 hover:text-orange-800" title="Sửa">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <?php endif; ?>
                                     
                                     <?php if (hasPermission('phieuyeucau.delete') && $phieu['tb_chuath'] == $phieu['so_thietbi']): ?>
                                     <form method="post" action="phieuyeucau.php?action=delete" class="inline" 

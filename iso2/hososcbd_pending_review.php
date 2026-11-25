@@ -343,6 +343,7 @@ require_once __DIR__ . '/views/layouts/header.php';
                             'ttktafter'   => 'Tình trạng KT sau',
                             'ketluan'     => 'Kết luận',
                             'xemxetxuong' => 'Xem xét xưởng',
+                            'ghichufinal' => 'Ghi chú TTKT',
                         ];
                         foreach ($fieldLabels as $field => $label):
                             $val = $rowData[$field] ?? '';

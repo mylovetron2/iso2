@@ -167,6 +167,25 @@ require_once __DIR__ . '/../layouts/header.php';
         <?php endif; ?>
     </div>
 
+    <?php
+    $ghiChuTtkt = [];
+    foreach ($lichSuSuaChua as $ls) {
+        $note = trim((string)($ls['ghichufinal'] ?? ''));
+        if ($note !== '') {
+            $ngay = !empty($ls['ngaykt']) && $ls['ngaykt'] !== '0000-00-00' ? date('d/m/Y', strtotime($ls['ngaykt'])) : 'N/A';
+            $ghiChuTtkt[] = $ngay . ': ' . $note;
+        }
+    }
+    ?>
+    <div class="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded">
+        <div class="text-base font-semibold text-amber-700 mb-1">
+            <i class="fas fa-sticky-note mr-1"></i> Ghi chú tình trạng kỹ thuật:
+        </div>
+        <div class="text-base text-gray-700">
+            <?php echo $ghiChuTtkt ? nl2br(htmlspecialchars(implode("\n", $ghiChuTtkt), ENT_QUOTES, 'UTF-8')) : '<span class="text-gray-400">Chưa có ghi chú</span>'; ?>
+        </div>
+    </div>
+
     <!-- Tab navigation -->
     <div class="mb-6 no-print">
         <div class="border-b border-gray-200">

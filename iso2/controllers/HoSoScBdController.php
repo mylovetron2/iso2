@@ -491,7 +491,7 @@ class HoSoScBdController
                     $success = $this->model->update($stt, $data);
                     if ($success) {
                         // Đồng bộ công việc liên kết bên giaoviec_kpi (nếu insert/update lỗi, rollback cả hồ sơ)
-                        $this->syncGiaoViecKpiForHoso($db, $stt, $data);
+                        $this->syncGiaoViecKpiForHoso($db, $stt, $data + ['cv' => $item['cv'] ?? '']);
 
                         $db->commit();
 
@@ -599,7 +599,6 @@ class HoSoScBdController
             'madv' => trim($_POST['madv'] ?? ''),
             'phieu' => trim($_POST['phieu'] ?? ''),
             'solg' => (int)($_POST['solg'] ?? 0),
-            'cv' => trim($_POST['cv'] ?? ''),
             'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
             'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
             'ngaykt' => empty(trim($_POST['ngaykt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykt']),
@@ -644,13 +643,15 @@ class HoSoScBdController
             foreach ($_POST['devices'] as $index => $device) {
                 // Only add device if at least mavt and somay are filled
                 if (!empty($device['mavt']) && !empty($device['somay'])) {
+                    $deviceCv = trim($device['cv'] ?? '');
                     $devices[(int)$index] = [
                         'mavt' => trim($device['mavt'] ?? ''),
                         'somay' => trim($device['somay'] ?? ''),
                         'model' => trim($device['model'] ?? ''),
                         'vitrimaybd' => trim($device['vitrimaybd'] ?? ''),
                         'honghoc' => trim($device['honghoc'] ?? ''),
-                        'noidung' => trim($device['noidungyc'] ?? ''),
+                        'ttktbefore' => trim($device['honghoc'] ?? ''),
+                        'cv' => $deviceCv,
                         'lo' => trim($device['lo'] ?? ''),
                         'gieng' => trim($device['gieng'] ?? ''),
                         'mo' => trim($device['mo'] ?? '')
@@ -674,7 +675,6 @@ class HoSoScBdController
             'madv' => trim($_POST['madv'] ?? ''),
             'phieu' => trim($_POST['phieu'] ?? ''),
             'solg' => (int)($_POST['solg'] ?? 0),
-            'cv' => trim($_POST['cv'] ?? ''),
             'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
             'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
             'ngaykt' => empty(trim($_POST['ngaykt'] ?? '')) ? '0000-00-00' : trim($_POST['ngaykt']),
@@ -722,7 +722,6 @@ class HoSoScBdController
         
         if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
         if (empty($data['madv'])) $errors[] = 'Mã đơn vị không được để trống';
-        if (empty($data['cv'])) $errors[] = 'Công việc không được để trống';
         // nhomsc is optional now - can be filled in repair_details page
         
         return $errors;
@@ -739,6 +738,7 @@ class HoSoScBdController
         // Required fields
         if (empty($device['mavt'])) $errors[] = "{$label}: Mã vật tư không được để trống";
         if (empty($device['somay'])) $errors[] = "{$label}: Số máy không được để trống";
+        if (!in_array($device['cv'] ?? '', ['KT', 'BD', 'SC'], true)) $errors[] = "{$label}: Nội dung yêu cầu không hợp lệ";
         // model, vitrimaybd, lo, gieng, mo are optional - no validation
         
         // Check device availability (bg=0 means device is busy)
@@ -763,7 +763,6 @@ class HoSoScBdController
         if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
         if (empty($data['ngayyc'])) $errors[] = 'Ngày yêu cầu không được để trống';
         if (empty($data['madv'])) $errors[] = 'Mã đơn vị không được để trống';
-        if (empty($data['cv'])) $errors[] = 'Công việc không được để trống';
         // model, vitrimaybd, lo, gieng, mo, nhomsc are optional - no validation
         
         // Check device availability (bg=0 means device is busy)

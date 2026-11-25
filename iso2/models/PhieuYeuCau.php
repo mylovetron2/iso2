@@ -179,7 +179,7 @@ class PhieuYeuCau extends BaseModel
                         h.ngnhyeucau,
                         h.dienthoai,
                         h.nhomsc,
-                        h.cv,
+                        GROUP_CONCAT(DISTINCT h.cv ORDER BY h.cv SEPARATOR ', ') as cv,
                         h.ycthemkh,
                         COUNT(*) as so_thietbi,
                         SUM(CASE WHEN h.ngayth IS NULL OR h.ngayth = '0000-00-00' THEN 1 ELSE 0 END) as tb_chuath,
@@ -189,7 +189,7 @@ class PhieuYeuCau extends BaseModel
                     FROM {$this->table} h
                     LEFT JOIN donvi_iso d ON h.madv = d.madv
                     WHERE h.phieu = $phieuEscaped
-                    GROUP BY h.phieu, h.madv, d.tendv, h.ngyeucau, h.ngnhyeucau, h.dienthoai, h.nhomsc, h.cv, h.ycthemkh";
+                    GROUP BY h.phieu, h.madv, d.tendv, h.ngyeucau, h.ngnhyeucau, h.dienthoai, h.nhomsc, h.ycthemkh";
         
         $stmt = $this->query($sqlSummary);
         $summary = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -293,7 +293,7 @@ class PhieuYeuCau extends BaseModel
      */
     public function updatePhieuCommonInfo(string $phieu, array $data): bool
     {
-        $allowedFields = ['ngayyc', 'madv', 'ngyeucau', 'ngnhyeucau', 'dienthoai', 'cv', 'ycthemkh', 'nhomsc'];
+        $allowedFields = ['ngayyc', 'madv', 'ngyeucau', 'ngnhyeucau', 'dienthoai', 'ycthemkh', 'nhomsc'];
         $updates = [];
         
         foreach ($allowedFields as $field) {

@@ -168,18 +168,6 @@ require_once __DIR__ . '/../layouts/header.php';
                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-gray-700 font-semibold mb-2">Công việc <span class="text-red-500">*</span></label>
-                    <select name="cv" required class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
-                        <?php 
-                        $currentCv = isset($error) && isset($_POST['cv']) ? $_POST['cv'] : ($item['cv'] ?? 'SC');
-                        ?>
-                        <option value="KT" <?php echo ($currentCv === 'KT') ? 'selected' : ''; ?>>KT - Kiểm Tra</option>
-                        <option value="BD" <?php echo ($currentCv === 'BD') ? 'selected' : ''; ?>>BD - Bảo Dưỡng</option>
-                        <option value="SC" <?php echo ($currentCv === 'SC') ? 'selected' : ''; ?>>SC - Sửa Chữa</option>
-                        <option value="BDDK" <?php echo ($currentCv === 'BDDK') ? 'selected' : ''; ?>>BDDK - Bảo Dưỡng Định Kỳ</option>
-                    </select>
-                </div>
-                <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2">Yêu cầu thêm của KH</label>
                     <textarea name="ycthemkh" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo isset($error) && isset($_POST['ycthemkh']) ? htmlspecialchars($_POST['ycthemkh']) : displayText($item['ycthemkh'] ?? ''); ?></textarea>
                 </div>

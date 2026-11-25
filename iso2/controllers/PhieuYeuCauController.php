@@ -227,7 +227,6 @@ class PhieuYeuCauController
                 'ngyeucau' => trim($_POST['ngyeucau'] ?? ''),
                 'ngnhyeucau' => trim($_POST['ngnhyeucau'] ?? ''),
                 'dienthoai' => trim($_POST['dienthoai'] ?? ''),
-                'cv' => trim($_POST['cv'] ?? ''),
                 'ycthemkh' => trim($_POST['ycthemkh'] ?? ''),
                 'nhomsc' => trim($_POST['nhomsc'] ?? '')
             ];
@@ -348,7 +347,7 @@ class PhieuYeuCauController
                 $mavt[$i] = $device['mavt'] ?? '';
                 $model[$i] = $device['model'] ?? '';
                 $somay[$i] = $device['somay'] ?? '';
-                $tinhtrang[$i] = $device['honghoc'] ?? '';
+                $tinhtrang[$i] = $device['ttktbefore'] ?? '';
                 $yeucau[$i] = $device['cv'] ?? '';
                 $vitri[$i] = $device['vitrimaybd'] ?? '';
             }
@@ -464,7 +463,7 @@ class PhieuYeuCauController
                     "ten_thiet_bi#{$number}" => $device['tenvt'] ?? $device['mavt'] ?? '',
                     "model#{$number}" => $device['model'] ?? '',
                     "serial#{$number}" => $device['somay'] ?? '',
-                    "tinh_trang#{$number}" => $device['honghoc'] ?? '',
+                    "tinh_trang#{$number}" => $device['ttktbefore'] ?? '',
                     "noi_dung_yeu_cau#{$number}" => $device['cv'] ?? $cv,
                     "tra_ve_xuong#{$number}" => $device['vitrimaybd'] ?? '',
                 ]);

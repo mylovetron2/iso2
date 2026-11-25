@@ -111,11 +111,6 @@ $summary = $detail['summary'];
             </div>
             
             <div class="mt-4">
-                <label class="block font-semibold mb-1">Công việc yêu cầu</label>
-                <textarea name="cv" rows="3" class="w-full border rounded px-3 py-2"><?php echo isset($_POST['cv']) ? htmlspecialchars($_POST['cv']) : htmlspecialchars($summary['cv']); ?></textarea>
-            </div>
-            
-            <div class="mt-4">
                 <label class="block font-semibold mb-1">Yêu cầu thêm từ khách hàng</label>
                 <textarea name="ycthemkh" rows="3" class="w-full border rounded px-3 py-2"><?php echo isset($_POST['ycthemkh']) ? htmlspecialchars($_POST['ycthemkh']) : htmlspecialchars($summary['ycthemkh']); ?></textarea>
             </div>

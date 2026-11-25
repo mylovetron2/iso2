@@ -94,7 +94,7 @@ class ThietBi extends BaseModel
         $somayEscaped = $this->db->quote($somay);
         $modelEscaped = $this->db->quote($model);
         
-        $sql = "SELECT stt, hoso, phieu, ngaykt, honghoc, khacphuc, noidung 
+        $sql = "SELECT stt, hoso, phieu, ngaykt, honghoc, khacphuc, noidung, ghichufinal 
                 FROM hososcbd_iso 
                 WHERE mavt = $mavtEscaped AND somay = $somayEscaped AND model = $modelEscaped 
                 ORDER BY ngaykt DESC";

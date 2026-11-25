@@ -14,7 +14,7 @@ class VatTuThanhLy extends BaseModel
     /**
      * Lấy tất cả vật tư với thông tin tổng hợp
      */
-    public function getAllWithStats(string $where = '', array $params = [], int $limit = 0, int $offset = 0): array
+    public function getAllWithStats(string $where = '', array $params = [], int $limit = 0, int $offset = 0, bool $sortByPosition = false): array
     {
         $sql = "SELECT 
                     v.*,
@@ -28,7 +28,9 @@ class VatTuThanhLy extends BaseModel
                 LEFT JOIN vattu_thanh_ly_sudung_iso s ON v.stt = s.vattu_stt
                 " . ($where ? $where : "") . "
                 GROUP BY v.stt
-                ORDER BY v.stt DESC";
+                ORDER BY " . ($sortByPosition
+                    ? 'v.vi_tri_sap_xep IS NULL, v.vi_tri_sap_xep ASC, v.stt DESC'
+                    : 'v.stt DESC');
         
         if ($limit > 0) {
             $sql .= " LIMIT $limit";

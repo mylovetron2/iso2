@@ -5,6 +5,13 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/VatTuThanhLy.php';
 require_once __DIR__ . '/../includes/ActivityLogger.php';
 
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 class VatTuThanhLyController
 {
     private VatTuThanhLy $model;
@@ -22,6 +29,7 @@ class VatTuThanhLyController
         try {
             $search = $_GET['search'] ?? '';
             $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $nguoiquanly = trim((string)($_GET['nguoiquanly'] ?? ''));
             $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
             $limit = 20;
             $offset = ($page - 1) * $limit;
@@ -62,6 +70,11 @@ class VatTuThanhLyController
                 $params[':phanloai_id'] = $phanloai_id;
             }
 
+            if ($nguoiquanly !== '') {
+                $conditions[] = "v.nguoiquanly LIKE :nguoiquanly";
+                $params[':nguoiquanly'] = "%$nguoiquanly%";
+            }
+
             $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
             
             $total = $this->model->count($where, $params);
@@ -84,6 +97,12 @@ class VatTuThanhLyController
             $stmtPhanLoai = $db->query("SELECT id, ma_phanloai, ten_phanloai, mau_sac FROM phanloai_vattu_thanh_ly_iso ORDER BY thu_tu ASC");
             $phanLoaiList = $stmtPhanLoai->fetchAll(PDO::FETCH_ASSOC);
 
+            // Load danh sách người quản lý
+            $nguoiQuanLyList = $db->query(
+                "SELECT DISTINCT nguoiquanly FROM vattu_thanh_ly_iso
+                 WHERE nguoiquanly IS NOT NULL AND nguoiquanly <> '' ORDER BY nguoiquanly ASC"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
             require_once __DIR__ . '/../views/vattuthanhly/index.php';
         } catch (Exception $e) {
             error_log("Error in VatTuThanhLyController::index: " . $e->getMessage());
@@ -97,6 +116,172 @@ class VatTuThanhLyController
             $error = 'Có lỗi xảy ra: ' . $e->getMessage();
             
             require_once __DIR__ . '/../views/vattuthanhly/index.php';
+        }
+    }
+
+    public function exportExcel(): void
+    {
+        try {
+            $search = trim((string)($_GET['search'] ?? ''));
+            $phanloai_id = !empty($_GET['phanloai_id']) ? (int)$_GET['phanloai_id'] : null;
+            $nguoiquanly = trim((string)($_GET['nguoiquanly'] ?? ''));
+            $conditions = [];
+            $params = [];
+
+            if ($search !== '') {
+                $searchLower = mb_strtolower($search, 'UTF-8');
+                $searchCap = mb_strtoupper(mb_substr($search, 0, 1, 'UTF-8'), 'UTF-8')
+                    . mb_substr($searchLower, 1);
+                $searchFields = [
+                    'mavattu' => 'search1',
+                    'so_pn' => 'search6',
+                    'ten_tienganh' => 'search2',
+                    'ten_tiengnga' => 'search3',
+                    'ten_tiengviet' => 'search4',
+                    'nguoiquanly' => 'search5',
+                ];
+                $searchConditions = [];
+
+                foreach ($searchFields as $field => $parameter) {
+                    $searchConditions[] = "v.{$field} LIKE :{$parameter}a";
+                    $searchConditions[] = "v.{$field} LIKE :{$parameter}b";
+                    $params[":{$parameter}a"] = "%{$searchLower}%";
+                    $params[":{$parameter}b"] = "%{$searchCap}%";
+                }
+
+                $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
+            }
+
+            if ($phanloai_id) {
+                $conditions[] = 'v.phanloai_id = :phanloai_id';
+                $params[':phanloai_id'] = $phanloai_id;
+            }
+
+            if ($nguoiquanly !== '') {
+                $conditions[] = 'v.nguoiquanly LIKE :nguoiquanly';
+                $params[':nguoiquanly'] = "%{$nguoiquanly}%";
+            }
+
+            $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $items = $this->model->getAllWithStats($where, $params, 0, 0, true);
+
+            $db = getDBConnection();
+            $columns = $db->query('SHOW COLUMNS FROM vattu_thanh_ly_iso')->fetchAll(PDO::FETCH_COLUMN);
+            $headers = [
+                'stt' => 'STT',
+                'mavattu' => 'Mã vật tư',
+                'so_serial' => 'Số serial',
+                'so_pn' => 'Số P/N',
+                'phanloai_id' => 'ID phân loại',
+                'vi_tri_sap_xep' => 'Vị trí sắp xếp',
+                'ten_tienganh' => 'Tên tiếng Anh',
+                'ten_tiengnga' => 'Tên tiếng Nga',
+                'ten_tiengviet' => 'Tên tiếng Việt',
+                'dactinhkt_tiengnga' => 'Đặc tính kỹ thuật tiếng Nga',
+                'dactinhkt_tiengviet' => 'Đặc tính kỹ thuật tiếng Việt',
+                'dvt_tiengnga' => 'ĐVT tiếng Nga',
+                'dvt_tiengviet' => 'ĐVT tiếng Việt',
+                'soluong_conlai' => 'Số lượng còn lại',
+                'dongia' => 'Đơn giá (VNĐ)',
+                'dongia_usd' => 'Đơn giá (USD)',
+                'ngaynhan' => 'Ngày nhận',
+                'sohd' => 'Số hợp đồng',
+                'ngaykyhd' => 'Ngày ký hợp đồng',
+                'nguoiquanly' => 'Người quản lý',
+                'vitribaoquan' => 'Vị trí bảo quản',
+                'ghichu' => 'Ghi chú',
+                'ten_phanloai' => 'Phân loại',
+                'so_lan_sudung' => 'Số lần sử dụng/thanh lý',
+                'soluong_dangdung' => 'Số lượng đang sử dụng',
+                'tong_tien' => 'Tổng tiền (VNĐ)',
+            ];
+            $hiddenColumns = [
+                'stt', 'phanloai_id', 'vi_tri_sap_xep', 'tenkyhieuvt', 'dvt', 'ghichu',
+                'created_at', 'updated_at', 'update_at',
+            ];
+            $exportColumns = array_values(array_diff($columns, $hiddenColumns));
+            $exportColumns[] = 'ten_phanloai';
+
+            require_once __DIR__ . '/../vendor/autoload.php';
+
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Danh sách vật tư');
+            $numericColumns = [
+                'stt', 'phanloai_id', 'vi_tri_sap_xep', 'soluong_conlai',
+                'dongia', 'dongia_usd', 'so_lan_sudung', 'soluong_dangdung', 'tong_tien',
+            ];
+
+            foreach ($exportColumns as $index => $column) {
+                $letter = $sheet->getCell([$index + 1, 1])->getColumn();
+                $sheet->setCellValue($letter . '1', $headers[$column] ?? $column);
+                $sheet->getColumnDimension($letter)->setWidth(
+                    in_array($column, ['dvt_tiengnga', 'dvt_tiengviet', 'soluong_conlai'], true)
+                        ? 5
+                        : (in_array($column, ['ten_tienganh', 'ten_tiengnga', 'ten_tiengviet', 'dactinhkt_tiengnga', 'dactinhkt_tiengviet', 'ghichu'], true)
+                            ? 35
+                            : 20)
+                );
+            }
+
+            $lastColumn = $sheet->getCell([count($exportColumns), 1])->getColumn();
+            $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '2196F3'],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => [
+                    'allBorders' => ['borderStyle' => Border::BORDER_THIN],
+                ],
+            ]);
+            $sheet->getRowDimension(1)->setRowHeight(30);
+            $sheet->freezePane('A2');
+
+            foreach ($items as $rowIndex => $item) {
+                $row = $rowIndex + 2;
+                foreach ($exportColumns as $columnIndex => $column) {
+                    $letter = $sheet->getCell([$columnIndex + 1, 1])->getColumn();
+                    $value = $item[$column] ?? null;
+                    $cell = $letter . $row;
+
+                    if ($value === null || $value === '') {
+                        $sheet->setCellValue($cell, null);
+                    } elseif (in_array($column, $numericColumns, true) && is_numeric($value)) {
+                        $sheet->setCellValue($cell, $value + 0);
+                    } else {
+                        $sheet->setCellValueExplicit($cell, (string)$value, DataType::TYPE_STRING);
+                    }
+                }
+            }
+
+            $lastRow = count($items) + 1;
+            if ($lastRow > 1) {
+                $sheet->getStyle("A1:{$lastColumn}{$lastRow}")
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("A2:{$lastColumn}{$lastRow}")
+                    ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+            }
+
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="Danh_Sach_Vat_Tu_Thanh_Ly_' . date('Ymd_His') . '.xlsx"');
+            header('Cache-Control: max-age=0');
+
+            (new Xlsx($spreadsheet))->save('php://output');
+            exit;
+        } catch (Exception $e) {
+            error_log('Error in VatTuThanhLyController::exportExcel: ' . $e->getMessage());
+            http_response_code(500);
+            echo 'Lỗi khi xuất danh sách vật tư ra Excel.';
         }
     }
     
@@ -219,10 +404,10 @@ class VatTuThanhLyController
                         ]
                     );
                     
-                    header('Location: /iso2/vattuthanhly.php?success=updated');
+                    header('Location: ' . $this->listUrl(['success' => 'updated']));
                     exit;
                 } else {
-                    header('Location: /iso2/vattuthanhly.php?error=update_failed');
+                    header('Location: ' . $this->listUrl(['error' => 'update_failed']));
                     exit;
                 }
             }
@@ -296,7 +481,7 @@ class VatTuThanhLyController
     private function listUrl(array $extra = []): string
     {
         $params = [];
-        foreach (['search', 'phanloai_id', 'page'] as $key) {
+        foreach (['search', 'phanloai_id', 'nguoiquanly', 'page'] as $key) {
             if (isset($_GET[$key]) && $_GET[$key] !== '') {
                 $params[$key] = $_GET[$key];
             }

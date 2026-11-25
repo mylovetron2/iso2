@@ -23,7 +23,13 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     <?php else: ?>
 
-    <form method="POST" action="vattuthanhly.php?action=edit&id=<?php echo $item['stt'] ?? ''; ?>">>
+    <?php
+    $keepQuery = http_build_query(array_filter(
+        array_intersect_key($_GET, array_flip(['search', 'phanloai_id', 'page'])),
+        fn($v) => $v !== ''
+    ));
+    ?>
+    <form method="POST" action="vattuthanhly.php?action=edit&id=<?php echo $item['stt'] ?? ''; ?><?php echo $keepQuery ? '&' . htmlspecialchars($keepQuery) : ''; ?>">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block font-medium mb-2">Mã vật tư <span class="text-red-500">*</span></label>
@@ -199,7 +205,7 @@ require_once __DIR__ . '/../layouts/header.php';
             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded">
                 <i class="fas fa-save mr-1"></i> Lưu
             </button>
-            <a href="vattuthanhly.php" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
+            <a href="vattuthanhly.php<?php echo $keepQuery ? '?' . htmlspecialchars($keepQuery) : ''; ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">
                 <i class="fas fa-times mr-1"></i> Hủy
             </a>
         </div>

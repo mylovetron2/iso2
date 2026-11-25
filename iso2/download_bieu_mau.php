@@ -18,6 +18,12 @@ $filePath = $item ? $storageDir . DIRECTORY_SEPARATOR . basename((string)$item['
 
 if (!$item || !is_file($filePath)) {
     http_response_code(404);
+    error_log('Download bieu mau not found: id=' . $id . ', path=' . $filePath);
+    if (hasRole(ROLE_ADMIN)) {
+        exit($item
+            ? 'Không tìm thấy file biểu mẫu trên máy chủ: ' . $filePath
+            : 'Không tìm thấy biểu mẫu #' . $id . ' trong cơ sở dữ liệu.');
+    }
     exit('Không tìm thấy biểu mẫu.');
 }
 

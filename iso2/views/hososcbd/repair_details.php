@@ -358,6 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['dinhmuc_action'])) {
             'noidung' => trim($_POST['noidung'] ?? ''),
             'ketluan' => trim($_POST['ketluan'] ?? ''),
             'xemxetxuong' => trim($_POST['xemxetxuong'] ?? ''),
+            'ghichufinal' => trim($_POST['ghichufinal'] ?? ''),
             'tbdosc' => trim($_POST['tbdosc'] ?? ''),
             'serialtbdosc' => trim($_POST['serialtbdosc'] ?? ''),
             'tbdosc1' => trim($_POST['tbdosc1'] ?? ''),
@@ -1494,9 +1495,10 @@ require_once __DIR__ . '/../layouts/header.php';
                     <textarea name="ketluan" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['ketluan']); ?></textarea>
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-gray-700 font-semibold mb-2">Xem xét xưởng</label>
-                    <textarea name="xemxetxuong" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo displayText($item['xemxetxuong']); ?></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Ghi chú tình trạng kỹ thuật</label>
+                    <textarea name="ghichufinal" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500"><?php echo htmlspecialchars((string)($item['ghichufinal'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
+                <input type="hidden" name="xemxetxuong" value="<?php echo htmlspecialchars((string)($item['xemxetxuong'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
         </div>
 
