@@ -45,8 +45,8 @@ require_once __DIR__ . '/../layouts/header.php';
 
             <?php
             $printParams = ['action' => 'inThongKe', 'nam' => $nam, 'qui' => $_GET['qui']];
-            foreach (['search', 'nhomsc', 'donvi_chinh'] as $filter) {
-                if ($filter === 'donvi_chinh'
+            foreach (['search', 'nhomsc', 'donvi_chinh', 'donvi_phu'] as $filter) {
+                if (in_array($filter, ['donvi_chinh', 'donvi_phu'], true)
                     ? isset($_GET[$filter]) && $_GET[$filter] !== ''
                     : !empty($_GET[$filter])) {
                     $printParams[$filter] = $_GET[$filter];
@@ -73,7 +73,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <input type="hidden" name="action" value="thongke">
         <input type="hidden" name="nam" value="<?php echo $nam; ?>">
         
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-search text-blue-600"></i> Tìm kiếm
@@ -124,6 +124,23 @@ require_once __DIR__ . '/../layouts/header.php';
                     <option value="__none__" <?php echo $donviChinhFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
                 </select>
             </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <i class="fas fa-user-friends text-blue-600"></i> Bộ phận thực hiện phụ
+                </label>
+                <?php $donviPhuFilter = $_GET['donvi_phu'] ?? ''; ?>
+                <select name="donvi_phu" onchange="this.form.submit()" class="border rounded px-3 py-2 w-full">
+                    <option value="">-- Tất cả --</option>
+                    <?php foreach ($donviPhuOptions as $donviOption): ?>
+                        <option value="<?php echo htmlspecialchars($donviOption, ENT_QUOTES, 'UTF-8'); ?>"
+                            <?php echo $donviPhuFilter === $donviOption ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($donviOption, ENT_QUOTES, 'UTF-8'); ?>
+                        </option>
+                    <?php endforeach; ?>
+                    <option value="__none__" <?php echo $donviPhuFilter === '__none__' ? 'selected' : ''; ?>>Chưa chọn</option>
+                </select>
+            </div>
             
             <div class="flex gap-2 items-end">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">
@@ -140,7 +157,8 @@ require_once __DIR__ . '/../layouts/header.php';
     <!-- Active Filters Display -->
     <?php 
     $hasFilters = !empty($_GET['search']) || !empty($_GET['qui']) || !empty($_GET['nhomsc'])
-        || (isset($_GET['donvi_chinh']) && $_GET['donvi_chinh'] !== '');
+        || (isset($_GET['donvi_chinh']) && $_GET['donvi_chinh'] !== '')
+        || (isset($_GET['donvi_phu']) && $_GET['donvi_phu'] !== '');
     if ($hasFilters): 
     ?>
     <div class="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4 flex items-center justify-between">
@@ -182,6 +200,13 @@ require_once __DIR__ . '/../layouts/header.php';
                 <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm">
                     <i class="fas fa-users mr-1"></i>
                     Bộ phận chính: <?php echo htmlspecialchars($_GET['donvi_chinh'] === '__none__' ? 'Chưa chọn' : $_GET['donvi_chinh'], ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+            <?php endif; ?>
+
+            <?php if (isset($_GET['donvi_phu']) && $_GET['donvi_phu'] !== ''): ?>
+                <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    <i class="fas fa-user-friends mr-1"></i>
+                    Bộ phận phụ: <?php echo htmlspecialchars($_GET['donvi_phu'] === '__none__' ? 'Chưa chọn' : $_GET['donvi_phu'], ENT_QUOTES, 'UTF-8'); ?>
                 </span>
             <?php endif; ?>
         </div>

@@ -217,7 +217,8 @@ class PhieuBanGiao extends BaseModel
                        COALESCE(t.tenvt, h.mavt) as tenvt,
                        h.somay, 
                        h.maql, 
-                       h.phieu as phieu_yc
+                       h.phieu as phieu_yc,
+                       h.ketluan
                 FROM phieubangiao_thietbi_iso pt
                 INNER JOIN hososcbd_iso h ON pt.hososcbd_stt = h.stt
                 LEFT JOIN thietbi_iso t ON h.mavt = t.mavt AND h.somay = t.somay

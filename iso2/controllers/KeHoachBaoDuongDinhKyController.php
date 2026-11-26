@@ -155,6 +155,15 @@ class KeHoachBaoDuongDinhKyController
         return in_array(mb_strtoupper($value, 'UTF-8'), ['CNM', 'RDNGA'], true) ? 'XSCTBĐVL' : $value;
     }
 
+    private function getDonViPhuLabel(): string
+    {
+        $value = trim((string)($_GET['donvi_phu'] ?? ''));
+        if ($value === '__none__') {
+            return 'Chưa chọn';
+        }
+        return in_array(mb_strtoupper($value, 'UTF-8'), ['CNM', 'RDNGA'], true) ? 'XSCTBĐVL' : $value;
+    }
+
     /**
      * Hiển thị danh sách kế hoạch
      */
@@ -1619,6 +1628,7 @@ class KeHoachBaoDuongDinhKyController
                 $availableYears = [(int)date('Y')];
             }
             $donviChinhOptions = $this->getAvailableDonViChinh($nam);
+            $donviPhuOptions = $this->getAvailableDonViChinh($nam, 'donvi_lam_phu');
             $statistics = $this->getStatistics($nam, $search, $nhomsc, $qui);
             
             require_once __DIR__ . '/../views/kehoachbaoduongdinhky/thongke.php';
@@ -1658,13 +1668,20 @@ class KeHoachBaoDuongDinhKyController
             $report = buildBaoDuongReport($plansWithExecution, (int)$qui);
 
             $donviChinh = $this->getDonViChinhLabel();
+            $donviPhu = $this->getDonViPhuLabel();
             if ($this->isAdmin()) {
                 $reportUnit = $donviChinh !== '' ? $donviChinh : 'Tất cả bộ phận';
+                if ($donviPhu !== '') {
+                    $reportUnit .= ' - Bộ phận thực hiện phụ: ' . $donviPhu;
+                }
             } else {
                 $scope = $this->getMadvScope();
                 $reportUnit = $scope === [] ? 'Chưa xác định' : implode(', ', $scope);
                 if ($donviChinh !== '') {
                     $reportUnit .= ' - Bộ phận thực hiện chính: ' . $donviChinh;
+                }
+                if ($donviPhu !== '') {
+                    $reportUnit .= ' - Bộ phận thực hiện phụ: ' . $donviPhu;
                 }
             }
 

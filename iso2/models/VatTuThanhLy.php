@@ -105,32 +105,79 @@ class VatTuThanhLy extends BaseModel
     }
     
     /**
-     * Cập nhật chi tiết sử dụng (không cho phép sửa số lượng)
+     * Cập nhật chi tiết sử dụng (không sửa ghi chú) và điều chỉnh số lượng còn lại
+     * của vật tư theo chênh lệch số lượng, trong một transaction.
+     *
+     * @return array{old_soluong: float, new_soluong: float, soluong_conlai_old: float, soluong_conlai_new: float}
+     * @throws InvalidArgumentException khi dữ liệu không hợp lệ (thông điệp hiển thị cho người dùng)
      */
-    public function updateChiTietSuDung(int $id, array $data): bool
+    public function updateChiTietSuDung(int $id, array $data, float $newSoluong): array
     {
-        $sql = "UPDATE vattu_thanh_ly_sudung_iso SET
-                nguoisudung = :nguoisudung,
-                ngaysd_nhan = :ngaysd_nhan,
-                bophan = :bophan,
-                mucdich_sudung = :mucdich_sudung,
-                ghichu = :ghichu
-                WHERE id = :id";
-        
+        if ($newSoluong <= 0) {
+            throw new InvalidArgumentException('Số lượng thanh lý phải lớn hơn 0');
+        }
+
+        $this->db->beginTransaction();
         try {
-            $this->query($sql, [
-                ':id' => $id,
-                ':nguoisudung' => $data['nguoisudung'] ?? null,
-                ':ngaysd_nhan' => $data['ngaysd_nhan'] ?? null,
-                ':bophan' => $data['bophan'] ?? null,
-                ':mucdich_sudung' => $data['mucdich_sudung'] ?? null,
-                ':ghichu' => $data['ghichu'] ?? null
-            ]);
-            
-            return true;
-        } catch (PDOException $e) {
-            error_log("Error updating chi tiet su dung: " . $e->getMessage());
-            return false;
+            $stmt = $this->query("SELECT * FROM vattu_thanh_ly_sudung_iso WHERE id = :id FOR UPDATE", [':id' => $id]);
+            $detail = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$detail) {
+                throw new InvalidArgumentException('Không tìm thấy chi tiết sử dụng');
+            }
+
+            $stmt = $this->query(
+                "SELECT soluong_conlai FROM vattu_thanh_ly_iso WHERE stt = :stt FOR UPDATE",
+                [':stt' => $detail['vattu_stt']]
+            );
+            $conlaiOld = floatval($stmt->fetchColumn() ?: 0);
+            $oldSoluong = floatval($detail['soluong'] ?? 0);
+            $delta = $newSoluong - $oldSoluong;
+
+            if ($delta > $conlaiOld + 0.00001) {
+                throw new InvalidArgumentException(
+                    'Số lượng thanh lý mới (' . number_format($newSoluong, 2) .
+                    ') vượt quá số lượng tối đa có thể (' . number_format($conlaiOld + $oldSoluong, 2) . ')'
+                );
+            }
+
+            $this->query(
+                "UPDATE vattu_thanh_ly_sudung_iso SET
+                    nguoisudung = :nguoisudung,
+                    ngaysd_nhan = :ngaysd_nhan,
+                    soluong = :soluong,
+                    bophan = :bophan,
+                    mucdich_sudung = :mucdich_sudung
+                 WHERE id = :id",
+                [
+                    ':id' => $id,
+                    ':nguoisudung' => $data['nguoisudung'] ?? null,
+                    ':ngaysd_nhan' => $data['ngaysd_nhan'] ?? null,
+                    ':soluong' => $newSoluong,
+                    ':bophan' => $data['bophan'] ?? null,
+                    ':mucdich_sudung' => $data['mucdich_sudung'] ?? null,
+                ]
+            );
+
+            if (abs($delta) > 0.00001) {
+                $this->deductSoLuongConLai((int)$detail['vattu_stt'], $delta);
+            }
+
+            $this->db->commit();
+
+            return [
+                'old_soluong' => $oldSoluong,
+                'new_soluong' => $newSoluong,
+                'soluong_conlai_old' => $conlaiOld,
+                'soluong_conlai_new' => $conlaiOld - $delta,
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            if (!($e instanceof InvalidArgumentException)) {
+                error_log("Error updating chi tiet su dung: " . $e->getMessage());
+            }
+            throw $e;
         }
     }
     

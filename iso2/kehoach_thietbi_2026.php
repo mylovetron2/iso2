@@ -508,7 +508,9 @@ if ($search) {
     $params[':search4'] = "%$search%";
 }
 
-if ($loaitb) {
+if ($loaitb === '1-5') {
+    $where[] = "COALESCE(TRIM(loaitb), '') <> '6'";
+} elseif ($loaitb) {
     $where[] = "loaitb = :loaitb";
     $params[':loaitb'] = $loaitb;
 }
@@ -608,6 +610,36 @@ if ($sortOrder === 'doith') {
     });
 }
 
+// Thống kê trên toàn bộ kết quả lọc (không phụ thuộc phân trang)
+$statsSql = "SELECT t.stt,
+        GROUP_CONCAT(DISTINCT k.thang_thuchien) as planned_months,
+        GROUP_CONCAT(DISTINCT k.thang_dot2) as planned_months_dot2,
+        GROUP_CONCAT(DISTINCT MONTH(h.ngayhc)) as inspected_months,
+        COUNT(DISTINCT h.stt) as inspection_count
+        FROM thietbihckd_iso t
+        LEFT JOIN kehoach_kiemdinh_2026_iso k ON t.stt = k.stt AND k.nam_kehoach = 2026
+        LEFT JOIN hosohckd_iso h ON (h.thietbi_stt = t.stt
+            OR (h.thietbi_stt IS NULL AND h.tenmay = t.mavattu))
+            AND YEAR(h.ngayhc) = 2026
+        WHERE $whereClause
+        GROUP BY t.stt
+        $havingClause";
+$statsStmt = $db->prepare($statsSql);
+$statsStmt->execute($params);
+$stats = ['total' => 0, 'planned' => 0, 'not_planned' => 0, 'inspected' => 0, 'planned_inspected' => 0];
+foreach ($statsStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $stats['total']++;
+    $isPlanned = $row['planned_months'] !== null;
+    $isInspected = (int)$row['inspection_count'] > 0;
+    $stats[$isPlanned ? 'planned' : 'not_planned']++;
+    if ($isInspected) {
+        $stats['inspected']++;
+        if ($isPlanned) $stats['planned_inspected']++;
+    }
+}
+$stats['planned_not_inspected'] = $stats['planned'] - $stats['planned_inspected'];
+$pctOfTotal = $stats['total'] > 0 ? round($stats['inspected'] * 100 / $stats['total'], 1) : 0;
+$pctOfPlanned = $stats['planned'] > 0 ? round($stats['planned_inspected'] * 100 / $stats['planned'], 1) : 0;
 // Lấy danh sách loại TB và bộ phận
 $loaiTBList = $db->query("SELECT DISTINCT loaitb FROM thietbihckd_iso WHERE loaitb != '' ORDER BY loaitb")->fetchAll(PDO::FETCH_COLUMN);
 $boPhanList = $db->query("SELECT DISTINCT bophansh FROM thietbihckd_iso WHERE bophansh != '' ORDER BY bophansh")->fetchAll(PDO::FETCH_COLUMN);
@@ -768,6 +800,7 @@ require_once __DIR__ . '/views/layouts/header.php';
             
             <select name="loaitb" onchange="this.form.submit()">
                 <option value="">-- Tất cả loại TB --</option>
+                <option value="1-5" <?= $loaitb === '1-5' ? 'selected' : '' ?>>Loại 1, 2, 3, 4, 5</option>
                 <?php foreach ($loaiTBList as $loai): ?>
                     <option value="<?= htmlspecialchars($loai) ?>" <?= $loaitb === $loai ? 'selected' : '' ?>>
                         <?= htmlspecialchars($loai) ?>
@@ -794,7 +827,7 @@ require_once __DIR__ . '/views/layouts/header.php';
 
             <select name="hoso" onchange="this.form.submit()">
                 <option value="">-- Tất cả hồ sơ --</option>
-                <option value="co" <?= $hosoFilter === 'co' ? 'selected' : '' ?>>Có hồ sơ (&gt;0)</option>
+                <option value="co" <?= $hosoFilter === 'co' ? 'selected' : '' ?>>Có hồ sơ (&gt;0)</option>
             </select>
             
             <select name="sort" onchange="this.form.submit()">
@@ -1002,6 +1035,43 @@ require_once __DIR__ . '/views/layouts/header.php';
             <?php else: ?>
                 (Hiển thị: <?= count($thietbiList) ?>)
             <?php endif; ?>
+        </div>
+
+        <!-- Thống kê theo bộ lọc hiện tại -->
+        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #4CAF50;">
+            <strong style="display: block; margin-bottom: 10px;">📊 Thống kê (theo bộ lọc hiện tại)</strong>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                <?php
+                $statCards = [
+                    ['Tổng số thiết bị', $stats['total'], '#007bff'],
+                    ['Đã có kế hoạch', $stats['planned'], '#2196F3'],
+                    ['Chưa có kế hoạch', $stats['not_planned'], '#6c757d'],
+                    ['Đã kiểm định', $stats['inspected'], '#28a745'],
+                    ['Có kế hoạch, chưa thực hiện', $stats['planned_not_inspected'], '#FF9800'],
+                ];
+                foreach ($statCards as [$label, $value, $color]): ?>
+                    <div style="min-width: 150px; padding: 10px 14px; background: #fff; border: 1px solid #ddd; border-top: 3px solid <?= $color ?>; border-radius: 4px;">
+                        <div style="font-size: 12px; color: #666;"><?= $label ?></div>
+                        <div style="font-size: 22px; font-weight: bold; color: <?= $color ?>;"><?= $value ?></div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php
+            $progressBars = [
+                ['Đã thực hiện so với tổng số thiết bị', $pctOfTotal, $stats['inspected'], $stats['total'], '#28a745'],
+                ['Đã thực hiện so với số thiết bị có kế hoạch', $pctOfPlanned, $stats['planned_inspected'], $stats['planned'], '#2196F3'],
+            ];
+            foreach ($progressBars as [$label, $pct, $done, $of, $color]): ?>
+                <div style="margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px;">
+                        <span><?= $label ?>: <?= $done ?>/<?= $of ?></span>
+                        <strong style="color: <?= $color ?>;"><?= $pct ?>%</strong>
+                    </div>
+                    <div style="height: 14px; background: #e9ecef; border-radius: 7px; overflow: hidden;">
+                        <div style="width: <?= min(100, $pct) ?>%; height: 100%; background: <?= $color ?>;"></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
         
         <?php if (!$search && $totalPages > 1): ?>

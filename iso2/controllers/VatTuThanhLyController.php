@@ -86,7 +86,7 @@ class VatTuThanhLyController
                 $offset = ($page - 1) * $limit;
             }
 
-            $items = $this->model->getAllWithStats($where, $params, $limit, $offset);
+            $items = $this->model->getAllWithStats($where, $params, $limit, $offset, true);
             
             // Load danh sách đơn vị
             $db = getDBConnection();
@@ -201,6 +201,9 @@ class VatTuThanhLyController
             ];
             $exportColumns = array_values(array_diff($columns, $hiddenColumns));
             $exportColumns[] = 'ten_phanloai';
+            array_unshift($exportColumns, 'so_thu_tu');
+            $exportColumns[] = 'ghichu';
+            $headers['so_thu_tu'] = 'STT';
 
             require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -247,7 +250,7 @@ class VatTuThanhLyController
                 $row = $rowIndex + 2;
                 foreach ($exportColumns as $columnIndex => $column) {
                     $letter = $sheet->getCell([$columnIndex + 1, 1])->getColumn();
-                    $value = $item[$column] ?? null;
+                    $value = $column === 'so_thu_tu' ? $rowIndex + 1 : ($item[$column] ?? null);
                     $cell = $letter . $row;
 
                     if ($value === null || $value === '') {
@@ -573,7 +576,12 @@ class VatTuThanhLyController
         }
         
         $chiTiet = $this->model->getChiTietSuDung((int)$vattuStt);
-        echo json_encode(['success' => true, 'data' => $chiTiet]);
+        $vattu = $this->model->findById((int)$vattuStt);
+        echo json_encode([
+            'success' => true,
+            'data' => $chiTiet,
+            'soluong_conlai' => $vattu ? floatval($vattu['soluong_conlai'] ?? 0) : null
+        ]);
         exit;
     }
     
@@ -761,40 +769,58 @@ class VatTuThanhLyController
         
         // Lấy dữ liệu cũ trước khi update
         $oldDetail = $this->model->getChiTietById((int)$id);
+        if (!$oldDetail) {
+            echo json_encode(['error' => 'Không tìm thấy chi tiết sử dụng']);
+            exit;
+        }
         
-        // Không cho phép sửa số lượng để tránh inconsistency
+        // Ghi chú không được sửa; số lượng được sửa và đồng bộ lại số lượng còn lại
         $data = [
             'nguoisudung' => $_POST['nguoisudung'] ?? null,
             'ngaysd_nhan' => $_POST['ngaysd_nhan'] ?? null,
             'bophan' => $_POST['bophan'] ?? null,
             'mucdich_sudung' => $_POST['mucdich_sudung'] ?? null,
-            'ghichu' => $_POST['ghichu'] ?? null,
         ];
+        $newSoluong = isset($_POST['soluong']) && is_numeric($_POST['soluong'])
+            ? floatval($_POST['soluong'])
+            : floatval($oldDetail['soluong'] ?? 0);
         
-        if ($this->model->updateChiTietSuDung((int)$id, $data)) {
-            // Log chi tiết sử dụng update
-            if ($oldDetail) {
-                $this->logger->log(
-                    'vattu_thanh_ly_sudung_iso',
-                    'UPDATE',
-                    (int)$id,
-                    [
-                        'nguoisudung' => $oldDetail['nguoisudung'] ?? null,
-                        'bophan' => $oldDetail['bophan'] ?? null,
-                        'mucdich_sudung' => $oldDetail['mucdich_sudung'] ?? null
-                    ],
-                    [
-                        'nguoisudung' => $data['nguoisudung'],
-                        'bophan' => $data['bophan'],
-                        'mucdich_sudung' => $data['mucdich_sudung']
-                    ]
-                );
-            }
-            
-            echo json_encode(['success' => true]);
-        } else {
+        try {
+            $result = $this->model->updateChiTietSuDung((int)$id, $data, $newSoluong);
+        } catch (InvalidArgumentException $e) {
+            echo json_encode(['error' => $e->getMessage()]);
+            exit;
+        } catch (Throwable $e) {
             echo json_encode(['error' => 'Failed to update chi tiet']);
+            exit;
         }
+        
+        $this->logger->log(
+            'vattu_thanh_ly_sudung_iso',
+            'UPDATE',
+            (int)$id,
+            [
+                'nguoisudung' => $oldDetail['nguoisudung'] ?? null,
+                'bophan' => $oldDetail['bophan'] ?? null,
+                'mucdich_sudung' => $oldDetail['mucdich_sudung'] ?? null,
+                'soluong' => $result['old_soluong'],
+                'soluong_conlai_vattu' => $result['soluong_conlai_old']
+            ],
+            [
+                'nguoisudung' => $data['nguoisudung'],
+                'bophan' => $data['bophan'],
+                'mucdich_sudung' => $data['mucdich_sudung'],
+                'soluong' => $result['new_soluong'],
+                'soluong_conlai_vattu' => $result['soluong_conlai_new']
+            ]
+        );
+        
+        $vattuStt = (int)$oldDetail['vattu_stt'];
+        echo json_encode([
+            'success' => true,
+            'soluong_conlai_moi' => $result['soluong_conlai_new'],
+            'so_lan_sudung' => count($this->model->getChiTietSuDung($vattuStt))
+        ]);
         exit;
     }
     

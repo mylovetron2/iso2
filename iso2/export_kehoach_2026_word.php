@@ -45,7 +45,9 @@ if ($search) {
     $params[':search3'] = "%$search%";
 }
 
-if ($loaitb) {
+if ($loaitb === '1-5') {
+    $where[] = "COALESCE(TRIM(t.loaitb), '') <> '6'";
+} elseif ($loaitb) {
     $where[] = "t.loaitb = :loaitb";
     $params[':loaitb'] = $loaitb;
 }

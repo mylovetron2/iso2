@@ -528,6 +528,7 @@ button.text-red-600:hover {
                             <input type="checkbox" id="selectAllVatTu" title="Chọn tất cả">
                         </th>
                         <?php endif; ?>
+                        <th class="px-2 py-2 border text-center" style="width: 60px;">STT</th>
                         <th class="px-4 py-2 border text-left">Mã VT</th>
                         <th class="px-4 py-2 border text-left">Số serial / P/N</th>
                         <th class="px-4 py-2 border text-left" style="display: none;">Phân loại</th>
@@ -540,18 +541,20 @@ button.text-red-600:hover {
                         <th class="px-4 py-2 border text-center">Số HĐ</th>
                         <th class="px-4 py-2 border text-left">Người quản lý</th>
                         <th class="px-4 py-2 border text-center">Số lần thanh lý</th>
+                        <th class="px-4 py-2 border text-left">Ghi chú</th>
                         <th class="px-4 py-2 border text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="13" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="15" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>Không có vật tư nào</p>
                         </td>
                     </tr>
                     <?php else: ?>
+                    <?php $rowNumber = $offset + 1; ?>
                     <?php foreach ($items as $item): ?>
                     <tr class="master-row" data-vattu-stt="<?php echo $item['stt']; ?>" 
                         data-mavattu="<?php echo htmlspecialchars($item['mavattu']); ?>"
@@ -561,6 +564,7 @@ button.text-red-600:hover {
                             <input type="checkbox" class="vattu-checkbox" name="ids[]" form="bulkDeleteForm" value="<?php echo (int)$item['stt']; ?>">
                         </td>
                         <?php endif; ?>
+                        <td class="px-2 py-2 border text-center"><?php echo $rowNumber++; ?></td>
                         <td class="px-4 py-2 border">
                             <a href="vattuthanhly.php?action=view&id=<?php echo $item['stt']; ?>" class="text-decoration-none">
                                 <code class="rounded font-semibold <?php echo htmlspecialchars($item['phanloai_mau_sac'] ?? 'bg-blue-100 text-blue-800'); ?>" style="font-size: 14px; padding: 6px 12px; display: inline-block; min-width: 140px; text-align: center; line-height: 1.4; cursor: pointer;">
@@ -632,6 +636,9 @@ button.text-red-600:hover {
                             <span class="badge badge-<?php echo ($item['so_lan_sudung'] ?? 0) > 0 ? 'success' : 'warning'; ?>">
                                 <?php echo $item['so_lan_sudung'] ?? 0; ?> lần
                             </span>
+                        </td>
+                        <td class="px-4 py-2 border">
+                            <?php echo !empty($item['ghichu']) ? htmlspecialchars($item['ghichu']) : '-'; ?>
                         </td>
                         <td class="px-4 py-2 border text-center">
                             <a href="vattuthanhly.php?action=view&id=<?php echo $item['stt']; ?>" 
@@ -1051,7 +1058,7 @@ function loadDetail(vattuStt) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                renderDetailTable(vattuStt, data.data);
+                renderDetailTable(vattuStt, data.data, data.soluong_conlai);
             } else {
                 alert('Lỗi: ' + (data.error || 'Unknown error'));
             }
@@ -1062,8 +1069,9 @@ function loadDetail(vattuStt) {
         });
 }
 
-function renderDetailTable(vattuStt, items) {
+function renderDetailTable(vattuStt, items, soluongConLai) {
     const tbody = document.getElementById(`detailTableBody_${vattuStt}`);
+    const conlai = (soluongConLai === undefined || soluongConLai === null) ? null : parseFloat(soluongConLai);
     
     if (!tbody) return;
     
@@ -1072,7 +1080,9 @@ function renderDetailTable(vattuStt, items) {
         return;
     }
     
-    tbody.innerHTML = items.map(item => `
+    tbody.innerHTML = items.map(item => {
+        const maxQty = conlai === null ? null : conlai + parseFloat(item.soluong || 0);
+        return `
         <tr id="detailRow_${item.id}">
             <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.nguoisudung || '-'}</td>
             <td class="px-3 py-2 border text-center" style="color: #000; font-weight: normal;">${item.ngaysd_nhan ? new Date(item.ngaysd_nhan).toLocaleDateString('vi-VN') : '-'}</td>
@@ -1110,8 +1120,8 @@ function renderDetailTable(vattuStt, items) {
                     
                     <div>
                         <label class="block text-sm font-medium mb-1">Số lượng</label>
-                        <input type="number" step="0.01" name="soluong" value="${item.soluong || ''}" class="w-full border rounded px-2 py-1 text-sm" required readonly>
-                        <small class="text-gray-500">Không cho phép sửa số lượng</small>
+                        <input type="number" step="0.01" min="0.01" ${maxQty !== null ? `max="${maxQty}"` : ''} name="soluong" value="${item.soluong || ''}" class="w-full border rounded px-2 py-1 text-sm" required>
+                        ${maxQty !== null ? `<small class="text-gray-500">Tối đa có thể nhập: ${Math.round(maxQty * 100) / 100}</small>` : ''}
                     </div>
                     
                     <div>
@@ -1136,7 +1146,7 @@ function renderDetailTable(vattuStt, items) {
                     
                     <div class="col-span-2">
                         <label class="block text-sm font-medium mb-1">Ghi chú</label>
-                        <input type="text" name="ghichu" value="${item.ghichu || ''}" class="w-full border rounded px-2 py-1 text-sm">
+                        <input type="text" name="ghichu" value="${item.ghichu || ''}" class="w-full border rounded px-2 py-1 text-sm bg-gray-100" readonly>
                     </div>
                     
                     <div class="col-span-2 flex gap-2">
@@ -1150,9 +1160,8 @@ function renderDetailTable(vattuStt, items) {
                 </form>
             </td>
         </tr>
-    `).join('');
-    
-    // Add event listeners for all edit forms
+    `;
+    }).join('');
     items.forEach(item => {
         const form = document.getElementById(`editForm_${item.id}`);
         if (form) {
@@ -1196,6 +1205,7 @@ function saveEditChiTiet(id, vattuStt) {
             alert('Cập nhật chi tiết thành công!');
             cancelEdit(id);
             loadDetail(vattuStt);
+            applyMasterQtyUpdate(vattuStt, data);
         } else {
             alert('Lỗi: ' + (data.error || 'Unknown error'));
         }
@@ -1208,6 +1218,39 @@ function saveEditChiTiet(id, vattuStt) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });
+}
+
+function applyMasterQtyUpdate(vattuStt, data) {
+    if (data.soluong_conlai_moi === undefined) return;
+    const conlai = parseFloat(data.soluong_conlai_moi);
+
+    const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
+    if (masterRow) {
+        const qtyCell = masterRow.querySelector('.cell-qty');
+        if (qtyCell) {
+            qtyCell.innerHTML = `<span class="font-semibold">${Math.round(conlai).toLocaleString('en-US')}</span>`;
+        }
+        if (data.so_lan_sudung !== undefined) {
+            const countCell = masterRow.querySelector('.cell-count');
+            if (countCell) {
+                const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
+                countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;
+            }
+        }
+    }
+
+    const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
+    if (qtyDisplay) {
+        qtyDisplay.textContent = Math.round(conlai);
+    }
+    const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
+    if (qtyInput) {
+        qtyInput.max = conlai;
+        const smallEl = qtyInput.parentElement.querySelector('small');
+        if (smallEl) {
+            smallEl.textContent = `Tối đa: ${Math.round(conlai)}`;
+        }
+    }
 }
 
 function deleteChiTiet(id, vattuStt) {
@@ -1232,38 +1275,7 @@ function deleteChiTiet(id, vattuStt) {
             alert('Xóa thành công!');
             loadDetail(vattuStt);
             
-            // Cập nhật lại số lượng còn lại sau khi xóa (cộng lại)
-            if (data.soluong_conlai_moi !== undefined) {
-                const masterRow = document.querySelector(`tr.master-row[data-vattu-stt="${vattuStt}"]`);
-                const qtyCell = masterRow.querySelector('.cell-qty');
-                if (qtyCell) {
-                    const formatted = Math.round(parseFloat(data.soluong_conlai_moi)).toLocaleString('en-US');
-                    qtyCell.innerHTML = `<span class="font-semibold">${formatted}</span>`;
-                }
-                
-                // Cập nhật số lần thanh lý
-                if (data.so_lan_sudung !== undefined) {
-                    const countCell = masterRow.querySelector('.cell-count');
-                    if (countCell) {
-                        const badgeClass = data.so_lan_sudung > 0 ? 'badge-success' : 'badge-warning';
-                        countCell.innerHTML = `<span class="badge ${badgeClass}">${data.so_lan_sudung} lần</span>`;
-                    }
-                }
-                
-                // Cập nhật trong form nếu đang hiển thị
-                const qtyDisplay = document.getElementById(`availableQty_${vattuStt}`);
-                if (qtyDisplay) {
-                    qtyDisplay.textContent = Math.round(data.soluong_conlai_moi);
-                }
-                const qtyInput = document.querySelector(`#chiTietForm_${vattuStt} input[name="soluong"]`);
-                if (qtyInput) {
-                    qtyInput.max = data.soluong_conlai_moi;
-                    const smallEl = qtyInput.parentElement.querySelector('small');
-                    if (smallEl) {
-                        smallEl.textContent = `Tối đa: ${Math.round(data.soluong_conlai_moi)}`;
-                    }
-                }
-            }
+            applyMasterQtyUpdate(vattuStt, data);
         } else {
             alert('Lỗi: ' + (data.error || 'Unknown error'));
         }

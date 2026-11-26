@@ -166,7 +166,7 @@ table.MsoTableGrid
   <p class=MsoNormal align=center style='text-align:center'><span style='font-size:13.0pt'><?php echo htmlspecialchars($device['somay'] ?: 'NA'); ?><o:p></o:p></span></p>
   </td>
   <td width=180 style='width:135.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
-  <p class=MsoNormal align=center style='text-align:center'><span style='font-size:13.0pt'><?php echo htmlspecialchars($device['tinhtrang'] ?: 'Đạt'); ?><o:p></o:p></span></p>
+  <p class=MsoNormal align=center style='text-align:center'><span style='font-size:13.0pt'><?php echo htmlspecialchars($device['ketluan'] ?: 'Đạt'); ?><o:p></o:p></span></p>
   </td>
   <td width=180 style='width:135.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
   <p class=MsoNormal align=center style='text-align:center'><span style='font-size:13.0pt'><?php echo htmlspecialchars($device['ghichu'] ?: ''); ?><o:p></o:p></span></p>

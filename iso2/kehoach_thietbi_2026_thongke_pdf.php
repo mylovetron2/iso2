@@ -58,8 +58,19 @@ try {
     }
     
     if (!empty($bophan)) {
-        $sql .= " AND t.bophansh = :bophan";
-        $params[':bophan'] = $bophan;
+        // Nhóm bộ phận dạng "A+B+C" lọc theo nhiều bộ phận
+        $bophanList = array_values(array_filter(array_map('trim', explode('+', $bophan)), 'strlen'));
+        if (count($bophanList) > 1) {
+            $placeholders = [];
+            foreach ($bophanList as $i => $bp) {
+                $placeholders[] = ':bophan' . $i;
+                $params[':bophan' . $i] = $bp;
+            }
+            $sql .= " AND t.bophansh IN (" . implode(',', $placeholders) . ")";
+        } else {
+            $sql .= " AND t.bophansh = :bophan";
+            $params[':bophan'] = $bophan;
+        }
     }
     
     $sql .= " GROUP BY t.stt ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
@@ -104,14 +115,6 @@ try {
             
             $monthsInQuarter = getMonthsInQuarter((int)$quy);
             
-            $hasInspectedInQuarter = false;
-            foreach ($monthsInQuarter as $m) {
-                if (in_array((string)$m, $inspectedMonths)) {
-                    $hasInspectedInQuarter = true;
-                    break;
-                }
-            }
-            
             $hasPlannedInQuarter = false;
             foreach ($monthsInQuarter as $m) {
                 if (in_array((string)$m, $plannedMonths)) {
@@ -120,46 +123,44 @@ try {
                 }
             }
             
-            if ($hasInspectedInQuarter) {
-                $totalEquipmentInQuarter++;
-                
-                if ($hasPlannedInQuarter) {
-                    $statistics['da_hoan_thanh'][] = $equipment;
-                } else {
-                    $statistics['truoc_han'][] = $equipment;
+            if (!$hasPlannedInQuarter) {
+                continue;
+            }
+            
+            $totalEquipmentInQuarter++;
+            
+            $hasInspectedInQuarter = false;
+            foreach ($monthsInQuarter as $m) {
+                if (in_array((string)$m, $inspectedMonths)) {
+                    $hasInspectedInQuarter = true;
+                    break;
                 }
+            }
+            
+            if ($hasInspectedInQuarter) {
+                $statistics['da_hoan_thanh'][] = $equipment;
             } else {
-                if ($hasPlannedInQuarter) {
-                    $totalEquipmentInQuarter++;
-                    
-                    $hasCompletedAfter = false;
-                    foreach ($inspectedMonths as $inspMonth) {
-                        $inspMonthInt = (int)$inspMonth;
-                        if ($inspMonthInt > $monthsInQuarter[2]) {
-                            $hasCompletedAfter = true;
-                            break;
-                        }
-                    }
-                    
-                    if ($hasCompletedAfter) {
-                        $statistics['sau_han'][] = $equipment;
-                    } else {
-                        $statistics['chua_hoan_thanh'][] = $equipment;
-                    }
+                $hasInspectedBefore = false;
+                $hasInspectedAfter = false;
+                foreach ($inspectedMonths as $inspMonth) {
+                    $inspMonthInt = (int)$inspMonth;
+                    if ($inspMonthInt < $monthsInQuarter[0]) $hasInspectedBefore = true;
+                    if ($inspMonthInt > $monthsInQuarter[2]) $hasInspectedAfter = true;
+                }
+                
+                if ($hasInspectedBefore) {
+                    $statistics['truoc_han'][] = $equipment;
+                } elseif ($hasInspectedAfter) {
+                    $statistics['sau_han'][] = $equipment;
+                } else {
+                    $statistics['chua_hoan_thanh'][] = $equipment;
                 }
             }
         } else {
-            if (!empty($inspectedMonths)) {
-                if (!empty($plannedMonths)) {
+            if (!empty($plannedMonths)) {
+                if (!empty($inspectedMonths)) {
                     $statistics['da_hoan_thanh'][] = $equipment;
-                    foreach ($plannedMonths as $month) {
-                        if (in_array($month, $inspectedMonths)) {
-                            $completedMonths++;
-                        }
-                    }
-                }
-            } else {
-                if (!empty($plannedMonths)) {
+                } else {
                     $statistics['chua_hoan_thanh'][] = $equipment;
                 }
             }
@@ -175,7 +176,9 @@ try {
         $completed = count($statistics['da_hoan_thanh']) + count($statistics['truoc_han']) + count($statistics['sau_han']);
         $tyLeHoanThanh = $totalEquipmentInQuarter > 0 ? round(($completed / $totalEquipmentInQuarter) * 100, 2) : 0;
     } else {
-        $tyLeHoanThanh = $totalMonths > 0 ? round(($completedMonths / $totalMonths) * 100, 2) : 0;
+        $tyLeHoanThanh = $totalEquipmentWithPlan > 0
+            ? round((count($statistics['da_hoan_thanh']) / $totalEquipmentWithPlan) * 100, 2)
+            : 0;
     }
     
     $summary = [
@@ -268,7 +271,7 @@ try {
             <span style="font-size: 16pt; font-weight: bold; color: #16a34a;"><?php echo $summary['tyle_hoan_thanh']; ?>%</span>
             <?php if (empty($summary['selected_quy'])): ?>
                 <span style="font-size: 9pt; color: #6b7280;">
-                    (<?php echo $summary['completed_months']; ?> / <?php echo $summary['total_months']; ?> tháng)
+                    (<?php echo $summary['da_hoan_thanh']; ?> / <?php echo $summary['total_plans']; ?> thiết bị)
                 </span>
             <?php endif; ?>
         </div>

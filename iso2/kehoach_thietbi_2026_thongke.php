@@ -62,8 +62,19 @@ try {
     
     // Lọc theo bộ phận
     if (!empty($bophan)) {
-        $sql .= " AND t.bophansh = :bophan";
-        $params[':bophan'] = $bophan;
+        // Nhóm bộ phận dạng "A+B+C" lọc theo nhiều bộ phận
+        $bophanList = array_values(array_filter(array_map('trim', explode('+', $bophan)), 'strlen'));
+        if (count($bophanList) > 1) {
+            $placeholders = [];
+            foreach ($bophanList as $i => $bp) {
+                $placeholders[] = ':bophan' . $i;
+                $params[':bophan' . $i] = $bp;
+            }
+            $sql .= " AND t.bophansh IN (" . implode(',', $placeholders) . ")";
+        } else {
+            $sql .= " AND t.bophansh = :bophan";
+            $params[':bophan'] = $bophan;
+        }
     }
     
     $sql .= " GROUP BY t.stt ORDER BY first_month ASC, t.loaitb, t.tenthietbi";
@@ -302,6 +313,8 @@ try {
                 </label>
                 <select name="bophan" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">-- Tất cả --</option>
+                    <option value="DVLTH+CNC+TH" <?php echo $bophan === 'DVLTH+CNC+TH' ? 'selected' : ''; ?>>DVLTH+CNC+TH</option>
+                    <option value="XDT+XCK" <?php echo $bophan === 'XDT+XCK' ? 'selected' : ''; ?>>XDT+XCK</option>
                     <?php foreach ($boPhanList as $bp): ?>
                         <option value="<?php echo htmlspecialchars($bp); ?>" <?php echo $bophan === $bp ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($bp); ?>
