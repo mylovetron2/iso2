@@ -74,6 +74,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Tên VT</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden md:table-cell">Số máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Model</th>
+                    <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Năm SX</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden lg:table-cell">Họ máy</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Đơn vị</th>
                     <th class="px-2 md:px-4 py-2 border text-left text-xs md:text-sm hidden xl:table-cell">Lịch sử sửa chữa</th>
@@ -83,14 +84,16 @@ require_once __DIR__ . '/../layouts/header.php';
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có thiết bị nào</p>
                     </td>
                 </tr>
                 <?php else: ?>
                 <?php foreach ($items as $item): ?>
-                <tr class="hover:bg-gray-50">
+                <?php $isHighlighted = (int)($item['stt'] ?? 0) === $highlightId; ?>
+                <tr id="device-<?php echo (int)$item['stt']; ?>"
+                    class="<?php echo $isHighlighted ? 'bg-yellow-100 ring-2 ring-yellow-400' : 'hover:bg-gray-50'; ?>">
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo $item['stt']; ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm">
                         <code class="bg-gray-100 px-2 py-1 rounded text-sm md:text-base font-semibold">
@@ -102,6 +105,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     </td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden md:table-cell"><?php echo htmlspecialchars($item['somay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['model']); ?></td>
+                    <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars((string)($item['nam_sx'] ?? '')); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden lg:table-cell"><?php echo htmlspecialchars($item['homay']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm"><?php echo htmlspecialchars($item['madv']); ?></td>
                     <td class="px-2 md:px-4 py-2 border text-xs md:text-sm hidden xl:table-cell">
@@ -237,5 +241,16 @@ require_once __DIR__ . '/../layouts/header.php';
         Hiển thị <?php echo count($items); ?> / <?php echo $total; ?> thiết bị
     </div>
 </div>
+
+<?php if ($highlightId > 0): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const row = document.getElementById(<?php echo json_encode('device-' . $highlightId); ?>);
+    if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

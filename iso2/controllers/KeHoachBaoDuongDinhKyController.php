@@ -13,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class KeHoachBaoDuongDinhKyController
 {
-    private PDO $db;
+    protected PDO $db;
     private string $userMadv;
     private ?bool $userIsAdmin = null;
 
@@ -25,7 +25,7 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Lấy mã đơn vị (madv) của user đang đăng nhập.
      */
-    private function getUserMadv(): string
+    protected function getUserMadv(): string
     {
         if (isset($this->userMadv)) {
             return $this->userMadv;
@@ -40,7 +40,7 @@ class KeHoachBaoDuongDinhKyController
         return $this->userMadv;
     }
 
-    private function isAdmin(): bool
+    protected function isAdmin(): bool
     {
         if ($this->userIsAdmin === null) {
             $this->userIsAdmin = hasRole(ROLE_ADMIN);
@@ -52,7 +52,7 @@ class KeHoachBaoDuongDinhKyController
      * Danh sách madv được xem là cùng đơn vị với user.
      * TH và CNC đã gộp thành DVLTH nên coi là một nhóm.
      */
-    private function getMadvScope(): array
+    protected function getMadvScope(): array
     {
         $madv = $this->getUserMadv();
         if ($madv === '') {
@@ -67,7 +67,7 @@ class KeHoachBaoDuongDinhKyController
     /**
      * Thêm điều kiện lọc theo đơn vị của user (qua thietbi_iso.madv) vào câu SQL.
      */
-    private function applyDonViFilter(string &$sql, array &$params, string $planAlias = ''): void
+    protected function applyDonViFilter(string &$sql, array &$params, string $planAlias = ''): void
     {
         if ($this->isAdmin()) {
             return;
@@ -213,7 +213,7 @@ class KeHoachBaoDuongDinhKyController
         }
     }
 
-    private function loadHoSoExecutionInfo(array $items): array
+    protected function loadHoSoExecutionInfo(array $items): array
     {
         if ($items === []) {
             return [];

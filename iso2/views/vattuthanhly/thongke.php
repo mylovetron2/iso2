@@ -26,6 +26,11 @@ require_once __DIR__ . '/../layouts/header.php';
                 <i class="fas fa-file-excel mr-1"></i> In thống kê Excel
             </a>
             <?php endif; ?>
+            <button type="button"
+                    onclick="window.location.href='thongke_vattu_thanh_ly.php?action=exportSoTheoDoi&amp;tu_ngay=' + encodeURIComponent(document.querySelector('[name=tungay]').value) + '&amp;den_ngay=' + encodeURIComponent(document.querySelector('[name=denngay]').value) + '&amp;phanloai_id=' + encodeURIComponent(document.querySelector('[name=phanloai_id]').value) + '&amp;bophan=' + encodeURIComponent(document.querySelector('[name=bophan]').value) + '&amp;search=' + encodeURIComponent(document.querySelector('[name=search]').value)"
+                    class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-file-excel mr-1"></i> Xuất Biểu mẫu 1
+            </button>
             <a href="vattuthanhly.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-arrow-left mr-1"></i> Quay lại
             </a>
@@ -66,7 +71,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-tags text-blue-600"></i> Phân loại
                 </label>
-                <select name="phanloai_id" class="border rounded px-3 py-2 w-full">
+                <select name="phanloai_id" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">Tất cả phân loại</option>
                     <?php foreach ($phanloaiList as $pl): ?>
                     <option value="<?php echo $pl['id']; ?>" 
@@ -83,7 +88,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-building text-blue-600"></i> Bộ phận
                 </label>
-                <select name="bophan" class="border rounded px-3 py-2 w-full">
+                <select name="bophan" class="border rounded px-3 py-2 w-full" onchange="this.form.submit()">
                     <option value="">Tất cả bộ phận</option>
                     <?php foreach ($donViList as $dv): ?>
                         <?php 
@@ -196,12 +201,15 @@ require_once __DIR__ . '/../layouts/header.php';
                         Nguyên nhân<br>
                         <span class="text-xs font-normal text-gray-600">Причина списания</span>
                     </th>
+                    <th class="px-3 py-3 border text-left font-semibold" style="width: 12%;">
+                        Người nhận
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2"></i>
                         <p>Không có dữ liệu thanh lý trong khoảng thời gian này</p>
                     </td>
@@ -241,6 +249,9 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-3 py-2 border">
                         <?php echo htmlspecialchars($item['nguyennhan'] ?? ''); ?>
                     </td>
+                    <td class="px-3 py-2 border">
+                        <?php echo htmlspecialchars($item['nguoi_thuchien'] ?? ''); ?>
+                    </td>
                 </tr>
                 <?php 
                 $stt++; 
@@ -258,6 +269,7 @@ require_once __DIR__ . '/../layouts/header.php';
                     <td class="px-3 py-3 border text-right text-lg text-red-700">
                         <?php echo preg_replace('/,00$/', '', number_format((float)$totalAmount, 2, ',', '.')); ?>
                     </td>
+                    <td class="px-3 py-3 border"></td>
                     <td class="px-3 py-3 border"></td>
                 </tr>
                 <?php endif; ?>

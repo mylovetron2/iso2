@@ -21,6 +21,9 @@ require_once __DIR__ . '/../layouts/header.php';
                 <span id="editLockLabel">Mở khóa sửa</span>
             </button>
             <?php endif; ?>
+            <a href="kehoachbaoduong2027.php" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm">
+                <i class="fas fa-calendar-plus mr-1"></i> Lập kế hoạch 2027
+            </a>
             <a href="kehoachbaoduongdinhky.php?action=thongke&nam=<?php echo $nam; ?>" 
                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
                 <i class="fas fa-chart-bar mr-1"></i> Thống kê

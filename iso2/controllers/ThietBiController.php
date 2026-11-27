@@ -62,6 +62,7 @@ class ThietBiController
             
             $total = $this->model->count($where, $params);
             $totalPages = ceil($total / $limit);
+            $highlightId = isset($_GET['highlight']) ? (int)$_GET['highlight'] : 0;
 
             $donViList = $this->donViModel->getAllSimple();
 
@@ -78,6 +79,7 @@ class ThietBiController
             $search = '';
             $madv = '';
             $page = 1;
+            $highlightId = 0;
             $error = 'Có lỗi xảy ra: ' . $e->getMessage();
             
             require_once __DIR__ . '/../views/thietbi/index.php';
@@ -119,6 +121,7 @@ class ThietBiController
                     'madv' => trim((string)($source['madv'] ?? '')),
                     'bdtime' => (int)($source['bdtime'] ?? 0),
                     'ngayktsd' => trim((string)($source['ngayktsd'] ?? date('Y-m-d'))),
+                    'nam_sx' => $source['nam_sx'] ?? '',
                     'tlkt' => trim((string)($source['tlkt'] ?? '')),
                     'hosomay' => trim((string)($source['hosomay'] ?? '')),
                     'mamay' => trim((string)($source['mamay'] ?? '')),
@@ -140,6 +143,7 @@ class ThietBiController
                 'madv' => trim($_POST['madv'] ?? ''),
                 'bdtime' => (int)($_POST['bdtime'] ?? 0),
                 'ngayktsd' => trim($_POST['ngayktsd'] ?? date('Y-m-d')),
+                'nam_sx' => null,
                 'tlkt' => trim($_POST['tlkt'] ?? ''),
                 'hosomay' => trim($_POST['hosomay'] ?? ''),
                 'mamay' => trim($_POST['mamay'] ?? '')
@@ -155,6 +159,7 @@ class ThietBiController
             }
 
             $errors = [];
+            $data['nam_sx'] = $this->parseManufacturingYear($_POST['nam_sx'] ?? '', $errors);
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
             if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';            if (empty($data['model'])) $errors[] = 'Model không được để trống';            if (empty($data['model'])) $errors[] = 'Model không được để trống';
             if (empty($data['somay'])) $errors[] = 'Số máy không được để trống';
@@ -163,7 +168,7 @@ class ThietBiController
             if (empty($errors)) {
                 $id = $this->model->create($data);
                 if ($id) {
-                    header('Location: /iso2/thietbi.php?success=created');
+                    header('Location: /iso2/thietbi.php?success=created&highlight=' . (int)$id);
                     exit;
                 }
                 $errors[] = 'Có lỗi xảy ra khi tạo thiết bị';
@@ -204,6 +209,7 @@ class ThietBiController
                 'madv' => trim($_POST['madv'] ?? ''),
                 'bdtime' => (int)($_POST['bdtime'] ?? 0),
                 'ngayktsd' => trim($_POST['ngayktsd'] ?? date('Y-m-d')),
+                'nam_sx' => null,
                 'tlkt' => trim($_POST['tlkt'] ?? ''),
                 'hosomay' => trim($_POST['hosomay'] ?? ''),
                 'mamay' => trim($_POST['mamay'] ?? '')
@@ -219,6 +225,7 @@ class ThietBiController
             }
 
             $errors = [];
+            $data['nam_sx'] = $this->parseManufacturingYear($_POST['nam_sx'] ?? '', $errors);
             if (empty($data['mavt'])) $errors[] = 'Mã vật tư không được để trống';
             if (empty($data['tenvt'])) $errors[] = 'Tên vật tư không được để trống';
             if (empty($data['model'])) $errors[] = 'Model không được để trống';
@@ -336,5 +343,29 @@ class ThietBiController
         }
 
         require_once __DIR__ . '/../views/thietbi/view.php';
+    }
+
+    private function parseManufacturingYear(mixed $value, array &$errors): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (!is_string($value) && !is_int($value)) {
+            $errors[] = 'Năm SX phải là năm hợp lệ từ 1901 đến 2155';
+            return null;
+        }
+
+        $year = trim((string)$value);
+        if ($year === '') {
+            return null;
+        }
+
+        if (!ctype_digit($year) || (int)$year < 1901 || (int)$year > 2155) {
+            $errors[] = 'Năm SX phải là năm hợp lệ từ 1901 đến 2155';
+            return null;
+        }
+
+        return (int)$year;
     }
 }

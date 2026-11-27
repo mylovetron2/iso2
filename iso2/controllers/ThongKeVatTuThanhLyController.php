@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/vattu_thanh_ly_bophan.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -47,6 +48,12 @@ class ThongKeVatTuThanhLyController
                 $this->exportExcelProcurement();
                 return;
             }
+
+            if (isset($_GET['action']) && $_GET['action'] === 'exportSoTheoDoi') {
+                require_once __DIR__ . '/VatTuThanhLyController.php';
+                VatTuThanhLyController::exportSoTheoDoiHangNgay();
+                return;
+            }
             
             // Get date range from query params
             $tungay = $_GET['tungay'] ?? date('Y-m-01'); // First day of current month
@@ -61,7 +68,9 @@ class ThongKeVatTuThanhLyController
             
             // Get list of donvi for dropdown
             $stmtDonVi = $this->db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
-            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+            $donViList = filterHiddenVatTuThanhLyDepartments(
+                appendDvlTongHopGroups($stmtDonVi->fetchAll(PDO::FETCH_ASSOC))
+            );
             
             // Get statistics
             $items = $this->getThanhLyByDateRange($tungay, $denngay, $search, $phanloai_id, $bophan);
@@ -146,9 +155,9 @@ class ThongKeVatTuThanhLyController
         
         // Add bophan filter if provided
         if (!empty($bophan)) {
-            // Nếu chọn "Đội ĐVL Tổng hợp" (madv = DVLTH) thì lọc cả TH và CNC
+            // Nếu chọn "Đội ĐVL Tổng hợp" (madv = DVLTH) thì lọc cả TH, CNC và 2 nhóm CNM, RDNGA
             if ($bophan === 'DVLTH') {
-                $sql .= " AND s.bophan IN ('TH', 'CNC')";
+                $sql .= " AND s.bophan IN ('TH', 'CNC', 'CNM', 'RDNGA')";
             } else {
                 $sql .= " AND s.bophan = :bophan";
                 $params[':bophan'] = $bophan;
@@ -157,16 +166,22 @@ class ThongKeVatTuThanhLyController
         
         // Add search filter if provided
         if (!empty($search)) {
-            $sql .= " AND (
-                v.mavattu LIKE :search 
-                OR v.ten_tiengviet LIKE :search 
-                OR v.ten_tienganh LIKE :search
-                OR v.ten_tiengnga LIKE :search
-                OR s.ghichu LIKE :search
-                OR s.bophan LIKE :search
-                OR s.nguoisudung LIKE :search
-            )";
-            $params[':search'] = '%' . $search . '%';
+            $searchFields = [
+                'v.mavattu',
+                'v.ten_tiengviet',
+                'v.ten_tienganh',
+                'v.ten_tiengnga',
+                's.ghichu',
+                's.bophan',
+                's.nguoisudung',
+            ];
+            $searchConditions = [];
+            foreach ($searchFields as $index => $field) {
+                $placeholder = ':search_' . $index;
+                $searchConditions[] = $field . ' LIKE ' . $placeholder;
+                $params[$placeholder] = '%' . $search . '%';
+            }
+            $sql .= ' AND (' . implode(' OR ', $searchConditions) . ')';
         }
         
         $sql .= " ORDER BY ngay_thuchien ASC, v.mavattu ASC";

@@ -415,7 +415,7 @@ button.text-red-600:hover {
                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-file-excel mr-1"></i> Xuất Excel
             </a>
-            
+
             <?php if (hasPermission('vattu.create')): ?>
             <a href="vattuthanhly.php?action=create" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 <i class="fas fa-plus mr-1"></i> Thêm vật tư
@@ -1082,12 +1082,18 @@ function renderDetailTable(vattuStt, items, soluongConLai) {
     
     tbody.innerHTML = items.map(item => {
         const maxQty = conlai === null ? null : conlai + parseFloat(item.soluong || 0);
+        const bophanLabels = {
+            RDNGA: 'ĐVLTH-Nga',
+            CNM: 'ĐVLTH-CNM',
+            TH: 'ĐVLTH'
+        };
+        const bophanDisplay = bophanLabels[item.bophan] || item.bophan || '-';
         return `
         <tr id="detailRow_${item.id}">
             <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.nguoisudung || '-'}</td>
             <td class="px-3 py-2 border text-center" style="color: #000; font-weight: normal;">${item.ngaysd_nhan ? new Date(item.ngaysd_nhan).toLocaleDateString('vi-VN') : '-'}</td>
             <td class="px-3 py-2 border text-right font-semibold" style="color: #000;">${Math.round(parseFloat(item.soluong || 0))}</td>
-            <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.bophan || '-'}</td>
+            <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${bophanDisplay}</td>
             <td class="px-3 py-2 border" style="color: #000; font-weight: normal;">${item.mucdich_sudung || '-'}</td>
             <td class="px-3 py-2 border text-center">
                 <?php if (hasPermission('vattu.edit')): ?>

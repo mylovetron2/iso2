@@ -210,6 +210,12 @@ iso2/
 - Ghi chú không bắt buộc
 - Khi xóa kế hoạch năm, tất cả dữ liệu của năm đó sẽ bị xóa hoàn toàn
 
+## Lập kế hoạch năm 2027
+
+Trang `kehoachbaoduong2027.php` cho phép đội chọn quý kế hoạch 2027 cho từng thiết bị trong danh sách kế hoạch 2026.
+Dấu tích xanh là quý đã hoàn thành năm 2026; bấm Q1–Q4 để chọn/bỏ quý 2027 (nhiều quý, mỗi quý một màu).
+Dữ liệu lưu vào cùng bảng `ke_hoach_bao_duong_dinh_ky_iso` với `nam = 2027` (quý được chọn ghi `TO`); cần quyền `kehoachbaoduong.edit` để lưu.
+
 ## Tính năng mở rộng (tương lai)
 
 - [ ] Sửa từng dòng kế hoạch trực tiếp trên giao diện

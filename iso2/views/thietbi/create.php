@@ -142,6 +142,13 @@ $copyDeviceList = $copyDeviceList ?? [];
             </div>
 
             <div>
+                <label class="block text-gray-700 font-semibold mb-2">Năm SX</label>
+                <input type="number" name="nam_sx" min="1901" max="2155" step="1"
+                       value="<?php echo isset($prefill['nam_sx']) ? htmlspecialchars((string)$prefill['nam_sx']) : ''; ?>"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+            </div>
+
+            <div>
                 <label class="block text-gray-700 font-semibold mb-2">Ngày KTSD</label>
                 <input type="date" name="ngayktsd"
                        value="<?php echo isset($prefill['ngayktsd']) ? htmlspecialchars((string)$prefill['ngayktsd']) : '1970-01-01'; ?>"

@@ -17,6 +17,7 @@ package-lock.json
 !/migrations/20261025_add_doi_execution_input.sql
 !/migrations/20261025_add_doi_pending_review_type.sql
 !/migrations/20261026_allow_all_units_doi_execution.sql
+!/migrations/20261127_add_nam_sx_to_thietbi_iso.sql
 *.sqlite
 *.db
 

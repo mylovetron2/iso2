@@ -42,6 +42,8 @@ $tenBoPhan = '';
 if (!empty($bophan)) {
     if ($bophan === 'DVLTH') {
         $tenBoPhan = 'Đội ĐVL Tổng hợp';
+    } elseif (isset(getDvlTongHopGroups()[$bophan])) {
+        $tenBoPhan = getDvlTongHopGroups()[$bophan];
     } else {
         // Query để lấy tên
         $stmtBP = $this->db->prepare("SELECT tendv FROM donvi_iso WHERE madv = :madv");

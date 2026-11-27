@@ -61,6 +61,13 @@ require_once __DIR__ . '/../layouts/header.php';
                     <?php echo htmlspecialchars($item['model'] ?? ''); ?>
                 </div>
             </div>
+
+            <div class="border-l-2 border-orange-500 pl-3">
+                <div class="text-sm text-gray-600">Năm SX</div>
+                <div class="text-base font-semibold">
+                    <?php echo htmlspecialchars((string)($item['nam_sx'] ?? '')); ?>
+                </div>
+            </div>
             
             <div class="border-l-2 border-yellow-500 pl-3">
                 <div class="text-sm text-gray-600">Họ máy</div>

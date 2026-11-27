@@ -130,6 +130,13 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
 
             <div>
+                <label class="block text-gray-700 font-semibold mb-2">Năm SX</label>
+                <input type="number" name="nam_sx" min="1901" max="2155" step="1"
+                       value="<?php echo isset($_POST['nam_sx']) ? htmlspecialchars((string)$_POST['nam_sx']) : htmlspecialchars((string)($item['nam_sx'] ?? '')); ?>"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:border-blue-500">
+            </div>
+
+            <div>
                 <label class="block text-gray-700 font-semibold mb-2">Ngày KTSD</label>
                 <input type="date" name="ngayktsd"
                        value="<?php echo isset($_POST['ngayktsd']) ? $_POST['ngayktsd'] : ($item['ngayktsd'] ?? ''); ?>"

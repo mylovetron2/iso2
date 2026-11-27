@@ -58,6 +58,14 @@ mysql -u root -p your_database_name < migrations/ALTER_congviec_hososcbd_FK.sql
 
 Database đã có bảng `congviec_suachua_iso` theo thiết kế cũ.
 
+### Thêm năm sản xuất vào danh mục thiết bị
+
+Trên database đã có bảng `thietbi_iso`, chạy migration sau trước khi sử dụng trường Năm SX:
+
+```bash
+mysql -u root -p your_database_name < migrations/20261127_add_nam_sx_to_thietbi_iso.sql
+```
+
 ### Kiểm tra bảng hiện tại
 
 ```sql
@@ -214,6 +222,7 @@ SELECT * FROM capdo_baocuong_iso;  -- Phải có 3 records: CAP1, CAP2, CAP3
 | File | Mô tả | Tạo bảng | Phụ thuộc |
 |------|-------|----------|-----------|
 | `20251121_create_hososcbd_tables.sql` | Tạo bảng hồ sơ SCBD, đơn vị, thiết bị | hososcbd_iso, donvi_iso, thietbi_iso | Không |
+| `20261127_add_nam_sx_to_thietbi_iso.sql` | Thêm năm sản xuất cho thiết bị | Không | thietbi_iso |
 | `20260224_create_kpi_suachua_system_FIXED.sql` | Tạo hệ thống KPI công việc (bản FIXED) | capdo_baocuong_iso, thietbi_capdo_kpi_iso, congviec_suachua_iso | Không (độc lập) |
 | `ALTER_congviec_hososcbd_FK.sql` | Chuẩn hóa FK congviec → hososcbd | Không (chỉ ALTER) | hososcbd_iso, congviec_suachua_iso |
 | `CREATE_thietbi_capdo_kpi_SIMPLE.sql` | Tạo bảng KPI riêng cho thiết bị (clean slate) | capdo_baocuong_iso, thietbi_capdo_kpi_iso | Không |

@@ -4,12 +4,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/VatTuThanhLy.php';
 require_once __DIR__ . '/../includes/ActivityLogger.php';
+require_once __DIR__ . '/../includes/vattu_thanh_ly_bophan.php';
 
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class VatTuThanhLyController
@@ -91,7 +93,9 @@ class VatTuThanhLyController
             // Load danh sách đơn vị
             $db = getDBConnection();
             $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
-            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+            $donViList = filterHiddenVatTuThanhLyDepartments(
+                appendDvlTongHopGroups($stmtDonVi->fetchAll(PDO::FETCH_ASSOC))
+            );
             
             // Load danh sách phân loại
             $stmtPhanLoai = $db->query("SELECT id, ma_phanloai, ten_phanloai, mau_sac FROM phanloai_vattu_thanh_ly_iso ORDER BY thu_tu ASC");
@@ -288,6 +292,225 @@ class VatTuThanhLyController
         }
     }
     
+    /**
+     * Xuất "Sổ theo dõi sử dụng vật tư hàng ngày" (Biểu mẫu 1) theo khoảng ngày sử dụng/nhận.
+     */
+    public static function exportSoTheoDoiHangNgay(): void
+    {
+        try {
+            $tuNgay = trim((string)($_GET['tu_ngay'] ?? $_GET['tungay'] ?? ''));
+            $denNgay = trim((string)($_GET['den_ngay'] ?? $_GET['denngay'] ?? ''));
+            $search = trim((string)($_GET['search'] ?? ''));
+            $phanloaiId = filter_var($_GET['phanloai_id'] ?? null, FILTER_VALIDATE_INT);
+            $bophan = trim((string)($_GET['bophan'] ?? ''));
+            $isDate = static fn(string $v): bool => (bool)preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) && strtotime($v) !== false;
+
+            $conditions = ['s.ngaysd_nhan IS NOT NULL'];
+            $params = [];
+            if ($isDate($tuNgay)) {
+                $conditions[] = 'DATE(s.ngaysd_nhan) >= :tu_ngay';
+                $params[':tu_ngay'] = $tuNgay;
+            }
+            if ($isDate($denNgay)) {
+                $conditions[] = 'DATE(s.ngaysd_nhan) <= :den_ngay';
+                $params[':den_ngay'] = $denNgay;
+            }
+            if ($phanloaiId !== false && $phanloaiId !== null && $phanloaiId > 0) {
+                $conditions[] = 'v.phanloai_id = :phanloai_id';
+                $params[':phanloai_id'] = $phanloaiId;
+            }
+            if ($bophan === 'DVLTH') {
+                $conditions[] = "s.bophan IN ('TH', 'CNC', 'CNM', 'RDNGA')";
+            } elseif ($bophan !== '') {
+                $conditions[] = 's.bophan = :bophan';
+                $params[':bophan'] = $bophan;
+            }
+            if ($search !== '') {
+                $searchFields = [
+                    'v.mavattu',
+                    'v.ten_tiengviet',
+                    'v.ten_tienganh',
+                    'v.ten_tiengnga',
+                    's.ghichu',
+                    's.bophan',
+                    's.nguoisudung',
+                ];
+                $searchConditions = [];
+                foreach ($searchFields as $index => $field) {
+                    $placeholder = ':search_' . $index;
+                    $searchConditions[] = $field . ' LIKE ' . $placeholder;
+                    $params[$placeholder] = '%' . $search . '%';
+                }
+                $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
+            }
+
+            $db = getDBConnection();
+            $stmt = $db->prepare(
+                "SELECT s.id, s.ngaysd_nhan, s.nguoisudung, s.soluong, s.mucdich_sudung,
+                        v.mavattu, v.ten_tiengviet, v.ten_tienganh, v.dvt_tiengviet
+                 FROM vattu_thanh_ly_sudung_iso s
+                 INNER JOIN vattu_thanh_ly_iso v ON v.stt = s.vattu_stt
+                 WHERE " . implode(' AND ', $conditions) . "
+                 ORDER BY DATE(s.ngaysd_nhan) ASC, s.id ASC"
+            );
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            require_once __DIR__ . '/../vendor/autoload.php';
+
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Biểu mẫu 1');
+            $sheet->getPageSetup()
+                ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+                ->setFitToWidth(1)
+                ->setFitToHeight(0);
+            $sheet->getPageSetup()->setFitToPage(true);
+            $spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(12);
+
+            foreach (['A' => 4.29, 'B' => 12.88, 'C' => 42, 'D' => 6.43, 'E' => 6.14, 'F' => 32.86, 'G' => 13.14, 'H' => 20] as $col => $width) {
+                $sheet->getColumnDimension($col)->setWidth($width);
+            }
+
+            $sheet->setCellValue('C1', "XN ĐỊA VẬT LÝ GK\nКИГ");
+            $sheet->getStyle('C1')->getFont()->setBold(true);
+            $sheet->getStyle('C1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+            $sheet->getRowDimension(1)->setRowHeight(36);
+
+            $sheet->mergeCells('G1:H1');
+            $sheet->setCellValue('G1', "Biểu mẫu 1 -\nФорма 1");
+            $sheet->getStyle('G1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+
+            $sheet->mergeCells('A2:H2');
+            $sheet->setCellValue('A2', 'SỔ THEO DÕI SỬ DỤNG VẬT TƯ HÀNG NGÀY');
+            $sheet->mergeCells('A3:H3');
+            $sheet->setCellValue('A3', 'Bộ phận/ Служба: Xưởng SCTBĐVL / ЦРГО');
+            $sheet->getStyle('A2:A3')->getFont()->setBold(true);
+            $sheet->getStyle('A2:A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A2')->getFont()->setSize(14);
+
+            $headers = [
+                'A' => "STT\n/\n№",
+                'B' => "Mã VT\nКод МТР",
+                'C' => "Tên Vật tư\nНаименование МТР",
+                'D' => "Đơn vị\nЕдзм",
+                'E' => "Số lượng sử dụng/\nКо-во",
+                'F' => "Mục đích sử dụng/\nЦель использования",
+                'G' => "Họ tên\nngười giao/\nВыдал",
+                'H' => "Họ tên\nngười nhận/\nПолучил",
+            ];
+            foreach ($headers as $col => $text) {
+                $sheet->setCellValue($col . '5', $text);
+            }
+            foreach (['A' => 1, 'B' => 2, 'C' => 3, 'D' => 5, 'E' => 6, 'F' => 7, 'G' => 8, 'H' => 9] as $col => $no) {
+                $sheet->setCellValue($col . '6', $no);
+            }
+            $sheet->getRowDimension(5)->setRowHeight(75);
+            $sheet->getStyle('A5:H6')->applyFromArray([
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+            $sheet->getStyle('A5:H5')->getFont()->setBold(true);
+
+            $row = 7;
+            $stt = 0;
+            $currentDay = null;
+            foreach ($rows as $item) {
+                $day = date('Y-m-d', strtotime((string)$item['ngaysd_nhan']));
+                if ($day !== $currentDay) {
+                    $currentDay = $day;
+                    $stt = 0;
+                    $sheet->mergeCells("A{$row}:H{$row}");
+                    $sheet->setCellValue("A{$row}", 'Ngày ' . date('d/m/Y', strtotime($day)));
+                    $sheet->getStyle("A{$row}:H{$row}")->getFont()->setBold(true);
+                    $sheet->getStyle("A{$row}:H{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    $row++;
+                }
+
+                $stt++;
+                $ten = trim((string)($item['ten_tiengviet'] ?? '')) !== ''
+                    ? $item['ten_tiengviet']
+                    : ($item['ten_tienganh'] ?? '');
+                $sheet->setCellValue("A{$row}", $stt);
+                $sheet->setCellValueExplicit("B{$row}", (string)($item['mavattu'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("C{$row}", (string)$ten, DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("D{$row}", (string)($item['dvt_tiengviet'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValue("E{$row}", (float)$item['soluong'] + 0);
+                $sheet->setCellValueExplicit("F{$row}", (string)($item['mucdich_sudung'] ?? ''), DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("G{$row}", 'Trần Đình Hiếu', DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("H{$row}", (string)($item['nguoisudung'] ?? ''), DataType::TYPE_STRING);
+
+                $sheet->getStyle("A{$row}:H{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getStyle("A{$row}:H{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+                $sheet->getStyle("A{$row}:B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("D{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("G{$row}:H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getRowDimension($row)->setRowHeight(30);
+                $row++;
+            }
+
+            $row++;
+            $sheet->mergeCells("A{$row}:E{$row}");
+            $sheet->setCellValue("A{$row}", 'Ответственное Лицо : __________________________');
+            $sheet->mergeCells("F{$row}:H{$row}");
+            $sheet->setCellValue("F{$row}", 'Дан Ван Туэ');
+            $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("F{$row}:H{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("F{$row}:H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $row += 2;
+            $sheet->mergeCells("A{$row}:H{$row}");
+            $sheet->setCellValue(
+                "A{$row}",
+                'Ghi chú: Trong trường hợp vật tư không sử dụng hết cần trả lại thì Người phụ trách vật tư cũng phải cập nhật, ký vào cột "Người nhận" và ghi chú "Vật tư trả lại".'
+            );
+            $sheet->getStyle("A{$row}:H{$row}")->getFont()->setItalic(true);
+            $sheet->getStyle("A{$row}:H{$row}")->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                ->setVertical(Alignment::VERTICAL_CENTER)
+                ->setWrapText(false);
+            $sheet->getRowDimension($row)->setRowHeight(22);
+
+            $row++;
+            $russianNotes = [
+                'Примечание: В случае неиспользованных материалов которые необходимо вернуть ответственное лицо за материалы должно обновить и подписать в колонке "Получил" и отметить "Возвращенные материалы"',
+                'Этот журнал обновляется ответственным лицом за материалы по специальности на объектах предприятия печать и создают журнал на 1 год',
+                'Необходимо ввести поля (од МТР наименование МТР тип размер)',
+            ];
+            $lastRussianRow = $row + count($russianNotes) - 1;
+            $sheet->mergeCells("A{$row}:H{$lastRussianRow}");
+            $sheet->setCellValue("A{$row}", implode("\n", $russianNotes));
+            $sheet->getStyle("A{$row}:H{$lastRussianRow}")->getFont()->setItalic(true);
+            $sheet->getStyle("A{$row}:H{$lastRussianRow}")->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                ->setVertical(Alignment::VERTICAL_CENTER)
+                ->setWrapText(true);
+            for ($noteRow = $row; $noteRow <= $lastRussianRow; $noteRow++) {
+                $sheet->getRowDimension($noteRow)->setRowHeight(22);
+            }
+
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="Bieu_Mau_1_' . date('Ymd_His') . '.xlsx"');
+            header('Cache-Control: max-age=0');
+
+            (new Xlsx($spreadsheet))->save('php://output');
+            exit;
+        } catch (Throwable $e) {
+            error_log('Error in VatTuThanhLyController::exportSoTheoDoiHangNgay: ' . $e->getMessage());
+            http_response_code(500);
+            echo 'Lỗi khi xuất sổ theo dõi sử dụng vật tư ra Excel.';
+        }
+    }
+
     public function create(): void
     {
         $copyId = isset($_GET['copy_from']) ? (int)$_GET['copy_from'] : 0;
@@ -858,7 +1081,9 @@ class VatTuThanhLyController
             // Load danh sách đơn vị cho dropdown (nếu cần thêm chi tiết)
             $db = getDBConnection();
             $stmtDonVi = $db->query("SELECT madv, tendv FROM donvi_iso ORDER BY tendv ASC");
-            $donViList = $stmtDonVi->fetchAll(PDO::FETCH_ASSOC);
+            $donViList = filterHiddenVatTuThanhLyDepartments(
+                appendDvlTongHopGroups($stmtDonVi->fetchAll(PDO::FETCH_ASSOC))
+            );
             
             require_once __DIR__ . '/../views/vattuthanhly/view.php';
         } catch (Exception $e) {
